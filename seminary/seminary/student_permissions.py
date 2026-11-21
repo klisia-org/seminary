@@ -50,6 +50,7 @@ CONFIG = {
     "Exam Submission": (("member", "user"), "course"),
     "Assignment Submission": (("member", "user"), "course"),
     "Discussion Submission": (("member", "user"), "course"),
+    "Oral Activity Submission": (("member", "user"), "course"),
     "Quiz Submission": (("member", "user"), "course"),
     "Course Schedule Progress": (("member", "user"), "course"),
     # Same shape as the progress row it sits beside: a student sees their own
@@ -66,6 +67,11 @@ CONFIG = {
     "Student Attendance": (None, "course"),
     # A student reads their own extensions; staff their sections' (decisions/082).
     "Student Due Date Override": (("student", "student"), "course"),
+    # Moments and the instructor-only step results are the section staff's
+    # (decisions/100 §6). Oral Recording itself has its own rule in oral.py:
+    # it belongs to every student on it, not to one field.
+    "Oral Moment": (None, "course"),
+    "Oral Step Result": (None, "course"),
 }
 
 
@@ -80,6 +86,7 @@ MENTOR_STUDENT_FIELD = {
     "Exam Submission": ("member", "user"),
     "Assignment Submission": ("member", "user"),
     "Discussion Submission": ("member", "user"),
+    "Oral Activity Submission": ("member", "user"),
     "Quiz Submission": ("member", "user"),
     "Course Schedule Progress": ("member", "user"),
     "SCORM Attempt": ("member", "user"),

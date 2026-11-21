@@ -29,6 +29,7 @@ SUBMISSION_DOCTYPES = (
     "Exam Submission",
     "Assignment Submission",
     "Discussion Submission",
+    "Oral Activity Submission",
 )
 
 POLICY_FIELDS = (
@@ -51,6 +52,7 @@ _ROW_FIELDS = [
     "exam",
     "assignment",
     "discussion",
+    "oral",
     "extracredit_scac",
     *ROW_DATE_FIELDS,
 ]
@@ -60,6 +62,7 @@ _ACTIVITY_FIELD = {
     "exam": "exam",
     "assignment": "assignment",
     "discussion": "discussion",
+    "oral": "oral",
 }
 
 
@@ -100,6 +103,7 @@ def get_override(course_assess, student):
             "replies_due_date",
             "extra_minutes",
             "extra_attempts",
+            "written_instead",
             "reason",
         ],
         as_dict=True,
@@ -132,6 +136,8 @@ def effective(course_assess, student, row=None):
         ),
         extra_minutes=cint(ov.extra_minutes),
         extra_attempts=cint(ov.extra_attempts),
+        # Oral questions answered in writing instead (decisions/100 §9).
+        written_instead=cint(ov.written_instead),
         override=ov.name,
         late_policy_exempt=cint(row.late_policy_exempt),
     )
@@ -209,7 +215,7 @@ def submitted_at(doc):
         if doc.get("status") == "Not Submitted":
             return None
         return doc.get("submission_date") or doc.get("creation")
-    if doc.doctype == "Assignment Submission":
+    if doc.doctype in ("Assignment Submission", "Oral Activity Submission"):
         return doc.get("submitted_on") or doc.get("creation")
     return doc.get("creation")
 
@@ -317,6 +323,7 @@ def latest_submission(course_assess, student):
         "Exam": "Exam Submission",
         "Assignment": "Assignment Submission",
         "Discussion": "Discussion Submission",
+        "Oral": "Oral Activity Submission",
     }.get(row.type)
     if not doctype:
         return None
@@ -408,6 +415,7 @@ def _student_authored(doc):
 _CONTENT_FIELDS = {
     "Assignment Submission": ("answer", "assignment_attachment"),
     "Discussion Submission": ("original_post", "original_attachment"),
+    "Oral Activity Submission": ("recording",),
 }
 
 
@@ -438,6 +446,9 @@ def guard_submission(doc, method=None):
         doc.submitted_on = at
         doc.late = seconds_late(dates, at)
     elif doc.doctype == "Discussion Submission" and doc.is_new():
+        doc.late = seconds_late(dates, at)
+    elif doc.doctype == "Oral Activity Submission":
+        doc.submitted_on = at
         doc.late = seconds_late(dates, at)
 
 
@@ -525,6 +536,7 @@ def get_deadline_settings(course):
             "replies_due_date",
             "extra_minutes",
             "extra_attempts",
+            "written_instead",
             "reason",
             "source",
         ],
@@ -586,6 +598,7 @@ def save_override(data):
         "replies_due_date",
         "extra_minutes",
         "extra_attempts",
+        "written_instead",
         "reason",
     )
     course_assess = data.get("course_assess")

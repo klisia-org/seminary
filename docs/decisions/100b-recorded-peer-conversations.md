@@ -1,7 +1,7 @@
 # 100b — Recorded peer conversations and talk time
 
 **Date:** 2026-11-19
-**Status:** Proposed
+**Status:** Accepted
 **Parent:** [100](100-oral-assessment.md)
 **Related:** 097 (discussions, student groups)
 
@@ -42,5 +42,6 @@ without a person timing it by hand.
   silent.
 - Diarization errors land on a person's record; labelling stays human-confirmed, and a student who
   disputes their share can ask the instructor to relabel.
-- Open: recording from a virtual meeting (051); whether students see the whole group's breakdown;
+- Recording from a virtual meeting is 100d.
+- Open: whether students see the whole group's breakdown;
   a minimum talk share as an optional requirement.

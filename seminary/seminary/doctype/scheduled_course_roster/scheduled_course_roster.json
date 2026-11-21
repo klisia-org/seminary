@@ -26,6 +26,7 @@
   "column_break_debd",
   "fgrade",
   "fgradepass",
+  "grades_sent_on",
   "attendance_standing_section",
   "absence_count",
   "tardy_count",
@@ -150,6 +151,14 @@
    "permlevel": 1
   },
   {
+   "description": "When this student's grades were sent. Retention periods count from here.",
+   "fieldname": "grades_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Grades Sent On",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "course_progress_section",
    "fieldtype": "Section Break",
    "label": "Course Progress"
@@ -262,7 +271,7 @@
  ],
  "image_field": "stuimage",
  "links": [],
- "modified": "2025-03-15 11:03:48.744914",
+ "modified": "2026-11-20 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Roster",

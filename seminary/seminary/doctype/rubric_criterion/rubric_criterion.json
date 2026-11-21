@@ -8,7 +8,8 @@
   "criterion_code",
   "title",
   "description",
-  "weight"
+  "weight",
+  "from_defense"
  ],
  "fields": [
   {
@@ -41,10 +42,18 @@
    "in_list_view": 1,
    "columns": 1,
    "description": "Leave blank to share what is left evenly with the other blank criteria. Type a percent to fix this criterion's weight."
+  },
+  {
+   "default": "0",
+   "fieldname": "from_defense",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "From the Oral Defense",
+   "description": "Judged from the oral defense rather than the paper."
   }
  ],
  "links": [],
- "modified": "2026-10-31 12:00:00.000000",
+ "modified": "2026-11-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Rubric Criterion",

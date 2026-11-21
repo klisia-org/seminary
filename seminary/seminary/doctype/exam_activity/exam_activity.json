@@ -20,7 +20,8 @@
   "column_break_jvja",
   "qbyquestion",
   "shuffle_questions",
-  "limit_questions_to"
+  "limit_questions_to",
+  "oral_steps"
  ],
  "fields": [
   {
@@ -103,12 +104,18 @@
    "fieldname": "limit_questions_to",
    "fieldtype": "Int",
    "label": "Limit Questions to (on Shuffle)"
+  },
+  {
+   "description": "Steps run on oral answers, from those the school allows. Stored as a list.",
+   "fieldname": "oral_steps",
+   "fieldtype": "Small Text",
+   "label": "Steps for Oral Answers"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-17 11:26:58.336544",
+ "modified": "2026-11-20 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Activity",

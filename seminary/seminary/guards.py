@@ -470,12 +470,18 @@ COURSE_FIELD = {
     "Assignment Submission": "course",
     "Exam Submission": "course",
     "Discussion Submission": "coursesc",
+    "Oral Activity Submission": "course",
     "Quiz Submission": "course",
     "Course Schedule Progress": "course",
     "SCORM Attempt": "course",
     "Course Enrollment Individual": "coursesc_ce",
     "Course Folder": "course_schedule",
     "Student Due Date Override": "course_schedule",
+    # Oral assessment (decisions/100).
+    "Oral Recording": "course_schedule",
+    "Oral Defense Question": "course",
+    "Oral Moment": "course_schedule",
+    "Oral Step Result": "course_schedule",
 }
 
 

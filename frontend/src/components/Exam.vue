@@ -119,25 +119,78 @@
               {{ __('Draft saved') }}
             </div>
           </div>
-          <div v-for="(question, index) in exam.data.questions" :key="question.name"
+          <div v-if="oneAtATime" class="text-sm text-ink-gray-6 mb-4">
+            {{ __('Question {0} of {1}').format(activeQuestion + 1, exam.data.questions.length) }}
+          </div>
+          <div v-for="(question, index) in shownQuestions" :key="question.name"
             class="relative border rounded-md p-5 mb-4">
             <div
               class="absolute -top-3 -left-3 bg-surface-gray-7 text-ink-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
-              {{ index + 1 }}
+              {{ oneAtATime ? activeQuestion + 1 : index + 1 }}
             </div>
             <div class="text-ink-gray-9 text-sm font-semibold text-right">
               {{ question.points }} {{ question.points === 1 ? __('Point') : __('Points') }}
             </div>
-            <div class="text-ink-gray-9 text-left font-semibold mt-2 leading-5">
-              <SafeHtml :html="question.question_detail || __('No question detail provided.')" />
-            </div>
-            <div class="mt-4">
-              <LightEditor v-if="answers && answers[question.name] !== undefined" :content="answers[question.name]"
-                :id="question.name" :placeholder="__('Type your answer here')"
-                @change="(val) => updateAnswer(question.name, val)" />
-            </div>
+            <!-- Oral answer (decisions/100a): the question is shown only when
+                 the reading time starts, then the recording starts by itself. -->
+            <template v-if="isOral(question)">
+              <div v-if="oralDone(question)" class="mt-2 space-y-2 text-left">
+                <SafeHtml :html="question.question_detail || ''" class="text-ink-gray-9 font-semibold leading-5" />
+                <div class="text-sm text-ink-green-3">
+                  {{ __('Your answer was recorded (take {0} of {1}).').format(oralOf(question).takes_used, oralOf(question).takes) }}
+                </div>
+                <Button v-if="oralOf(question).takes_used < oralOf(question).takes" variant="outline" size="sm"
+                  @click="retake[question.name] = true">
+                  {{ __('Record again (the new take replaces this one)') }}
+                </Button>
+              </div>
+              <div v-else class="mt-2 space-y-2 text-left">
+                <div v-if="oralOf(question).prepare_s" class="text-sm text-ink-gray-7">
+                  {{ __('Answered aloud. You will have {0} seconds to read the question, then the recording starts by itself. Up to {1}.').format(oralOf(question).prepare_s, minutes(oralOf(question).max_answer_s)) }}
+                </div>
+                <OralRecorder v-if="oralOf(question).row" :key="'rec-' + question.name + '-' + oralOf(question).takes_used"
+                  :ref="(el) => (recorders[question.name] = el)" reference-doctype="Exam Question Result"
+                  :reference-name="oralOf(question).row" :prepare-s="oralOf(question).prepare_s"
+                  :max-s="oralOf(question).max_answer_s" :notice="oralNotice" @finished="onOralFinished">
+                  <template #question>
+                    <SafeHtml :html="question.question_detail || ''" class="text-ink-gray-9 font-semibold leading-5" />
+                  </template>
+                </OralRecorder>
+                <div v-else class="text-sm text-ink-gray-5">{{ __('Preparing...') }}</div>
+              </div>
+              <button v-if="oralOf(question).mode === 'Student chooses' && !oralBusy(question)" type="button"
+                class="mt-2 text-xs text-ink-blue-3 underline" @click="typed[question.name] = true">
+                {{ __('Type the answer instead') }}
+              </button>
+            </template>
+            <template v-else>
+              <div class="text-ink-gray-9 text-left font-semibold mt-2 leading-5">
+                <SafeHtml :html="question.question_detail || __('No question detail provided.')" />
+              </div>
+              <div class="mt-4">
+                <LightEditor v-if="answers && answers[question.name] !== undefined" :content="answers[question.name]"
+                  :id="question.name" :placeholder="__('Type your answer here')"
+                  @change="(val) => updateAnswer(question.name, val)" />
+              </div>
+              <button v-if="oralOf(question).mode === 'Student chooses' && typed[question.name]" type="button"
+                class="mt-2 text-xs text-ink-blue-3 underline" @click="typed[question.name] = false">
+                {{ __('Answer aloud instead') }}
+              </button>
+            </template>
           </div>
-          <div class="text-center mt-4">
+          <div v-if="oneAtATime" class="flex justify-between items-center mt-4">
+            <Button :disabled="activeQuestion === 0 || previousIsAnsweredOral || anyOralBusy"
+              @click="goToQuestion(activeQuestion - 1)">
+              <span>{{ __('Previous') }}</span>
+            </Button>
+            <Button v-if="!isLastQuestion" variant="solid" :disabled="anyOralBusy" @click="goToQuestion(activeQuestion + 1)">
+              <span>{{ __('Next') }}</span>
+            </Button>
+            <Button v-else variant="solid" @click="submitExam">
+              <span>{{ __('Submit Your Exam') }}</span>
+            </Button>
+          </div>
+          <div v-else class="text-center mt-4">
             <Button @click="submitExam">
               <span>{{ __('Submit Your Exam') }}</span>
             </Button>
@@ -184,13 +237,14 @@
 <script setup>
 import { userLocale } from '@seminary/portal-shell'
 import { Button, call, createResource, toast } from 'frappe-ui'
-import { ref, watch, inject, computed, toRaw, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, watch, inject, computed, toRaw, onMounted, onBeforeUnmount } from 'vue'
 import { SquarePen } from 'lucide-vue-next'
 import { timeAgo } from '@/utils'
 import { useRouter } from 'vue-router'
 import ProgressBar from '@/components/ProgressBar.vue'
 import ExamGraded from '@/components/ExamGraded.vue'
 import LightEditor from '@/components/LightEditor.vue'
+import OralRecorder from '@/components/OralRecorder.vue'
 
 const user = inject('$user')
 const timer = ref(0);
@@ -514,7 +568,56 @@ const autoSave = async () => {
   }
 }
 
+// --- Oral answers (decisions/100a) ---
+const oralState = ref({})
+const oralNotice = ref({})
+const recorders = reactive({})
+const retake = ref({})
+const typed = ref({})
+const ORAL_MODES = ['Oral', 'Student chooses']
+
+const oralOf = (question) => oralState.value[question.name] || {}
+const hasOralQuestions = computed(() =>
+  (exam.data?.questions || []).some((q) => ORAL_MODES.includes(q.response_mode))
+)
+const isOral = (question) => {
+  const st = oralState.value[question.name]
+  const oral = st ? st.oral : ORAL_MODES.includes(question.response_mode)
+  return oral && !(typed.value[question.name] && (st?.mode || question.response_mode) === 'Student chooses')
+}
+const oralDone = (question) => !!oralOf(question).recording && !retake.value[question.name]
+const oralBusy = (question) => !!recorders[question.name]?.busy
+const anyOralBusy = computed(() => Object.values(recorders).some((r) => r?.busy))
+const previousIsAnsweredOral = computed(() => {
+  const prev = (exam.data?.questions || [])[activeQuestion.value - 1]
+  return !!prev && isOral(prev) && !!oralOf(prev).recording
+})
+const minutes = (s) =>
+  s >= 60 ? __('{0} minutes').format(Math.round((s / 60) * 10) / 10) : __('{0} seconds').format(s)
+
+const loadOralState = async () => {
+  if (!submissionName.value || !hasOralQuestions.value) return
+  try {
+    const r = await call('seminary.seminary.oral_exams.my_oral_state', {
+      submission: submissionName.value,
+    })
+    oralState.value = r.questions || {}
+    oralNotice.value = r.notice || {}
+  } catch (e) {
+    console.error('Could not load the oral answers:', e)
+  }
+}
+
+const onOralFinished = async () => {
+  retake.value = {}
+  await loadOralState()
+}
+
 const submitExam = async () => {
+  if (Object.values(recorders).some((r) => r?.busy)) {
+    toast.warning(__('Finish your oral answer before submitting.'))
+    return
+  }
   try {
     await autoSave()
 
@@ -542,11 +645,35 @@ const submitExam = async () => {
   }
 }
 
+// "Question by question" (Exam Activity.qbyquestion): the same exam, draft and
+// timer as the full view, shown one question at a time. Moving on saves the
+// draft. Oral questions will refuse going back (decisions/100a §5).
+const activeQuestion = ref(0)
+const oneAtATime = computed(
+  () => !!exam.data?.qbyquestion && fullExamMode.value && !is_instructor()
+)
+const shownQuestions = computed(() => {
+  const list = exam.data?.questions || []
+  if (!oneAtATime.value) return list
+  return list[activeQuestion.value] ? [list[activeQuestion.value]] : []
+})
+const isLastQuestion = computed(
+  () => activeQuestion.value >= (exam.data?.questions?.length || 1) - 1
+)
+const goToQuestion = (index) => {
+  const last = (exam.data?.questions?.length || 1) - 1
+  activeQuestion.value = Math.min(Math.max(index, 0), last)
+  // A save already running will be followed by the debounced one; only
+  // replace the debounce when this call will actually save.
+  if (!isSaving.value) {
+    clearTimeout(saveTimer)
+    autoSave()
+  }
+}
+
 const startExam = () => {
-  activeQuestion.value = 1
-  localStorage.removeItem(exam.data.title)
-  startTimer()
-  ensureAnswersInitialized(exam.data?.questions || []);
+  activeQuestion.value = 0
+  return startExam2()
 }
 
 const startExam2 = async () => {
@@ -581,6 +708,12 @@ const startExam2 = async () => {
     }
   } catch (e) {
     // No existing draft found
+  }
+  // An oral answer is recorded against its draft row, so the draft must exist
+  // before the first recording starts.
+  if (hasOralQuestions.value) {
+    if (!submissionName.value) await autoSave()
+    await loadOralState()
   }
 }
 

@@ -175,6 +175,8 @@ const submissionRoute = (s) => {
 			return { name: 'ExamSubmission', params: { courseName, examID: s.activity, submission: s.name } }
 		case 'Discussion Submission':
 			return { name: 'DiscussionActivitySubmission', params: { courseName, discussionID: s.activity, submissionName: s.name } }
+		case 'Oral Activity Submission':
+			return { name: 'OralActivitySubmission', params: { courseName, activityID: s.activity, submissionName: s.name } }
 		default:
 			return { name: 'QuizSubmission', params: { submission: s.name } }
 	}

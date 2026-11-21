@@ -24,7 +24,9 @@ class Rubric(Document):
     def set_context(self):
         title_field = rubrics.ACTIVITIES.get(self.activity_doctype)
         if not title_field:
-            frappe.throw(_("Rubrics are only for assignments and discussions."))
+            frappe.throw(
+                _("Rubrics are only for assignments, discussions and oral activities.")
+            )
         values = frappe.db.get_value(
             self.activity_doctype, self.activity, [title_field, "course"], as_dict=True
         )

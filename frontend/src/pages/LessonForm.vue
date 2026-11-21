@@ -91,6 +91,7 @@ const ACTIVITY_DATA_KEY = {
 	exam: 'exam',
 	assignment: 'assignment',
 	discussionActivity: 'discussion',
+	oralActivity: 'oral',
 }
 
 const editor = ref(null)

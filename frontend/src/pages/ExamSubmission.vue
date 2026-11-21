@@ -112,6 +112,8 @@
             <span> {{ __('Your Answer') }}: </span>
             <SafeHtml :html="row.answer" as="span" />
           </div>
+          <!-- An oral answer: the answer above is its transcript (decisions/100a). -->
+          <OralPlayer v-if="row.oral_recording" :recording="row.oral_recording" :question="row.question" />
           <!-- Points and Buttons -->
           <div class="flex items-center justify-end space-x-5">
             <!-- Buttons for Auto-Grading -->
@@ -222,6 +224,7 @@ import {
 import { computed, onBeforeUnmount, onMounted, inject, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import LightEditor from '@/components/LightEditor.vue'
+import OralPlayer from '@/components/OralPlayer.vue'
 import { Check, X } from 'lucide-vue-next'
 import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'

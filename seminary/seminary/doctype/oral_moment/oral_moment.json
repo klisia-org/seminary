@@ -1,0 +1,158 @@
+{
+ "actions": [],
+ "creation": "2026-11-20 18:00:00.000000",
+ "description": "A passage of a recording worth grading. A suggested one stays suggested until the instructor keeps, edits or dismisses it.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "recording",
+  "course_schedule",
+  "column_break_a",
+  "source",
+  "state",
+  "moment_section",
+  "start",
+  "end",
+  "column_break_b",
+  "criterion_code",
+  "question",
+  "note"
+ ],
+ "fields": [
+  {
+   "fieldname": "recording",
+   "fieldtype": "Link",
+   "label": "Recording",
+   "options": "Oral Recording",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "fetch_from": "recording.course_schedule",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Instructor\nSuggested",
+   "default": "Instructor",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Select",
+   "label": "State",
+   "options": "Suggested\nKept\nDismissed",
+   "default": "Kept",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "moment_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "start",
+   "fieldtype": "Float",
+   "label": "Start (seconds)",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "end",
+   "fieldtype": "Float",
+   "label": "End (seconds)"
+  },
+  {
+   "fieldname": "column_break_b",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "criterion_code",
+   "fieldtype": "Data",
+   "label": "Criterion"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Data",
+   "label": "Question",
+   "description": "For an exam, the question the moment belongs to."
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-20 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Moment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Program Chair"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Registrar"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "write": 1,
+   "delete": 1,
+   "report": 1,
+   "role": "Instructor"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "hash",
+ "naming_rule": "Random",
+ "track_changes": 1
+}

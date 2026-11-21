@@ -52,7 +52,7 @@ def course_ics(course_schedule=None, token=None):
     validate_token(course_schedule, token)
     meeting_dates = frappe.db.sql(
         """
-        select mt.cs_fromtime, mt.cs_totime, mt.cs_meetdate, mt.cs_online,
+        select mt.name, mt.cs_fromtime, mt.cs_totime, mt.cs_meetdate, mt.cs_online,
                COALESCE(mt.cs_room, cs.room) as room,
                COALESCE(mt.cs_web_meeting, cs.web_meeting) as web_meeting,
                mt.creation
@@ -73,6 +73,10 @@ def course_ics(course_schedule=None, token=None):
     )
 
     calendar = Calendar()
+    # Meetings recorded for an oral activity say so (decisions/100d §5).
+    from seminary.seminary.oral_meetings import captured_rows
+
+    recorded = captured_rows(course_schedule)
 
     for meeting in meeting_dates:
         event = Event()
@@ -90,6 +94,10 @@ def course_ics(course_schedule=None, token=None):
         event.description = f"Course Schedule: {course_schedule}\nMeeting Date: {meeting.cs_meetdate}\nFrom: {meeting.cs_fromtime}\nTo: {meeting.cs_totime}"
         if meeting.web_meeting:
             event.description += f"\nJoin online: {meeting.web_meeting}"
+        if meeting.name in recorded:
+            event.description += "\n" + _(
+                "This meeting is recorded for an oral assessment."
+            )
         # Online meetings have no physical room; show the room otherwise.
         if meeting.cs_online:
             event.location = meeting.web_meeting or _("Online")

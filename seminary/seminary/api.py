@@ -985,6 +985,12 @@ def get_virtual_meetings(course_schedule):
             "cs_totime",
             "cs_web_meeting",
             "attendance",
+            # School meetings (decisions/051a): staff only, as this endpoint is.
+            "cs_meeting_account",
+            "cs_meeting_status",
+            "cs_meeting_error",
+            "cs_meeting_hosts",
+            "cs_host_key",
         ],
         order_by="cs_meetdate asc, cs_fromtime asc",
     )
@@ -1010,7 +1016,8 @@ def add_virtual_meeting(course_schedule, meeting_date, from_time, to_time, link=
             "cs_fromtime": from_time,
             "cs_totime": to_time,
             "cs_online": 1,
-            "cs_web_meeting": link or doc.web_meeting,
+            # A school meeting gets its link from the provider (decisions/051a).
+            "cs_web_meeting": None if doc.school_meeting else (link or doc.web_meeting),
         },
     )
     doc.hasmtgdate = 1
@@ -3348,6 +3355,7 @@ def save_course_assessment(course, assessment_data, categories=None):
             doc.quiz = data.get("quiz", "")
             doc.assignment = data.get("assignment", "")
             doc.discussion = data.get("discussion", "")
+            doc.oral = data.get("oral", "")
             doc.exam = data.get("exam", "")
             doc.due_date = data.get("due_date", None)
             # Cut-off, replies due date and the late opt-out (decisions/082),
@@ -3392,6 +3400,7 @@ def save_course_assessment(course, assessment_data, categories=None):
                     "assignment": data.get("assignment", ""),
                     "exam": data.get("exam", ""),
                     "discussion": data.get("discussion", ""),
+                    "oral": data.get("oral", ""),
                     "course_competency": data.get("course_competency") or None,
                     "grading_mode_override": data.get("grading_mode_override") or None,
                     "due_date": data.get("due_date") or None,
@@ -3730,6 +3739,7 @@ def insert_cs_assessment(criteria):
             "exam": criteria.get("exam"),
             "assignment": criteria.get("assignment"),
             "discussion": criteria.get("discussion"),
+            "oral": criteria.get("oral"),
             "extracredit_scac": criteria.get("extracredit_scac"),
             "fudgepoints_scac": criteria.get("fudgepoints_scac"),
             "category_code": criteria.get("category_code") or None,
@@ -4482,7 +4492,14 @@ def finalize_roster(roster_name):
 
     frappe.db.set_value("Program Enrollment Course", pec, values)
     frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
-    frappe.db.set_value("Scheduled Course Roster", record.name, "active", 0)
+    # The send date is kept per student, not per section: an open-ended section
+    # sends students one by one (send_selected_grades). Retention of graded
+    # evidence, such as oral recordings (ADR 100 §8), counts from it.
+    frappe.db.set_value(
+        "Scheduled Course Roster",
+        record.name,
+        {"active": 0, "grades_sent_on": frappe.utils.now_datetime()},
+    )
     return pe
 
 

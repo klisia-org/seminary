@@ -68,6 +68,7 @@
 					:submission="submissionResource.doc"
 					:type="assignment.data?.type"
 				/>
+				<OralDefenseReview v-if="submissionName && submissionName !== 'new'" :submission="submissionName" />
 			</div>
 			<!-- RIGHT: prof comments / grading panel -->
 			<div class="p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
@@ -291,6 +292,8 @@
 					</Button>
 				</div>
 			</div>
+			<!-- The oral defense of the paper, when the activity asks for one (100c). -->
+			<OralDefense v-if="submissionResource.doc?.name" :submission="submissionResource.doc.name" />
 			<!-- Prof's overall feedback (the legacy single `comments` field — distinct
 			     from the anchored thread in the sidebar, which lives in
 			     `comments_thread`). Shown when the prof has written something. -->
@@ -526,6 +529,8 @@ import SubmissionViewer from '@/components/AssignmentViewers/SubmissionViewer.vu
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
 import RubricGrading from '@/components/RubricGrading.vue'
+import OralDefense from '@/components/OralDefense.vue'
+import OralDefenseReview from '@/components/OralDefenseReview.vue'
 import RubricView from '@/components/RubricView.vue'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
@@ -1009,6 +1014,8 @@ const canModifyAssignment = computed(() => {
 	if (!submissionResource.doc) return true
 	if (submissionResource.doc.owner !== user.data?.name) return false
 	if (submissionResource.doc.status !== 'Not Graded') return false
+	// Once the oral defense has started, the paper it defends cannot change (100c).
+	if (['In Progress', 'Done'].includes(submissionResource.doc.defense_status)) return false
 	// Any prof feedback that refers to the *current* submission state locks
 	// further edits — otherwise the feedback would dangle on a stale version.
 	// Lock applies on next page load (resource's fetched state is the truth).

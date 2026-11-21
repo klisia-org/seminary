@@ -1,0 +1,188 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-11-21 12:00:00.000000",
+ "description": "One question of a student's oral defense of a paper, with the answer. Students see a question only when it is asked.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "submission",
+  "course",
+  "position",
+  "follow_up_of",
+  "source",
+  "column_break_q",
+  "state",
+  "follow_up_state",
+  "asked_on",
+  "answered_on",
+  "section_text",
+  "question",
+  "passage",
+  "good_answer",
+  "recording",
+  "answer_text"
+ ],
+ "fields": [
+  {
+   "fieldname": "submission",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Assignment Submission",
+   "options": "Assignment Submission",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "position",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Position"
+  },
+  {
+   "fieldname": "follow_up_of",
+   "fieldtype": "Link",
+   "label": "Follow-up Of",
+   "options": "Oral Defense Question"
+  },
+  {
+   "default": "Instructor",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Instructor\nSuggested"
+  },
+  {
+   "fieldname": "column_break_q",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "state",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "State",
+   "options": "Pending\nAsked\nAnswered"
+  },
+  {
+   "fieldname": "follow_up_state",
+   "fieldtype": "Select",
+   "label": "Follow-up",
+   "options": "\nWaiting\nAsked\nNone\nTimed Out"
+  },
+  {
+   "fieldname": "asked_on",
+   "fieldtype": "Datetime",
+   "label": "Asked On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "answered_on",
+   "fieldtype": "Datetime",
+   "label": "Answered On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_text",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "label": "Question",
+   "reqd": 1
+  },
+  {
+   "fieldname": "passage",
+   "fieldtype": "Small Text",
+   "label": "Passage",
+   "description": "The part of the paper the question is about."
+  },
+  {
+   "fieldname": "good_answer",
+   "fieldtype": "Small Text",
+   "label": "What a Good Answer Addresses",
+   "description": "For the instructor only."
+  },
+  {
+   "fieldname": "recording",
+   "fieldtype": "Link",
+   "label": "Recording",
+   "options": "Oral Recording",
+   "read_only": 1
+  },
+  {
+   "fieldname": "answer_text",
+   "fieldtype": "Long Text",
+   "label": "Answer",
+   "read_only": 1,
+   "description": "The transcript of the recorded answer, or the written answer when the student answers in writing."
+  }
+ ],
+ "grid_page_length": 50,
+ "links": [],
+ "modified": "2026-11-21 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Defense Question",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Program Chair"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Registrar"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Instructor"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "question"
+}

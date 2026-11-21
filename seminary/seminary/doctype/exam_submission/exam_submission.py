@@ -159,6 +159,37 @@ def save_exam_grade(submission_name, status, score, percentage, fudge_points, re
     return doc
 
 
+def _merge_answers(doc, answers):
+    """Update the draft's answer rows in place, keyed by question.
+
+    The rows used to be dropped and re-appended on every save, so a row's
+    ``name`` changed each time the student typed. Anything that points at one
+    answer (an oral recording, 100a §3) needs that name to hold while the exam
+    is open. A question no longer sent is removed, as before; a duplicate row
+    for the same question keeps only the first.
+    """
+    wanted = {}
+    for answer in answers:
+        question = answer.get("question")
+        if question:
+            wanted[question] = sanitize_html(answer.get("answer"))
+
+    seen = set()
+    for row in list(doc.result):
+        if row.question not in wanted or row.question in seen:
+            doc.remove(row)
+            continue
+        seen.add(row.question)
+        # An oral answer's text is its transcript, written by the recording
+        # (100a §3); the editor's copy must not overwrite it.
+        if not row.oral_recording:
+            row.answer = wanted[row.question]
+
+    for question, text in wanted.items():
+        if question not in seen:
+            doc.append("result", {"question": question, "answer": text, "points": ""})
+
+
 @frappe.whitelist()
 def save_exam_draft(exam, course, member, answers, time_taken, submission_name=None):
     """Save or update an exam draft (docstatus=0).
@@ -178,16 +209,7 @@ def save_exam_draft(exam, course, member, answers, time_taken, submission_name=N
             frappe.throw(_("Cannot modify a submitted exam."))
 
         doc.time_taken = time_taken
-        doc.result = []
-        for answer in answers:
-            doc.append(
-                "result",
-                {
-                    "question": answer.get("question"),
-                    "answer": sanitize_html(answer.get("answer")),
-                    "points": "",
-                },
-            )
+        _merge_answers(doc, answers)
         doc.flags.ignore_permissions = True
         doc.save()
         return doc

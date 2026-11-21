@@ -25,6 +25,7 @@
   "assignment",
   "exam",
   "discussion",
+  "oral",
   "section_break_bqdt",
   "column_break_flax",
   "extracredit_scac",
@@ -150,6 +151,13 @@
    "options": "Discussion Activity"
   },
   {
+   "fieldname": "oral",
+   "fieldtype": "Link",
+   "in_list_view": 0,
+   "label": "Oral Activity",
+   "options": "Oral Activity"
+  },
+  {
    "description": "Shown only for competency-based courses. Per-dimension weights for this activity are kept as Assessment Dimension Weight records, reachable from the activity's Connections.",
    "fieldname": "competency_section",
    "fieldtype": "Section Break",
@@ -206,7 +214,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-10-31 12:00:00.000000",
+ "modified": "2026-11-21 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Assess Criteria",

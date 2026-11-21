@@ -10,6 +10,10 @@
   "question_detail",
   "section_break",
   "points",
+  "response_mode",
+  "prepare_s",
+  "max_answer_s",
+  "takes",
   "standard_comments"
  ],
  "fields": [
@@ -26,6 +30,40 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Question Points"
+  },
+  {
+   "default": "Written",
+   "fieldname": "response_mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Answered",
+   "options": "Written\nOral\nStudent chooses"
+  },
+  {
+   "default": "30",
+   "depends_on": "eval:doc.response_mode!='Written'",
+   "description": "Reading time before the recording starts by itself.",
+   "fieldname": "prepare_s",
+   "fieldtype": "Int",
+   "label": "Reading Time (seconds)",
+   "non_negative": 1
+  },
+  {
+   "default": "180",
+   "depends_on": "eval:doc.response_mode!='Written'",
+   "fieldname": "max_answer_s",
+   "fieldtype": "Int",
+   "label": "Longest Answer (seconds)",
+   "non_negative": 1
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.response_mode!='Written'",
+   "description": "How many times the student may record. Only the last one is graded.",
+   "fieldname": "takes",
+   "fieldtype": "Int",
+   "label": "Takes",
+   "non_negative": 1
   },
   {
    "fetch_from": "question.question",
@@ -55,7 +93,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-30 12:23:24.542102",
+ "modified": "2026-11-20 20:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Exam Question",

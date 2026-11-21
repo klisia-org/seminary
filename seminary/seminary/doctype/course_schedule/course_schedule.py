@@ -22,7 +22,6 @@ import calendar
 from datetime import timedelta
 from dateutil import relativedelta
 
-from seminary.seminary.utils import OverlapError
 import json
 import secrets
 
@@ -59,6 +58,10 @@ class CourseSchedule(Document):
         self._default_max_enrollment_from_room()
         self._validate_room_fit()
         self._log_room_change()
+        # School meeting accounts (decisions/051a): an account is a room.
+        from seminary.seminary import school_meetings
+
+        school_meetings.validate(self)
 
     def on_update(self):
         # Re-level attendance standings: the per-student Auto limit moves when
@@ -93,6 +96,14 @@ class CourseSchedule(Document):
         from seminary.seminary import gradebook_weights
 
         gradebook_weights.on_section_update(self)
+        # Create, move or delete the provider meetings after commit (decisions/051a §5).
+        from seminary.seminary import school_meetings
+
+        school_meetings.on_update(self)
+        # A captured meeting that moved is armed again (decisions/100d).
+        from seminary.seminary import oral_meetings
+
+        oral_meetings.on_section_update(self)
 
     def _scaffold_if_became_cbe(self):
         """A section whose course or scale changes so that it now resolves to a
@@ -467,6 +478,12 @@ class CourseSchedule(Document):
                     "Use Cancel Course to retire a course that has opened for enrollment."
                 )
             )
+        from seminary.seminary import school_meetings
+
+        school_meetings.on_section_gone(self)
+        from seminary.seminary import oral_meetings
+
+        oral_meetings.on_section_gone(self.name)
 
     def _resolve_dates_if_needed(self):
         from seminary.seminary.cs_lifecycle import resolve_window_dates
@@ -891,6 +908,75 @@ class CourseSchedule(Document):
         self.calendar_token = secrets.token_hex(32)
         self.save()
 
+    def _merge_meeting_rows(self, wanted):
+        """Bring cs_meetinfo to the ``wanted`` dates without recreating rows.
+
+        The rows used to be wiped and re-appended, which gave every meeting a
+        new name and orphaned whatever pointed at the old one: Student
+        Attendance ``meeting`` (051 #4), and later provider meetings (051a) and
+        captured activities (100d). Now:
+
+        - a row whose date is still wanted is kept, with its name, room, online
+          flag and link. Its times follow the section only when they still
+          equal the section's previous times, so a meeting given its own hours
+          keeps them;
+        - a wanted date with no row gets a new one at the section's times;
+        - a row whose date is no longer wanted is removed, unless it is in use,
+          in which case nothing is changed and the dates are named.
+        """
+        old_from, old_to = (
+            frappe.db.get_value("Course Schedule", self.name, ["from_time", "to_time"])
+            if not self.is_new()
+            else (None, None)
+        )
+        wanted_set = set(wanted)
+
+        in_use = [
+            row
+            for row in self.cs_meetinfo
+            if getdate(row.cs_meetdate) not in wanted_set and _meeting_row_in_use(row)
+        ]
+        if in_use:
+            frappe.throw(
+                _(
+                    "These meetings cannot be removed because they are already in "
+                    "use (attendance has been taken): {0}. Keep their weekdays and "
+                    "dates in the schedule, or remove them one by one after "
+                    "clearing what uses them."
+                ).format(", ".join(sorted(formatdate(r.cs_meetdate) for r in in_use)))
+            )
+
+        have = set()
+        for row in list(self.cs_meetinfo):
+            meeting_day = getdate(row.cs_meetdate)
+            if meeting_day not in wanted_set:
+                self.remove(row)
+                continue
+            have.add(meeting_day)
+            if _same_time(row.cs_fromtime, old_from) and _same_time(
+                row.cs_totime, old_to
+            ):
+                row.cs_fromtime = self.from_time
+                row.cs_totime = self.to_time
+
+        for meeting_day in wanted:
+            if meeting_day not in have:
+                self.append(
+                    "cs_meetinfo",
+                    {
+                        "cs_meetdate": meeting_day,
+                        "cs_fromtime": self.from_time,
+                        "cs_totime": self.to_time,
+                    },
+                )
+
+        self.cs_meetinfo.sort(
+            key=lambda r: (getdate(r.cs_meetdate), str(r.cs_fromtime or ""))
+        )
+        for i, row in enumerate(self.cs_meetinfo, start=1):
+            row.idx = i
+        return list(self.cs_meetinfo)
+
     @frappe.whitelist()
     def schedule_dates(self, days):
         """Returns a list of meeting dates and also creates child documents for each meeting date"""
@@ -898,11 +984,9 @@ class CourseSchedule(Document):
         # checks only READ on the document. Everything past that is this
         # method's own job (p008a G10 inventory).
         # A student reads the sections they are enrolled in, and this method
-        # wipes cs_meetinfo and saves with ignore_permissions -- so without the
+        # rewrites cs_meetinfo and saves with ignore_permissions -- so without the
         # check below any enrolled student could rewrite the section's schedule.
         self.check_permission("write")
-        meeting_dates = []
-        meeting_dates_errors = []
 
         if not self.c_dateend:
             frappe.throw(
@@ -913,37 +997,22 @@ class CourseSchedule(Document):
                 )
             )
 
-        # Remove existing meeting dates through the ORM (not raw SQL)
-        self.set("cs_meetinfo", [])
-
+        wanted = []
         current_date = self.c_datestart
-
         while current_date <= self.c_dateend:
             if calendar.day_name[getdate(current_date).weekday()] in days:
-                try:
-                    meeting_date = self.append(
-                        "cs_meetinfo",
-                        {
-                            "cs_meetdate": current_date,
-                            "cs_fromtime": self.from_time,
-                            "cs_totime": self.to_time,
-                        },
-                    )
-                    meeting_dates.append(meeting_date)
-                except OverlapError:
-                    meeting_dates_errors.append(current_date)
-
+                wanted.append(getdate(current_date))
             current_date = add_days(current_date, 1)
+
+        meeting_dates = self._merge_meeting_rows(wanted)
 
         # Save the parent once — this persists all children and updates the timestamp
         self.hasmtgdate = 1 if meeting_dates else 0
         self.flags.ignore_permissions = True
         self.save()
 
-        return dict(
-            meeting_dates=meeting_dates,
-            meeting_dates_errors=meeting_dates_errors,
-        )
+        # meeting_dates_errors is always empty now; kept for the Desk caller.
+        return dict(meeting_dates=meeting_dates, meeting_dates_errors=[])
 
     @frappe.whitelist()
     def cancel_course(self, reason):
@@ -1007,6 +1076,13 @@ class CourseSchedule(Document):
 
         mark_waitlist_unseated(self.name)
         recount(self.name)
+        # A cancelled section's school meetings are deleted (decisions/051a §5).
+        from seminary.seminary import school_meetings
+
+        school_meetings.on_section_gone(self)
+        from seminary.seminary import oral_meetings
+
+        oral_meetings.on_section_gone(self.name)
 
     @frappe.whitelist()
     def import_template(self, source_cs):
@@ -1171,6 +1247,33 @@ class CourseSchedule(Document):
                     "be overwritten by a template import."
                 )
             )
+
+
+def _same_time(a, b):
+    """Two meeting times are equal when both are blank or both are the same time."""
+    if not a and not b:
+        return True
+    if not a or not b:
+        return False
+    return get_time(a) == get_time(b)
+
+
+def _meeting_row_in_use(row):
+    """True when something points at this meeting row, so it must not be removed.
+
+    Today that is attendance (051 #4). Provider meetings (051a) and captured
+    activities (100d) add their checks here.
+    """
+    if row.attendance:
+        return True
+    if not row.name:
+        return False
+    if frappe.db.exists("Student Attendance", {"meeting": row.name}):
+        return True
+    # An oral activity captures, or has captured, this meeting (100d).
+    from seminary.seminary.oral_meetings import row_in_use
+
+    return row_in_use(row.name)
 
 
 def refile_chapter_competencies(course_schedule):
@@ -1373,6 +1476,7 @@ _SCAC_COPYABLE_FIELDS = (
     "assignment",
     "exam",
     "discussion",
+    "oral",
     "extracredit_scac",
     "fudgepoints_scac",
     # Whether the section's late deductions apply (decisions/082 section 6).

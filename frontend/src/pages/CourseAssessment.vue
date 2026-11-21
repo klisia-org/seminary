@@ -144,6 +144,11 @@
               :label="__('Select a Discussion Activity')" :required="true" :filters="{ course: course.data.course }"
               :onCreate="(value, close) => redirectToForm('discussion', close)" />
           </template>
+          <template v-else-if="criteria.type === 'Oral'">
+            <Link v-model="criteria.oral" doctype="Oral Activity"
+              :label="__('Select an Oral Activity')" :required="true" :filters="{ course: course.data.course }"
+              :onCreate="(value, close) => redirectToForm('oral', close)" />
+          </template>
           <template v-else>
             <p>{{ __('Offline') }}</p>
           </template>
@@ -284,6 +289,7 @@
                 <td class="p-1">
                   <span v-if="ov.extra_minutes">{{ __('+{0} min').format(ov.extra_minutes) }} </span>
                   <span v-if="ov.extra_attempts">{{ __('+{0} attempt(s)').format(ov.extra_attempts) }}</span>
+                  <span v-if="ov.written_instead">{{ __('Written instead of oral') }}</span>
                 </td>
                 <td class="p-1">{{ ov.reason }}</td>
                 <td class="p-1 whitespace-nowrap">
@@ -314,6 +320,8 @@
               v-model="ovForm.extra_minutes" :label="__('Extra minutes')" />
             <FormControl v-if="criteria.type === 'Quiz'" type="number"
               v-model="ovForm.extra_attempts" :label="__('Extra attempts')" />
+            <FormControl v-if="criteria.type === 'Exam'" type="checkbox"
+              v-model="ovForm.written_instead" :label="__('Answers oral questions in writing')" />
             <FormControl class="sm:col-span-2" v-model="ovForm.reason" :label="__('Reason')" />
             <div class="flex items-end gap-2">
               <Button variant="solid" size="sm" :loading="savingOverride" @click="saveOverride(criteria)">
@@ -637,7 +645,7 @@ const rosterOptions = computed(() => [
 
 const emptyOverride = () => ({
   name: '', student: '', due_date: '', cutoff_date: '', replies_due_date: '',
-  extra_minutes: '', extra_attempts: '', reason: '',
+  extra_minutes: '', extra_attempts: '', written_instead: 0, reason: '',
 })
 const ovForm = reactive(emptyOverride())
 const savingOverride = ref(false)
@@ -850,6 +858,7 @@ function toCriteria(item) {
     exam: item.exam || '',
     assignment: item.assignment || '',
     discussion: item.discussion || '',
+    oral: item.oral || '',
     creator: item.creator || '',
     extracredit_scac: item.extracredit_scac || 0,
     fudgepoints_scac: item.fudgepoints_scac || '',
@@ -978,6 +987,9 @@ function validateCriteria() {
     if (criteria.type === 'Discussion' && !criteria.discussion) {
       return false;
     }
+    if (criteria.type === 'Oral' && !criteria.oral) {
+      return false;
+    }
     // A competency section has no weight or extra-credit columns to fill.
     if (!weightsApply.value) continue;
     // With categories a weight of 0 shares the category; the category itself
@@ -1070,6 +1082,9 @@ async function fetchType(criteria) {
       if (resolvedType !== 'Discussion') {
         criteria.discussion = '';
       }
+      if (resolvedType !== 'Oral') {
+        criteria.oral = '';
+      }
     } catch (error) {
       console.error('Error fetching type:', error);
     }
@@ -1079,6 +1094,7 @@ async function fetchType(criteria) {
     criteria.exam = '';
     criteria.assignment = '';
     criteria.discussion = '';
+    criteria.oral = '';
   }
 }
 
@@ -1107,6 +1123,7 @@ function redirectToForm(type, close) {
     exam: '/seminary/exams/new',
     assignment: '/seminary/assignments/new',
     discussion: '/seminary/discussion-activities/new',
+    oral: '/seminary/oral-activities/new',
   }
   const target = routeMap?.[String(type || '').toLowerCase()]
   if (typeof close === 'function') {

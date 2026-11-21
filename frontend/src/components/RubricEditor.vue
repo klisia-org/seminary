@@ -67,6 +67,8 @@
 						<X class="h-4 w-4" />
 					</Button>
 				</div>
+				<FormControl v-if="defense" v-model="c.from_defense" type="checkbox"
+					:label="__('Judged from the oral defense, not the paper')" />
 				<FormControl v-model="c.description" type="textarea" rows="2"
 					:placeholder="__('What is judged (optional)')" />
 				<Badge v-for="l in editor.data.rubric?.labels?.[c.criterion_code] || []" :key="l" :label="l" theme="blue" />
@@ -100,6 +102,8 @@ const emit = defineEmits(['saved'])
 
 const props = defineProps({
 	activityDoctype: { type: String, required: true },
+	// The activity asks for an oral defense: criteria can be judged from it (100c §5).
+	defense: { type: Boolean, default: false },
 	activity: { type: String, required: true },
 })
 
@@ -132,6 +136,7 @@ const criterionRow = (c = {}, cells = []) => ({
 	title: c.title || '',
 	description: c.description || '',
 	weight: c.weight || null,
+	from_defense: !!c.from_defense,
 	open: cells.some((x) => x.criterion_code === c.criterion_code),
 	cells: Object.fromEntries(
 		cells.filter((x) => x.criterion_code === c.criterion_code).map((x) => [x.level, x.descriptor])
@@ -243,6 +248,7 @@ const save = async () => {
 				title: c.title,
 				description: c.description,
 				weight: c.weight,
+				from_defense: c.from_defense ? 1 : 0,
 				cells: c.cells,
 			})),
 		})

@@ -1,7 +1,7 @@
 # 100a — Oral answers in exams
 
 **Date:** 2026-11-19
-**Status:** Proposed
+**Status:** Accepted
 **Parent:** [100](100-oral-assessment.md)
 
 ## Context
@@ -16,7 +16,7 @@ grades each answer as today, question by question, but from audio.
 1. **`response_mode` on Exam Question**: *Written* (default), *Oral* or *Student chooses*. An exam
    may mix written and oral questions.
 2. **Exam conditions.** An oral question shows `prepare_s` (default 30) seconds of reading time,
-   then recording starts by itself and stops at `max_answer_s` (default 180) or when the student
+   then recording starts by itself (the student may start it sooner) and stops at `max_answer_s` (default 180) or when the student
    stops. There is no pause. `takes` (default 1) sets how many attempts a student has; only the
    last is kept and graded, and the number used is recorded. Oral answers in an exam must be
    recorded live; uploading a file is refused.
@@ -34,4 +34,4 @@ grades each answer as today, question by question, but from audio.
 - An instructor can turn one question of an existing exam into an oral one with a single field.
 - Time limits and single takes make an oral answer hard to script, but not impossible to coach;
   this is a deterrent, not proctoring.
-- Open: per-question rubrics; whether `prepare_s` counts toward the exam's `duration`.
+- There are no per-question rubrics - same as text questions; `prepare_s` counts toward the exam's `duration`.

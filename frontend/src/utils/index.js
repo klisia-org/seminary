@@ -4,6 +4,7 @@ import { Assignment } from '@/utils/assignment'
 import { Exam} from '@/utils/exam'
 import { SelfAssessment, DevelopmentPlan } from '@/utils/reflection'
 import { DiscussionActivity } from '@/utils/discussionactivity'
+import { OralActivity } from '@/utils/oralactivity'
 import { Upload } from '@/utils/upload'
 import { Markdown } from '@/utils/markdownParser'
 import Header from '@editorjs/header'
@@ -297,6 +298,7 @@ export const getEditorTools = (course = null, courseName = null, lesson = null) 
 		exam: { class: Exam, config: { course: course} },
 		discussionActivity: { class: DiscussionActivity, config: { course: course,
                 courseName: courseName} },
+		oralActivity: { class: OralActivity, config: { course: course, courseName: courseName } },
 		upload: Upload, 
 		markdown: {
 			class: Markdown,

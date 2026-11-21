@@ -1,0 +1,291 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-11-21 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "description": "One class meeting in which part of an oral activity is captured from the virtual meeting, with the method that records it and the people it saw. Confirming the participants creates their submissions.",
+ "field_order": [
+  "course_schedule",
+  "course_assess",
+  "oral_activity",
+  "kind",
+  "group_label",
+  "meeting",
+  "column_break_a",
+  "meeting_date",
+  "from_time",
+  "to_time",
+  "method",
+  "status",
+  "capture_section",
+  "capture_ref",
+  "error",
+  "captured_on",
+  "column_break_b",
+  "confirmed_by",
+  "confirmed_on",
+  "group_section",
+  "link",
+  "meeting_account",
+  "provider_meeting_id",
+  "column_break_g",
+  "meeting_status",
+  "meeting_error",
+  "host_key",
+  "schedule_note",
+  "members_section",
+  "members",
+  "participants_section",
+  "participants"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1,
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Data",
+   "label": "Assessment Row",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "oral_activity",
+   "fieldtype": "Link",
+   "label": "Oral Activity",
+   "options": "Oral Activity",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Whole class\nGroup",
+   "default": "Whole class",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "group_label",
+   "fieldtype": "Data",
+   "label": "Group",
+   "read_only": 1,
+   "depends_on": "eval:doc.kind=='Group'",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "meeting",
+   "fieldtype": "Data",
+   "label": "Meeting Row",
+   "read_only": 1,
+   "depends_on": "eval:doc.kind!='Group'",
+   "mandatory_depends_on": "eval:doc.kind!='Group'"
+  },
+  {
+   "fieldname": "column_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "meeting_date",
+   "fieldtype": "Date",
+   "label": "Meeting Date",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "from_time",
+   "fieldtype": "Time",
+   "label": "From",
+   "read_only": 1
+  },
+  {
+   "fieldname": "to_time",
+   "fieldtype": "Time",
+   "label": "To",
+   "read_only": 1
+  },
+  {
+   "fieldname": "method",
+   "fieldtype": "Data",
+   "label": "Capture Method",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Scheduled\nArmed\nCaptured\nConfirmed\nFailed\nCancelled",
+   "default": "Scheduled",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "capture_section",
+   "fieldtype": "Section Break",
+   "label": "Capture"
+  },
+  {
+   "fieldname": "capture_ref",
+   "fieldtype": "Data",
+   "label": "Provider Reference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Error",
+   "read_only": 1
+  },
+  {
+   "fieldname": "captured_on",
+   "fieldtype": "Datetime",
+   "label": "Captured On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_b",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "confirmed_by",
+   "fieldtype": "Link",
+   "label": "Confirmed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "confirmed_on",
+   "fieldtype": "Datetime",
+   "label": "Confirmed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "group_section",
+   "fieldtype": "Section Break",
+   "label": "Group Meeting",
+   "depends_on": "eval:doc.kind=='Group'"
+  },
+  {
+   "fieldname": "link",
+   "fieldtype": "Data",
+   "label": "Join Link",
+   "read_only": 1
+  },
+  {
+   "fieldname": "meeting_account",
+   "fieldtype": "Link",
+   "label": "Meeting Account",
+   "options": "Web Meeting Account",
+   "read_only": 1
+  },
+  {
+   "fieldname": "provider_meeting_id",
+   "fieldtype": "Data",
+   "label": "Provider Meeting ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_g",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "meeting_status",
+   "fieldtype": "Select",
+   "label": "Meeting Status",
+   "options": "\nPending\nCreated\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "meeting_error",
+   "fieldtype": "Small Text",
+   "label": "Meeting Error",
+   "read_only": 1
+  },
+  {
+   "fieldname": "host_key",
+   "fieldtype": "Data",
+   "label": "Host Key",
+   "read_only": 1
+  },
+  {
+   "fieldname": "schedule_note",
+   "fieldtype": "Small Text",
+   "label": "Scheduling Note",
+   "read_only": 1,
+   "description": "Why this time, when no time fits every member's day."
+  },
+  {
+   "fieldname": "members_section",
+   "fieldtype": "Section Break",
+   "label": "Members",
+   "depends_on": "eval:doc.kind=='Group'"
+  },
+  {
+   "fieldname": "members",
+   "fieldtype": "Table",
+   "label": "Members",
+   "options": "Oral Activity Meeting Member"
+  },
+  {
+   "fieldname": "participants_section",
+   "fieldtype": "Section Break",
+   "label": "Participants"
+  },
+  {
+   "fieldname": "participants",
+   "fieldtype": "Table",
+   "label": "Participants",
+   "options": "Oral Activity Meeting Participant",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Activity Meeting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Seminary Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,10 +1,11 @@
 # 100 — Oral assessment
 
 **Date:** 2026-11-19
-**Status:** Proposed
+**Status:** Accepted
 **Children:** [100a](100a-oral-answers-in-exams.md) (oral answers in exams),
 [100b](100b-recorded-peer-conversations.md) (recorded peer conversations),
-[100c](100c-oral-defense-of-submitted-work.md) (oral defense of submitted work)
+[100c](100c-oral-defense-of-submitted-work.md) (oral defense of submitted work),
+[100d](100d-capture-from-virtual-meetings.md) (capture from virtual meetings)
 **Related:** 021 (timestamp comments), 082 (individual due dates), 092 (hooks for other apps),
 095 (rubrics), 097 (discussions)
 
@@ -63,13 +64,17 @@ grading, but the grade must stay theirs.
    student can see. Suggestions show as *Suggested* until the instructor keeps, edits or dismisses
    them. A kept moment becomes a Timestamp comment (021) on the submission, so students see it the
    way they see any timestamp comment once grades are released.
-7. **Students know.** Before recording, the student sees what will be recorded, who will hear it,
-   which steps will run on it and how long the audio is kept. Recording starts only after they
-   confirm, once per activity.
+7. **Students are told, not asked.** The activity states, before it starts, that it is recorded,
+   who will hear it, which steps will run on it and how long the audio is kept, and a recording
+   indicator stays visible while it records. There is no individual confirmation, as in Zoom or
+   Teams: taking part in a recorded activity is the school's policy to set, in its syllabus or
+   handbook. Asking each student to confirm was rejected: it blocks a shared recording on one
+   absent click and adds nothing the notice does not already say.
 8. **Retention.** Seminary Settings `oral_audio_retention_days` (default 365) counts from the day
    the course's grades are sent (084). The daily job then deletes the audio and keeps the
    transcript, speakers and moments, which are the evidence behind the grade. A pending grade
-   appeal or a hold keeps the audio.
+   appeal or a hold keeps the audio. This governs Seminary's copy only: a copy a meeting provider
+   keeps (100d) follows the school's settings there.
 9. **Accommodations.** An instructor may let one student answer in writing instead, per activity,
    in the same per-student override table as 082's individual due dates.
 
@@ -80,5 +85,5 @@ grading, but the grade must stay theirs.
   governance. A school with none still gets recording, playback and timestamp grading.
 - Audio is heavy: chunked upload, private files and a retention job are required on day one.
 - Open: video (sermon delivery already uses YouTube, 021); whether students may re-record before
-  submitting outside exams; a transcript editor for the instructor; live classroom capture from a
-  virtual meeting (051).
+  submitting outside exams; a transcript editor for the instructor. Capture from a virtual meeting
+  is 100d.

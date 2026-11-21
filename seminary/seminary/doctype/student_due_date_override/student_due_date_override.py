@@ -65,9 +65,15 @@ class StudentDueDateOverride(Document):
                 self.replies_due_date,
                 self.extra_minutes,
                 self.extra_attempts,
+                # The written alternative to oral answers stands on its own (100 §9).
+                self.get("written_instead"),
             )
         ):
-            frappe.throw(_("Set at least one date, extra minutes or extra attempts."))
+            frappe.throw(
+                _(
+                    "Set at least one date, extra minutes, extra attempts or the written alternative."
+                )
+            )
         due = self.due_date or row.due_date
         if (
             self.cutoff_date

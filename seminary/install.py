@@ -123,6 +123,7 @@ def seed_assessment_criteria():
         ("Quiz", "Quiz"),
         ("Exam", "Exam"),
         ("Discussion", "Discussion"),
+        ("Oral Presentation", "Oral"),
         ("Academic Paper with Online Submission", "Assignment"),
     ]
     for criteria, criteria_type in defaults:

@@ -30,6 +30,22 @@
 
 		<section class="rounded-lg border border-outline-gray-1 bg-surface-white p-5 shadow-sm">
 			<h3 class="mb-1 text-base font-semibold text-ink-gray-8">
+				{{ __('Time zone') }}
+			</h3>
+			<p class="mb-3 text-sm text-ink-gray-5">
+				{{ __('Meetings set for you are shown and sent in this time zone, and instructors see it when they schedule group meetings.') }}
+			</p>
+			<div class="flex flex-wrap items-center gap-2">
+				<select v-model="timeZone"
+					class="w-full max-w-xs rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0">
+					<option v-for="z in zoneOptions" :key="z" :value="z">{{ z }}</option>
+				</select>
+				<Button size="sm" :loading="savingZone" @click="saveZone">{{ __('Save time zone') }}</Button>
+			</div>
+		</section>
+
+		<section class="rounded-lg border border-outline-gray-1 bg-surface-white p-5 shadow-sm">
+			<h3 class="mb-1 text-base font-semibold text-ink-gray-8">
 				{{ __('What we may send you, and where') }}
 			</h3>
 			<p class="mb-4 text-sm text-ink-gray-5">
@@ -257,7 +273,7 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
 import { reactive, ref } from 'vue'
-import { Button, createResource } from 'frappe-ui'
+import { Button, call, createResource, toast } from 'frappe-ui'
 import { Send } from 'lucide-vue-next'
 import { createToast } from '@/utils'
 
@@ -267,6 +283,30 @@ const telegram = createResource({
 })
 
 const language = ref('')
+// The student's own time zone (decisions/100d-a §9).
+const timeZone = ref('')
+const savingZone = ref(false)
+const zoneOptions = (() => {
+	try {
+		return Intl.supportedValuesOf('timeZone')
+	} catch (e) {
+		return []
+	}
+})()
+call('seminary.seminary.time_zones.my_time_zone').then((r) => {
+	timeZone.value = r?.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone
+})
+const saveZone = async () => {
+	savingZone.value = true
+	try {
+		await call('seminary.seminary.time_zones.set_my_time_zone', { tz: timeZone.value })
+		toast.success(__('Time zone saved'))
+	} catch (e) {
+		toast.error(e?.messages?.[0] || __('The time zone could not be saved'))
+	} finally {
+		savingZone.value = false
+	}
+}
 const consents = reactive({})
 const mailing = reactive({
 	address_line_1: '',

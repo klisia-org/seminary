@@ -157,6 +157,8 @@
 												class="h-4 w-4 stroke-1" />
 											<MessageSquare v-else-if="lesson.icon === 'icon-discussion'"
 												class="h-4 w-4 stroke-1" />
+											<Mic v-else-if="lesson.icon === 'icon-oral'"
+												class="h-4 w-4 stroke-1" />
 											<FolderOpen v-else-if="lesson.icon === 'icon-folder'"
 												class="h-4 w-4 stroke-1" />
 											<Sprout v-else-if="lesson.icon === 'icon-self-assessment'"
@@ -264,6 +266,7 @@ import {
 	FolderOpen,
 	HelpCircle,
 	MessageSquare,
+	Mic,
 	MonitorPlay,
 	BookOpenCheck,
 	Trash2,

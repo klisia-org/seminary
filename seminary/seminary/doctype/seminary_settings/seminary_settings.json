@@ -122,7 +122,22 @@
   "has_oikonomos",
   "has_billing",
   "financial_backend",
-  "financial_backend_since"
+  "financial_backend_since",
+  "oral_assessment_section",
+  "oral_audio_retention_days",
+  "oral_max_minutes",
+  "column_break_oral",
+  "oral_steps_html",
+  "oral_step_transcribe",
+  "oral_step_diarize",
+  "oral_step_moments",
+  "oral_step_questions",
+  "oral_step_follow_up",
+  "oral_step_score_suggestions",
+  "oral_step_consistency",
+  "meeting_capture_html",
+  "meeting_capture_account",
+  "meeting_capture_bot"
  ],
  "fields": [
   {
@@ -229,13 +244,13 @@
   },
   {
    "default": "1",
-   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft \u2192 Open for Enrollment, Open for Enrollment \u2192 Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
+   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft → Open for Enrollment, Open for Enrollment → Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
    "fieldname": "auto_advance_course_schedule",
    "fieldtype": "Check",
    "label": "Auto-advance Course Schedule states"
   },
   {
-   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window \u2014 Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
+   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window — Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
    "fieldname": "enrollment_window_rules_section",
    "fieldtype": "Section Break",
    "label": "Enrollment Window Rules"
@@ -346,14 +361,14 @@
   },
   {
    "default": "25",
-   "description": "Catch-all cap for everyone without a role row below. At 0 the normal upload path falls back to System Settings \u2192 Max File Size \u2014 but direct-to-object-storage uploads bypass that setting by design, so at 0 they are bounded only by a built-in 2048 MB ceiling. Set a value here to govern both.",
+   "description": "Catch-all cap for everyone without a role row below. At 0 the normal upload path falls back to System Settings → Max File Size — but direct-to-object-storage uploads bypass that setting by design, so at 0 they are bounded only by a built-in 2048 MB ceiling. Set a value here to govern both.",
    "fieldname": "default_max_upload_mb",
    "fieldtype": "Int",
    "label": "Default Max Upload (MB)",
    "non_negative": 1
   },
   {
-   "description": "Per-role exceptions to the default above. Only add roles that differ. A user holding several listed roles gets the most permissive of them; a user listed nowhere gets the default. Frappe enforces System Settings \u2192 Max File Size first, so set that to the MOST permissive value here and tighten below it.",
+   "description": "Per-role exceptions to the default above. Only add roles that differ. A user holding several listed roles gets the most permissive of them; a user listed nowhere gets the default. Frappe enforces System Settings → Max File Size first, so set that to the MOST permissive value here and tighten below it.",
    "fieldname": "upload_limits",
    "fieldtype": "Table",
    "label": "Per-Role Exceptions",
@@ -602,7 +617,7 @@
   },
   {
    "default": "1",
-   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code \u2014 best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
+   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code — best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
    "fieldname": "enforce_time_window",
    "fieldtype": "Check",
    "label": "Enforce meeting time window"
@@ -645,13 +660,13 @@
   },
   {
    "default": "1",
-   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only \u2014 excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
+   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only — excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
    "fieldname": "track_online_attendance",
    "fieldtype": "Check",
    "label": "Track Attendance for Online Meetings"
   },
   {
-   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % \u00d7 the course's scheduled meetings, overridable per Course Schedule by the registrar.",
+   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % × the course's scheduled meetings, overridable per Course Schedule by the registrar.",
    "fieldname": "attendance_policy_section",
    "fieldtype": "Section Break",
    "label": "Attendance Policy"
@@ -665,7 +680,7 @@
   },
   {
    "default": "School",
-   "description": "How far an instructor of record can see beyond the sections they teach. School: every section. Academic Unit: only sections of courses owned by an academic unit they belong to (their department, its parent units, and interdepartments it constitutes). The two settings below decide what happens when an instructor holds no membership, or a course has no unit \u2014 both default to School. Graders and assistants only ever see their own sections.",
+   "description": "How far an instructor of record can see beyond the sections they teach. School: every section. Academic Unit: only sections of courses owned by an academic unit they belong to (their department, its parent units, and interdepartments it constitutes). The two settings below decide what happens when an instructor holds no membership, or a course has no unit — both default to School. Graders and assistants only ever see their own sections.",
    "fieldname": "faculty_read_scope",
    "fieldtype": "Select",
    "label": "Faculty read scope",
@@ -674,7 +689,7 @@
   {
    "default": "School",
    "depends_on": "eval:doc.faculty_read_scope=='Academic Unit'",
-   "description": "What an instructor of record may read when they hold no active Academic Unit Membership. School: every section \u2014 the behaviour before this setting existed, and the default. Own sections only: just the sections they are listed on. Leaving this on School means the Academic Unit scope restricts nothing on a school that has not populated memberships.",
+   "description": "What an instructor of record may read when they hold no active Academic Unit Membership. School: every section — the behaviour before this setting existed, and the default. Own sections only: just the sections they are listed on. Leaving this on School means the Academic Unit scope restricts nothing on a school that has not populated memberships.",
    "fieldname": "unit_scope_no_membership",
    "fieldtype": "Select",
    "label": "Instructor without a unit membership",
@@ -683,7 +698,7 @@
   {
    "default": "School",
    "depends_on": "eval:doc.faculty_read_scope=='Academic Unit'",
-   "description": "How a Course with no academic unit is treated under the Academic Unit scope. School: every instructor of record may read its sections \u2014 the behaviour before this setting existed, and the default. Exclude: only the staff listed on the section may read it.",
+   "description": "How a Course with no academic unit is treated under the Academic Unit scope. School: every instructor of record may read its sections — the behaviour before this setting existed, and the default. Exclude: only the staff listed on the section may read it.",
    "fieldname": "unit_scope_unassigned_course",
    "fieldtype": "Select",
    "label": "Course with no academic unit",
@@ -691,7 +706,7 @@
   },
   {
    "default": "3",
-   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 \u2192 every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
+   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 → every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
    "fieldname": "tardies_per_absence",
    "fieldtype": "Int",
    "label": "Tardies per Absence"
@@ -772,7 +787,7 @@
   {
    "default": "0",
    "depends_on": "allow_alumni_view_partner_directory",
-   "description": "Lets alumni submit new Partner Organizations from their portal for staff approval. A second gate at Program Level exists for greater control \u2014 both this and the Program Level toggle must be on.",
+   "description": "Lets alumni submit new Partner Organizations from their portal for staff approval. A second gate at Program Level exists for greater control — both this and the Program Level toggle must be on.",
    "fieldname": "allow_alumni_create_partner_org",
    "fieldtype": "Check",
    "label": "Allow Alumni to create Partner Organizations?"
@@ -791,13 +806,13 @@
   },
   {
    "default": "0",
-   "description": "An internship type with no graduation requirement mapped is 'ungated'. Off (default): such internships are Desk-only and hidden from the student portal \u2014 an empty requirement is treated as a misconfiguration. On: ungated internships are shown to all students (intentional open internships).",
+   "description": "An internship type with no graduation requirement mapped is 'ungated'. Off (default): such internships are Desk-only and hidden from the student portal — an empty requirement is treated as a misconfiguration. On: ungated internships are shown to all students (intentional open internships).",
    "fieldname": "show_ungated_internships_to_all",
    "fieldtype": "Check",
    "label": "Show Ungated Internships to All Students"
   },
   {
-   "description": "Academic details shared with a partner organization when it evaluates internship applicants. All off by default \u2014 the partner sees only the applicant's name unless you opt in here.",
+   "description": "Academic details shared with a partner organization when it evaluates internship applicants. All off by default — the partner sees only the applicant's name unless you opt in here.",
    "fieldname": "internship_share_column",
    "fieldtype": "Column Break"
   },
@@ -875,11 +890,100 @@
    "fieldtype": "Date",
    "hidden": 1,
    "label": "Active Since"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "oral_assessment_section",
+   "fieldtype": "Section Break",
+   "label": "Oral Assessment"
+  },
+  {
+   "default": "365",
+   "description": "Counted from the day a student's grades are sent. The audio is then deleted; the transcript, speakers and marked moments are kept.",
+   "fieldname": "oral_audio_retention_days",
+   "fieldtype": "Int",
+   "label": "Keep Oral Audio For (days)",
+   "non_negative": 1
+  },
+  {
+   "default": "60",
+   "fieldname": "oral_max_minutes",
+   "fieldtype": "Int",
+   "label": "Longest Recording (minutes)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_oral",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "oral_steps_html",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted small\">Steps an installed app may run on recordings. An instructor is never offered a step the school has turned off here.</p>"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_transcribe",
+   "fieldtype": "Check",
+   "label": "Transcription"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_diarize",
+   "fieldtype": "Check",
+   "label": "Who spoke when"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_moments",
+   "fieldtype": "Check",
+   "label": "Suggested moments"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_questions",
+   "fieldtype": "Check",
+   "label": "Defense questions"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_follow_up",
+   "fieldtype": "Check",
+   "label": "Follow-up questions"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_score_suggestions",
+   "fieldtype": "Check",
+   "label": "Score suggestions"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_consistency",
+   "fieldtype": "Check",
+   "label": "Consistency notes"
+  },
+  {
+   "fieldname": "meeting_capture_html",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted small\">How an oral activity may be captured from a virtual meeting, where an installed app provides it.</p>"
+  },
+  {
+   "default": "1",
+   "fieldname": "meeting_capture_account",
+   "fieldtype": "Check",
+   "label": "Capture by the school's meeting account"
+  },
+  {
+   "default": "1",
+   "fieldname": "meeting_capture_bot",
+   "fieldtype": "Check",
+   "label": "Capture by a recorder that joins the meeting"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-28 12:00:00.000000",
+ "modified": "2026-11-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

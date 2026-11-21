@@ -12,6 +12,13 @@
   "cs_room",
   "cs_online",
   "cs_web_meeting",
+  "school_meeting",
+  "cs_meeting_account",
+  "cs_meeting_id",
+  "cs_meeting_status",
+  "cs_meeting_error",
+  "cs_meeting_hosts",
+  "cs_host_key",
   "attendance",
   "checkin_code"
  ],
@@ -54,7 +61,59 @@
    "description": "Join link for this meeting. Falls back to the section's Web Meeting Link when blank.",
    "fieldname": "cs_web_meeting",
    "fieldtype": "Data",
-   "label": "Web Meeting Link"
+   "label": "Web Meeting Link",
+   "read_only_depends_on": "eval:doc.cs_meeting_account"
+  },
+  {
+   "fieldname": "school_meeting",
+   "fieldtype": "Check",
+   "label": "School Meeting",
+   "description": "Create this online meeting on one of the school's meeting accounts instead of a pasted link."
+  },
+  {
+   "fieldname": "cs_meeting_account",
+   "fieldtype": "Link",
+   "options": "Web Meeting Account",
+   "label": "Meeting Account",
+   "read_only": 1,
+   "depends_on": "eval:doc.cs_meeting_account"
+  },
+  {
+   "fieldname": "cs_meeting_id",
+   "fieldtype": "Data",
+   "label": "Meeting ID",
+   "read_only": 1,
+   "depends_on": "eval:doc.cs_meeting_id"
+  },
+  {
+   "fieldname": "cs_meeting_status",
+   "fieldtype": "Select",
+   "options": "\nPending\nCreated\nFailed",
+   "label": "Meeting Status",
+   "read_only": 1,
+   "depends_on": "eval:doc.cs_meeting_status"
+  },
+  {
+   "fieldname": "cs_meeting_error",
+   "fieldtype": "Small Text",
+   "label": "Meeting Error",
+   "read_only": 1,
+   "depends_on": "eval:doc.cs_meeting_status=='Failed'"
+  },
+  {
+   "fieldname": "cs_meeting_hosts",
+   "fieldtype": "Small Text",
+   "label": "Alternative Hosts",
+   "read_only": 1,
+   "depends_on": "eval:doc.cs_meeting_hosts"
+  },
+  {
+   "fieldname": "cs_host_key",
+   "fieldtype": "Data",
+   "label": "Host Key",
+   "read_only": 1,
+   "depends_on": "eval:doc.cs_host_key",
+   "description": "For the section's instructors only, to claim host in the meeting."
   },
   {
    "default": "0",
@@ -74,7 +133,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-31 13:04:38.110795",
+ "modified": "2026-11-21 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Meeting Dates",

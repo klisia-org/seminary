@@ -27,6 +27,7 @@ from .constants import (
     ASSIGNMENT_FIELDS,
     CHAPTER_FIELDS,
     DISCUSSION_FIELDS,
+    ORAL_FIELDS,
     EXAM_FIELDS,
     EXAM_QUESTION_FIELDS,
     EXPORT_ROLES,
@@ -52,6 +53,7 @@ _ACTIVITY_LINK_FIELDS = (
     ("assignment", "Assignment Activity"),
     ("exam", "Exam Activity"),
     ("discussion", "Discussion Activity"),
+    ("oral", "Oral Activity"),
 )
 
 
@@ -189,6 +191,8 @@ class _Exporter:
             rec["fields"] = self._pick(a, ASSIGNMENT_FIELDS)
         elif doctype == "Discussion Activity":
             rec["fields"] = self._pick(a, DISCUSSION_FIELDS)
+        elif doctype == "Oral Activity":
+            rec["fields"] = self._pick(a, ORAL_FIELDS)
         self._scan_media(rec.get("fields", {}))
         self.activities[name] = rec
 

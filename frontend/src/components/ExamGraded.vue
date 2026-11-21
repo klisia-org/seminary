@@ -48,6 +48,8 @@
             <span> {{ __('Your Answer') }}: </span>
             <SafeHtml :html="row.answer" as="span" profile="inline" />
           </div>
+          <!-- An oral answer: the answer above is its transcript (decisions/100a). -->
+          <OralPlayer v-if="row.oral_recording" :recording="row.oral_recording" :question="row.question" />
           <!-- Points -->
           <div class="flex justify-end items-center space-x-2">
             <span class="text-sm text-ink-gray-7 text-xl">
@@ -72,6 +74,7 @@
 <script setup>
 import { createDocumentResource } from 'frappe-ui';
 import { watch, inject } from 'vue';
+import OralPlayer from '@/components/OralPlayer.vue'
 
 
 // const socket = inject('$socket')

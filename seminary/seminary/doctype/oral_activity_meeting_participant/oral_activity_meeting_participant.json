@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "creation": "2026-11-21 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "istable": 1,
+ "description": "One person the provider saw in a captured meeting, and the student they are.",
+ "field_order": [
+  "display_name",
+  "email",
+  "speaker_label",
+  "joined_at",
+  "left_at",
+  "match",
+  "suggested_student",
+  "student",
+  "student_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "label": "Display Name",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "speaker_label",
+   "fieldtype": "Data",
+   "label": "Speaker Label",
+   "read_only": 1
+  },
+  {
+   "fieldname": "joined_at",
+   "fieldtype": "Datetime",
+   "label": "Joined At",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "left_at",
+   "fieldtype": "Datetime",
+   "label": "Left At",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "match",
+   "fieldtype": "Select",
+   "label": "Match",
+   "options": "\nEmail\nName",
+   "read_only": 1
+  },
+  {
+   "fieldname": "suggested_student",
+   "fieldtype": "Link",
+   "label": "Suggested Student",
+   "options": "Student",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "fetch_from": "student.student_name",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Activity Meeting Participant",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

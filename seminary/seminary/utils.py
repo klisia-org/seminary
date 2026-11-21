@@ -910,6 +910,7 @@ def get_course_details(course):
             "calendar_token",
             "room",
             "web_meeting",
+            "school_meeting",
             "from_time",
             "to_time",
             "monday",
@@ -945,6 +946,7 @@ def get_course_details(course):
         "Course Schedule Meeting Dates",
         filters={"parent": course_details.name, "parenttype": "Course Schedule"},
         fields=[
+            "name",
             "cs_meetdate",
             "cs_fromtime",
             "cs_totime",
@@ -958,7 +960,12 @@ def get_course_details(course):
     # section value; online meetings have no room) so the calendar can show
     # per-meeting detail (ADR 051).
     _room_labels = {}
+    from seminary.seminary.oral_meetings import captured_rows
+
+    _recorded = captured_rows(course_details.name)
     for m in course_details.meeting_dates:
+        # Recorded for an oral activity: everyone on the calendar is told (100d §5).
+        m["recorded_for_assessment"] = m.name in _recorded
         eff_room = None if m.cs_online else (m.cs_room or course_details.room)
         if eff_room and eff_room not in _room_labels:
             _room_labels[eff_room] = (
@@ -985,6 +992,17 @@ def get_course_details(course):
         for m in course_details.meeting_dates:
             m["cs_web_meeting"] = None
             m["web_meeting"] = None
+
+    # A student's own oral activity group meetings, never another group's (100d-a §6).
+    course_details.my_oral_meetings = []
+    if frappe.session.user != "Guest" and user_is_enrolled_in_section(
+        course_details.name
+    ):
+        from seminary.seminary.oral_groups import my_meetings
+
+        course_details.my_oral_meetings = my_meetings(
+            frappe.session.user, course_details.name
+        )
 
     if frappe.session.user == "Guest":
         course_details.membership = None
@@ -1397,6 +1415,8 @@ def get_lesson_icon(body, content):
                 "discussionactivity",
             ):
                 return "icon-discussion"
+            if block.get("type") == "oralActivity":
+                return "icon-oral"
             if block.get("type") == "folder":
                 return "icon-folder"
             # Reflection lessons (ADR 079 decision 4).
@@ -1891,7 +1911,7 @@ def get_assessment_due_date(course, activity_type, activity_id):
         return None
     require_content_reader(course)
     field = (activity_type or "").strip().lower()
-    if field not in {"quiz", "assignment", "exam", "discussion"}:
+    if field not in {"quiz", "assignment", "exam", "discussion", "oral"}:
         return None
     return frappe.db.get_value(
         "Scheduled Course Assess Criteria",
@@ -1982,6 +2002,7 @@ _LESSON_BLOCK_LOOKUP = {
         ("discussionActivity", "discussionID"),
         ("discussionActivity", "discussion"),
     ],
+    "Oral": [("oralActivity", "oral")],
 }
 
 # Maps SCAC.type → (Submission DocType, activity field, course-schedule field).
@@ -1992,6 +2013,7 @@ _LESSON_SUBMISSION_LOOKUP = {
     "Exam": ("Exam Submission", "exam", "course"),
     "Quiz": ("Quiz Submission", "quiz", "course"),
     "Discussion": ("Discussion Submission", "disc_activity", "coursesc"),
+    "Oral": ("Oral Activity Submission", "oral_activity", "course"),
 }
 
 # Reverse lookup keyed by Submission DocType, used by the controller-side
@@ -2284,7 +2306,7 @@ def get_gradebook(course):
     for student in students:
         student["course_grade"] = grades.get(student.name)
         student["assessments"] = frappe.db.sql(
-            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, r.excused, r.excused_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, scar.category_code, scar.never_drop, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
+            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, r.excused, r.excused_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, scar.category_code, scar.never_drop, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion, scar.oral
 	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
 	where r.assessment_criteria = scar.name and r.parent = %s""",
             (student.name,),

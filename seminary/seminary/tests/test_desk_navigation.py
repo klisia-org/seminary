@@ -17,7 +17,11 @@ from frappe.tests import UnitTestCase
 PACKAGE = Path(__file__).resolve().parents[2]
 MODULE = PACKAGE / "seminary"
 # Per-user bookkeeping rows with no screen of their own.
-INTERNAL = {"Cohort Feed Read State", "Cohort Thread Read State"}
+INTERNAL = {
+    "Cohort Feed Read State",
+    "Cohort Thread Read State",
+    "Discussion Read State",
+}
 # Frappe's own doctypes that a sidebar may open, because every site has them.
 FRAMEWORK_DOCTYPES = {"User", "Website Settings"}
 # Records that instructors and students work on in the portal; reachable on Desk by search and
@@ -50,6 +54,10 @@ PORTAL_ONLY = {
     "Exam Submission",
     "Gradebook Course Schedule",
     "Open Question",
+    "Oral Activity",
+    "Oral Activity Submission",
+    "Oral Defense Question",
+    "Oral Activity Meeting",
     "Personal Development Note",
     "Personal Development Plan",
     "Plagiarism Check Result",
@@ -62,6 +70,10 @@ PORTAL_ONLY = {
     "Student Due Date Override",
     "Student Group",
     "Student Log",
+    # Oral assessment (decisions/100): recorded and graded in the portal.
+    "Oral Recording",
+    "Oral Moment",
+    "Oral Step Result",
 }
 # Listed in the billing apps' Scholarships sidebars (088a §5).
 COMPANION_PLACED = {"Sources of Funding"}

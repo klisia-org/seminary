@@ -73,7 +73,7 @@ def _importable(section, doctype):
     return allowed
 
 
-_SCAC_ACTIVITY_FIELDS = ("quiz", "assignment", "exam", "discussion")
+_SCAC_ACTIVITY_FIELDS = ("quiz", "assignment", "exam", "discussion", "oral")
 
 
 class _Importer:

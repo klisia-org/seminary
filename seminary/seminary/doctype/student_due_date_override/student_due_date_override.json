@@ -20,6 +20,7 @@
   "column_break_b",
   "extra_minutes",
   "extra_attempts",
+  "written_instead",
   "reason_section",
   "reason",
   "source"
@@ -111,6 +112,12 @@
    "description": "Added to a quiz's maximum number of attempts."
   },
   {
+   "description": "Oral questions on this assessment are answered in writing by this student.",
+   "fieldname": "written_instead",
+   "fieldtype": "Check",
+   "label": "Written Instead of Oral"
+  },
+  {
    "fieldname": "reason_section",
    "fieldtype": "Section Break"
   },
@@ -130,7 +137,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-28 12:00:00.000000",
+ "modified": "2026-11-20 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Due Date Override",

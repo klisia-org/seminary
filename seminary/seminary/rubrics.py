@@ -33,12 +33,14 @@ from seminary.seminary.guards import (
 ACTIVITIES = {
     "Assignment Activity": "title",
     "Discussion Activity": "discussion_name",
+    "Oral Activity": "title",
 }
 
 # submission doctype -> (activity doctype, activity field, section field)
 SUBMISSIONS = {
     "Assignment Submission": ("Assignment Activity", "assignment", "course"),
     "Discussion Submission": ("Discussion Activity", "disc_activity", "coursesc"),
+    "Oral Activity Submission": ("Oral Activity", "oral_activity", "course"),
 }
 
 
@@ -221,6 +223,7 @@ def rubric_payload(rubric) -> dict | None:
                 "title": c.title,
                 "description": c.description,
                 "weight": c.weight or None,
+                "from_defense": cint(c.get("from_defense")),
                 "share": round(share.get(c.criterion_code, 0) * 100, 1),
             }
             for c in doc.criteria
@@ -338,6 +341,8 @@ def save_rubric(activity_doctype, activity, scale, criteria):
                 "title": c.get("title"),
                 "description": c.get("description"),
                 "weight": flt(c.get("weight")),
+                # Judged from the oral defense (decisions/100c §5).
+                "from_defense": cint(c.get("from_defense")),
             },
         )
         for level, descriptor in (c.get("cells") or {}).items():
@@ -552,7 +557,7 @@ def assessment_rubric(scheduled_assess_criteria):
     sac = frappe.db.get_value(
         "Scheduled Course Assess Criteria",
         scheduled_assess_criteria,
-        ["type", "assignment", "discussion"],
+        ["type", "assignment", "discussion", "oral"],
         as_dict=True,
     )
     if not sac:
@@ -561,6 +566,8 @@ def assessment_rubric(scheduled_assess_criteria):
         rubric = frappe.db.get_value("Assignment Activity", sac.assignment, "rubric")
     elif sac.type == "Discussion" and sac.discussion:
         rubric = frappe.db.get_value("Discussion Activity", sac.discussion, "rubric")
+    elif sac.type == "Oral" and sac.oral:
+        rubric = frappe.db.get_value("Oral Activity", sac.oral, "rubric")
     else:
         return None
     return rubric_payload(rubric)

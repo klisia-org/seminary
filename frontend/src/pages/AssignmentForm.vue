@@ -48,8 +48,48 @@
 				@change="(val) => (model.question = val)" :editable="true" :fixedMenu="true"
 				editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
 		</div>
+		<div v-if="defensible" class="mt-8 space-y-4">
+			<div class="font-semibold">{{ __('Oral Defense') }}</div>
+			<FormControl v-model="model.oral_defense" type="checkbox"
+				:label="__('After submitting, the student answers a few questions about the paper aloud')" />
+			<template v-if="model.oral_defense">
+				<div class="grid grid-cols-3 gap-5">
+					<FormControl v-model.number="model.defense_questions" type="number" min="1" :label="__('Questions')" />
+					<FormControl v-model.number="model.defense_answer_s" type="number" min="30"
+						:label="__('Seconds per answer')" />
+					<div class="flex items-end gap-2">
+						<FormControl v-model.number="windowAmount" type="number" min="1" class="flex-1"
+							:label="__('Due within')" />
+						<FormControl v-model="windowUnit" type="select" class="w-28" :options="[
+							{ label: __('minutes'), value: 60 },
+							{ label: __('hours'), value: 3600 },
+							{ label: __('days'), value: 86400 },
+						]" />
+					</div>
+				</div>
+				<p class="text-xs text-ink-gray-5">
+					{{ __('Counted from when the defense opens, once its questions are ready: an hour for a defense straight after the paper, or days for one taken later.') }}
+				</p>
+				<div class="flex flex-wrap gap-y-2">
+					<FormControl v-model="model.defense_follow_up" type="checkbox" class="mr-6"
+						:label="__('Ask a follow-up question on each answer')" />
+					<FormControl v-model="model.defense_review" type="checkbox" class="mr-6"
+						:label="__('Review the questions before the defense opens')" />
+				</div>
+				<div>
+					<div class="text-sm text-ink-gray-7 mb-1">{{ __('Processing of each answer') }}</div>
+					<div v-if="stepChoices.data?.length" class="flex flex-wrap gap-y-2">
+						<FormControl v-for="c in stepChoices.data" :key="c.step" type="checkbox" :label="c.label"
+							class="mr-6" :modelValue="chosenSteps.includes(c.step)"
+							@update:modelValue="(v) => toggleStep(c.step, v)" />
+					</div>
+					<p v-else class="text-sm text-ink-gray-5">{{ __('No processing steps are available on this site.') }}</p>
+				</div>
+			</template>
+		</div>
 		<RubricEditor v-if="assignment.doc?.name" class="mt-8" activity-doctype="Assignment Activity"
-			:activity="assignment.doc.name" @saved="outcomesPanel?.reload()" />
+			:activity="assignment.doc.name" :defense="!!(defensible && model.oral_defense)"
+			@saved="outcomesPanel?.reload()" />
 		<ActivityOutcomesPanel v-if="assignment.doc?.name && user?.data?.has_aretenic" ref="outcomesPanel"
 			class="mt-6" activity-doctype="Assignment Activity" :activity="assignment.doc.name" />
 	</div>
@@ -99,6 +139,42 @@ const model = reactive({
 	course: '',
 	type: 'PDF',
 	question: '',
+	oral_defense: false,
+	defense_questions: 3,
+	defense_answer_s: 120,
+	defense_follow_up: false,
+	defense_window: 259200,
+	defense_review: false,
+	defense_steps: '[]',
+})
+
+// The oral defense (decisions/100c): only for papers whose text can be read.
+const defensible = computed(() => ['PDF', 'Document', 'Text'].includes(model.type))
+const stepChoices = createResource({ url: 'seminary.seminary.oral.step_choices', auto: true })
+const chosenSteps = computed(() => {
+	try {
+		return JSON.parse(model.defense_steps || '[]')
+	} catch (e) {
+		return []
+	}
+})
+const toggleStep = (step, on) => {
+	const set = new Set(chosenSteps.value)
+	on ? set.add(step) : set.delete(step)
+	model.defense_steps = JSON.stringify([...set])
+}
+// The window is stored in seconds and shown in the largest unit that divides it.
+const windowUnit = computed({
+	get: () => [86400, 3600, 60].find((u) => (model.defense_window || 0) % u === 0) || 60,
+	set: (unit) => {
+		model.defense_window = windowAmount.value * Number(unit)
+	},
+})
+const windowAmount = computed({
+	get: () => Math.max(1, Math.round((model.defense_window || 0) / windowUnit.value)),
+	set: (n) => {
+		model.defense_window = Math.max(1, Number(n) || 1) * windowUnit.value
+	},
 })
 
 onMounted(() => {
@@ -188,6 +264,9 @@ watch(assignment, () => {
 		Object.keys(assignment.doc).forEach((key) => {
 			model[key] = assignment.doc[key];
 		});
+		model.oral_defense = !!model.oral_defense
+		model.defense_follow_up = !!model.defense_follow_up
+		model.defense_review = !!model.defense_review
 	}
 });
 

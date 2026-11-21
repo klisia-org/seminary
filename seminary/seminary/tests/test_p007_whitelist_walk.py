@@ -78,6 +78,10 @@ REVIEWED_MODULES = (
     "seminary.seminary.discipleship.reading_plans",
     "seminary.seminary.requirements",
     "seminary.seminary.discipleship.scripture",
+    "seminary.seminary.oral",
+    "seminary.seminary.oral_exams",
+    "seminary.seminary.oral_activities",
+    "seminary.seminary.oral_defense",
     "seminary.seminary.doctype.academic_term.academic_term",
     "seminary.seminary.doctype.course.course",
     "seminary.seminary.doctype.course_competency.course_competency",
@@ -148,6 +152,44 @@ GUEST_ALLOWED = {
 }
 
 STUDENT_ALLOWED = {
+    # decisions/100d-a §9: the caller's own time zone, read and set on their
+    # own User only; nothing about anyone else.
+    "seminary.seminary.time_zones.report",
+    "seminary.seminary.time_zones.set_my_time_zone",
+    "seminary.seminary.time_zones.my_time_zone",
+    # decisions/093: whether the public website is on -- one site-wide flag the
+    # Website Branding form reads to hide options; nothing about any person.
+    "seminary.seminary.doctype.website_branding.website_branding.public_website_enabled",
+    # Oral recordings (decisions/100). start_recording asks the record's own
+    # resolver whether this user may record it now (an unregistered doctype is
+    # refused); the other three act only on a recording the caller opened and
+    # that is still open. Covered by test_adr100_oral_core.
+    "seminary.seminary.oral.start_recording",
+    "seminary.seminary.oral.upload_chunk",
+    "seminary.seminary.oral.received_chunks",
+    "seminary.seminary.oral.finish_recording",
+    # get_recording reads through Oral Recording's own has_permission (the
+    # students on it, the section's staff), one message for missing and
+    # refused; my_oral_state answers only the submission's owner (100a).
+    "seminary.seminary.oral.get_recording",
+    "seminary.seminary.oral_exams.my_oral_state",
+    # Oral activities (decisions/100b). upload_recording asks the same resolver
+    # as start_recording, and the activity must allow uploads; link_speaker
+    # reads through the recording's has_permission and the record's labelling
+    # rule; my_state and submit act only for the student on the roster or on
+    # the recording. Covered by test_adr100b_oral_activities.
+    "seminary.seminary.oral.upload_recording",
+    "seminary.seminary.oral.link_speaker",
+    "seminary.seminary.oral_activities.my_state",
+    "seminary.seminary.oral_activities.submit",
+    "seminary.seminary.oral_activities.gradeable",
+    # Oral defense (decisions/100c): the student's own submission only, by
+    # member; a question is revealed only when asked. Covered by
+    # test_adr100c_oral_defense.
+    "seminary.seminary.oral_defense.my_defense",
+    "seminary.seminary.oral_defense.start",
+    "seminary.seminary.oral_defense.next_question",
+    "seminary.seminary.oral_defense.answer_in_writing",
     # SCORM (p009). All five are the student's own player talking about the
     # student's own launch. `launch` runs `require_enrolled` on the section --
     # the same gate every other course read uses -- and the other four take a
@@ -245,6 +287,36 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+    # decisions/100 §5: require_grader.
+    "seminary.seminary.oral.step_choices",
+    # decisions/100b: require_grader, then the section's own staff.
+    "seminary.seminary.oral_activities.section_summary",
+    "seminary.seminary.oral_activities.get_submission",
+    "seminary.seminary.oral_activities.save_grade",
+    # decisions/100c: require_grader, then the submission's section staff.
+    "seminary.seminary.oral_defense.get_defense",
+    "seminary.seminary.oral_defense.save_question",
+    "seminary.seminary.oral_defense.delete_question",
+    "seminary.seminary.oral_defense.release",
+    "seminary.seminary.school_meetings.provider_names",
+    "seminary.seminary.oral_groups.cancel_meeting",
+    "seminary.seminary.oral_groups.configure_state",
+    "seminary.seminary.oral_groups.create_meetings",
+    "seminary.seminary.oral_groups.move_meeting",
+    "seminary.seminary.oral_groups.move_student",
+    "seminary.seminary.oral_groups.propose_groups",
+    "seminary.seminary.oral_groups.suggest",
+    "seminary.seminary.oral_meetings.attendance_suggestions",
+    "seminary.seminary.oral_meetings.cancel_capture",
+    "seminary.seminary.oral_meetings.capture_options",
+    "seminary.seminary.oral_meetings.confirm_capture",
+    "seminary.seminary.oral_meetings.get_capture",
+    "seminary.seminary.oral_meetings.list_captures",
+    "seminary.seminary.oral_meetings.schedule_capture",
+    "seminary.seminary.school_meetings.retry",
+    # Setup progress (privatedocs p024): `can_open` refuses anyone outside the
+    # group's roles (Registrar, Seminary Manager for "Seminary").
+    "seminary.setup_progress.get_progress",
     # Rubrics (decisions/095): the editor needs write on the activity, grading
     # needs require_grader + require_course_staff, a rubric's content needs its
     # own read permission.
@@ -382,6 +454,12 @@ OWN_RULE = (
         # STAFF_ONLY in this test's "must raise PermissionError" sense.
         "seminary.seminary.disciplinary.list_course_enrollments",
         "seminary.seminary.disciplinary.list_pending_incidents",
+    }
+    | {
+        # decisions/100 §5-§6: the section's staff of the recording's own
+        # section, resolved from the recording; covered by test_adr100a.
+        "seminary.seminary.oral.add_moment",
+        "seminary.seminary.oral.set_moment_state",
     }
     | {
         # decisions/098: the student, their mentor or a decider requests; the
@@ -972,6 +1050,8 @@ KWARG_OVERRIDES = {
         "course_schedule": "ZZT-no-such-cs",
     },
     "seminary.seminary.api.send_grades": {"doc": '{"name": "ZZT-no-such-cs"}'},
+    # An unknown group is refused before the role gate; name a real one.
+    "seminary.setup_progress.get_progress": {"group": "Seminary"},
     "seminary.seminary.absence_decisions.record_absence_decisions": {"decisions": "[]"},
     "seminary.seminary.deadlines.save_override": {"data": "{}"},
     "seminary.seminary.deadlines.save_late_policy": {"policy": "{}"},

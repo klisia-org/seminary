@@ -1,0 +1,41 @@
+{
+ "actions": [],
+ "creation": "2026-11-20 18:00:00.000000",
+ "description": "A student whose recording this is.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "student"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "in_list_view": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-20 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Recording Participant",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1
+}
