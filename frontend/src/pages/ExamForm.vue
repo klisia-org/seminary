@@ -78,8 +78,8 @@
 					<p class="text-sm text-ink-gray-6 mb-3">
 						{{ __('Steps run on each recorded answer. Without any, you listen and grade from the audio.') }}
 					</p>
-					<div v-if="stepChoices.data?.length" class="space-y-1">
-						<FormControl v-for="c in stepChoices.data" :key="c.step" type="checkbox" :label="c.label"
+					<div v-if="stepChoices.data?.length" class="flex flex-wrap gap-y-2">
+						<FormControl v-for="c in stepChoices.data" :key="c.step" type="checkbox" :label="c.label" class="mr-6"
 							:modelValue="chosenSteps.includes(c.step)" @update:modelValue="(v) => toggleStep(c.step, v)" />
 					</div>
 					<p v-else class="text-sm text-ink-gray-5">
