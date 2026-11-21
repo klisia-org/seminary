@@ -118,9 +118,8 @@ const props = defineProps({
 	courseName: { type: String, required: true },
 })
 
-const isStaff = computed(
-	() => !user.data?.is_student && (user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_instructor)
-)
+// Same rule as the discussion block: a staff role wins over Student.
+const isStaff = computed(() => !!(user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_instructor))
 const present = ref([])
 const submitting = ref(false)
 const uploading = ref(false)
