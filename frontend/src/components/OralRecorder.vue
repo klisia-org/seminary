@@ -13,6 +13,7 @@
         {{ __('Recording starts in {0} seconds.').format(countdown) }}
       </div>
       <ProgressBar :progress="(countdown / Math.max(prepareS, 1)) * 100" />
+      <Button variant="solid" :loading="startingEarly" @click="startNow">{{ __('Start now') }}</Button>
     </div>
 
     <div v-else-if="phase === 'recording'" class="space-y-3">
@@ -115,6 +116,7 @@ const begin = async () => {
     return
   }
   if (props.prepareS > 0) {
+    startingEarly.value = false
     phase.value = 'preparing'
     countdown.value = props.prepareS
     ticker = setInterval(() => {
@@ -127,6 +129,15 @@ const begin = async () => {
   } else {
     start()
   }
+}
+
+// The student may end the reading time early (100a §2).
+const startingEarly = ref(false)
+const startNow = () => {
+  if (startingEarly.value) return
+  startingEarly.value = true
+  clearInterval(ticker)
+  start()
 }
 
 const start = async () => {
