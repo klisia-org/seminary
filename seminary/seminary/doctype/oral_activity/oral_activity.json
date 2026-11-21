@@ -14,6 +14,7 @@
   "column_break_main",
   "max_minutes",
   "allow_upload",
+  "capture",
   "group_size",
   "section_break_prompt",
   "prompt",
@@ -65,6 +66,14 @@
    "description": "Students may upload a file recorded elsewhere, such as on a phone in a classroom, instead of recording in the browser."
   },
   {
+   "fieldname": "capture",
+   "fieldtype": "Select",
+   "label": "Captured From",
+   "options": "Browser\nVirtual meeting",
+   "default": "Browser",
+   "description": "Virtual meeting: recorded from class meetings the instructor names on each section, not by students in their browser."
+  },
+  {
    "depends_on": "eval:doc.mode=='Conversation'",
    "fieldname": "group_size",
    "fieldtype": "Int",
@@ -99,7 +108,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-21 08:00:00.000000",
+ "modified": "2026-11-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Oral Activity",

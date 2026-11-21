@@ -55,6 +55,7 @@ def _activity(name):
             "prompt",
             "max_minutes",
             "allow_upload",
+            "capture",
             "group_size",
             "oral_steps",
             "rubric",
@@ -232,8 +233,12 @@ def resolve(scac, user):
         "course_schedule": row.parent,
         "participants": [(me[0], me[1])] if me else [],
         "choosable": choosable,
-        "may_record": bool(me and me[1] not in covered),
-        "allow_upload": bool(cint(activity.allow_upload)),
+        # Captured from class meetings: nobody records it in the browser (100d §1).
+        "may_record": bool(
+            me and me[1] not in covered and activity.capture != "Virtual meeting"
+        ),
+        "allow_upload": bool(cint(activity.allow_upload))
+        and activity.capture != "Virtual meeting",
         "steps": _steps(activity),
         "prompt": activity.prompt,
         "max_seconds": cint(activity.max_minutes) * 60,
@@ -336,6 +341,8 @@ def my_state(course, activity):
         "scac": scac,
         "title": act.title,
         "mode": act.mode,
+        "capture": act.capture or "Browser",
+        "meetings": _captured_meetings(course, activity),
         "prompt": act.prompt,
         "allow_upload": ctx["allow_upload"],
         "max_seconds": min(
@@ -355,6 +362,20 @@ def my_state(course, activity):
             ),
         },
     }
+
+
+def _captured_meetings(course, activity):
+    """The class meetings recorded for this activity, for the student's notice."""
+    return frappe.get_all(
+        "Oral Activity Meeting",
+        filters={
+            "course_schedule": course,
+            "oral_activity": activity,
+            "status": ["not in", ["Cancelled", "Failed"]],
+        },
+        fields=["meeting_date", "from_time", "to_time", "status"],
+        order_by="meeting_date asc, from_time asc",
+    )
 
 
 @frappe.whitelist(methods=["POST"])

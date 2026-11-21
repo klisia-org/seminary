@@ -452,7 +452,9 @@ def _payload(doc, step, ctx):
         "language": doc.language,
         "duration_s": doc.duration_s,
         "tracks": [
-            {"label": s.label, "audio": s.audio} for s in doc.speakers if s.audio
+            {"label": s.label, "audio": s.audio, "offset_s": flt(s.audio_offset_s)}
+            for s in doc.speakers
+            if s.audio
         ],
         # Which steps follow and how many voices to expect, so a provider can
         # do transcription and speaker labels in one job.
@@ -481,6 +483,17 @@ def _payload(doc, step, ctx):
 
 def _names_of(doc):
     names = set()
+    # A captured meeting's speakers are labelled with display names (100d §4).
+    if doc.get("activity_meeting"):
+        labels = [s.label for s in doc.speakers] + frappe.get_all(
+            "Oral Activity Meeting Participant",
+            filters={"parent": doc.activity_meeting},
+            pluck="display_name",
+        )
+        for value in labels:
+            for part in [value, *(value or "").split()]:
+                if part and len(part) >= 2:
+                    names.add(part)
     for p in doc.participants:
         row = frappe.db.get_value(
             "Student",
@@ -671,6 +684,20 @@ def step_done(recording, step, result):
     if ctx_after:
         frappe.get_attr(ctx_after)(doc.name, step)
     run_steps(doc.name)
+
+
+def meeting_recorded(meeting, result):
+    """A capture method's audio for one Oral Activity Meeting (decisions/100d §2).
+    Not a web endpoint: the app providing the method calls it from its own job."""
+    from seminary.seminary import oral_meetings
+
+    return oral_meetings.meeting_recorded(meeting, result)
+
+
+def meeting_failed(meeting, error=None):
+    from seminary.seminary import oral_meetings
+
+    return oral_meetings.meeting_failed(meeting, error)
 
 
 def step_failed(recording, step, error=None):
@@ -1029,6 +1056,9 @@ def sweep_abandoned():
 def _expiry(doc, days):
     """When the audio may go, or None while it must stay."""
     students = [p.student for p in doc.participants if p.student]
+    if not students and doc.get("activity_meeting") and doc.ended_at:
+        # A captured meeting nobody was confirmed on waits for no one's grades.
+        return add_days(get_datetime(doc.ended_at), days)
     if not students or not doc.course_schedule:
         return None
     sent = frappe.get_all(

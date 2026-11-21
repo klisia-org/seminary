@@ -11,7 +11,8 @@
   "talk_s",
   "turns",
   "longest_turn_s",
-  "audio"
+  "audio",
+  "audio_offset_s"
  ],
  "fields": [
   {
@@ -54,10 +55,17 @@
    "label": "Own Track",
    "read_only": 1,
    "description": "This speaker's own audio, when the meeting provider records one track per person."
+  },
+  {
+   "fieldname": "audio_offset_s",
+   "fieldtype": "Float",
+   "label": "Audio Offset (s)",
+   "read_only": 1,
+   "description": "Where this track starts in the recording."
   }
  ],
  "links": [],
- "modified": "2026-11-20 18:00:00.000000",
+ "modified": "2026-11-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Oral Speaker",

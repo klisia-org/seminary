@@ -100,6 +100,10 @@ class CourseSchedule(Document):
         from seminary.seminary import school_meetings
 
         school_meetings.on_update(self)
+        # A captured meeting that moved is armed again (decisions/100d).
+        from seminary.seminary import oral_meetings
+
+        oral_meetings.on_section_update(self)
 
     def _scaffold_if_became_cbe(self):
         """A section whose course or scale changes so that it now resolves to a
@@ -477,6 +481,9 @@ class CourseSchedule(Document):
         from seminary.seminary import school_meetings
 
         school_meetings.on_section_gone(self)
+        from seminary.seminary import oral_meetings
+
+        oral_meetings.on_section_gone(self.name)
 
     def _resolve_dates_if_needed(self):
         from seminary.seminary.cs_lifecycle import resolve_window_dates
@@ -1073,6 +1080,9 @@ class CourseSchedule(Document):
         from seminary.seminary import school_meetings
 
         school_meetings.on_section_gone(self)
+        from seminary.seminary import oral_meetings
+
+        oral_meetings.on_section_gone(self.name)
 
     @frappe.whitelist()
     def import_template(self, source_cs):
@@ -1258,7 +1268,12 @@ def _meeting_row_in_use(row):
         return True
     if not row.name:
         return False
-    return bool(frappe.db.exists("Student Attendance", {"meeting": row.name}))
+    if frappe.db.exists("Student Attendance", {"meeting": row.name}):
+        return True
+    # An oral activity captures, or has captured, this meeting (100d).
+    from seminary.seminary.oral_meetings import row_in_use
+
+    return row_in_use(row.name)
 
 
 def refile_chapter_competencies(course_schedule):

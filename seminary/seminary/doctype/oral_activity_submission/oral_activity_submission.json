@@ -18,6 +18,7 @@
   "course_name",
   "course_assess",
   "recording",
+  "activity_meeting",
   "submitted_on",
   "late",
   "feedback_section",
@@ -101,6 +102,14 @@
    "description": "A conversation has one recording, shared by every member's submission."
   },
   {
+   "fieldname": "activity_meeting",
+   "fieldtype": "Link",
+   "label": "Activity Meeting",
+   "options": "Oral Activity Meeting",
+   "read_only": 1,
+   "depends_on": "eval:doc.activity_meeting"
+  },
+  {
    "fieldname": "submitted_on",
    "fieldtype": "Datetime",
    "label": "Submitted On",
@@ -176,7 +185,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-21 08:00:00.000000",
+ "modified": "2026-11-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Oral Activity Submission",

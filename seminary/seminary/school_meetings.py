@@ -311,6 +311,11 @@ def _sync_row(cs, row, hosts):
             ", ".join(out.get("alternative_hosts") or []) or None
         )
     frappe.db.set_value(ROW, row.name, values, update_modified=False)
+    if values.get("cs_web_meeting") and values["cs_web_meeting"] != row.cs_web_meeting:
+        # A capture waiting for this link can now arm (decisions/100d).
+        from seminary.seminary.oral_meetings import on_meeting_link
+
+        on_meeting_link(row.name)
 
 
 def _message(e):

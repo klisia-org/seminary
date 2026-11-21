@@ -57,6 +57,7 @@ PORTAL_ONLY = {
     "Oral Activity",
     "Oral Activity Submission",
     "Oral Defense Question",
+    "Oral Activity Meeting",
     "Personal Development Note",
     "Personal Development Plan",
     "Plagiarism Check Result",

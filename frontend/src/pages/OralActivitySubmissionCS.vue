@@ -12,6 +12,7 @@
 				<span v-if="dueDate.data"> · {{ __('Due') }}: {{ formatWhen(dueDate.data) }}</span>
 			</div>
 		</div>
+		<OralActivityMeetings :course="courseName" :activity="activityID" @confirmed="summary.reload()" />
 		<div v-if="summary.data" class="overflow-x-auto rounded border">
 			<table class="w-full text-sm">
 				<thead class="bg-surface-gray-2 text-left text-ink-gray-7">
@@ -51,6 +52,7 @@
 <script setup>
 // The section's submissions for one oral activity (decisions/100b).
 import PageHeader from '@/components/PageHeader.vue'
+import OralActivityMeetings from '@/components/OralActivityMeetings.vue'
 import { Badge, Breadcrumbs, createResource } from 'frappe-ui'
 import { userLocale } from '@seminary/portal-shell'
 import { computed } from 'vue'

@@ -82,6 +82,9 @@
                                     rel="noopener noreferrer" class="text-ink-blue-3 hover:underline">
                                     · {{ __('Join Online') }}
                                 </a>
+                                <span v-if="meeting.recorded_for_assessment" class="text-ink-amber-3">
+                                    · {{ __('Recorded for an oral assessment') }}
+                                </span>
                             </li>
                         </ul>
                     </dd>

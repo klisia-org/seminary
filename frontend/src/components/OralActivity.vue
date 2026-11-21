@@ -53,6 +53,19 @@
 			</div>
 
 			<!-- Recorded, not yet submitted -->
+			<!-- Captured from class meetings (decisions/100d) -->
+			<div v-else-if="state.data.capture === 'Virtual meeting'" class="space-y-2 text-sm">
+				<p class="rounded-md bg-surface-amber-1 p-3 text-ink-amber-3">
+					{{ __('This activity is recorded in your online class meetings, for assessment. A recorder named for it, or the meeting\'s own recording notice, shows in the call. Your instructor confirms who took part, and your submission then appears here.') }}
+				</p>
+				<ul v-if="state.data.meetings?.length" class="list-disc pl-5 text-ink-gray-7">
+					<li v-for="m in state.data.meetings" :key="m.meeting_date + m.from_time">
+						{{ formatDay(m.meeting_date) }} · {{ hhmm(m.from_time) }}–{{ hhmm(m.to_time) }}
+					</li>
+				</ul>
+				<p v-else class="text-ink-gray-5">{{ __('No meeting has been chosen yet.') }}</p>
+			</div>
+
 			<div v-else-if="state.data.recording" class="space-y-3">
 				<OralPlayer :recording="state.data.recording" :key="state.data.recording" />
 				<p class="text-sm text-ink-gray-6">
@@ -129,6 +142,8 @@ const activityDoc = createResource({
 	makeParams: () => ({ doctype: 'Oral Activity', filters: { name: props.activity }, fieldname: ['title', 'prompt', 'mode'] }),
 	auto: true,
 })
+const hhmm = (t) => (t ? String(t).split(':').slice(0, 2).join(':') : '')
+const formatDay = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString(userLocale()) : '')
 const isConversation = computed(() => (state.data?.mode || activityDoc.data?.mode) === 'Conversation')
 
 const gradeable = createResource({

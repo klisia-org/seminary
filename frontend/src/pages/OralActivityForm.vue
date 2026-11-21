@@ -36,7 +36,12 @@
 				:description="__('On a section without student groups, groups of this size are made the first time the activity is opened. Leave 0 to let students choose classmates from the whole section.')" />
 			<FormControl v-model.number="activity.max_minutes" type="number" min="1"
 				:label="__('Maximum length (minutes)')" />
-			<FormControl v-model="activity.allow_upload" type="checkbox"
+			<FormControl v-model="activity.capture" type="select" :label="__('Recorded')" :options="[
+				{ label: __('By students, in the browser'), value: 'Browser' },
+				{ label: __('From online class meetings'), value: 'Virtual meeting' },
+			]"
+				:description="activity.capture === 'Virtual meeting' ? __('On each section, choose the class meetings to capture from the activity\'s Submissions page.') : ''" />
+			<FormControl v-if="activity.capture !== 'Virtual meeting'" v-model="activity.allow_upload" type="checkbox"
 				:label="__('Students may upload a file recorded elsewhere, such as on a phone in a classroom')" />
 		</div>
 
@@ -92,6 +97,7 @@ const activity = reactive({
 	group_size: 0,
 	max_minutes: 10,
 	allow_upload: false,
+	capture: 'Browser',
 	oral_steps: '[]',
 	prompt: '',
 })

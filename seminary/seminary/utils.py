@@ -946,6 +946,7 @@ def get_course_details(course):
         "Course Schedule Meeting Dates",
         filters={"parent": course_details.name, "parenttype": "Course Schedule"},
         fields=[
+            "name",
             "cs_meetdate",
             "cs_fromtime",
             "cs_totime",
@@ -959,7 +960,12 @@ def get_course_details(course):
     # section value; online meetings have no room) so the calendar can show
     # per-meeting detail (ADR 051).
     _room_labels = {}
+    from seminary.seminary.oral_meetings import captured_rows
+
+    _recorded = captured_rows(course_details.name)
     for m in course_details.meeting_dates:
+        # Recorded for an oral activity: everyone on the calendar is told (100d §5).
+        m["recorded_for_assessment"] = m.name in _recorded
         eff_room = None if m.cs_online else (m.cs_room or course_details.room)
         if eff_room and eff_room not in _room_labels:
             _room_labels[eff_room] = (

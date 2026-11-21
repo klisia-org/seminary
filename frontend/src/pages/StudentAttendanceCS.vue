@@ -103,6 +103,11 @@
             <td class="p-2 border">
               <div>
                 {{ student.stuname_roster }}
+                <span v-if="suggestions.data?.[student.student]"
+                  class="ml-2 rounded bg-surface-blue-1 px-1.5 py-0.5 text-xs text-ink-blue-3"
+                  :title="__('Seen in the captured meeting (oral activity), confirmed by an instructor.')">
+                  {{ __('In the meeting {0}–{1}').format(hm(suggestions.data[student.student].joined_at), hm(suggestions.data[student.student].left_at)) }}
+                </span>
                 <span v-if="onLeave(student.student)"
                   class="ml-2 rounded bg-surface-gray-3 px-1.5 py-0.5 text-xs text-ink-gray-7"
                   :title="__('On a leave of absence: an absence on this day does not count.')">
@@ -176,6 +181,13 @@
           <span class="text-ink-red-3">{{ absentCount }}</span> {{ __('Absent') }},
           <span class="text-ink-blue-3">{{ excusedCount }}</span> {{ __('Excused') }}
         </p>
+      </div>
+
+      <!-- Suggested from a captured meeting (decisions/100d §7) -->
+      <div v-if="selectedDate && !isFuture && (!attendanceTaken || editing) && suggestedCount" class="mt-2">
+        <button class="text-sm text-ink-blue-3 hover:underline" @click="markSuggestedPresent">
+          {{ __('Mark the {0} students seen in the captured meeting present').format(suggestedCount) }}
+        </button>
       </div>
 
       <!-- Mark Attendance Button -->
@@ -499,9 +511,25 @@ watch(
   }
 );
 
+// Who a confirmed meeting capture saw, with join and leave times (100d §7).
+const suggestions = createResource({
+  url: 'seminary.seminary.oral_meetings.attendance_suggestions',
+  makeParams: () => ({ course_schedule: props.courseName, meeting: selectedDate.value?.name }),
+  auto: false,
+  onError: () => {},
+});
+const hm = (v) => (v ? dayjs(v).format('HH:mm') : '');
+const suggestedCount = computed(() => Object.keys(suggestions.data || {}).length);
+const markSuggestedPresent = () => {
+  Object.keys(suggestions.data || {}).forEach((student) => {
+    if (student in attendance.value) attendance.value[student] = 'Present';
+  });
+};
+
 // Select a date
 const selectDate = async (meeting) => {
   selectedDate.value = meeting;
+  suggestions.reload();
   editing.value = false;
   await attendanceResource.reload(); // Fetch attendance for the selected date
 };
