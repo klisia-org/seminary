@@ -55,6 +55,47 @@
       </button>
     </div>
 
+    <div v-if="panel" class="space-y-2 border-t pt-2 text-xs">
+      <div class="font-medium text-ink-gray-7">{{ __('Score suggestions') }}</div>
+      <p class="text-ink-gray-5">
+        {{ __('For you only. Each model scored on its own; flagged criteria, where they disagree or found too little to go on, come first. You choose every level.') }}
+      </p>
+      <p v-if="panel.note" class="text-ink-gray-5">{{ panel.note }}</p>
+      <div v-for="c in panel.criteria || []" :key="c.criterion_code" class="rounded border p-2"
+        :class="c.flagged ? 'border-outline-amber-2 bg-surface-amber-1' : ''">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-medium">{{ c.criterion_code }} {{ c.title || '' }}</span>
+          <span>
+            {{ c.level || __('No level') }}
+            <template v-if="c.flagged"> ·
+              {{ c.insufficient_evidence ? __('too little to go on') : __('spread {0}').format(c.spread) }}
+            </template>
+          </span>
+        </div>
+        <div v-for="(m, i) in c.members" :key="i" class="mt-1 text-ink-gray-6">
+          <span class="font-medium">{{ m.level || __('insufficient evidence') }}</span>
+          <template v-if="m.reason">: {{ m.reason }}</template>
+          <button v-for="(ev, j) in m.evidence || []" :key="j" type="button" class="ml-1 text-ink-blue-3 underline"
+            @click="seek(ev.start)">{{ clock(ev.start) }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="consistency" class="space-y-2 border-t pt-2 text-xs">
+      <div class="font-medium text-ink-gray-7">{{ __('Consistency notes') }}</div>
+      <p class="text-ink-gray-5">
+        {{ __('For you only, and not evidence of misconduct on its own: points where what was said differs from the written work, to ask about.') }}
+      </p>
+      <p v-if="consistency.note || consistency.summary">{{ consistency.summary || consistency.note }}</p>
+      <div v-for="(d, i) in consistency.differences || []" :key="i" class="rounded border p-2">
+        <button v-if="d.start !== undefined && d.start !== null" type="button" class="text-ink-blue-3 underline mr-1"
+          @click="seek(d.start)">{{ clock(d.start) }}</button>
+        <span v-if="d.spoken">{{ __('Said') }}: {{ d.spoken }}. </span>
+        <span v-if="d.written">{{ __('Written') }}: {{ d.written }}. </span>
+        <span v-if="d.note" class="text-ink-gray-6">{{ d.note }}</span>
+      </div>
+    </div>
+
     <div v-if="rec.data.is_staff" class="space-y-2 border-t pt-2">
       <div class="flex items-center gap-2">
         <FormControl v-model="note" class="flex-1" :placeholder="__('Note for this moment')" />
@@ -129,6 +170,11 @@ const speakerBars = computed(() => {
     share: Math.round(((s.talk_s || 0) / total) * 100),
   }))
 })
+// Results only the section's staff receive (score suggestions, consistency).
+const latest = (step) => (rec.data?.step_results || []).find((r) => r.step === step)?.result || null
+const panel = computed(() => latest('score_suggestions'))
+const consistency = computed(() => latest('consistency'))
+
 const ownTalk = computed(() => (rec.data?.speakers || []).find((s) => s.talk_s !== undefined))
 
 const labelling = computed(

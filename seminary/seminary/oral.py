@@ -463,6 +463,9 @@ def _payload(doc, step, ctx):
     base["segments"] = _segments(doc)
     if step == "diarize":
         return base
+    # Names a step must scrub from the transcript and the work before any
+    # model reads them (aretenic decisions/091 §4). They are never sent on.
+    base["redact"] = _names_of(doc)
     base.update(
         {
             "criteria": ctx.get("criteria") or [],
@@ -471,6 +474,29 @@ def _payload(doc, step, ctx):
         }
     )
     return base
+
+
+def _names_of(doc):
+    names = set()
+    for p in doc.participants:
+        row = frappe.db.get_value(
+            "Student",
+            p.student,
+            ["first_name", "middle_name", "last_name", "student_name"],
+            as_dict=True,
+        )
+        for value in (row or {}).values():
+            for part in [value, *(value or "").split()]:
+                if part and len(part) >= 2:
+                    names.add(part)
+    return sorted(names)
+
+
+def step_payload(recording, step):
+    """What a step receives, for an app's trials (decisions/090): the same
+    payload a run sends, built without running anything."""
+    doc = frappe.get_doc("Oral Recording", recording)
+    return _payload(doc, step, _context(doc))
 
 
 def run_steps(recording):
@@ -720,6 +746,19 @@ def get_recording(recording):
     }
     if staff:
         out["error"] = doc.error
+        out["step_results"] = [
+            {
+                "step": r.step,
+                "received_on": r.received_on,
+                "result": json.loads(r.result or "{}"),
+            }
+            for r in frappe.get_all(
+                "Oral Step Result",
+                filters={"recording": doc.name},
+                fields=["step", "received_on", "result"],
+                order_by="received_on desc",
+            )
+        ]
         out["moments"] = frappe.get_all(
             "Oral Moment",
             filters={"recording": doc.name, "state": ["!=", "Dismissed"]},

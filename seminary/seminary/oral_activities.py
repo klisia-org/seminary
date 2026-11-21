@@ -241,7 +241,37 @@ def resolve(scac, user):
     }
     if not conversation:
         ctx["expected_speakers"] = 1
+    ctx["criteria"] = rubric_criteria(activity.rubric)
     return ctx
+
+
+def rubric_criteria(rubric):
+    """The rubric as a step reads it: each criterion with its levels, lowest
+    first, and the cell's descriptor for each level."""
+    from seminary.seminary.rubrics import rubric_payload
+
+    payload = rubric_payload(rubric)
+    if not payload:
+        return []
+    levels = sorted(payload["levels"], key=lambda lv: lv.get("percent") or 0)
+    cells = {
+        (c["criterion_code"], c["level"]): c["descriptor"] for c in payload["cells"]
+    }
+    return [
+        {
+            "criterion_code": c["criterion_code"],
+            "title": c["title"],
+            "description": c["description"],
+            "levels": [
+                {
+                    "label": lv["label"],
+                    "descriptor": cells.get((c["criterion_code"], lv["label"])),
+                }
+                for lv in levels
+            ],
+        }
+        for c in payload["criteria"]
+    ]
 
 
 def may_label(recording, user):
