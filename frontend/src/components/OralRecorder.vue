@@ -3,7 +3,7 @@
     <div v-if="phase === 'idle'" class="space-y-3">
       <p class="text-sm text-ink-gray-7">{{ noticeText }}</p>
       <Button variant="solid" @click="begin">
-        {{ prepareS ? __('Show the question and start') : __('Start recording') }}
+        {{ startLabel || (prepareS ? __('Show the question and start') : __('Start recording')) }}
       </Button>
     </div>
 
@@ -60,6 +60,8 @@ const props = defineProps({
   notice: { type: Object, default: () => ({}) },
   // Students named as present in a group recording (decisions/100b §3).
   participants: { type: Array, default: () => [] },
+  // The idle button's words, when the caller knows better (decisions/100c: the next question).
+  startLabel: { type: String, default: '' },
 })
 const emit = defineEmits(['started', 'finished'])
 

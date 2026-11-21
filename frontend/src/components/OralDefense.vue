@@ -36,7 +36,7 @@
 		<!-- In progress -->
 		<template v-else-if="state.data.status === 'In Progress'">
 			<div class="text-xs text-ink-gray-5">
-				{{ __('Answered {0}. Stay on this page until the defense is done.').format(state.data.answered) }}
+				{{ __('Answered {0}. Your answers so far are saved; stay on this page until the defense is done.').format(state.data.answered) }}
 			</div>
 			<div v-if="waiting" class="text-sm text-ink-gray-6" role="status">
 				{{ __('One moment: there may be a follow-up question on your answer.') }}
@@ -52,7 +52,7 @@
 				</template>
 				<OralRecorder v-else :key="current.name" reference-doctype="Oral Defense Question"
 					:reference-name="current.name" :prepare-s="state.data.prepare_s" :max-s="state.data.answer_s"
-					:notice="state.data.notice" @finished="next">
+					:notice="state.data.notice" :start-label="startLabel" @finished="next">
 					<template #question>
 						<div class="rounded-md bg-surface-gray-2 p-3 text-sm font-medium">
 							<span v-if="current.follow_up" class="mr-1 text-ink-blue-3">{{ __('Follow-up:') }}</span>
@@ -90,6 +90,8 @@ const busy = ref(false)
 const waiting = ref(false)
 const current = ref(null)
 const written = ref('')
+// Set once an answer is in, so the label does not flash back before the state reloads.
+const movedOn = ref(false)
 let pollTimer = null
 let retries = 0
 let openTimer = null
@@ -110,6 +112,13 @@ const state = createResource({
 
 const formatWhen = (value) => (value ? new Date(value).toLocaleString(userLocale()) : '')
 const pastDue = computed(() => state.data?.due && new Date(state.data.due) < new Date())
+
+// Later questions must not read like starting over.
+const startLabel = computed(() => {
+	if (current.value?.follow_up) return __('Show the follow-up question')
+	if (!movedOn.value && !state.data?.answered) return __('Show the first question')
+	return __('Proceed to the next question')
+})
 
 const badgeLabel = computed(() => {
 	const s = state.data?.status
