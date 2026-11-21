@@ -107,6 +107,11 @@
                   class="text-ink-blue-link hover:text-ink-blue-3 underline text-center">
                   {{ assessment.title }}
                 </router-link>
+                <router-link v-else-if="assessment.type === 'Oral' && assessment.oral"
+                  :to="{ name: 'OralActivitySubmissionCS', params: { courseName: props.courseName, activityID: assessment.oral } }"
+                  class="text-ink-blue-link hover:text-ink-blue-3 underline text-center">
+                  {{ assessment.title }}
+                </router-link>
                 <span v-else class="text-center">
                   {{ assessment.title }}
                 </span>

@@ -58,6 +58,8 @@ const props = defineProps({
   prepareS: { type: Number, default: 0 },
   maxS: { type: Number, default: 180 },
   notice: { type: Object, default: () => ({}) },
+  // Students named as present in a group recording (decisions/100b §3).
+  participants: { type: Array, default: () => [] },
 })
 const emit = defineEmits(['started', 'finished'])
 
@@ -147,6 +149,7 @@ const start = async () => {
       reference_doctype: props.referenceDoctype,
       reference_name: props.referenceName,
       mime_type: mimeType || 'audio/webm',
+      participants: JSON.stringify(props.participants || []),
     })
     recording.value = r.recording
   } catch (e) {

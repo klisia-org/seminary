@@ -52,6 +52,14 @@
           :filters="{ course: course?.data?.course }"
           :onCreate="(value, close) => redirectToDiscussion(value, close)"
         />
+        <Link
+          v-else-if="criteria.type === 'Oral'"
+          v-model="criteria.oral"
+          doctype="Oral Activity"
+          :label="__('Select an Oral Activity')"
+          :filters="{ course: course?.data?.course }"
+          :onCreate="(value, close) => redirectToOral(value, close)"
+        />
         <template v-else>
           <p>Offline</p>
         </template>
@@ -138,6 +146,7 @@ const defaultCriteriaState = () => ({
   exam: '',
   assignment: '',
   discussion: '',
+  oral: '',
   extracredit_scac: 0,
   fudgepoints_scac: '',
   category_code: '',
@@ -196,6 +205,12 @@ const fetchType = async () => {
     if (resolvedType !== 'Assignment') {
       criteria.assignment = ''
     }
+    if (resolvedType !== 'Discussion') {
+      criteria.discussion = ''
+    }
+    if (resolvedType !== 'Oral') {
+      criteria.oral = ''
+    }
   } catch (error) {
     console.error('Error fetching type:', error)
   }
@@ -210,6 +225,7 @@ watch(
       criteria.exam = ''
       criteria.assignment = ''
       criteria.discussion = ''
+      criteria.oral = ''
       return
     }
     fetchType()
@@ -260,6 +276,18 @@ const redirectToDiscussion = (value, close) => {
   router.push({
     name: 'DiscussionActivityForm',
     params: { discussionID: 'new' },
+  })
+  close()
+}
+
+const redirectToOral = (value, close) => {
+  examStore.setPrefillData({
+    title: criteria.title,
+    course: course?.data?.course,
+  })
+  router.push({
+    name: 'OralActivityForm',
+    params: { activityID: 'new' },
   })
   close()
 }

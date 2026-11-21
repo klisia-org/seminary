@@ -14,6 +14,9 @@
 				<div v-else-if="type == 'discussionactivity'" class="text-lg font-semibold">
 					{{ __('Add a discussion activity to your lesson') }}
 				</div>
+				<div v-else-if="type == 'oralactivity'" class="text-lg font-semibold">
+					{{ __('Add an oral activity to your lesson') }}
+				</div>
 				<div v-else class="text-lg font-semibold">
 					{{ __('Add an assignment to your lesson') }}
 				</div>
@@ -25,6 +28,9 @@
 						:onCreate="(value, close) => redirectToForm(close)" />
 					<Link v-else-if="type == 'discussionactivity'" v-model="discussionactivity"
 						doctype="Discussion Activity" :label="__('Select a discussion activity')"
+						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm(close)" />
+					<Link v-else-if="type == 'oralactivity'" v-model="oralactivity"
+						doctype="Oral Activity" :label="__('Select an oral activity')"
 						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm(close)" />
 					<Link v-else v-model="assignment" doctype="Assignment Activity" :label="__('Select an assignment')"
 						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm(close)" />
@@ -54,6 +60,7 @@ const FORM_BY_TYPE = {
 	exam: { name: 'ExamForm', param: 'examID', insertType: 'exam' },
 	assignment: { name: 'AssignmentForm', param: 'assignmentID', insertType: 'assignment' },
 	discussionactivity: { name: 'DiscussionActivityForm', param: 'discussionID', insertType: 'discussionActivity' },
+	oralactivity: { name: 'OralActivityForm', param: 'activityID', insertType: 'oralActivity' },
 }
 
 const show = ref(false)
@@ -61,6 +68,7 @@ const quiz = ref(null)
 const assignment = ref(null)
 const exam = ref(null)
 const discussionactivity = ref(null)
+const oralactivity = ref(null)
 
 const props = defineProps({
 	type: {
@@ -88,6 +96,8 @@ const addAssessment = () => {
 		props.onAddition(exam.value)
 	} else if (props.type == 'discussionactivity') {
 		props.onAddition(discussionactivity.value)
+	} else if (props.type == 'oralactivity') {
+		props.onAddition(oralactivity.value)
 	} else {
 		props.onAddition(assignment.value)
 	}

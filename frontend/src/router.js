@@ -398,6 +398,30 @@ const routes = [
 		component: () => import('@/pages/DiscussionActivitySubmission.vue'),
 		props: true,
 	},
+	// Oral activities (decisions/100b).
+	{
+		path: '/oral-activities',
+		name: 'OralActivities',
+		component: () => import('@/pages/OralActivities.vue'),
+	},
+	{
+		path: '/oral-activities/:activityID',
+		name: 'OralActivityForm',
+		component: () => import('@/pages/OralActivityForm.vue'),
+		props: true,
+	},
+	{
+		path: '/gradebook/:courseName/oral-submissions/:activityID',
+		name: 'OralActivitySubmissionCS',
+		component: () => import('@/pages/OralActivitySubmissionCS.vue'),
+		props: true,
+	},
+	{
+		path: '/gradebook/:courseName/oral-submissions/:activityID/:submissionName',
+		name: 'OralActivitySubmission',
+		component: () => import('@/pages/OralActivitySubmission.vue'),
+		props: true,
+	},
 	{
 		path: '/discussion-activity-submissions',
 		name: 'DiscussionActivitySubmissionList',

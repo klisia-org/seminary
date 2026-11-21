@@ -17,7 +17,25 @@
       {{ __('The audio was deleted after the retention period. The transcript is kept.') }}
     </div>
 
-    <div v-if="speakerBars.length > 1" class="space-y-1">
+    <div v-if="labelling" class="space-y-1 border-t pt-2">
+      <div class="text-xs font-medium text-ink-gray-7">{{ __('Who is speaking?') }}</div>
+      <div v-for="s in rec.data.speakers" :key="s.label" class="flex items-center gap-2 text-xs">
+        <span class="w-20">{{ s.label }}</span>
+        <Button size="sm" variant="ghost" :disabled="firstStart(s.label) === undefined"
+          @click="seek(firstStart(s.label))">{{ __('Listen') }}</Button>
+        <select class="form-select text-xs rounded border-outline-gray-2" :value="s.student || ''"
+          @change="link(s.label, $event.target.value)">
+          <option value="">{{ __('Not a student on the recording') }}</option>
+          <option v-for="p in rec.data.people" :key="p.student" :value="p.student">{{ p.name }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div v-if="!rec.data.is_staff && ownTalk" class="text-xs text-ink-gray-6">
+      {{ __('You spoke for {0} ({1}% of the conversation), in {2} turns.').format(clock(ownTalk.talk_s), ownTalk.share, ownTalk.turns) }}
+    </div>
+
+    <div v-if="rec.data.is_staff && speakerBars.length > 1" class="space-y-1">
       <div v-for="s in speakerBars" :key="s.label" class="flex items-center gap-2 text-xs">
         <span class="w-28 truncate">{{ s.name }}</span>
         <div class="flex-1 h-2 rounded bg-surface-gray-2">
@@ -32,7 +50,7 @@
         class="block w-full text-left rounded px-1 hover:bg-surface-gray-2"
         :class="isCurrent(seg) ? 'bg-surface-blue-1' : ''" @click="seek(seg.start)">
         <span class="text-xs text-ink-gray-5 mr-2">{{ clock(seg.start) }}</span>
-        <span v-if="seg.speaker && speakerBars.length > 1" class="text-xs font-medium mr-1">{{ seg.speaker }}:</span>
+        <span v-if="seg.speaker && rec.data.speakers.length > 1" class="text-xs font-medium mr-1">{{ speakerName(seg.speaker) }}:</span>
         {{ seg.text }}
       </button>
     </div>
@@ -94,15 +112,41 @@ const seek = (t) => {
 
 const isCurrent = (seg) => now.value >= seg.start && now.value < seg.end
 
+const nameOf = (student) => rec.data?.people?.find((p) => p.student === student)?.name || student
+
+const speakerName = (label) => {
+  const s = rec.data?.speakers?.find((r) => r.label === label)
+  return s?.student ? nameOf(s.student) : label
+}
+
+// Talk time per speaker (100b §6). The server sends a student only their own.
 const speakerBars = computed(() => {
-  const speakers = rec.data?.speakers || []
+  const speakers = (rec.data?.speakers || []).filter((s) => s.talk_s !== undefined)
   const total = speakers.reduce((sum, s) => sum + (s.talk_s || 0), 0) || 1
   return speakers.map((s) => ({
     ...s,
-    name: s.student || s.label,
+    name: s.student ? nameOf(s.student) : s.label,
     share: Math.round(((s.talk_s || 0) / total) * 100),
   }))
 })
+const ownTalk = computed(() => (rec.data?.speakers || []).find((s) => s.talk_s !== undefined))
+
+const labelling = computed(
+  () =>
+    rec.data?.may_label &&
+    (rec.data?.speakers || []).length > 0 &&
+    ((rec.data?.speakers || []).length > 1 || (rec.data?.people || []).length > 1)
+)
+const firstStart = (label) => rec.data?.transcript?.find((seg) => seg.speaker === label)?.start
+
+const link = async (label, student) => {
+  try {
+    await call('seminary.seminary.oral.link_speaker', { recording: props.recording, label, student: student || null })
+    rec.reload()
+  } catch (e) {
+    toast.error(e.messages?.[0] || __('The speaker could not be linked.'))
+  }
+}
 
 const mark = async () => {
   try {

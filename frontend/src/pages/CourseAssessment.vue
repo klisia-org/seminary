@@ -144,6 +144,11 @@
               :label="__('Select a Discussion Activity')" :required="true" :filters="{ course: course.data.course }"
               :onCreate="(value, close) => redirectToForm('discussion', close)" />
           </template>
+          <template v-else-if="criteria.type === 'Oral'">
+            <Link v-model="criteria.oral" doctype="Oral Activity"
+              :label="__('Select an Oral Activity')" :required="true" :filters="{ course: course.data.course }"
+              :onCreate="(value, close) => redirectToForm('oral', close)" />
+          </template>
           <template v-else>
             <p>{{ __('Offline') }}</p>
           </template>
@@ -853,6 +858,7 @@ function toCriteria(item) {
     exam: item.exam || '',
     assignment: item.assignment || '',
     discussion: item.discussion || '',
+    oral: item.oral || '',
     creator: item.creator || '',
     extracredit_scac: item.extracredit_scac || 0,
     fudgepoints_scac: item.fudgepoints_scac || '',
@@ -981,6 +987,9 @@ function validateCriteria() {
     if (criteria.type === 'Discussion' && !criteria.discussion) {
       return false;
     }
+    if (criteria.type === 'Oral' && !criteria.oral) {
+      return false;
+    }
     // A competency section has no weight or extra-credit columns to fill.
     if (!weightsApply.value) continue;
     // With categories a weight of 0 shares the category; the category itself
@@ -1073,6 +1082,9 @@ async function fetchType(criteria) {
       if (resolvedType !== 'Discussion') {
         criteria.discussion = '';
       }
+      if (resolvedType !== 'Oral') {
+        criteria.oral = '';
+      }
     } catch (error) {
       console.error('Error fetching type:', error);
     }
@@ -1082,6 +1094,7 @@ async function fetchType(criteria) {
     criteria.exam = '';
     criteria.assignment = '';
     criteria.discussion = '';
+    criteria.oral = '';
   }
 }
 
@@ -1110,6 +1123,7 @@ function redirectToForm(type, close) {
     exam: '/seminary/exams/new',
     assignment: '/seminary/assignments/new',
     discussion: '/seminary/discussion-activities/new',
+    oral: '/seminary/oral-activities/new',
   }
   const target = routeMap?.[String(type || '').toLowerCase()]
   if (typeof close === 'function') {
