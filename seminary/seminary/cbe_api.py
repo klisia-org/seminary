@@ -185,6 +185,7 @@ def get_competency_context(course_schedule):
             "assignment",
             "exam",
             "discussion",
+            "oral",
         ],
         order_by="idx asc",
     ):
@@ -936,6 +937,7 @@ SUBMISSION_DOCTYPES = {
     "Exam Submission": "course",
     "Assignment Submission": "course",
     "Discussion Submission": "coursesc",
+    "Oral Activity Submission": "course",
 }
 
 
@@ -1319,6 +1321,7 @@ REVIEW_SUBMISSIONS = (
     ("Exam Submission", "course", "exam", "creation"),
     ("Quiz Submission", "course", "quiz", "creation"),
     ("Discussion Submission", "coursesc", "disc_activity", "creation"),
+    ("Oral Activity Submission", "course", "oral_activity", "submitted_on"),
 )
 
 

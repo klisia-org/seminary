@@ -1397,6 +1397,8 @@ def get_lesson_icon(body, content):
                 "discussionactivity",
             ):
                 return "icon-discussion"
+            if block.get("type") == "oralActivity":
+                return "icon-oral"
             if block.get("type") == "folder":
                 return "icon-folder"
             # Reflection lessons (ADR 079 decision 4).
@@ -1891,7 +1893,7 @@ def get_assessment_due_date(course, activity_type, activity_id):
         return None
     require_content_reader(course)
     field = (activity_type or "").strip().lower()
-    if field not in {"quiz", "assignment", "exam", "discussion"}:
+    if field not in {"quiz", "assignment", "exam", "discussion", "oral"}:
         return None
     return frappe.db.get_value(
         "Scheduled Course Assess Criteria",
@@ -1982,6 +1984,7 @@ _LESSON_BLOCK_LOOKUP = {
         ("discussionActivity", "discussionID"),
         ("discussionActivity", "discussion"),
     ],
+    "Oral": [("oralActivity", "oral")],
 }
 
 # Maps SCAC.type → (Submission DocType, activity field, course-schedule field).
@@ -1992,6 +1995,7 @@ _LESSON_SUBMISSION_LOOKUP = {
     "Exam": ("Exam Submission", "exam", "course"),
     "Quiz": ("Quiz Submission", "quiz", "course"),
     "Discussion": ("Discussion Submission", "disc_activity", "coursesc"),
+    "Oral": ("Oral Activity Submission", "oral_activity", "course"),
 }
 
 # Reverse lookup keyed by Submission DocType, used by the controller-side
@@ -2284,7 +2288,7 @@ def get_gradebook(course):
     for student in students:
         student["course_grade"] = grades.get(student.name)
         student["assessments"] = frappe.db.sql(
-            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, r.excused, r.excused_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, scar.category_code, scar.never_drop, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
+            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, r.excused, r.excused_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, scar.category_code, scar.never_drop, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion, scar.oral
 	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
 	where r.assessment_criteria = scar.name and r.parent = %s""",
             (student.name,),

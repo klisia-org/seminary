@@ -1,0 +1,279 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-11-21 08:00:00.000000",
+ "description": "A student's submission of an oral activity: the recording it points at, and the instructor's grade and feedback. Created when the student, or a member of their group, submits the recording.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html",
+ "engine": "InnoDB",
+ "field_order": [
+  "oral_activity",
+  "activity_title",
+  "member",
+  "student",
+  "member_name",
+  "column_break_id",
+  "course",
+  "course_name",
+  "course_assess",
+  "recording",
+  "submitted_on",
+  "late",
+  "feedback_section",
+  "grade",
+  "percentage",
+  "extra_credit",
+  "column_break_grade",
+  "status",
+  "evaluator",
+  "graded_on",
+  "comments"
+ ],
+ "fields": [
+  {
+   "fieldname": "oral_activity",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Oral Activity",
+   "options": "Oral Activity",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "oral_activity.title",
+   "fieldname": "activity_title",
+   "fieldtype": "Data",
+   "label": "Activity Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "member_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_id",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course.course",
+   "fieldname": "course_name",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course",
+   "read_only": 1
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Link",
+   "label": "Course Assessment",
+   "options": "Scheduled Course Assess Criteria",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recording",
+   "fieldtype": "Link",
+   "label": "Recording",
+   "options": "Oral Recording",
+   "read_only": 1,
+   "description": "A conversation has one recording, shared by every member's submission."
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "late",
+   "fieldtype": "Duration",
+   "label": "Lateness",
+   "read_only": 1
+  },
+  {
+   "fieldname": "feedback_section",
+   "fieldtype": "Section Break",
+   "label": "Grading"
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Float",
+   "label": "Grade",
+   "non_negative": 1,
+   "permlevel": 1
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "Percentage",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "extra_credit",
+   "fieldtype": "Check",
+   "label": "Is Extra Credit",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "column_break_grade",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Not Graded",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Not Graded\nGraded",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "evaluator",
+   "fieldtype": "Link",
+   "label": "Evaluated by",
+   "options": "User",
+   "read_only": 1,
+   "permlevel": 1,
+   "description": "Who first marked this work Graded. Set automatically."
+  },
+  {
+   "fieldname": "graded_on",
+   "fieldtype": "Datetime",
+   "label": "Graded On",
+   "read_only": 1,
+   "permlevel": 1,
+   "description": "When this work was first marked Graded. Set automatically and never changed afterwards."
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text Editor",
+   "label": "Comments",
+   "permlevel": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-11-21 08:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Activity Submission",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 0
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Instructor",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "member_name"
+}

@@ -50,6 +50,7 @@ CONFIG = {
     "Exam Submission": (("member", "user"), "course"),
     "Assignment Submission": (("member", "user"), "course"),
     "Discussion Submission": (("member", "user"), "course"),
+    "Oral Activity Submission": (("member", "user"), "course"),
     "Quiz Submission": (("member", "user"), "course"),
     "Course Schedule Progress": (("member", "user"), "course"),
     # Same shape as the progress row it sits beside: a student sees their own
@@ -85,6 +86,7 @@ MENTOR_STUDENT_FIELD = {
     "Exam Submission": ("member", "user"),
     "Assignment Submission": ("member", "user"),
     "Discussion Submission": ("member", "user"),
+    "Oral Activity Submission": ("member", "user"),
     "Quiz Submission": ("member", "user"),
     "Course Schedule Progress": ("member", "user"),
     "SCORM Attempt": ("member", "user"),

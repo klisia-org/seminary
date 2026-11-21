@@ -54,6 +54,8 @@ PORTAL_ONLY = {
     "Exam Submission",
     "Gradebook Course Schedule",
     "Open Question",
+    "Oral Activity",
+    "Oral Activity Submission",
     "Personal Development Note",
     "Personal Development Plan",
     "Plagiarism Check Result",

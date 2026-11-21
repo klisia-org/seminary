@@ -124,6 +124,16 @@ DISCUSSION_FIELDS = (
     "min_replies_required",
 )  # course set on import
 
+ORAL_FIELDS = (
+    "title",
+    "mode",
+    "max_minutes",
+    "allow_upload",
+    "group_size",
+    "prompt",
+    "oral_steps",
+)  # course set on import
+
 # Folder records in the manifest carry `foldername`, the original `scope` and,
 # for Instructor scope, the originating professor's display name only
 # (`origin_instructor_name`). course / instructor / file_reference /
@@ -201,6 +211,7 @@ ACTIVITY_BLOCKS = {
     "assignment": ("assignment", "Assignment Activity"),
     "discussionActivity": ("discussionID", "Discussion Activity"),
     "discussionactivity": ("discussionID", "Discussion Activity"),
+    "oralActivity": ("oral", "Oral Activity"),
     # A folder block stores the Course Folder docname in `folder_ref`; `folder`
     # is only the display label (p006 F2). Blocks that predate the docname
     # reference carry `folder` alone — see editorjs.scan_folder_refs.
@@ -232,6 +243,7 @@ IMPORTABLE_DOCTYPES = {
         "Exam Activity": EXAM_FIELDS,
         "Assignment Activity": ASSIGNMENT_FIELDS,
         "Discussion Activity": DISCUSSION_FIELDS,
+        "Oral Activity": ORAL_FIELDS,
     },
 }
 

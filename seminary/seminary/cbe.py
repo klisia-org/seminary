@@ -1047,6 +1047,7 @@ _SUBMISSION_FOR = {
     "exam": ("Exam Submission", "exam", "course"),
     "assignment": ("Assignment Submission", "assignment", "course"),
     "discussion": ("Discussion Submission", "disc_activity", "coursesc"),
+    "oral": ("Oral Activity Submission", "oral_activity", "course"),
 }
 
 

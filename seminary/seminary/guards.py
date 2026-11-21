@@ -470,6 +470,7 @@ COURSE_FIELD = {
     "Assignment Submission": "course",
     "Exam Submission": "course",
     "Discussion Submission": "coursesc",
+    "Oral Activity Submission": "course",
     "Quiz Submission": "course",
     "Course Schedule Progress": "course",
     "SCORM Attempt": "course",

@@ -349,6 +349,7 @@ permission_query_conditions = {
     "Exam Submission": "seminary.seminary.student_permissions.query_exam_submission",
     "Assignment Submission": "seminary.seminary.student_permissions.query_assignment_submission",
     "Discussion Submission": "seminary.seminary.student_permissions.query_discussion_submission",
+    "Oral Activity Submission": "seminary.seminary.student_permissions.query_oral_activity_submission",
     "Quiz Submission": "seminary.seminary.student_permissions.query_quiz_submission",
     "Course Schedule Progress": "seminary.seminary.student_permissions.query_course_schedule_progress",
     "SCORM Attempt": "seminary.seminary.student_permissions.query_scorm_attempt",
@@ -410,6 +411,7 @@ has_permission = {
     "Exam Submission": "seminary.seminary.student_permissions.has_permission_exam_submission",
     "Assignment Submission": "seminary.seminary.student_permissions.has_permission_assignment_submission",
     "Discussion Submission": "seminary.seminary.student_permissions.has_permission_discussion_submission",
+    "Oral Activity Submission": "seminary.seminary.student_permissions.has_permission_oral_activity_submission",
     "Quiz Submission": "seminary.seminary.student_permissions.has_permission_quiz_submission",
     "Course Schedule Progress": "seminary.seminary.student_permissions.has_permission_course_schedule_progress",
     "SCORM Attempt": "seminary.seminary.student_permissions.has_permission_scorm_attempt",
@@ -569,6 +571,11 @@ doc_events = {
             "seminary.seminary.api.sanitize_submission",
         ],
         "before_save": "seminary.seminary.api.sanitize_submission",
+    },
+    "Oral Activity Submission": {
+        "on_update": "seminary.seminary.api.quizresult_to_card",
+        "validate": "seminary.seminary.deadlines.guard_submission",
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
     },
     "Discussion Submission Replies": {
         "before_insert": "seminary.seminary.api.sanitize_reply",

@@ -80,6 +80,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.discipleship.scripture",
     "seminary.seminary.oral",
     "seminary.seminary.oral_exams",
+    "seminary.seminary.oral_activities",
     "seminary.seminary.doctype.academic_term.academic_term",
     "seminary.seminary.doctype.course.course",
     "seminary.seminary.doctype.course_competency.course_competency",
@@ -166,6 +167,16 @@ STUDENT_ALLOWED = {
     # refused; my_oral_state answers only the submission's owner (100a).
     "seminary.seminary.oral.get_recording",
     "seminary.seminary.oral_exams.my_oral_state",
+    # Oral activities (decisions/100b). upload_recording asks the same resolver
+    # as start_recording, and the activity must allow uploads; link_speaker
+    # reads through the recording's has_permission and the record's labelling
+    # rule; my_state and submit act only for the student on the roster or on
+    # the recording. Covered by test_adr100b_oral_activities.
+    "seminary.seminary.oral.upload_recording",
+    "seminary.seminary.oral.link_speaker",
+    "seminary.seminary.oral_activities.my_state",
+    "seminary.seminary.oral_activities.submit",
+    "seminary.seminary.oral_activities.gradeable",
     # SCORM (p009). All five are the student's own player talking about the
     # student's own launch. `launch` runs `require_enrolled` on the section --
     # the same gate every other course read uses -- and the other four take a
@@ -265,6 +276,10 @@ STUDENT_ALLOWED = {
 STAFF_ONLY = {
     # decisions/100 §5: require_grader.
     "seminary.seminary.oral.step_choices",
+    # decisions/100b: require_grader, then the section's own staff.
+    "seminary.seminary.oral_activities.section_summary",
+    "seminary.seminary.oral_activities.get_submission",
+    "seminary.seminary.oral_activities.save_grade",
     # Setup progress (privatedocs p024): `can_open` refuses anyone outside the
     # group's roles (Registrar, Seminary Manager for "Seminary").
     "seminary.setup_progress.get_progress",

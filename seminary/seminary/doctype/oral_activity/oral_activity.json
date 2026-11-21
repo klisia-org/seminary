@@ -1,0 +1,172 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:{course}-{title}-{##}",
+ "creation": "2026-11-21 08:00:00.000000",
+ "description": "Spoken activity an instructor sets up for a course: a recorded talk by one student, or a recorded conversation among a group. Create one for each graded oral activity.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "course",
+  "mode",
+  "column_break_main",
+  "max_minutes",
+  "allow_upload",
+  "group_size",
+  "section_break_prompt",
+  "prompt",
+  "oral_steps",
+  "rubric"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1,
+   "link_filters": "[[\"Course\",\"disabled\",\"=\",0]]",
+   "description": "This allows the activity to be used in other offerings of the course."
+  },
+  {
+   "default": "Individual",
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Mode",
+   "options": "Individual\nConversation",
+   "description": "Individual: each student records alone. Conversation: a group records one conversation together."
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "10",
+   "fieldname": "max_minutes",
+   "fieldtype": "Int",
+   "label": "Maximum Length (minutes)",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_upload",
+   "fieldtype": "Check",
+   "label": "Allow Uploading a Recording",
+   "description": "Students may upload a file recorded elsewhere, such as on a phone in a classroom, instead of recording in the browser."
+  },
+  {
+   "depends_on": "eval:doc.mode=='Conversation'",
+   "fieldname": "group_size",
+   "fieldtype": "Int",
+   "label": "Group Size",
+   "non_negative": 1,
+   "description": "On a section without student groups, groups of this size are made the first time the activity is opened. Leave 0 to let students choose classmates from the whole section."
+  },
+  {
+   "fieldname": "section_break_prompt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "prompt",
+   "fieldtype": "Text Editor",
+   "label": "Prompt"
+  },
+  {
+   "description": "Steps run on each recording, from those the school allows. Stored as a list.",
+   "fieldname": "oral_steps",
+   "fieldtype": "Small Text",
+   "label": "Processing Steps"
+  },
+  {
+   "fieldname": "rubric",
+   "fieldtype": "Link",
+   "label": "Rubric",
+   "options": "Rubric",
+   "read_only": 1,
+   "description": "The current version of this activity's rubric. Set from the activity's page in the portal."
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-11-21 08:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Activity",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 0
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title"
+}

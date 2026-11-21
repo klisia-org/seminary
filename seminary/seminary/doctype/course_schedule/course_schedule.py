@@ -1446,6 +1446,7 @@ _SCAC_COPYABLE_FIELDS = (
     "assignment",
     "exam",
     "discussion",
+    "oral",
     "extracredit_scac",
     "fudgepoints_scac",
     # Whether the section's late deductions apply (decisions/082 section 6).

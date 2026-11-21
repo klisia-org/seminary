@@ -3348,6 +3348,7 @@ def save_course_assessment(course, assessment_data, categories=None):
             doc.quiz = data.get("quiz", "")
             doc.assignment = data.get("assignment", "")
             doc.discussion = data.get("discussion", "")
+            doc.oral = data.get("oral", "")
             doc.exam = data.get("exam", "")
             doc.due_date = data.get("due_date", None)
             # Cut-off, replies due date and the late opt-out (decisions/082),
@@ -3392,6 +3393,7 @@ def save_course_assessment(course, assessment_data, categories=None):
                     "assignment": data.get("assignment", ""),
                     "exam": data.get("exam", ""),
                     "discussion": data.get("discussion", ""),
+                    "oral": data.get("oral", ""),
                     "course_competency": data.get("course_competency") or None,
                     "grading_mode_override": data.get("grading_mode_override") or None,
                     "due_date": data.get("due_date") or None,
@@ -3730,6 +3732,7 @@ def insert_cs_assessment(criteria):
             "exam": criteria.get("exam"),
             "assignment": criteria.get("assignment"),
             "discussion": criteria.get("discussion"),
+            "oral": criteria.get("oral"),
             "extracredit_scac": criteria.get("extracredit_scac"),
             "fudgepoints_scac": criteria.get("fudgepoints_scac"),
             "category_code": criteria.get("category_code") or None,

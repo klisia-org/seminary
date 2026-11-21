@@ -75,6 +75,9 @@ STAFF_RESULTS = ("score_suggestions", "consistency")
 # doctype -> dotted path of resolve(name, user) -> dict, see `_resolve`.
 REFERENCES: dict[str, str] = {
     "Exam Question Result": "seminary.seminary.oral_exams.resolve",  # 100a
+    # An oral activity on a section: the recording is made before any
+    # submission exists, and submitting points every member's at it (100b).
+    "Scheduled Course Assess Criteria": "seminary.seminary.oral_activities.resolve",
 }
 
 MIME_EXTENSIONS = {
@@ -141,6 +144,9 @@ def _resolve(reference_doctype, reference_name, user=None) -> dict:
     ``may_record`` (this user may record it now); ``allow_upload``;
     ``steps`` (chosen for the activity); and optionally ``language``,
     ``expected_speakers``, ``criteria``, ``prompt``, ``text``,
+    ``choosable`` (``[(user, student)]`` the recorder may name as present),
+    ``max_seconds`` (a shorter limit than the school's),
+    ``may_label`` (this user may link speaker labels to students),
     ``on_start`` (a dotted path called with the new recording's name) and
     ``after_step`` (a dotted path called with ``(recording, step)``).
     """
@@ -184,12 +190,33 @@ def _clean_mime(mime_type):
     return base
 
 
-@frappe.whitelist(methods=["POST"])
-def start_recording(reference_doctype, reference_name, mime_type=None, language=None):
-    """Open a recording for one record. Returns its name."""
+def _participants(ctx, chosen=None):
+    """The recorder and, from ``choosable``, the classmates named as present."""
+    people = list(ctx.get("participants") or [])
+    choosable = {student: user for user, student in ctx.get("choosable") or []}
+    if isinstance(chosen, str):
+        chosen = json.loads(chosen or "[]")
+    for student in chosen or []:
+        if student not in choosable:
+            frappe.throw(_("{0} cannot be named in this recording.").format(student))
+        if all(s != student for _u, s in people):
+            people.append((choosable[student], student))
+    return people
+
+
+def _limit(ctx):
+    own = cint(ctx.get("max_seconds"))
+    return min(own, max_seconds()) if own > 0 else max_seconds()
+
+
+def _open_recording(
+    reference_doctype, reference_name, mime_type, language, people, source
+):
     ctx = _resolve(reference_doctype, reference_name)
     if not ctx.get("may_record"):
         frappe.throw(_("You cannot record this now."), frappe.PermissionError)
+    if source == "Uploaded" and not ctx.get("allow_upload"):
+        frappe.throw(_("This activity must be recorded here."), frappe.PermissionError)
     mime = _clean_mime(mime_type)
     chosen = [s for s in (ctx.get("steps") or []) if s in available_steps()]
     doc = frappe.get_doc(
@@ -199,7 +226,7 @@ def start_recording(reference_doctype, reference_name, mime_type=None, language=
             "reference_name": reference_name,
             "course_schedule": ctx.get("course_schedule"),
             "status": "Recording",
-            "source": "Recorded",
+            "source": source,
             "recorded_by": frappe.session.user,
             "language": language or ctx.get("language"),
             "started_at": now_datetime(),
@@ -207,15 +234,59 @@ def start_recording(reference_doctype, reference_name, mime_type=None, language=
             "steps": json.dumps([s for s in PIPELINE if s in chosen]),
             "participants": [
                 {"user": user, "student": student}
-                for user, student in ctx.get("participants") or []
+                for user, student in _participants(ctx, people)
             ],
         }
     )
     doc.insert(ignore_permissions=True)
-    os.makedirs(_chunk_dir(doc.name), exist_ok=True)
     if ctx.get("on_start"):
         frappe.get_attr(ctx["on_start"])(doc.name)
-    return {"recording": doc.name, "max_seconds": max_seconds()}
+    return doc, ctx
+
+
+@frappe.whitelist(methods=["POST"])
+def start_recording(
+    reference_doctype, reference_name, mime_type=None, language=None, participants=None
+):
+    """Open a recording for one record. Returns its name.
+
+    ``participants`` lists the students named as present (100b §3), from those
+    the record lets this user choose."""
+    doc, ctx = _open_recording(
+        reference_doctype, reference_name, mime_type, language, participants, "Recorded"
+    )
+    os.makedirs(_chunk_dir(doc.name), exist_ok=True)
+    return {"recording": doc.name, "max_seconds": _limit(ctx)}
+
+
+@frappe.whitelist(methods=["POST"])
+@rate_limit(limit=10, seconds=60, ip_based=False, user_based=True)
+def upload_recording(
+    reference_doctype, reference_name, participants=None, language=None
+):
+    """A file recorded elsewhere, where the record allows it (100b §3). Its
+    ``started_at`` is the upload time and its source says so."""
+    files = frappe.request.files if frappe.request else None
+    upload = files.get("file") if files else None
+    if not upload:
+        frappe.throw(_("No audio received."))
+    ctx = _resolve(reference_doctype, reference_name)
+    limit = _limit(ctx) * MAX_BYTES_PER_SECOND
+    content = upload.stream.read(limit + 1)
+    if not content:
+        frappe.throw(_("No audio received."))
+    if len(content) > limit:
+        frappe.throw(_("This recording is longer than the school allows."))
+    doc, _ctx = _open_recording(
+        reference_doctype,
+        reference_name,
+        upload.mimetype,
+        language,
+        participants,
+        "Uploaded",
+    )
+    _attach_audio(doc, content)
+    return _finished(doc)
 
 
 def _chunk_bytes(directory):
@@ -312,11 +383,18 @@ def _attach_audio(doc, content):
 
 def _finished(doc):
     doc.ended_at = now_datetime()
-    doc.duration_s = max(
-        0,
-        int(
-            (get_datetime(doc.ended_at) - get_datetime(doc.started_at)).total_seconds()
-        ),
+    # An upload's length is only known once it is transcribed.
+    doc.duration_s = (
+        0
+        if doc.source == "Uploaded"
+        else max(
+            0,
+            int(
+                (
+                    get_datetime(doc.ended_at) - get_datetime(doc.started_at)
+                ).total_seconds()
+            ),
+        )
     )
     doc.status = "Recorded"
     doc.step_state = json.dumps({s: "pending" for s in _steps_of(doc)})
@@ -475,6 +553,8 @@ def _clean_segments(segments):
 def _apply_transcribe(doc, result):
     segments = _clean_segments(result.get("segments"))
     doc.transcript = json.dumps(segments)
+    if not doc.duration_s and segments:
+        doc.duration_s = int(max(s["end"] for s in segments))
     if result.get("language") and not doc.language:
         doc.language = str(result["language"])[:20]
     if any("speaker" in s for s in segments):
@@ -620,21 +700,21 @@ def get_recording(recording):
     out = {
         "name": doc.name,
         "status": doc.status,
+        "source": doc.source,
         "audio": doc.audio,
         "audio_deleted_on": doc.audio_deleted_on,
         "duration_s": doc.duration_s,
         "started_at": doc.started_at,
         "transcript": _segments(doc),
-        "speakers": [
+        "speakers": _speakers_for(doc, staff),
+        "people": [
             {
-                "label": s.label,
-                "student": s.student,
-                "talk_s": s.talk_s,
-                "turns": s.turns,
-                "longest_turn_s": s.longest_turn_s,
+                "student": p.student,
+                "name": frappe.db.get_value("Student", p.student, "student_name"),
             }
-            for s in doc.speakers
+            for p in doc.participants
         ],
+        "may_label": _may_label(doc, staff),
         "is_staff": staff,
         "moments": [],
     }
@@ -656,6 +736,72 @@ def get_recording(recording):
             order_by="start asc",
         )
     return out
+
+
+def _speakers_for(doc, staff):
+    """Every label and who it is linked to; talk time only for the staff, and
+    for a student only their own (100b §6: never a classmate's)."""
+    own = (
+        None
+        if staff
+        else frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
+    )
+    total = sum(flt(s.talk_s) for s in doc.speakers) or 1
+    out = []
+    for s in doc.speakers:
+        row = {"label": s.label, "student": s.student}
+        if staff or (own and s.student == own):
+            row.update(
+                {
+                    "talk_s": s.talk_s,
+                    "turns": s.turns,
+                    "longest_turn_s": s.longest_turn_s,
+                    "share": round(flt(s.talk_s) / total * 100),
+                }
+            )
+        out.append(row)
+    return out
+
+
+def _may_label(doc, staff):
+    if staff:
+        return True
+    if not any(p.user == frappe.session.user for p in doc.participants):
+        return False
+    try:
+        ctx = _resolve(doc.reference_doctype, doc.reference_name)
+    except frappe.PermissionError:
+        return False
+    rule = ctx.get("may_label")
+    if isinstance(rule, str):
+        return bool(frappe.get_attr(rule)(doc.name, frappe.session.user))
+    return bool(rule)
+
+
+@frappe.whitelist(methods=["POST"])
+def link_speaker(recording, label, student=None):
+    """Link a speaker label to a student on the recording, or unlink it (100b §5).
+    Students on the recording may do it while the record allows; the section's
+    staff may always correct it."""
+    doc = (
+        frappe.get_doc("Oral Recording", recording)
+        if frappe.db.exists("Oral Recording", recording)
+        else None
+    )
+    if not doc or not frappe.has_permission("Oral Recording", "read", doc=doc):
+        frappe.throw(_("Recording not found."), frappe.PermissionError)
+    if not _may_label(doc, _is_staff_of(doc)):
+        frappe.throw(
+            _("The speakers can no longer be changed."), frappe.PermissionError
+        )
+    row = next((s for s in doc.speakers if s.label == label), None)
+    if not row:
+        frappe.throw(_("There is no speaker {0} on this recording.").format(label))
+    if student and all(p.student != student for p in doc.participants):
+        frappe.throw(_("Only students on the recording can be linked to a speaker."))
+    row.student = student or None
+    doc.save(ignore_permissions=True)
+    return {"label": label, "student": row.student}
 
 
 def _staff_recording(recording):

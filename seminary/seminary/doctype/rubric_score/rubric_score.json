@@ -27,7 +27,7 @@
    "fieldname": "submission_doctype",
    "fieldtype": "Select",
    "label": "Submission Type",
-   "options": "Assignment Submission\nDiscussion Submission",
+   "options": "Assignment Submission\nDiscussion Submission\nOral Activity Submission",
    "reqd": 1
   },
   {
@@ -132,7 +132,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-30 12:00:00.000000",
+ "modified": "2026-11-21 08:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Rubric Score",

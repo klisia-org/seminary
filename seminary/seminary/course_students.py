@@ -38,6 +38,7 @@ from seminary.seminary.guards import require_course_staff
 _WAITING = (
     ("Assignment Submission", "course", "coalesce(submitted_on, creation)"),
     ("Discussion Submission", "coursesc", "creation"),
+    ("Oral Activity Submission", "course", "submitted_on"),
     ("Exam Submission", "course", "creation"),
 )
 
