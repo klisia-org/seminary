@@ -279,7 +279,11 @@ def _people(rows):
 @frappe.whitelist()
 def my_state(course, activity):
     """For the student opening the activity: what to record, with whom, and
-    what has been recorded or submitted."""
+    what has been recorded or submitted. An activity that is in a lesson but
+    not yet in the section's grading cannot be recorded: there is nothing for
+    the recording to belong to."""
+    if not gradeable(course, activity):
+        return {"gradeable": False}
     scac = _scac_for(course, activity)
     user = frappe.session.user
     ctx = resolve(scac, user)
@@ -298,6 +302,7 @@ def my_state(course, activity):
         submission.grade = submission.comments = None
     steps = [s for s in ctx["steps"] if s in oral.available_steps()]
     return {
+        "gradeable": True,
         "scac": scac,
         "title": act.title,
         "mode": act.mode,

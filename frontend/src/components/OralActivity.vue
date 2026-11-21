@@ -16,7 +16,7 @@
 				<Button variant="solid">{{ __('Submissions') }}</Button>
 			</router-link>
 			<p v-else class="text-sm text-ink-gray-5">
-				{{ __('This activity is not part of the section\'s grading yet, so students cannot record it.') }}
+				{{ __('Students cannot record this yet: add it to the section\'s Course Assessment as an Oral criterion.') }}
 			</p>
 			<router-link :to="{ name: 'OralActivityForm', params: { activityID: activity } }">
 				<Button>{{ __('Edit activity') }}</Button>
@@ -24,6 +24,9 @@
 		</div>
 
 		<!-- Student -->
+		<p v-else-if="state.data && !state.data.gradeable" class="rounded-md bg-surface-amber-1 p-3 text-sm text-ink-amber-3">
+			{{ __('This activity is not open for recording yet. Your instructor still needs to add it to the course\'s assessments.') }}
+		</p>
 		<template v-else-if="state.data">
 			<div v-if="myDates.data?.due_date" class="text-sm text-ink-gray-6">
 				{{ __('Due {0}.').format(formatWhen(myDates.data.due_date)) }}

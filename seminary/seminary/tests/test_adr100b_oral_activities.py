@@ -304,3 +304,18 @@ class TestUpload(OralActivityCase):
             (doc.source, doc.duration_s, doc.mime_type), ("Uploaded", 0, "audio/mp4")
         )
         self.assertTrue(doc.audio)
+
+
+class TestNotInGrading(OralActivityCase):
+    mode = "Individual"
+    size = 1
+
+    def test_an_activity_outside_the_grading_says_so_instead_of_failing(self):
+        other = _activity("Individual")
+        frappe.set_user(self.students[0].user)
+        try:
+            self.assertEqual(
+                oral_activities.my_state(self.cs, other.name), {"gradeable": False}
+            )
+        finally:
+            frappe.set_user("Administrator")
