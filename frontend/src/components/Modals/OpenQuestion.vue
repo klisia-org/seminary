@@ -38,6 +38,13 @@
 							@change="(val) => (question.explanation = val)" :editable="true" />
 					</div>
 					<FormControl v-model="question.points" :label="__('Points')" type="number" />
+					<FormControl v-model="oralSettings.response_mode" type="select" :label="__('How is it answered?')"
+						:options="responseModes" />
+					<div v-if="oralSettings.response_mode !== 'Written'" class="grid grid-cols-3 gap-3">
+						<FormControl v-model="oralSettings.prepare_s" type="number" :label="__('Reading time (seconds)')" />
+						<FormControl v-model="oralSettings.max_answer_s" type="number" :label="__('Longest answer (seconds)')" />
+						<FormControl v-model="oralSettings.takes" type="number" :label="__('Takes')" />
+					</div>
 
 
 				</div>
@@ -45,6 +52,13 @@
 					<Link v-model="existingQuestion.question" :label="__('Select a question')"
 						doctype="Open Question" />
 					<FormControl v-model="existingQuestion.points" :label="__('Points')" type="number" />
+					<FormControl v-model="oralSettings.response_mode" type="select" :label="__('How is it answered?')"
+						:options="responseModes" />
+					<div v-if="oralSettings.response_mode !== 'Written'" class="grid grid-cols-3 gap-3">
+						<FormControl v-model="oralSettings.prepare_s" type="number" :label="__('Reading time (seconds)')" />
+						<FormControl v-model="oralSettings.max_answer_s" type="number" :label="__('Longest answer (seconds)')" />
+						<FormControl v-model="oralSettings.takes" type="number" :label="__('Takes')" />
+					</div>
 				</div>
 			</div>
 		</template>
@@ -71,6 +85,21 @@ const question = reactive({
 	question: '',
 	explanation: '',
 	points: 0,
+})
+// Oral answers (decisions/100a) are a setting of the question's row in this
+// exam, not of the bank question, so they live apart from `question`.
+const ORAL_DEFAULTS = { response_mode: 'Written', prepare_s: 30, max_answer_s: 180, takes: 1 }
+const oralSettings = reactive({ ...ORAL_DEFAULTS })
+const responseModes = [
+	{ label: __('Written'), value: 'Written' },
+	{ label: __('Aloud'), value: 'Oral' },
+	{ label: __('The student chooses'), value: 'Student chooses' },
+]
+const oralFields = () => ({
+	response_mode: oralSettings.response_mode,
+	prepare_s: Number(oralSettings.prepare_s) || 0,
+	max_answer_s: Number(oralSettings.max_answer_s) || 180,
+	takes: Number(oralSettings.takes) || 1,
 })
 
 
@@ -115,6 +144,9 @@ watch(show, (value) => {
 })
 
 const initializeState = () => {
+	Object.keys(ORAL_DEFAULTS).forEach((k) => {
+		oralSettings[k] = props.questionDetail[k] ?? ORAL_DEFAULTS[k]
+	})
 	if (props.questionDetail.question) {
 		editMode.value = true
 		questionType.value = 'new'
@@ -145,6 +177,7 @@ const questionRow = createResource({
 				parentfield: 'questions',
 				parenttype: 'Exam Activity',
 				points: values.points,
+				...oralFields(),
 				...values,
 			},
 		}
@@ -241,6 +274,7 @@ const pointsUpdate = createResource({
 			name: props.questionDetail.name,
 			fieldname: {
 				points: question.points,
+				...oralFields(),
 			},
 		}
 	},

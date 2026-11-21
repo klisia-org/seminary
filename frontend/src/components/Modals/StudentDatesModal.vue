@@ -28,6 +28,8 @@
 						v-model="form.extra_minutes" :label="__('Extra minutes')" />
 					<FormControl v-if="assessment?.type === 'Quiz'" type="number"
 						v-model="form.extra_attempts" :label="__('Extra attempts')" />
+					<FormControl v-if="assessment?.type === 'Exam'" type="checkbox"
+						v-model="form.written_instead" :label="__('Answers oral questions in writing')" />
 					<FormControl class="sm:col-span-2" v-model="form.reason" :label="__('Reason')" />
 				</div>
 				<div class="mt-3 flex gap-2">
@@ -150,6 +152,7 @@ async function load() {
 			replies_due_date: ov.replies_due_date || '',
 			extra_minutes: ov.extra_minutes || '',
 			extra_attempts: ov.extra_attempts || '',
+			written_instead: ov.written_instead ? 1 : 0,
 			reason: ov.reason || '',
 		})
 	} catch (e) {

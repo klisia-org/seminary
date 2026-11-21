@@ -79,6 +79,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.requirements",
     "seminary.seminary.discipleship.scripture",
     "seminary.seminary.oral",
+    "seminary.seminary.oral_exams",
     "seminary.seminary.doctype.academic_term.academic_term",
     "seminary.seminary.doctype.course.course",
     "seminary.seminary.doctype.course_competency.course_competency",
@@ -160,6 +161,11 @@ STUDENT_ALLOWED = {
     "seminary.seminary.oral.upload_chunk",
     "seminary.seminary.oral.received_chunks",
     "seminary.seminary.oral.finish_recording",
+    # get_recording reads through Oral Recording's own has_permission (the
+    # students on it, the section's staff), one message for missing and
+    # refused; my_oral_state answers only the submission's owner (100a).
+    "seminary.seminary.oral.get_recording",
+    "seminary.seminary.oral_exams.my_oral_state",
     # SCORM (p009). All five are the student's own player talking about the
     # student's own launch. `launch` runs `require_enrolled` on the section --
     # the same gate every other course read uses -- and the other four take a
@@ -257,6 +263,8 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+    # decisions/100 §5: require_grader.
+    "seminary.seminary.oral.step_choices",
     # Setup progress (privatedocs p024): `can_open` refuses anyone outside the
     # group's roles (Registrar, Seminary Manager for "Seminary").
     "seminary.setup_progress.get_progress",
@@ -397,6 +405,12 @@ OWN_RULE = (
         # STAFF_ONLY in this test's "must raise PermissionError" sense.
         "seminary.seminary.disciplinary.list_course_enrollments",
         "seminary.seminary.disciplinary.list_pending_incidents",
+    }
+    | {
+        # decisions/100 §5-§6: the section's staff of the recording's own
+        # section, resolved from the recording; covered by test_adr100a.
+        "seminary.seminary.oral.add_moment",
+        "seminary.seminary.oral.set_moment_state",
     }
     | {
         # decisions/098: the student, their mentor or a decider requests; the

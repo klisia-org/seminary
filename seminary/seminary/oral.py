@@ -73,7 +73,9 @@ FINISHED = ("done", "skipped")
 STAFF_RESULTS = ("score_suggestions", "consistency")
 
 # doctype -> dotted path of resolve(name, user) -> dict, see `_resolve`.
-REFERENCES: dict[str, str] = {}
+REFERENCES: dict[str, str] = {
+    "Exam Question Result": "seminary.seminary.oral_exams.resolve",  # 100a
+}
 
 MIME_EXTENSIONS = {
     "audio/webm": ".webm",
@@ -132,7 +134,8 @@ def _resolve(reference_doctype, reference_name, user=None) -> dict:
     ``course_schedule``; ``participants`` as ``[(user, student)]``;
     ``may_record`` (this user may record it now); ``allow_upload``;
     ``steps`` (chosen for the activity); and optionally ``language``,
-    ``expected_speakers``, ``criteria``, ``prompt``, ``text`` and
+    ``expected_speakers``, ``criteria``, ``prompt``, ``text``,
+    ``on_start`` (a dotted path called with the new recording's name) and
     ``after_step`` (a dotted path called with ``(recording, step)``).
     """
     path = REFERENCES.get(reference_doctype)
@@ -204,6 +207,8 @@ def start_recording(reference_doctype, reference_name, mime_type=None, language=
     )
     doc.insert(ignore_permissions=True)
     os.makedirs(_chunk_dir(doc.name), exist_ok=True)
+    if ctx.get("on_start"):
+        frappe.get_attr(ctx["on_start"])(doc.name)
     return {"recording": doc.name, "max_seconds": max_seconds()}
 
 
@@ -562,6 +567,135 @@ def step_failed(recording, step, error=None):
     doc.status = "Failed"
     doc.error = (f"{step}: {error}" if error else step)[:1000]
     doc.save(ignore_permissions=True)
+
+
+# ------------------------------------------------------------- reading, grading
+
+STEP_LABELS = {
+    "transcribe": "Transcription",
+    "diarize": "Who spoke when",
+    "moments": "Suggested moments",
+    "questions": "Defense questions",
+    "follow_up": "Follow-up questions",
+    "score_suggestions": "Score suggestions",
+    "consistency": "Consistency notes",
+}
+
+
+@frappe.whitelist()
+def step_choices():
+    """The steps an instructor may choose for an activity, with labels."""
+    from seminary.seminary.guards import require_grader
+
+    require_grader()
+    return [{"step": s, "label": _(STEP_LABELS[s])} for s in available_steps()]
+
+
+def _is_staff_of(doc):
+    from seminary.seminary.guards import is_course_staff, is_school_role
+
+    return is_school_role(frappe.session.user) or (
+        bool(doc.course_schedule) and is_course_staff(doc.course_schedule)
+    )
+
+
+@frappe.whitelist()
+def get_recording(recording):
+    """A recording for its player: audio, status, transcript and speakers, and
+    for the section's staff its moments. One message for missing and refused."""
+    doc = (
+        frappe.get_doc("Oral Recording", recording)
+        if frappe.db.exists("Oral Recording", recording)
+        else None
+    )
+    if not doc or not frappe.has_permission("Oral Recording", "read", doc=doc):
+        frappe.throw(_("Recording not found."), frappe.PermissionError)
+    staff = _is_staff_of(doc)
+    out = {
+        "name": doc.name,
+        "status": doc.status,
+        "audio": doc.audio,
+        "audio_deleted_on": doc.audio_deleted_on,
+        "duration_s": doc.duration_s,
+        "started_at": doc.started_at,
+        "transcript": _segments(doc),
+        "speakers": [
+            {
+                "label": s.label,
+                "student": s.student,
+                "talk_s": s.talk_s,
+                "turns": s.turns,
+                "longest_turn_s": s.longest_turn_s,
+            }
+            for s in doc.speakers
+        ],
+        "is_staff": staff,
+        "moments": [],
+    }
+    if staff:
+        out["error"] = doc.error
+        out["moments"] = frappe.get_all(
+            "Oral Moment",
+            filters={"recording": doc.name, "state": ["!=", "Dismissed"]},
+            fields=[
+                "name",
+                "start",
+                "end",
+                "source",
+                "state",
+                "criterion_code",
+                "question",
+                "note",
+            ],
+            order_by="start asc",
+        )
+    return out
+
+
+def _staff_recording(recording):
+    doc = frappe.get_doc("Oral Recording", recording)
+    if not _is_staff_of(doc):
+        frappe.throw(
+            _("Only the section's staff can mark moments."), frappe.PermissionError
+        )
+    return doc
+
+
+@frappe.whitelist(methods=["POST"])
+def add_moment(
+    recording, start, end=None, note=None, criterion_code=None, question=None
+):
+    """The instructor marks a passage by hand (100 §5)."""
+    doc = _staff_recording(recording)
+    moment = frappe.get_doc(
+        {
+            "doctype": "Oral Moment",
+            "recording": doc.name,
+            "source": "Instructor",
+            "state": "Kept",
+            "start": flt(start),
+            "end": flt(end) if end not in (None, "") else None,
+            "note": note,
+            "criterion_code": criterion_code,
+            "question": question,
+        }
+    )
+    moment.insert(ignore_permissions=True)
+    return moment.name
+
+
+@frappe.whitelist(methods=["POST"])
+def set_moment_state(moment, state, note=None):
+    """Keep or dismiss a suggested moment, or edit a moment's note (100 §6)."""
+    if state not in ("Kept", "Dismissed"):
+        frappe.throw(_("A moment can only be kept or dismissed."))
+    doc = frappe.get_doc("Oral Moment", moment)
+    _staff_recording(doc.recording)
+    doc.state = state
+    if note is not None:
+        doc.note = note
+    doc.save(ignore_permissions=True)
+    return doc.state
 
 
 # -------------------------------------------------------------------- talk time

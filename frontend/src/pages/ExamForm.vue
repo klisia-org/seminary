@@ -71,6 +71,22 @@
 
 				</div>
 
+				<div v-if="hasOralQuestions" class="mb-8">
+					<div class="font-semibold mb-2">
+						{{ __('Oral answers') }}
+					</div>
+					<p class="text-sm text-ink-gray-6 mb-3">
+						{{ __('Steps run on each recorded answer. Without any, you listen and grade from the audio.') }}
+					</p>
+					<div v-if="stepChoices.data?.length" class="space-y-1">
+						<FormControl v-for="c in stepChoices.data" :key="c.step" type="checkbox" :label="c.label"
+							:modelValue="chosenSteps.includes(c.step)" @update:modelValue="(v) => toggleStep(c.step, v)" />
+					</div>
+					<p v-else class="text-sm text-ink-gray-5">
+						{{ __('No processing steps are available on this site.') }}
+					</p>
+				</div>
+
 				<div class="mb-8">
 					<div class="font-semibold mb-4">
 						{{ __('Shuffle Settings') }}
@@ -175,6 +191,10 @@ const currentQuestion = reactive({
 	question: '',
 	points: 0,
 	name: '',
+	response_mode: 'Written',
+	prepare_s: 30,
+	max_answer_s: 180,
+	takes: 1,
 })
 const user = inject('$user')
 const router = useRouter()
@@ -195,8 +215,34 @@ const exam = reactive({
 	limit_questions_to: 0,
 	show_answers: true,
 	shuffle_questions: false,
+	oral_steps: '[]',
 	questions: [],
 })
+
+// Steps run on oral answers (decisions/100 §5): offered only from what the
+// site provides and the school allows, and only when a question is oral.
+const hasOralQuestions = computed(() =>
+	(exam.questions || []).some((q) => q.response_mode && q.response_mode !== 'Written')
+)
+const stepChoices = createResource({
+	url: 'seminary.seminary.oral.step_choices',
+	auto: false,
+})
+watch(hasOralQuestions, (yes) => {
+	if (yes && !stepChoices.data) stepChoices.reload()
+}, { immediate: true })
+const chosenSteps = computed(() => {
+	try {
+		return JSON.parse(exam.oral_steps || '[]')
+	} catch (e) {
+		return []
+	}
+})
+const toggleStep = (step, on) => {
+	const set = new Set(chosenSteps.value)
+	on ? set.add(step) : set.delete(step)
+	exam.oral_steps = JSON.stringify([...set])
+}
 
 onMounted(() => {
 
@@ -360,18 +406,27 @@ const questionColumns = computed(() => {
 			key: 'points',
 			width: '5rem',
 		},
+		{
+			label: __('Answered'),
+			key: 'response_mode',
+			width: '8rem',
+		},
 	]
 })
 
 const openOpenQuestionModal = (question = null) => {
+	const oral = ['response_mode', 'prepare_s', 'max_answer_s', 'takes']
+	const defaults = { response_mode: 'Written', prepare_s: 30, max_answer_s: 180, takes: 1 }
 	if (question) {
 		currentQuestion.question = question.question
 		currentQuestion.points = question.points
 		currentQuestion.name = question.name
+		oral.forEach((k) => (currentQuestion[k] = question[k] ?? defaults[k]))
 	} else {
 		currentQuestion.question = ''
 		currentQuestion.points = 0
 		currentQuestion.name = ''
+		oral.forEach((k) => (currentQuestion[k] = defaults[k]))
 	}
 	showOpenQuestionModal.value = true
 }

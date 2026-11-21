@@ -180,7 +180,10 @@ def _merge_answers(doc, answers):
             doc.remove(row)
             continue
         seen.add(row.question)
-        row.answer = wanted[row.question]
+        # An oral answer's text is its transcript, written by the recording
+        # (100a §3); the editor's copy must not overwrite it.
+        if not row.oral_recording:
+            row.answer = wanted[row.question]
 
     for question, text in wanted.items():
         if question not in seen:

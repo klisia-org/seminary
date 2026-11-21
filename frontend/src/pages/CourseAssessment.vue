@@ -284,6 +284,7 @@
                 <td class="p-1">
                   <span v-if="ov.extra_minutes">{{ __('+{0} min').format(ov.extra_minutes) }} </span>
                   <span v-if="ov.extra_attempts">{{ __('+{0} attempt(s)').format(ov.extra_attempts) }}</span>
+                  <span v-if="ov.written_instead">{{ __('Written instead of oral') }}</span>
                 </td>
                 <td class="p-1">{{ ov.reason }}</td>
                 <td class="p-1 whitespace-nowrap">
@@ -314,6 +315,8 @@
               v-model="ovForm.extra_minutes" :label="__('Extra minutes')" />
             <FormControl v-if="criteria.type === 'Quiz'" type="number"
               v-model="ovForm.extra_attempts" :label="__('Extra attempts')" />
+            <FormControl v-if="criteria.type === 'Exam'" type="checkbox"
+              v-model="ovForm.written_instead" :label="__('Answers oral questions in writing')" />
             <FormControl class="sm:col-span-2" v-model="ovForm.reason" :label="__('Reason')" />
             <div class="flex items-end gap-2">
               <Button variant="solid" size="sm" :loading="savingOverride" @click="saveOverride(criteria)">
@@ -637,7 +640,7 @@ const rosterOptions = computed(() => [
 
 const emptyOverride = () => ({
   name: '', student: '', due_date: '', cutoff_date: '', replies_due_date: '',
-  extra_minutes: '', extra_attempts: '', reason: '',
+  extra_minutes: '', extra_attempts: '', written_instead: 0, reason: '',
 })
 const ovForm = reactive(emptyOverride())
 const savingOverride = ref(false)

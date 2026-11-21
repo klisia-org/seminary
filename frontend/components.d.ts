@@ -72,6 +72,8 @@ declare module 'vue' {
     OpenQuestion: typeof import('./src/components/Modals/OpenQuestion.vue')['default']
     OpenQuestionnairesPanel: typeof import('./src/components/OpenQuestionnairesPanel.vue')['default']
     OpenRequirementsPanel: typeof import('./src/components/OpenRequirementsPanel.vue')['default']
+    OralPlayer: typeof import('./src/components/OralPlayer.vue')['default']
+    OralRecorder: typeof import('./src/components/OralRecorder.vue')['default']
     PageHeader: typeof import('./src/components/PageHeader.vue')['default']
     PageTabs: typeof import('./src/components/PageTabs.vue')['default']
     PartnerHeader: typeof import('./src/components/PartnerHeader.vue')['default']

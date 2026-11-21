@@ -100,6 +100,7 @@ def get_override(course_assess, student):
             "replies_due_date",
             "extra_minutes",
             "extra_attempts",
+            "written_instead",
             "reason",
         ],
         as_dict=True,
@@ -132,6 +133,8 @@ def effective(course_assess, student, row=None):
         ),
         extra_minutes=cint(ov.extra_minutes),
         extra_attempts=cint(ov.extra_attempts),
+        # Oral questions answered in writing instead (decisions/100 §9).
+        written_instead=cint(ov.written_instead),
         override=ov.name,
         late_policy_exempt=cint(row.late_policy_exempt),
     )
@@ -525,6 +528,7 @@ def get_deadline_settings(course):
             "replies_due_date",
             "extra_minutes",
             "extra_attempts",
+            "written_instead",
             "reason",
             "source",
         ],
@@ -586,6 +590,7 @@ def save_override(data):
         "replies_due_date",
         "extra_minutes",
         "extra_attempts",
+        "written_instead",
         "reason",
     )
     course_assess = data.get("course_assess")
