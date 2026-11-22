@@ -16,6 +16,18 @@ fi
 BASELINE=()
 BASE="${SEMGREP_BASELINE_REF:-HEAD}"
 if git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null; then
+	# A formatting sweep between the base and HEAD moves every old finding, so semgrep would see
+	# them all as new: compare with the newest sweep in that range instead.
+	# The base can carry merges HEAD lacks (main after a PR), so start from where they fork.
+	if [ -f .git-blame-ignore-revs ] && FORK=$(git merge-base "$BASE" HEAD 2>/dev/null); then
+		for rev in $(grep -oE '^[0-9a-f]{7,40}' .git-blame-ignore-revs); do
+			if git merge-base --is-ancestor "$FORK" "$rev" 2>/dev/null \
+				&& ! git merge-base --is-ancestor "$rev" "$BASE" 2>/dev/null \
+				&& git merge-base --is-ancestor "$rev" HEAD 2>/dev/null; then
+				BASE="$rev"
+			fi
+		done
+	fi
 	BASELINE=(--baseline-commit "$(git rev-parse "$BASE")")
 fi
 
