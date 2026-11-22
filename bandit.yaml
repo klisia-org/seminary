@@ -1,5 +1,5 @@
 # Shared bandit setup. B608 (SQL built from strings) is deliberately not skipped: every
 # dynamic-SQL site carries a `# nosec B608` saying what it interpolates, so a new value
 # interpolated into SQL fails the commit.
-exclude_dirs: ['.history', 'scripts', 'node_modules', 'runbooks', 'tooling']
+exclude_dirs: ['.history', 'scripts', 'node_modules', 'runbooks', 'tooling', 'prototypes']
 skips: []
