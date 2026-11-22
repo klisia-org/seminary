@@ -5,21 +5,21 @@ from frappe.model.document import Document
 
 
 class RequirementException(Document):
-    """A course substitution, course waiver or requirement waiver for one
-    enrollment (decisions/098). Status moves only through the actions in
-    `seminary.seminary.exceptions`."""
+	"""A course substitution, course waiver or requirement waiver for one
+	enrollment (decisions/098). Status moves only through the actions in
+	`seminary.seminary.exceptions`."""
 
-    def before_insert(self):
-        from seminary.seminary import exceptions
+	def before_insert(self):
+		from seminary.seminary import exceptions
 
-        exceptions.before_insert(self)
+		exceptions.before_insert(self)
 
-    def validate(self):
-        from seminary.seminary import exceptions
+	def validate(self):
+		from seminary.seminary import exceptions
 
-        exceptions.validate(self)
+		exceptions.validate(self)
 
-    def after_insert(self):
-        from seminary.seminary import exceptions
+	def after_insert(self):
+		from seminary.seminary import exceptions
 
-        exceptions.after_insert(self)
+		exceptions.after_insert(self)

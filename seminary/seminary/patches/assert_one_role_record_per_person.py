@@ -29,39 +29,39 @@ CONSTRAINT = "unique_person"
 
 
 def execute():
-    problems = []
-    for doctype in DOCTYPES:
-        if not frappe.db.exists("DocType", doctype):
-            continue
-        # `has_column` takes the doctype and prepends `tab` itself — passing a
-        # scrubbed table name looks for `tabstudent` and raises TableMissing.
-        if not frappe.db.has_column(doctype, "person"):
-            continue
-        for row in frappe.db.sql(
-            """
+	problems = []
+	for doctype in DOCTYPES:
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		# `has_column` takes the doctype and prepends `tab` itself — passing a
+		# scrubbed table name looks for `tabstudent` and raises TableMissing.
+		if not frappe.db.has_column(doctype, "person"):
+			continue
+		for row in frappe.db.sql(
+			"""
             select person, count(*) as n, group_concat(name) as names
             from `tab{doctype}`
             where person is not null and person != ''
             group by person having n > 1
             """.format(  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
-                doctype=doctype
-            ),
-            as_dict=True,
-        ):
-            problems.append("%s: %s share person %s" % (doctype, row.names, row.person))
+				doctype=doctype
+			),
+			as_dict=True,
+		):
+			problems.append("%s: %s share person %s" % (doctype, row.names, row.person))
 
-    if problems:
-        frappe.throw(
-            _(
-                "One record per role per person, but these already "
-                "share one:\n\n{0}\n\nDecide which record is the person's and "
-                "either delete or re-point the others, then migrate again."
-            ).format("\n".join(problems))
-        )
+	if problems:
+		frappe.throw(
+			_(
+				"One record per role per person, but these already "
+				"share one:\n\n{0}\n\nDecide which record is the person's and "
+				"either delete or re-point the others, then migrate again."
+			).format("\n".join(problems))
+		)
 
-    for doctype in DOCTYPES:
-        if not frappe.db.exists("DocType", doctype):
-            continue
-        if not frappe.db.has_column(doctype, "person"):
-            continue
-        frappe.db.add_unique(doctype, ["person"], constraint_name=CONSTRAINT)
+	for doctype in DOCTYPES:
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		if not frappe.db.has_column(doctype, "person"):
+			continue
+		frappe.db.add_unique(doctype, ["person"], constraint_name=CONSTRAINT)

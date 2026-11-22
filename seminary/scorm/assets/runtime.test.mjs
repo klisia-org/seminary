@@ -49,7 +49,10 @@ function harness(config = {}) {
   };
 
   const runtime = load().createRuntime(
-    Object.assign({ version: "1.2", sco: "SCO1", appOrigin: "https://app.invalid" }, config),
+    Object.assign(
+      { version: "1.2", sco: "SCO1", appOrigin: "https://app.invalid" },
+      config
+    ),
     transport
   );
   return {
@@ -59,7 +62,12 @@ function harness(config = {}) {
     // `Object.prototype` and `deepStrictEqual` refuses them. Copy into a host
     // object before comparing.
     merged() {
-      return Object.assign({}, ...sent.filter((m) => m.type === "scorm:commit").map((m) => ({ ...m.data })));
+      return Object.assign(
+        {},
+        ...sent
+          .filter((m) => m.type === "scorm:commit")
+          .map((m) => ({ ...m.data }))
+      );
     },
     api: runtime.is2004 ? runtime.api2004 : runtime.api12,
     tick(ms) {
@@ -79,7 +87,11 @@ test("the 1.2 API is installed, and only the 1.2 API", () => {
   const win = {};
   harness({ version: "1.2" }).runtime.install(win);
   assert.equal(typeof win.API.LMSInitialize, "function");
-  assert.equal(win.API_1484_11, undefined, "advertising both confuses a package that probes");
+  assert.equal(
+    win.API_1484_11,
+    undefined,
+    "advertising both confuses a package that probes"
+  );
 });
 
 test("the 2004 API is installed, and only the 2004 API", () => {
@@ -93,7 +105,10 @@ test("nothing works before Initialize", () => {
   const h = harness();
   assert.equal(h.api.LMSGetValue("cmi.core.lesson_status"), "");
   assert.equal(h.api.LMSGetLastError(), "301");
-  assert.equal(h.api.LMSSetValue("cmi.core.lesson_status", "completed"), "false");
+  assert.equal(
+    h.api.LMSSetValue("cmi.core.lesson_status", "completed"),
+    "false"
+  );
   assert.equal(h.api.LMSCommit(), "false");
   assert.equal(h.commits().length, 0);
 });
@@ -112,7 +127,7 @@ test("the launch snapshot seeds the model both ways", () => {
       learner_id: "opaque-id",
       learner_name: "A Student",
       location: "page-4",
-      suspend_data: "{\"p\":4}",
+      suspend_data: '{"p":4}',
       completion_status: "incomplete",
       score_raw: 42,
     },
@@ -128,7 +143,11 @@ test("the launch snapshot seeds the model both ways", () => {
 test("a 2004 snapshot keeps completion and success apart", () => {
   const h = harness({
     version: "2004",
-    cmi: { completion_status: "completed", success_status: "failed", score_scaled: -0.5 },
+    cmi: {
+      completion_status: "completed",
+      success_status: "failed",
+      score_scaled: -0.5,
+    },
   });
   h.api.Initialize("");
   assert.equal(h.api.GetValue("cmi.completion_status"), "completed");
@@ -139,7 +158,10 @@ test("a 2004 snapshot keeps completion and success apart", () => {
 test("read-only elements are refused", () => {
   const h = harness();
   h.api.LMSInitialize("");
-  assert.equal(h.api.LMSSetValue("cmi.core.student_id", "someone-else"), "false");
+  assert.equal(
+    h.api.LMSSetValue("cmi.core.student_id", "someone-else"),
+    "false"
+  );
   assert.equal(h.api.LMSGetLastError(), "403");
   assert.equal(h.api.LMSSetValue("cmi.core._children", "x"), "false");
 });
@@ -186,10 +208,13 @@ test("writes are batched, not one message per SetValue", () => {
   assert.equal(h.commits().length, 0, "a SetValue must not be a round trip");
   h.tick(3000);
   assert.equal(h.commits().length, 1);
-  assert.deepEqual({ ...h.commits()[0].data }, {
-    "cmi.core.lesson_location": "2",
-    "cmi.suspend_data": "s",
-  });
+  assert.deepEqual(
+    { ...h.commits()[0].data },
+    {
+      "cmi.core.lesson_location": "2",
+      "cmi.suspend_data": "s",
+    }
+  );
 });
 
 test("Commit with nothing dirty sends nothing", () => {
@@ -297,9 +322,14 @@ test("a discovery walk finds the API on its first hop", () => {
   // where reading `win.API_1484_11` throws instead of returning null.
   const launcher = {};
   harness({ version: "2004" }).runtime.install(launcher);
-  const crossOrigin = new Proxy({}, {
-    get() { throw new Error("SecurityError: cross-origin property read"); },
-  });
+  const crossOrigin = new Proxy(
+    {},
+    {
+      get() {
+        throw new Error("SecurityError: cross-origin property read");
+      },
+    }
+  );
   launcher.parent = crossOrigin;
   const sco = { parent: launcher };
 

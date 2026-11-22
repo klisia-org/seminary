@@ -29,53 +29,53 @@ from seminary.scorm import cmi
 
 
 class SCORMAttempt(Document):
-    def validate(self):
-        self.validate_status()
-        self.validate_scores()
-        self.validate_state()
+	def validate(self):
+		self.validate_status()
+		self.validate_scores()
+		self.validate_state()
 
-    def validate_status(self):
-        self.completion_status = cmi.check_vocabulary(
-            "completion_status",
-            self.completion_status or "unknown",
-            cmi.COMPLETION_VALUES,
-        )
-        self.success_status = cmi.check_vocabulary(
-            "success_status", self.success_status or "unknown", cmi.SUCCESS_VALUES
-        )
+	def validate_status(self):
+		self.completion_status = cmi.check_vocabulary(
+			"completion_status",
+			self.completion_status or "unknown",
+			cmi.COMPLETION_VALUES,
+		)
+		self.success_status = cmi.check_vocabulary(
+			"success_status", self.success_status or "unknown", cmi.SUCCESS_VALUES
+		)
 
-    def validate_scores(self):
-        """Clamped to what the package itself declared, or to 0-100.
+	def validate_scores(self):
+		"""Clamped to what the package itself declared, or to 0-100.
 
-        Clamped rather than refused: a package reporting 110 out of 100 is badly
-        written, not hostile, and refusing would lose the student's real progress
-        with the bad number. What keeps the number from being treated as an
-        assessment is §2.12, not this.
-        """
-        for field in ("score_raw", "score_min", "score_max", "score_scaled"):
-            value = self.get(field)
-            if value in (None, ""):
-                continue
-            self.set(field, cmi.check_number(field, value))
+		Clamped rather than refused: a package reporting 110 out of 100 is badly
+		written, not hostile, and refusing would lose the student's real progress
+		with the bad number. What keeps the number from being treated as an
+		assessment is §2.12, not this.
+		"""
+		for field in ("score_raw", "score_min", "score_max", "score_scaled"):
+			value = self.get(field)
+			if value in (None, ""):
+				continue
+			self.set(field, cmi.check_number(field, value))
 
-        if self.score_scaled is not None:
-            self.score_scaled = cmi.clamp(self.score_scaled, -1.0, 1.0)
+		if self.score_scaled is not None:
+			self.score_scaled = cmi.clamp(self.score_scaled, -1.0, 1.0)
 
-        if self.score_raw is None:
-            return
-        low = self.score_min if self.score_min is not None else 0.0
-        high = self.score_max if self.score_max is not None else 100.0
-        if low > high:
-            # The package contradicted itself; its range is not usable.
-            low, high = 0.0, 100.0
-        self.score_raw = cmi.clamp(self.score_raw, low, high)
+		if self.score_raw is None:
+			return
+		low = self.score_min if self.score_min is not None else 0.0
+		high = self.score_max if self.score_max is not None else 100.0
+		if low > high:
+			# The package contradicted itself; its range is not usable.
+			low, high = 0.0, 100.0
+		self.score_raw = cmi.clamp(self.score_raw, low, high)
 
-    def validate_state(self):
-        self.location = cmi.check_length("location", self.location, cmi.MAX_LOCATION)
-        self.suspend_data = cmi.check_length(
-            "suspend_data",
-            self.suspend_data,
-            int(frappe.conf.get("scorm_max_suspend_bytes") or cmi.DEFAULT_MAX_SUSPEND),
-        )
-        self.session_time = cmi.check_time("session_time", self.session_time)
-        self.total_time = cmi.check_time("total_time", self.total_time)
+	def validate_state(self):
+		self.location = cmi.check_length("location", self.location, cmi.MAX_LOCATION)
+		self.suspend_data = cmi.check_length(
+			"suspend_data",
+			self.suspend_data,
+			int(frappe.conf.get("scorm_max_suspend_bytes") or cmi.DEFAULT_MAX_SUSPEND),
+		)
+		self.session_time = cmi.check_time("session_time", self.session_time)
+		self.total_time = cmi.check_time("total_time", self.total_time)

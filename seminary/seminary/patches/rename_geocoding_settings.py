@@ -23,49 +23,45 @@ NEW = "Address Geocoding Settings"
 
 
 def execute():
-    if not frappe.db.exists("DocType", OLD):
-        return
-    if frappe.db.exists("DocType", NEW):
-        # Both present: the new one was synced before this ran. Keep the old
-        # values, they are the ones a human typed.
-        _carry_values()
-        frappe.delete_doc("DocType", OLD, force=True, ignore_permissions=True)
-        return
+	if not frappe.db.exists("DocType", OLD):
+		return
+	if frappe.db.exists("DocType", NEW):
+		# Both present: the new one was synced before this ran. Keep the old
+		# values, they are the ones a human typed.
+		_carry_values()
+		frappe.delete_doc("DocType", OLD, force=True, ignore_permissions=True)
+		return
 
-    key = _stored_key(OLD)
-    frappe.rename_doc("DocType", OLD, NEW, force=True, show_alert=False)
-    frappe.db.sql("update `tabSingles` set doctype = %s where doctype = %s", (NEW, OLD))
-    if key:
-        _store_key(NEW, key)
-    print("  renamed %r to %r" % (OLD, NEW))
+	key = _stored_key(OLD)
+	frappe.rename_doc("DocType", OLD, NEW, force=True, show_alert=False)
+	frappe.db.sql("update `tabSingles` set doctype = %s where doctype = %s", (NEW, OLD))
+	if key:
+		_store_key(NEW, key)
+	print("  renamed %r to %r" % (OLD, NEW))
 
 
 def _stored_key(doctype):
-    from frappe.utils.password import get_decrypted_password
+	from frappe.utils.password import get_decrypted_password
 
-    try:
-        return get_decrypted_password(
-            doctype, doctype, "api_key", raise_exception=False
-        )
-    except Exception:
-        return None
+	try:
+		return get_decrypted_password(doctype, doctype, "api_key", raise_exception=False)
+	except Exception:
+		return None
 
 
 def _store_key(doctype, key):
-    from frappe.utils.password import set_encrypted_password
+	from frappe.utils.password import set_encrypted_password
 
-    set_encrypted_password(doctype, doctype, key, "api_key")
+	set_encrypted_password(doctype, doctype, key, "api_key")
 
 
 def _carry_values():
-    rows = frappe.db.sql(
-        "select field, value from `tabSingles` where doctype = %s", (OLD,), as_dict=True
-    )
-    for row in rows:
-        if row.value in (None, ""):
-            continue
-        frappe.db.set_value(NEW, NEW, row.field, row.value, update_modified=False)
-    key = _stored_key(OLD)
-    if key:
-        _store_key(NEW, key)
-    frappe.db.sql("delete from `tabSingles` where doctype = %s", (OLD,))
+	rows = frappe.db.sql("select field, value from `tabSingles` where doctype = %s", (OLD,), as_dict=True)
+	for row in rows:
+		if row.value in (None, ""):
+			continue
+		frappe.db.set_value(NEW, NEW, row.field, row.value, update_modified=False)
+	key = _stored_key(OLD)
+	if key:
+		_store_key(NEW, key)
+	frappe.db.sql("delete from `tabSingles` where doctype = %s", (OLD,))

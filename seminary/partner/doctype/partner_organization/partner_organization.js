@@ -15,7 +15,9 @@ frappe.ui.form.on("Partner Organization", {
 		bind_tax_id(frm);
 		if (frm.is_new()) return;
 		window.seminary?.renderLocationSummary(frm);
-		window.seminary?.bindFormAddressAutocomplete(frm, { country_field: "country" });
+		window.seminary?.bindFormAddressAutocomplete(frm, {
+			country_field: "country",
+		});
 	},
 
 	// The country decides which registration number is wanted, so changing it

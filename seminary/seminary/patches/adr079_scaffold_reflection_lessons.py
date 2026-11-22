@@ -14,16 +14,14 @@ from seminary.seminary import cbe, cbe_reflection
 
 
 def execute():
-    for cs in frappe.get_all(
-        "Course Schedule",
-        filters={"workflow_state": ("not in", ("Closed", "Cancelled"))},
-        pluck="name",
-    ):
-        if not cbe.framework_for(cs):
-            continue
-        try:
-            cbe_reflection.scaffold(cs)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(), f"adr079_scaffold_reflection_lessons: {cs}"
-            )
+	for cs in frappe.get_all(
+		"Course Schedule",
+		filters={"workflow_state": ("not in", ("Closed", "Cancelled"))},
+		pluck="name",
+	):
+		if not cbe.framework_for(cs):
+			continue
+		try:
+			cbe_reflection.scaffold(cs)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"adr079_scaffold_reflection_lessons: {cs}")

@@ -7,6 +7,7 @@ Run:  cd /home/drmrmelo/lms/sites && ../env/bin/python \
 
 import json
 import os
+
 import frappe
 from frappe.utils.password import update_password
 
@@ -21,43 +22,43 @@ db = frappe.db
 OUT = {"CS": CS, "USER": EMAIL}
 
 if not db.exists("User", EMAIL):
-    u = frappe.get_doc(
-        {
-            "doctype": "User",
-            "email": EMAIL,
-            "first_name": "Sec",
-            "last_name": "Tier",
-            "send_welcome_email": 0,
-            "user_type": "System User",
-        }
-    )
-    u.flags.ignore_permissions = True
-    u.insert()
-    u.add_roles("Instructor")
+	u = frappe.get_doc(
+		{
+			"doctype": "User",
+			"email": EMAIL,
+			"first_name": "Sec",
+			"last_name": "Tier",
+			"send_welcome_email": 0,
+			"user_type": "System User",
+		}
+	)
+	u.flags.ignore_permissions = True
+	u.insert()
+	u.add_roles("Instructor")
 update_password(EMAIL, PW)
 
 INST = db.get_value("Instructor", {"user": EMAIL}, "name")
 if not INST:
-    d = frappe.get_doc(
-        {
-            "doctype": "Instructor",
-            "instructor_name": "Sec Tier",
-            "user": EMAIL,
-            "status": "Active",
-        }
-    )
-    d.flags.ignore_permissions = True
-    d.insert(ignore_mandatory=True)
-    INST = d.name
+	d = frappe.get_doc(
+		{
+			"doctype": "Instructor",
+			"instructor_name": "Sec Tier",
+			"user": EMAIL,
+			"status": "Active",
+		}
+	)
+	d.flags.ignore_permissions = True
+	d.insert(ignore_mandatory=True)
+	INST = d.name
 if not db.get_value("Instructor", INST, "person"):
-    from seminary.seminary import person as person_spine
+	from seminary.seminary import person as person_spine
 
-    db.set_value(
-        "Instructor",
-        INST,
-        "person",
-        person_spine.ensure_person(email=EMAIL, first_name="Sec", last_name="Tier"),
-    )
+	db.set_value(
+		"Instructor",
+		INST,
+		"person",
+		person_spine.ensure_person(email=EMAIL, first_name="Sec", last_name="Tier"),
+	)
 # The precondition: blank default. Reset every run in case a repro promoted it.
 db.set_value("Instructor", INST, "default_inst_category", None)
 OUT["INSTRUCTOR"] = INST
@@ -65,23 +66,21 @@ OUT["INSTRUCTOR"] = INST
 cs = frappe.get_doc("Course Schedule", CS)
 row = next((r for r in cs.instructor1 if r.instructor == INST), None)
 if not row:
-    row = frappe.get_doc(
-        {
-            "doctype": "Course Schedule Instructors",
-            "parent": CS,
-            "parenttype": "Course Schedule",
-            "parentfield": "instructor1",
-            "instructor": INST,
-            "instructor_category": "Grader",
-            "idx": len(cs.instructor1) + 1,
-        }
-    )
-    row.flags.ignore_permissions = True
-    row.insert()
+	row = frappe.get_doc(
+		{
+			"doctype": "Course Schedule Instructors",
+			"parent": CS,
+			"parenttype": "Course Schedule",
+			"parentfield": "instructor1",
+			"instructor": INST,
+			"instructor_category": "Grader",
+			"idx": len(cs.instructor1) + 1,
+		}
+	)
+	row.flags.ignore_permissions = True
+	row.insert()
 else:
-    db.set_value(
-        "Course Schedule Instructors", row.name, "instructor_category", "Grader"
-    )
+	db.set_value("Course Schedule Instructors", row.name, "instructor_category", "Grader")
 OUT["ROW"] = row.name
 
 # An Exam Question Result row on ES_A. The p006/p007 fixtures recorded one
@@ -92,22 +91,22 @@ FX1 = json.load(open(os.path.join(S, "..", "p007_validation", "fx1.json")))
 ES_A = FX1["ES_A"]
 row = db.get_value("Exam Question Result", {"parent": ES_A}, "name")
 if not row:
-    q = db.get_value("Exam Question", {}, "name")
-    es = frappe.get_doc("Exam Submission", ES_A)
-    es.append(
-        "result",
-        {
-            "question": q,
-            "question_name": "p008a probe",
-            "points": 0,
-            "points_out_of": 1,
-            "graded": 0,
-        },
-    )
-    es.flags.ignore_permissions = True
-    es.flags.ignore_validate_update_after_submit = True
-    es.save()
-    row = db.get_value("Exam Question Result", {"parent": ES_A}, "name")
+	q = db.get_value("Exam Question", {}, "name")
+	es = frappe.get_doc("Exam Submission", ES_A)
+	es.append(
+		"result",
+		{
+			"question": q,
+			"question_name": "p008a probe",
+			"points": 0,
+			"points_out_of": 1,
+			"graded": 0,
+		},
+	)
+	es.flags.ignore_permissions = True
+	es.flags.ignore_validate_update_after_submit = True
+	es.save()
+	row = db.get_value("Exam Question Result", {"parent": ES_A}, "name")
 OUT["ES_A"], OUT["ES_A_ROW"] = ES_A, row
 
 # A Student who is NOT enrolled in the fixture quiz's course, to prove the G8

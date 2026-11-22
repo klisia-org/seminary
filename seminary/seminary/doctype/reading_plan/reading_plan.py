@@ -7,11 +7,11 @@ from seminary.seminary.discipleship import reading_plans
 
 
 class ReadingPlan(Document):
-    def validate(self):
-        reading_plans.validate_plan(self)
+	def validate(self):
+		reading_plans.validate_plan(self)
 
-    def on_update(self):
-        reading_plans.adopt_step_attachments(self)
+	def on_update(self):
+		reading_plans.adopt_step_attachments(self)
 
-    def on_trash(self):
-        reading_plans.guard_plan_delete(self)
+	def on_trash(self):
+		reading_plans.guard_plan_delete(self)

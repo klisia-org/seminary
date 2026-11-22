@@ -6,5 +6,5 @@ from frappe.model.document import Document
 
 
 class Campus(Document):
-    def onload(self):
-        load_address_and_contact(self)
+	def onload(self):
+		load_address_and_contact(self)

@@ -18,186 +18,180 @@ STAFF_BYPASS = {"System Manager", "Seminary Manager", "Registrar", "Program Chai
 
 
 def _should_restrict(user):
-    if not user or user == "Administrator":
-        return False
-    return not (set(frappe.get_roles(user)) & STAFF_BYPASS)
+	if not user or user == "Administrator":
+		return False
+	return not (set(frappe.get_roles(user)) & STAFF_BYPASS)
 
 
 def _descendants(roots):
-    """All cohorts at or below `roots`, walking parent_cohort downward."""
-    seen = set(roots)
-    frontier = list(roots)
-    while frontier:
-        children = frappe.get_all(
-            "Cohort", filters={"parent_cohort": ["in", frontier]}, pluck="name"
-        )
-        fresh = [c for c in children if c not in seen]
-        seen.update(fresh)
-        frontier = fresh
-    return seen
+	"""All cohorts at or below `roots`, walking parent_cohort downward."""
+	seen = set(roots)
+	frontier = list(roots)
+	while frontier:
+		children = frappe.get_all("Cohort", filters={"parent_cohort": ["in", frontier]}, pluck="name")
+		fresh = [c for c in children if c not in seen]
+		seen.update(fresh)
+		frontier = fresh
+	return seen
 
 
 def mentor_cohorts(user=None):
-    """Cohorts where the user is an active **Mentor**, plus everything beneath
-    them (ADR 076).
+	"""Cohorts where the user is an active **Mentor**, plus everything beneath
+	them (ADR 076).
 
-    Deliberately distinct from `led_cohorts`: `Cohort Membership.role`
-    (Member/Mentor) is the pastoral function, while `is_leader` is who runs the
-    cohort and drives moderation scope. A leader need not be a mentor, and a
-    mentor need not lead, so the two sets genuinely differ.
-    """
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    if not person:
-        return set()
-    roots = frappe.get_all(
-        "Cohort Membership",
-        filters={"person": person, "active": 1, "role": "Mentor"},
-        pluck="cohort",
-    )
-    return _descendants(set(roots)) if roots else set()
+	Deliberately distinct from `led_cohorts`: `Cohort Membership.role`
+	(Member/Mentor) is the pastoral function, while `is_leader` is who runs the
+	cohort and drives moderation scope. A leader need not be a mentor, and a
+	mentor need not lead, so the two sets genuinely differ.
+	"""
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	if not person:
+		return set()
+	roots = frappe.get_all(
+		"Cohort Membership",
+		filters={"person": person, "active": 1, "role": "Mentor"},
+		pluck="cohort",
+	)
+	return _descendants(set(roots)) if roots else set()
 
 
 def visible_cohorts(user=None):
-    """The set of Cohort names a (restricted) user may see: cohorts they are an
-    active member of, plus the subtree beneath any cohort they actively lead."""
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    if not person:
-        return set()
-    memberships = frappe.get_all(
-        "Cohort Membership",
-        filters={"person": person, "active": 1},
-        fields=["cohort", "is_leader"],
-    )
-    cohorts = {m.cohort for m in memberships}
-    # A membership the archiving closed is not somebody leaving, and ADR 066
-    # §7.6 promises the record survives for the people who were in it. Their
-    # seat is gone; their account of having been there is not.
-    cohorts |= set(
-        frappe.get_all(
-            "Cohort Membership",
-            filters={"person": person, "closed_by_archive": 1},
-            pluck="cohort",
-        )
-    )
-    led = [m.cohort for m in memberships if m.is_leader]
-    if led:
-        cohorts |= _descendants(led)
-    return cohorts
+	"""The set of Cohort names a (restricted) user may see: cohorts they are an
+	active member of, plus the subtree beneath any cohort they actively lead."""
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	if not person:
+		return set()
+	memberships = frappe.get_all(
+		"Cohort Membership",
+		filters={"person": person, "active": 1},
+		fields=["cohort", "is_leader"],
+	)
+	cohorts = {m.cohort for m in memberships}
+	# A membership the archiving closed is not somebody leaving, and ADR 066
+	# §7.6 promises the record survives for the people who were in it. Their
+	# seat is gone; their account of having been there is not.
+	cohorts |= set(
+		frappe.get_all(
+			"Cohort Membership",
+			filters={"person": person, "closed_by_archive": 1},
+			pluck="cohort",
+		)
+	)
+	led = [m.cohort for m in memberships if m.is_leader]
+	if led:
+		cohorts |= _descendants(led)
+	return cohorts
 
 
 def led_cohorts(user=None):
-    """Cohorts the user actively leads, plus their split-off subtree — the scope
-    a leader may moderate.
+	"""Cohorts the user actively leads, plus their split-off subtree — the scope
+	a leader may moderate.
 
-    Archived cohorts are excluded (ADR 066 §7.6): archiving ends a group's life,
-    and there is nothing left in it to moderate. `visible_cohorts` deliberately
-    keeps them — members still see the cohort and its history, because archiving
-    a group should not erase anyone's account of having been in it.
-    """
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    if not person:
-        return set()
-    led = frappe.get_all(
-        "Cohort Membership",
-        filters={"person": person, "active": 1, "is_leader": 1},
-        pluck="cohort",
-    )
-    if not led:
-        return set()
-    live = frappe.get_all(
-        "Cohort", filters={"name": ["in", led], "status": "Active"}, pluck="name"
-    )
-    return _descendants(live) if live else set()
+	Archived cohorts are excluded (ADR 066 §7.6): archiving ends a group's life,
+	and there is nothing left in it to moderate. `visible_cohorts` deliberately
+	keeps them — members still see the cohort and its history, because archiving
+	a group should not erase anyone's account of having been in it.
+	"""
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	if not person:
+		return set()
+	led = frappe.get_all(
+		"Cohort Membership",
+		filters={"person": person, "active": 1, "is_leader": 1},
+		pluck="cohort",
+	)
+	if not led:
+		return set()
+	live = frappe.get_all("Cohort", filters={"name": ["in", led], "status": "Active"}, pluck="name")
+	return _descendants(live) if live else set()
 
 
 def my_channels(user=None):
-    """Channels offered by the types of the cohorts the user can see
-    (decisions/101 section 1.3). A *Whole community* post reaches a reader only
-    in these, so a faculty channel's posts never reach students whatever their
-    visibility."""
-    if not user:
-        user = frappe.session.user
-    cohorts = visible_cohorts(user)
-    channels = set()
-    if cohorts:
-        types = set(
-            frappe.get_all(
-                "Cohort",
-                filters={"name": ["in", list(cohorts)]},
-                pluck="cohort_type",
-            )
-        )
-        types.discard(None)
-        if types:
-            channels = set(
-                frappe.get_all(
-                    "Cohort Type Channel",
-                    filters={
-                        "parenttype": "Cohort Type",
-                        "parent": ["in", list(types)],
-                    },
-                    pluck="channel",
-                )
-            )
-    return channels
+	"""Channels offered by the types of the cohorts the user can see
+	(decisions/101 section 1.3). A *Whole community* post reaches a reader only
+	in these, so a faculty channel's posts never reach students whatever their
+	visibility."""
+	if not user:
+		user = frappe.session.user
+	cohorts = visible_cohorts(user)
+	channels = set()
+	if cohorts:
+		types = set(
+			frappe.get_all(
+				"Cohort",
+				filters={"name": ["in", list(cohorts)]},
+				pluck="cohort_type",
+			)
+		)
+		types.discard(None)
+		if types:
+			channels = set(
+				frappe.get_all(
+					"Cohort Type Channel",
+					filters={
+						"parenttype": "Cohort Type",
+						"parent": ["in", list(types)],
+					},
+					pluck="channel",
+				)
+			)
+	return channels
 
 
 def _in_clause(table, field, names):
-    joined = ", ".join(frappe.db.escape(n) for n in names)
-    return f"(`tab{table}`.`{field}` in ({joined}))"
+	joined = ", ".join(frappe.db.escape(n) for n in names)
+	return f"(`tab{table}`.`{field}` in ({joined}))"
 
 
 # --- Cohort (scoped by its own name) ---
 def cohort_query(user=None):
-    if not _should_restrict(user):
-        return ""
-    names = visible_cohorts(user)
-    if not names:
-        return "1=0"
-    return _in_clause("Cohort", "name", names)
+	if not _should_restrict(user):
+		return ""
+	names = visible_cohorts(user)
+	if not names:
+		return "1=0"
+	return _in_clause("Cohort", "name", names)
 
 
 def cohort_has(doc, ptype=None, user=None):
-    if not _should_restrict(user):
-        return True
-    return doc.name in visible_cohorts(user)
+	if not _should_restrict(user):
+		return True
+	return doc.name in visible_cohorts(user)
 
 
 # --- Cohort Membership (scoped by its cohort, plus the user's own rows) ---
 def membership_query(user=None):
-    if not _should_restrict(user):
-        return ""
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    clauses = []
-    names = visible_cohorts(user)
-    if names:
-        clauses.append(_in_clause("Cohort Membership", "cohort", names))
-    if person:
-        clauses.append(
-            f"(`tabCohort Membership`.`person` = {frappe.db.escape(person)})"
-        )
-    if not clauses:
-        return "1=0"
-    return "(" + " OR ".join(clauses) + ")"
+	if not _should_restrict(user):
+		return ""
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	clauses = []
+	names = visible_cohorts(user)
+	if names:
+		clauses.append(_in_clause("Cohort Membership", "cohort", names))
+	if person:
+		clauses.append(f"(`tabCohort Membership`.`person` = {frappe.db.escape(person)})")
+	if not clauses:
+		return "1=0"
+	return "(" + " OR ".join(clauses) + ")"
 
 
 def membership_has(doc, ptype=None, user=None):
-    if not _should_restrict(user):
-        return True
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    if person and doc.person == person:
-        return True
-    return doc.cohort in visible_cohorts(user)
+	if not _should_restrict(user):
+		return True
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	if person and doc.person == person:
+		return True
+	return doc.cohort in visible_cohorts(user)
 
 
 # ---------------------------------------------------------------------------
@@ -212,144 +206,128 @@ def membership_has(doc, ptype=None, user=None):
 
 
 def _visibility_clause(user, table, author_field, status_field=None, own_field=None):
-    if not _should_restrict(user):
-        return ""
-    person = find_person(user=user)
-    me = frappe.db.escape(person) if person else None
-    t = f"`tab{table}`"
-    parts = []
-    channels = my_channels(user)
-    if channels:
-        joined_ch = ", ".join(frappe.db.escape(c) for c in channels)
-        parts.append(
-            f"({t}.`visibility` = 'portal_users' AND {t}.`channel` in ({joined_ch}))"
-        )
-    if me:
-        # An author keeps their own post even after leaving the cohorts that
-        # offer its channel.
-        parts.append(
-            f"({t}.`visibility` = 'portal_users' AND {t}.`{author_field}` = {me})"
-        )
-    cohorts = visible_cohorts(user)
-    if cohorts:
-        joined = ", ".join(frappe.db.escape(c) for c in cohorts)
-        parts.append(
-            f"({t}.`visibility` = 'cohort_only' AND {t}.`cohort` in ({joined}))"
-        )
-    # ADR 076: a `mentors` post reaches the mentors of its cohort and everything
-    # beneath it. Resolved from the reader's side -- the cohorts where *I* am an
-    # active Mentor, expanded downward -- so it stays one IN list rather than a
-    # correlated subquery per row. `role` is the pastoral function and is
-    # orthogonal to `is_leader`, which drives moderation.
-    mentor_scope = mentor_cohorts(user)
-    if mentor_scope:
-        joined_m = ", ".join(frappe.db.escape(c) for c in mentor_scope)
-        parts.append(f"({t}.`visibility` = 'mentors' AND {t}.`cohort` in ({joined_m}))")
-    if me:
-        # The author always sees their own mentors post, even if they are not
-        # themselves a mentor (a leader writing to their mentors).
-        parts.append(f"({t}.`visibility` = 'mentors' AND {t}.`{author_field}` = {me})")
-    if me:
-        parts.append(f"({t}.`visibility` = 'private' AND {t}.`{author_field}` = {me})")
-        parts.append(
-            f"({t}.`visibility` = 'direct' AND ({t}.`{author_field}` = {me} "
-            f"OR {t}.`direct_recipient` = {me}))"
-        )
-    clause = "(" + " OR ".join(parts) + ")" if parts else "1=0"
-    # Drafts / blocked content are visible only to their own author.
-    if status_field and own_field:
-        allowed = "'published', 'pinned'" if status_field == "status" else "'published'"
-        owner = f"{t}.`{own_field}` = {me}" if me else "0"
-        clause = f"({clause} AND ({t}.`{status_field}` in ({allowed}) OR {owner}))"
-    return clause
+	if not _should_restrict(user):
+		return ""
+	person = find_person(user=user)
+	me = frappe.db.escape(person) if person else None
+	t = f"`tab{table}`"
+	parts = []
+	channels = my_channels(user)
+	if channels:
+		joined_ch = ", ".join(frappe.db.escape(c) for c in channels)
+		parts.append(f"({t}.`visibility` = 'portal_users' AND {t}.`channel` in ({joined_ch}))")
+	if me:
+		# An author keeps their own post even after leaving the cohorts that
+		# offer its channel.
+		parts.append(f"({t}.`visibility` = 'portal_users' AND {t}.`{author_field}` = {me})")
+	cohorts = visible_cohorts(user)
+	if cohorts:
+		joined = ", ".join(frappe.db.escape(c) for c in cohorts)
+		parts.append(f"({t}.`visibility` = 'cohort_only' AND {t}.`cohort` in ({joined}))")
+	# ADR 076: a `mentors` post reaches the mentors of its cohort and everything
+	# beneath it. Resolved from the reader's side -- the cohorts where *I* am an
+	# active Mentor, expanded downward -- so it stays one IN list rather than a
+	# correlated subquery per row. `role` is the pastoral function and is
+	# orthogonal to `is_leader`, which drives moderation.
+	mentor_scope = mentor_cohorts(user)
+	if mentor_scope:
+		joined_m = ", ".join(frappe.db.escape(c) for c in mentor_scope)
+		parts.append(f"({t}.`visibility` = 'mentors' AND {t}.`cohort` in ({joined_m}))")
+	if me:
+		# The author always sees their own mentors post, even if they are not
+		# themselves a mentor (a leader writing to their mentors).
+		parts.append(f"({t}.`visibility` = 'mentors' AND {t}.`{author_field}` = {me})")
+	if me:
+		parts.append(f"({t}.`visibility` = 'private' AND {t}.`{author_field}` = {me})")
+		parts.append(
+			f"({t}.`visibility` = 'direct' AND ({t}.`{author_field}` = {me} "
+			f"OR {t}.`direct_recipient` = {me}))"
+		)
+	clause = "(" + " OR ".join(parts) + ")" if parts else "1=0"
+	# Drafts / blocked content are visible only to their own author.
+	if status_field and own_field:
+		allowed = "'published', 'pinned'" if status_field == "status" else "'published'"
+		owner = f"{t}.`{own_field}` = {me}" if me else "0"
+		clause = f"({clause} AND ({t}.`{status_field}` in ({allowed}) OR {owner}))"
+	return clause
 
 
 def _visibility_has(doc, user, author_field, status_field=None, own_field=None):
-    if not _should_restrict(user):
-        return True
-    person = find_person(user=user)
-    vis = doc.get("visibility")
-    if status_field:
-        published = {"published", "pinned"}
-        if doc.get(status_field) not in published and not (
-            person and doc.get(own_field) == person
-        ):
-            return False
-    if vis == "portal_users":
-        if person and doc.get(author_field) == person:
-            return True
-        return doc.get("channel") in my_channels(user)
-    if vis == "cohort_only":
-        return doc.get("cohort") in visible_cohorts(user)
-    if vis == "mentors":
-        if person and doc.get(author_field) == person:
-            return True
-        return doc.get("cohort") in mentor_cohorts(user)
-    if vis == "private":
-        return bool(person) and doc.get(author_field) == person
-    if vis == "direct":
-        return bool(person) and person in (
-            doc.get(author_field),
-            doc.get("direct_recipient"),
-        )
-    return False
+	if not _should_restrict(user):
+		return True
+	person = find_person(user=user)
+	vis = doc.get("visibility")
+	if status_field:
+		published = {"published", "pinned"}
+		if doc.get(status_field) not in published and not (person and doc.get(own_field) == person):
+			return False
+	if vis == "portal_users":
+		if person and doc.get(author_field) == person:
+			return True
+		return doc.get("channel") in my_channels(user)
+	if vis == "cohort_only":
+		return doc.get("cohort") in visible_cohorts(user)
+	if vis == "mentors":
+		if person and doc.get(author_field) == person:
+			return True
+		return doc.get("cohort") in mentor_cohorts(user)
+	if vis == "private":
+		return bool(person) and doc.get(author_field) == person
+	if vis == "direct":
+		return bool(person) and person in (
+			doc.get(author_field),
+			doc.get("direct_recipient"),
+		)
+	return False
 
 
 def post_query(user=None):
-    return _visibility_clause(
-        user or frappe.session.user, "Cohort Post", "author", "status", "author"
-    )
+	return _visibility_clause(user or frappe.session.user, "Cohort Post", "author", "status", "author")
 
 
 def post_has(doc, ptype=None, user=None):
-    return _visibility_has(
-        doc, user or frappe.session.user, "author", "status", "author"
-    )
+	return _visibility_has(doc, user or frappe.session.user, "author", "status", "author")
 
 
 def comment_query(user=None):
-    user = user or frappe.session.user
-    base = _visibility_clause(
-        user, "Cohort Post Comment", "post_author", "status", "author"
-    )
-    if not base:  # staff bypass
-        return ""
-    # private replies: only the writer, the post author, and cohort leaders.
-    person = find_person(user=user)
-    me = frappe.db.escape(person) if person else "''"
-    t = "`tabCohort Post Comment`"
-    parts = [
-        f"{t}.`is_private` = 0",
-        f"{t}.`author` = {me}",
-        f"{t}.`post_author` = {me}",
-    ]
-    led = led_cohorts(user)
-    if led:
-        joined = ", ".join(frappe.db.escape(c) for c in led)
-        parts.append(f"{t}.`cohort` in ({joined})")
-    return f"({base} AND (" + " OR ".join(parts) + "))"
+	user = user or frappe.session.user
+	base = _visibility_clause(user, "Cohort Post Comment", "post_author", "status", "author")
+	if not base:  # staff bypass
+		return ""
+	# private replies: only the writer, the post author, and cohort leaders.
+	person = find_person(user=user)
+	me = frappe.db.escape(person) if person else "''"
+	t = "`tabCohort Post Comment`"
+	parts = [
+		f"{t}.`is_private` = 0",
+		f"{t}.`author` = {me}",
+		f"{t}.`post_author` = {me}",
+	]
+	led = led_cohorts(user)
+	if led:
+		joined = ", ".join(frappe.db.escape(c) for c in led)
+		parts.append(f"{t}.`cohort` in ({joined})")
+	return f"({base} AND (" + " OR ".join(parts) + "))"
 
 
 def comment_has(doc, ptype=None, user=None):
-    user = user or frappe.session.user
-    if not _visibility_has(doc, user, "post_author", "status", "author"):
-        return False
-    if int(getattr(doc, "is_private", 0) or 0) and _should_restrict(user):
-        person = find_person(user=user)
-        if person and person in (doc.get("author"), doc.get("post_author")):
-            return True
-        return doc.get("cohort") in led_cohorts(user)
-    return True
+	user = user or frappe.session.user
+	if not _visibility_has(doc, user, "post_author", "status", "author"):
+		return False
+	if int(getattr(doc, "is_private", 0) or 0) and _should_restrict(user):
+		person = find_person(user=user)
+		if person and person in (doc.get("author"), doc.get("post_author")):
+			return True
+		return doc.get("cohort") in led_cohorts(user)
+	return True
 
 
 def reaction_query(user=None):
-    return _visibility_clause(
-        user or frappe.session.user, "Cohort Post Reaction", "post_author"
-    )
+	return _visibility_clause(user or frappe.session.user, "Cohort Post Reaction", "post_author")
 
 
 def reaction_has(doc, ptype=None, user=None):
-    return _visibility_has(doc, user or frappe.session.user, "post_author")
+	return _visibility_has(doc, user or frappe.session.user, "post_author")
 
 
 # ---------------------------------------------------------------------------
@@ -357,33 +335,31 @@ def reaction_has(doc, ptype=None, user=None):
 # reporter see a flag; everyone else is blind to the moderation queue.
 # ---------------------------------------------------------------------------
 def flag_query(user=None):
-    if not _should_restrict(user):
-        return ""
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    clauses = []
-    led = led_cohorts(user)
-    if led:
-        clauses.append(_in_clause("Cohort Content Flag", "cohort", led))
-    if person:
-        clauses.append(
-            f"(`tabCohort Content Flag`.`reporter` = {frappe.db.escape(person)})"
-        )
-    if not clauses:
-        return "1=0"
-    return "(" + " OR ".join(clauses) + ")"
+	if not _should_restrict(user):
+		return ""
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	clauses = []
+	led = led_cohorts(user)
+	if led:
+		clauses.append(_in_clause("Cohort Content Flag", "cohort", led))
+	if person:
+		clauses.append(f"(`tabCohort Content Flag`.`reporter` = {frappe.db.escape(person)})")
+	if not clauses:
+		return "1=0"
+	return "(" + " OR ".join(clauses) + ")"
 
 
 def flag_has(doc, ptype=None, user=None):
-    if not _should_restrict(user):
-        return True
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    if person and doc.reporter == person:
-        return True
-    return doc.cohort in led_cohorts(user)
+	if not _should_restrict(user):
+		return True
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	if person and doc.reporter == person:
+		return True
+	return doc.cohort in led_cohorts(user)
 
 
 # ---------------------------------------------------------------------------
@@ -391,45 +367,43 @@ def flag_has(doc, ptype=None, user=None):
 # seen by the cohort's members and leaders; a vote by its voter and leaders.
 # ---------------------------------------------------------------------------
 def meeting_query(user=None):
-    if not _should_restrict(user):
-        return ""
-    names = visible_cohorts(user)
-    if not names:
-        return "1=0"
-    return _in_clause("Cohort Meeting", "cohort", names)
+	if not _should_restrict(user):
+		return ""
+	names = visible_cohorts(user)
+	if not names:
+		return "1=0"
+	return _in_clause("Cohort Meeting", "cohort", names)
 
 
 def meeting_has(doc, ptype=None, user=None):
-    if not _should_restrict(user):
-        return True
-    return doc.cohort in visible_cohorts(user)
+	if not _should_restrict(user):
+		return True
+	return doc.cohort in visible_cohorts(user)
 
 
 def vote_query(user=None):
-    if not _should_restrict(user):
-        return ""
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    clauses = []
-    led = led_cohorts(user)
-    if led:
-        clauses.append(_in_clause("Cohort Meeting Vote", "cohort", led))
-    if person:
-        clauses.append(
-            f"(`tabCohort Meeting Vote`.`person` = {frappe.db.escape(person)})"
-        )
-    if not clauses:
-        return "1=0"
-    return "(" + " OR ".join(clauses) + ")"
+	if not _should_restrict(user):
+		return ""
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	clauses = []
+	led = led_cohorts(user)
+	if led:
+		clauses.append(_in_clause("Cohort Meeting Vote", "cohort", led))
+	if person:
+		clauses.append(f"(`tabCohort Meeting Vote`.`person` = {frappe.db.escape(person)})")
+	if not clauses:
+		return "1=0"
+	return "(" + " OR ".join(clauses) + ")"
 
 
 def vote_has(doc, ptype=None, user=None):
-    if not _should_restrict(user):
-        return True
-    if not user:
-        user = frappe.session.user
-    person = find_person(user=user)
-    if person and doc.person == person:
-        return True
-    return doc.cohort in led_cohorts(user)
+	if not _should_restrict(user):
+		return True
+	if not user:
+		user = frappe.session.user
+	person = find_person(user=user)
+	if person and doc.person == person:
+		return True
+	return doc.cohort in led_cohorts(user)

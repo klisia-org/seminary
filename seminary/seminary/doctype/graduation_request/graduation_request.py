@@ -19,220 +19,201 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import today
 
-
 NAME_LOCKED_STATES = ("Academic Review", "Financial Review", "Approved")
 
 
 class GraduationRequest(Document):
-    def validate(self):
-        self._fetch_program_and_dates()
-        self._guard_unique_active_request()
-        self._guard_name_edits_after_review()
+	def validate(self):
+		self._fetch_program_and_dates()
+		self._guard_unique_active_request()
+		self._guard_name_edits_after_review()
 
-    def before_submit(self):
-        from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+	def before_submit(self):
+		from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
 
-        program = frappe.get_cached_doc("Program", self.program)
-        if not program.students_can_request_graduation:
-            frappe.throw(
-                _("Program {0} does not allow Graduation Requests.").format(
-                    self.program
-                )
-            )
-        # An unset graduation_request_trigger is not a veto — it resolves to the
-        # default (see graduation_candidate.resolve_request_trigger), so a
-        # program that was never explicitly configured still graduates students.
-        # Candidacy is recomputed here rather than read off the enrollment: the
-        # stored flag is hook-maintained and several paths bypass those hooks.
-        if not evaluate_candidacy_safe(self.program_enrollment):
-            frappe.throw(
-                _(
-                    "Student is not yet a graduation candidate on enrollment {0}. "
-                    "Wait until the program's trigger condition is met."
-                ).format(self.program_enrollment)
-            )
+		program = frappe.get_cached_doc("Program", self.program)
+		if not program.students_can_request_graduation:
+			frappe.throw(_("Program {0} does not allow Graduation Requests.").format(self.program))
+		# An unset graduation_request_trigger is not a veto — it resolves to the
+		# default (see graduation_candidate.resolve_request_trigger), so a
+		# program that was never explicitly configured still graduates students.
+		# Candidacy is recomputed here rather than read off the enrollment: the
+		# stored flag is hook-maintained and several paths bypass those hooks.
+		if not evaluate_candidacy_safe(self.program_enrollment):
+			frappe.throw(
+				_(
+					"Student is not yet a graduation candidate on enrollment {0}. "
+					"Wait until the program's trigger condition is met."
+				).format(self.program_enrollment)
+			)
 
-    # Sales Invoice generation on submit is owned by the oikonomos bridge
-    # (oikonomos.financial.graduation.on_submit, via doc_events). With no bridge
-    # the graduation request submits free; oikonomos stamps gr_si.
+	# Sales Invoice generation on submit is owned by the oikonomos bridge
+	# (oikonomos.financial.graduation.on_submit, via doc_events). With no bridge
+	# the graduation request submits free; oikonomos stamps gr_si.
 
-    def on_update_after_submit(self):
-        if self.workflow_state != "Approved":
-            return
-        if not frappe.db.exists("Diploma", {"graduation_request": self.name}):
-            self._issue_diploma()
-        # Flip the enrollment to Graduated. Kept outside the diploma guard (and
-        # idempotent) so an approval whose diploma already exists still settles
-        # the enrollment status.
-        self._mark_enrollment_graduated()
+	def on_update_after_submit(self):
+		if self.workflow_state != "Approved":
+			return
+		if not frappe.db.exists("Diploma", {"graduation_request": self.name}):
+			self._issue_diploma()
+		# Flip the enrollment to Graduated. Kept outside the diploma guard (and
+		# idempotent) so an approval whose diploma already exists still settles
+		# the enrollment status.
+		self._mark_enrollment_graduated()
 
-    def _mark_enrollment_graduated(self):
-        """Transition the Program Enrollment to Graduated on approval.
+	def _mark_enrollment_graduated(self):
+		"""Transition the Program Enrollment to Graduated on approval.
 
-        Routes through the status spine (history + leaving record + stop billing).
-        Idempotent — set_program_status no-ops if the enrollment is already
-        Graduated — and passes this request as the cascade's source so the spine
-        does not cancel the very request that triggered the graduation."""
-        if not self.program_enrollment:
-            return
-        from seminary.seminary.program_status import set_program_status
+		Routes through the status spine (history + leaving record + stop billing).
+		Idempotent — set_program_status no-ops if the enrollment is already
+		Graduated — and passes this request as the cascade's source so the spine
+		does not cancel the very request that triggered the graduation."""
+		if not self.program_enrollment:
+			return
+		from seminary.seminary.program_status import set_program_status
 
-        set_program_status(
-            self.program_enrollment,
-            to_status="Graduated",
-            category="Academic",
-            reason="Graduation",
-            effective_date=self.expected_graduation_date or today(),
-            source_doctype="Graduation Request",
-            source_name=self.name,
-        )
+		set_program_status(
+			self.program_enrollment,
+			to_status="Graduated",
+			category="Academic",
+			reason="Graduation",
+			effective_date=self.expected_graduation_date or today(),
+			source_doctype="Graduation Request",
+			source_name=self.name,
+		)
 
-    def on_cancel(self):
-        """Stamp workflow_state and revoke any issued diploma.
+	def on_cancel(self):
+		"""Stamp workflow_state and revoke any issued diploma.
 
-        Cancelling the linked Sales Invoices is owned by the oikonomos bridge
-        (oikonomos.financial.graduation.on_cancel), which also honours the
-        non-refundable `flags.cascade_from_pe_withdrawal` path.
-        """
-        frappe.db.set_value(
-            self.doctype,
-            self.name,
-            "workflow_state",
-            "Cancelled",
-            update_modified=False,
-        )
+		Cancelling the linked Sales Invoices is owned by the oikonomos bridge
+		(oikonomos.financial.graduation.on_cancel), which also honours the
+		non-refundable `flags.cascade_from_pe_withdrawal` path.
+		"""
+		frappe.db.set_value(
+			self.doctype,
+			self.name,
+			"workflow_state",
+			"Cancelled",
+			update_modified=False,
+		)
 
-        self._revoke_diploma_if_issued()
+		self._revoke_diploma_if_issued()
 
-    # ------------------------------------------------------------------
-    # Validators
-    # ------------------------------------------------------------------
+	# ------------------------------------------------------------------
+	# Validators
+	# ------------------------------------------------------------------
 
-    def _fetch_program_and_dates(self):
-        """Backfill program / expected_graduation_date / is_free / student
-        from PE in case the form was submitted without triggering fetch_from
-        (programmatic insert from the audit endpoint)."""
-        if not self.program_enrollment:
-            return
-        pe = frappe.db.get_value(
-            "Program Enrollment",
-            self.program_enrollment,
-            ["student", "program", "expected_graduation_date"],
-            as_dict=True,
-        )
-        if not pe:
-            frappe.throw(
-                _("Program Enrollment {0} not found.").format(self.program_enrollment)
-            )
-        self.student = self.student or pe.student
-        self.program = self.program or pe.program
-        self.expected_graduation_date = (
-            self.expected_graduation_date or pe.expected_graduation_date
-        )
-        if self.program:
-            self.is_free = frappe.db.get_value("Program", self.program, "is_free") or 0
+	def _fetch_program_and_dates(self):
+		"""Backfill program / expected_graduation_date / is_free / student
+		from PE in case the form was submitted without triggering fetch_from
+		(programmatic insert from the audit endpoint)."""
+		if not self.program_enrollment:
+			return
+		pe = frappe.db.get_value(
+			"Program Enrollment",
+			self.program_enrollment,
+			["student", "program", "expected_graduation_date"],
+			as_dict=True,
+		)
+		if not pe:
+			frappe.throw(_("Program Enrollment {0} not found.").format(self.program_enrollment))
+		self.student = self.student or pe.student
+		self.program = self.program or pe.program
+		self.expected_graduation_date = self.expected_graduation_date or pe.expected_graduation_date
+		if self.program:
+			self.is_free = frappe.db.get_value("Program", self.program, "is_free") or 0
 
-        # Without a financial backend (a Frappe-only seminary) there is no
-        # graduation fee to collect, so treat the request as free — the workflow
-        # then routes Draft → Academic Review instead of stalling at Awaiting
-        # Payment with no way to pay.
-        from seminary.seminary.financial.backend import get_financial_backend
+		# Without a financial backend (a Frappe-only seminary) there is no
+		# graduation fee to collect, so treat the request as free — the workflow
+		# then routes Draft → Academic Review instead of stalling at Awaiting
+		# Payment with no way to pay.
+		from seminary.seminary.financial.backend import get_financial_backend
 
-        if not get_financial_backend().has_financials():
-            self.is_free = 1
+		if not get_financial_backend().has_financials():
+			self.is_free = 1
 
-    def _revoke_diploma_if_issued(self):
-        """Mark the Diploma revoked rather than deleting it — preserves the
-        verification hash for the future v2 page (which should report the
-        Revoked state, not 404)."""
-        diploma = frappe.db.get_value(
-            "Diploma", {"graduation_request": self.name}, "name"
-        )
-        if not diploma:
-            return
-        reason = "Graduation Request cancelled"
-        if getattr(self.flags, "cascade_from_pe_withdrawal", False):
-            reason += " (cascade from PE withdrawal)"
-        frappe.db.set_value(
-            "Diploma",
-            diploma,
-            {
-                "revoked": 1,
-                "revoked_on": today(),
-                "revocation_reason": reason,
-            },
-            update_modified=False,
-        )
+	def _revoke_diploma_if_issued(self):
+		"""Mark the Diploma revoked rather than deleting it — preserves the
+		verification hash for the future v2 page (which should report the
+		Revoked state, not 404)."""
+		diploma = frappe.db.get_value("Diploma", {"graduation_request": self.name}, "name")
+		if not diploma:
+			return
+		reason = "Graduation Request cancelled"
+		if getattr(self.flags, "cascade_from_pe_withdrawal", False):
+			reason += " (cascade from PE withdrawal)"
+		frappe.db.set_value(
+			"Diploma",
+			diploma,
+			{
+				"revoked": 1,
+				"revoked_on": today(),
+				"revocation_reason": reason,
+			},
+			update_modified=False,
+		)
 
-    def _guard_name_edits_after_review(self):
-        """Lock the diploma name fields once Academic Review begins.
+	def _guard_name_edits_after_review(self):
+		"""Lock the diploma name fields once Academic Review begins.
 
-        Registrar (and Program Chair) can still correct typos at any state.
-        """
-        if self.is_new():
-            return
-        changed = self.has_value_changed(
-            "legal_name_at_graduation"
-        ) or self.has_value_changed("phonetic_name_snapshot")
-        if not changed:
-            return
-        if self.workflow_state in NAME_LOCKED_STATES:
-            roles = set(frappe.get_roles())
-            if not (
-                roles
-                & {"Program Chair", "Registrar", "Seminary Manager", "System Manager"}
-            ):
-                frappe.throw(
-                    _(
-                        "Diploma name can only be changed before Academic Review. "
-                        "Contact the registrar."
-                    )
-                )
+		Registrar (and Program Chair) can still correct typos at any state.
+		"""
+		if self.is_new():
+			return
+		changed = self.has_value_changed("legal_name_at_graduation") or self.has_value_changed(
+			"phonetic_name_snapshot"
+		)
+		if not changed:
+			return
+		if self.workflow_state in NAME_LOCKED_STATES:
+			roles = set(frappe.get_roles())
+			if not (roles & {"Program Chair", "Registrar", "Seminary Manager", "System Manager"}):
+				frappe.throw(
+					_("Diploma name can only be changed before Academic Review. Contact the registrar.")
+				)
 
-    def _issue_diploma(self):
-        """Create the Diploma record. Two layers of idempotency:
-        the `frappe.db.exists` short-circuit in on_update_after_submit,
-        and the unique constraint on Diploma.graduation_request."""
-        diploma = frappe.get_doc(
-            {
-                "doctype": "Diploma",
-                "graduation_request": self.name,
-                "student": self.student,
-                "program": self.program,
-                "program_enrollment": self.program_enrollment,
-                "legal_name": self.legal_name_at_graduation,
-                "phonetic_name": self.phonetic_name_snapshot,
-                "issued_on": today(),
-                "expected_graduation_date": self.expected_graduation_date,
-            }
-        )
-        diploma.flags.ignore_permissions = True
-        diploma.insert(ignore_permissions=True)
+	def _issue_diploma(self):
+		"""Create the Diploma record. Two layers of idempotency:
+		the `frappe.db.exists` short-circuit in on_update_after_submit,
+		and the unique constraint on Diploma.graduation_request."""
+		diploma = frappe.get_doc(
+			{
+				"doctype": "Diploma",
+				"graduation_request": self.name,
+				"student": self.student,
+				"program": self.program,
+				"program_enrollment": self.program_enrollment,
+				"legal_name": self.legal_name_at_graduation,
+				"phonetic_name": self.phonetic_name_snapshot,
+				"issued_on": today(),
+				"expected_graduation_date": self.expected_graduation_date,
+			}
+		)
+		diploma.flags.ignore_permissions = True
+		diploma.insert(ignore_permissions=True)
 
-    def _guard_unique_active_request(self):
-        """Block duplicate active requests on the same enrollment."""
-        existing = frappe.get_all(
-            "Graduation Request",
-            filters={
-                "program_enrollment": self.program_enrollment,
-                "docstatus": ("!=", 2),
-                "name": ("!=", self.name or ""),
-                "workflow_state": (
-                    "in",
-                    (
-                        "Draft",
-                        "Awaiting Payment",
-                        "Academic Review",
-                        "Financial Review",
-                        "Approved",
-                    ),
-                ),
-            },
-            pluck="name",
-        )
-        if existing:
-            frappe.throw(
-                _(
-                    "An active Graduation Request already exists for this enrollment: {0}."
-                ).format(existing[0])
-            )
+	def _guard_unique_active_request(self):
+		"""Block duplicate active requests on the same enrollment."""
+		existing = frappe.get_all(
+			"Graduation Request",
+			filters={
+				"program_enrollment": self.program_enrollment,
+				"docstatus": ("!=", 2),
+				"name": ("!=", self.name or ""),
+				"workflow_state": (
+					"in",
+					(
+						"Draft",
+						"Awaiting Payment",
+						"Academic Review",
+						"Financial Review",
+						"Approved",
+					),
+				),
+			},
+			pluck="name",
+		)
+		if existing:
+			frappe.throw(
+				_("An active Graduation Request already exists for this enrollment: {0}.").format(existing[0])
+			)

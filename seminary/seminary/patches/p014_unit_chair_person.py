@@ -9,31 +9,25 @@ import frappe
 
 
 def execute():
-    for unit, chair in frappe.get_all(
-        "Academic Unit",
-        filters={"chair": ("is", "set")},
-        fields=["name", "chair"],
-        as_list=True,
-    ):
-        person = frappe.db.get_value("Instructor", chair, "person")
-        if not person and frappe.db.exists("Person", chair):
-            person = chair
-        if person == chair:
-            continue
-        if not person:
-            print(
-                f"p014: cleared chair {chair!r} of {unit!r}, which matches no Instructor or Person"
-            )
-        frappe.db.set_value(
-            "Academic Unit",
-            unit,
-            {
-                "chair": person,
-                "chair_name": (
-                    frappe.db.get_value("Person", person, "full_name")
-                    if person
-                    else None
-                ),
-            },
-            update_modified=False,
-        )
+	for unit, chair in frappe.get_all(
+		"Academic Unit",
+		filters={"chair": ("is", "set")},
+		fields=["name", "chair"],
+		as_list=True,
+	):
+		person = frappe.db.get_value("Instructor", chair, "person")
+		if not person and frappe.db.exists("Person", chair):
+			person = chair
+		if person == chair:
+			continue
+		if not person:
+			print(f"p014: cleared chair {chair!r} of {unit!r}, which matches no Instructor or Person")
+		frappe.db.set_value(
+			"Academic Unit",
+			unit,
+			{
+				"chair": person,
+				"chair_name": (frappe.db.get_value("Person", person, "full_name") if person else None),
+			},
+			update_modified=False,
+		)

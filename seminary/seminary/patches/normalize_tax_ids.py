@@ -22,43 +22,34 @@ DOCTYPES = ("Person", "Student Applicant", "Partner Organization")
 
 
 def execute():
-    normalized = left_alone = 0
+	normalized = left_alone = 0
 
-    for doctype in DOCTYPES:
-        if not _has_tax_id(doctype):
-            continue
+	for doctype in DOCTYPES:
+		if not _has_tax_id(doctype):
+			continue
 
-        fields = ["name", "tax_id", *tax_ids.COUNTRY_FIELDS.get(doctype, ())]
-        subject = tax_ids.SUBJECTS.get(doctype, tax_ids.BOTH)
+		fields = ["name", "tax_id", *tax_ids.COUNTRY_FIELDS.get(doctype, ())]
+		subject = tax_ids.SUBJECTS.get(doctype, tax_ids.BOTH)
 
-        for row in frappe.get_all(
-            doctype, filters={"tax_id": ("is", "set")}, fields=fields
-        ):
-            country = next(
-                (row.get(f) for f in tax_ids.COUNTRY_FIELDS[doctype] if row.get(f)),
-                None,
-            )
-            if tax_ids.problem_with(row.tax_id, country, subject):
-                left_alone += 1
-                continue
+		for row in frappe.get_all(doctype, filters={"tax_id": ("is", "set")}, fields=fields):
+			country = next(
+				(row.get(f) for f in tax_ids.COUNTRY_FIELDS[doctype] if row.get(f)),
+				None,
+			)
+			if tax_ids.problem_with(row.tax_id, country, subject):
+				left_alone += 1
+				continue
 
-            cleaned = tax_ids.clean_tax_id(row.tax_id, country, subject)
-            if cleaned and cleaned != row.tax_id:
-                frappe.db.set_value(
-                    doctype, row.name, "tax_id", cleaned, update_modified=False
-                )
-                normalized += 1
+			cleaned = tax_ids.clean_tax_id(row.tax_id, country, subject)
+			if cleaned and cleaned != row.tax_id:
+				frappe.db.set_value(doctype, row.name, "tax_id", cleaned, update_modified=False)
+				normalized += 1
 
-    if normalized:
-        print("  tax ids normalized: %d" % normalized)
-    if left_alone:
-        print(
-            "  tax ids left as typed (no rule, or would not validate): %d" % left_alone
-        )
+	if normalized:
+		print("  tax ids normalized: %d" % normalized)
+	if left_alone:
+		print("  tax ids left as typed (no rule, or would not validate): %d" % left_alone)
 
 
 def _has_tax_id(doctype):
-    return bool(
-        frappe.db.exists("DocType", doctype)
-        and frappe.get_meta(doctype).get_field("tax_id")
-    )
+	return bool(frappe.db.exists("DocType", doctype) and frappe.get_meta(doctype).get_field("tax_id"))

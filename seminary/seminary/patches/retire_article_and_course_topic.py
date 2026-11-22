@@ -19,9 +19,9 @@ import frappe
 
 
 def execute():
-    for name in ("Course Topic", "Article"):
-        if frappe.db.exists("DocType", name):
-            frappe.delete_doc("DocType", name, force=True, ignore_missing=True)
-            print(f"Deleted leftover DocType '{name}'.")
+	for name in ("Course Topic", "Article"):
+		if frappe.db.exists("DocType", name):
+			frappe.delete_doc("DocType", name, force=True, ignore_missing=True)
+			print(f"Deleted leftover DocType '{name}'.")
 
-    frappe.db.commit()
+	frappe.db.commit()

@@ -5,22 +5,18 @@
 // competency, so it is offered only where the framework asks for one (ADR 079
 // decision 7). The controller refuses the combination too; this only keeps the
 // form from offering what it would refuse.
-const END_OF_COMPETENCY = [
-	"End of each competency",
-	"Start of course and end of each competency",
-];
+const END_OF_COMPETENCY = ["End of each competency", "Start of course and end of each competency"];
 
 function filter_release_modes(frm) {
 	const all = (
-		frappe.get_meta("Competency Framework").fields.find(
-			(df) => df.fieldname === "content_release_mode"
-		)?.options || ""
+		frappe
+			.get_meta("Competency Framework")
+			.fields.find((df) => df.fieldname === "content_release_mode")?.options || ""
 	)
 		.split("\n")
 		.filter(Boolean);
 	const gated_ok =
-		frm.doc.course_self_eval &&
-		END_OF_COMPETENCY.includes(frm.doc.course_self_eval_points);
+		frm.doc.course_self_eval && END_OF_COMPETENCY.includes(frm.doc.course_self_eval_points);
 	let options = gated_ok ? all : ["Ungated"];
 	// A stored gated mode stays visible rather than silently changing, so the
 	// save explains why it is refused instead of the value just disappearing.

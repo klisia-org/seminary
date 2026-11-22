@@ -45,51 +45,51 @@ from seminary.storage.backend import get_storage_backend
 
 #: Large, egress-heavy, and read as opaque bytes by everything that touches them.
 OFFLOAD_EXTENSIONS = frozenset(
-    {
-        # video
-        ".mp4",
-        ".webm",
-        ".mov",
-        ".m4v",
-        ".mkv",
-        # audio (includes Seminary Announcement voice_audio)
-        ".mp3",
-        ".m4a",
-        ".wav",
-        ".ogg",
-        # instructor materials and submissions
-        ".pptx",
-        ".ppt",
-        ".pdf",
-        ".docx",
-        ".doc",
-        ".xlsx",
-        # SCORM packages and course packs — these need StorageBackend.materialize()
-        ".zip",
-    }
+	{
+		# video
+		".mp4",
+		".webm",
+		".mov",
+		".m4v",
+		".mkv",
+		# audio (includes Seminary Announcement voice_audio)
+		".mp3",
+		".m4a",
+		".wav",
+		".ogg",
+		# instructor materials and submissions
+		".pptx",
+		".ppt",
+		".pdf",
+		".docx",
+		".doc",
+		".xlsx",
+		# SCORM packages and course packs — these need StorageBackend.materialize()
+		".zip",
+	}
 )
 
 #: Never offloaded at any size. See the module docstring.
 NEVER_OFFLOAD_EXTENSIONS = frozenset(
-    {
-        # images: rewritten by comms.py, thumbnailed, rendered by path
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".webp",
-        ".svg",
-        ".ico",
-        ".bmp",
-        # text formats: small, and read as content by importers
-        ".csv",
-        ".txt",
-        ".json",
-        ".xml",
-        ".html",
-        ".htm",
-        ".md",
-    }
+	{
+		# images: rewritten by comms.py, thumbnailed, rendered by path
+		".png",
+		".jpg",
+		".jpeg",
+		".gif",
+		".webp",
+		".svg",
+		".ico",
+		".bmp",
+		# text formats: small, and read as content by importers
+		".csv",
+		".txt",
+		".json",
+		".xml",
+		".html",
+		".htm",
+		".md",
+	}
 )
 
 #: Below this, offloading costs a redirect round-trip and saves nothing.
@@ -97,55 +97,55 @@ DEFAULT_MIN_BYTES = 8 * 1024 * 1024
 
 
 def min_offload_bytes() -> int:
-    return int(frappe.conf.get("storage_min_bytes") or DEFAULT_MIN_BYTES)
+	return int(frappe.conf.get("storage_min_bytes") or DEFAULT_MIN_BYTES)
 
 
 def _offload_unknown_types() -> bool:
-    return bool(frappe.conf.get("storage_offload_unknown_types"))
+	return bool(frappe.conf.get("storage_offload_unknown_types"))
 
 
 def client_rule() -> dict:
-    """The offload rule, serialised for the browser.
+	"""The offload rule, serialised for the browser.
 
-    The SPA has to know whether a given file will go direct to object storage,
-    because that decides which ceiling applies to it — the large direct one or
-    the much smaller worker one. Getting that wrong means either refusing an
-    upload that would have worked, or accepting one the server will reject after
-    the user has waited for it.
+	The SPA has to know whether a given file will go direct to object storage,
+	because that decides which ceiling applies to it — the large direct one or
+	the much smaller worker one. Getting that wrong means either refusing an
+	upload that would have worked, or accepting one the server will reject after
+	the user has waited for it.
 
-    Published from these same constants rather than restated in JavaScript, so
-    the rule cannot drift between the two.
-    """
-    return {
-        "min_bytes": min_offload_bytes(),
-        "offload_extensions": sorted(OFFLOAD_EXTENSIONS),
-        "never_offload_extensions": sorted(NEVER_OFFLOAD_EXTENSIONS),
-        "offload_unknown_types": _offload_unknown_types(),
-    }
+	Published from these same constants rather than restated in JavaScript, so
+	the rule cannot drift between the two.
+	"""
+	return {
+		"min_bytes": min_offload_bytes(),
+		"offload_extensions": sorted(OFFLOAD_EXTENSIONS),
+		"never_offload_extensions": sorted(NEVER_OFFLOAD_EXTENSIONS),
+		"offload_unknown_types": _offload_unknown_types(),
+	}
 
 
 def should_offload(file_name: str | None, size: int | None, is_private=None) -> bool:
-    """True when this file should live in object storage rather than on disk.
+	"""True when this file should live in object storage rather than on disk.
 
-    `is_private` is accepted because both hook signatures carry it and a future
-    policy may need it; it is deliberately not consulted today — access control
-    is enforced at read time by the download endpoint, so where the bytes live is
-    independent of who may see them.
-    """
-    # The single kill switch. A site with no storage backend behaves exactly as
-    # it did before this module existed.
-    if not get_storage_backend().is_configured():
-        return False
+	`is_private` is accepted because both hook signatures carry it and a future
+	policy may need it; it is deliberately not consulted today — access control
+	is enforced at read time by the download endpoint, so where the bytes live is
+	independent of who may see them.
+	"""
+	# The single kill switch. A site with no storage backend behaves exactly as
+	# it did before this module existed.
+	if not get_storage_backend().is_configured():
+		return False
 
-    if not size or int(size) < min_offload_bytes():
-        return False
+	if not size or int(size) < min_offload_bytes():
+		return False
 
-    extension = os.path.splitext(file_name or "")[1].lower()
+	extension = os.path.splitext(file_name or "")[1].lower()
 
-    if extension in NEVER_OFFLOAD_EXTENSIONS:
-        return False
+	if extension in NEVER_OFFLOAD_EXTENSIONS:
+		return False
 
-    if extension in OFFLOAD_EXTENSIONS:
-        return True
+	if extension in OFFLOAD_EXTENSIONS:
+		return True
 
-    return _offload_unknown_types()
+	return _offload_unknown_types()

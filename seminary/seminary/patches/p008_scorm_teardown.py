@@ -23,53 +23,52 @@ import frappe
 
 
 def execute():
-    from seminary.seminary.api import pin_scorm_package
+	from seminary.seminary.api import pin_scorm_package
 
-    if frappe.db.exists("DocType", "Course Schedule Chapter"):
-        # p009 S1 dropped these three columns outright. On a site that ran this
-        # patch when they existed nothing changes; on one where p009 has already
-        # migrated there is nothing to clear, and the patch must not crash
-        # trying -- a patch that explodes when invoked is a landmine for
-        # whoever rebuilds a site or runs it by hand.
-        stale = [
-            f
-            for f in ("scorm_package_path", "manifest_file", "launch_file")
-            if frappe.db.has_column("Course Schedule Chapter", f)
-        ]
-        for ch in frappe.get_all(
-            "Course Schedule Chapter",
-            filters={"is_scorm_package": 1},
-            fields=["name", "scorm_package"],
-        ):
-            if stale:
-                frappe.db.set_value(
-                    "Course Schedule Chapter",
-                    ch.name,
-                    dict.fromkeys(stale),
-                    update_modified=False,
-                )
-            if ch.scorm_package and frappe.db.exists("File", ch.scorm_package):
-                try:
-                    pin_scorm_package(ch.name, ch.scorm_package)
-                except Exception:
-                    frappe.log_error(
-                        frappe.get_traceback(),
-                        f"p008_scorm_teardown: could not pin the package of {ch.name}",
-                    )
-            elif ch.scorm_package:
-                frappe.log_error(
-                    f"Chapter {ch.name} names SCORM package {ch.scorm_package}, "
-                    "which no longer exists.",
-                    "p008_scorm_teardown: missing package",
-                )
+	if frappe.db.exists("DocType", "Course Schedule Chapter"):
+		# p009 S1 dropped these three columns outright. On a site that ran this
+		# patch when they existed nothing changes; on one where p009 has already
+		# migrated there is nothing to clear, and the patch must not crash
+		# trying -- a patch that explodes when invoked is a landmine for
+		# whoever rebuilds a site or runs it by hand.
+		stale = [
+			f
+			for f in ("scorm_package_path", "manifest_file", "launch_file")
+			if frappe.db.has_column("Course Schedule Chapter", f)
+		]
+		for ch in frappe.get_all(
+			"Course Schedule Chapter",
+			filters={"is_scorm_package": 1},
+			fields=["name", "scorm_package"],
+		):
+			if stale:
+				frappe.db.set_value(
+					"Course Schedule Chapter",
+					ch.name,
+					dict.fromkeys(stale),
+					update_modified=False,
+				)
+			if ch.scorm_package and frappe.db.exists("File", ch.scorm_package):
+				try:
+					pin_scorm_package(ch.name, ch.scorm_package)
+				except Exception:
+					frappe.log_error(
+						frappe.get_traceback(),
+						f"p008_scorm_teardown: could not pin the package of {ch.name}",
+					)
+			elif ch.scorm_package:
+				frappe.log_error(
+					f"Chapter {ch.name} names SCORM package {ch.scorm_package}, which no longer exists.",
+					"p008_scorm_teardown: missing package",
+				)
 
-    public = os.path.realpath(frappe.get_site_path("public"))
-    scorm = os.path.realpath(os.path.join(public, "scorm"))
-    if (
-        scorm != public
-        and os.path.commonpath([scorm, public]) == public
-        and os.path.basename(scorm) == "scorm"
-        and os.path.isdir(scorm)
-        and not os.path.islink(os.path.join(public, "scorm"))
-    ):
-        shutil.rmtree(scorm, ignore_errors=True)
+	public = os.path.realpath(frappe.get_site_path("public"))
+	scorm = os.path.realpath(os.path.join(public, "scorm"))
+	if (
+		scorm != public
+		and os.path.commonpath([scorm, public]) == public
+		and os.path.basename(scorm) == "scorm"
+		and os.path.isdir(scorm)
+		and not os.path.islink(os.path.join(public, "scorm"))
+	):
+		shutil.rmtree(scorm, ignore_errors=True)

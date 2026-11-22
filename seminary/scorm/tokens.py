@@ -47,77 +47,75 @@ _REVERSE = "scorm:launch:of"
 
 
 def ttl() -> int:
-    return int(frappe.conf.get("scorm_launch_ttl") or DEFAULT_TTL)
+	return int(frappe.conf.get("scorm_launch_ttl") or DEFAULT_TTL)
 
 
 def _primary_key(token: str) -> str:
-    return f"{_PRIMARY}:{hashlib.sha256(token.encode()).hexdigest()}"
+	return f"{_PRIMARY}:{hashlib.sha256(token.encode()).hexdigest()}"
 
 
 def _reverse_key(user: str, package: str) -> str:
-    return f"{_REVERSE}:{hashlib.sha256(f'{user}|{package}'.encode()).hexdigest()}"
+	return f"{_REVERSE}:{hashlib.sha256(f'{user}|{package}'.encode()).hexdigest()}"
 
 
 def mint(user: str, package: str, chapter: str) -> str:
-    """Issue (or reuse) a launch token. Call only after the guards have passed."""
-    reverse = _reverse_key(user, package)
-    existing = frappe.cache.get_value(reverse)
-    if existing:
-        live = resolve(existing)
-        if live and live.get("chapter") == chapter:
-            return existing
+	"""Issue (or reuse) a launch token. Call only after the guards have passed."""
+	reverse = _reverse_key(user, package)
+	existing = frappe.cache.get_value(reverse)
+	if existing:
+		live = resolve(existing)
+		if live and live.get("chapter") == chapter:
+			return existing
 
-    token = frappe.generate_hash(length=64)
-    payload = {"user": user, "package": package, "chapter": chapter}
-    frappe.cache.set_value(
-        _primary_key(token), json.dumps(payload), expires_in_sec=ttl()
-    )
-    frappe.cache.set_value(reverse, token, expires_in_sec=ttl())
-    return token
+	token = frappe.generate_hash(length=64)
+	payload = {"user": user, "package": package, "chapter": chapter}
+	frappe.cache.set_value(_primary_key(token), json.dumps(payload), expires_in_sec=ttl())
+	frappe.cache.set_value(reverse, token, expires_in_sec=ttl())
+	return token
 
 
 def resolve(token: str) -> dict | None:
-    """The launch this token names, or None.
+	"""The launch this token names, or None.
 
-    There is no secret comparison to make constant-time: the lookup *is* the
-    check, because the key is derived from the token. A wrong token reaches a
-    key that does not exist.
+	There is no secret comparison to make constant-time: the lookup *is* the
+	check, because the key is derived from the token. A wrong token reaches a
+	key that does not exist.
 
-    The package is re-checked on every resolve, which is what makes deleting a
-    package or its last chapter an effective revocation. A change of enrolment is
-    not caught here -- it takes effect at the next launch or renewal -- because a
-    permission check per asset request would put a round trip on every image in
-    a package.
-    """
-    if not token or len(token) < 32:
-        return None
+	The package is re-checked on every resolve, which is what makes deleting a
+	package or its last chapter an effective revocation. A change of enrolment is
+	not caught here -- it takes effect at the next launch or renewal -- because a
+	permission check per asset request would put a round trip on every image in
+	a package.
+	"""
+	if not token or len(token) < 32:
+		return None
 
-    raw = frappe.cache.get_value(_primary_key(token))
-    if not raw:
-        return None
+	raw = frappe.cache.get_value(_primary_key(token))
+	if not raw:
+		return None
 
-    try:
-        payload = json.loads(raw)
-    except (TypeError, ValueError):
-        return None
+	try:
+		payload = json.loads(raw)
+	except (TypeError, ValueError):
+		return None
 
-    if not frappe.db.exists("SCORM Package", payload.get("package")):
-        return None
-    return payload
+	if not frappe.db.exists("SCORM Package", payload.get("package")):
+		return None
+	return payload
 
 
 def renew(token: str) -> bool:
-    """Push the expiry out while an attempt is open. The launcher heartbeats."""
-    payload = resolve(token)
-    if not payload:
-        return False
-    frappe.cache.expire(_primary_key(token), ttl())
-    frappe.cache.expire(_reverse_key(payload["user"], payload["package"]), ttl())
-    return True
+	"""Push the expiry out while an attempt is open. The launcher heartbeats."""
+	payload = resolve(token)
+	if not payload:
+		return False
+	frappe.cache.expire(_primary_key(token), ttl())
+	frappe.cache.expire(_reverse_key(payload["user"], payload["package"]), ttl())
+	return True
 
 
 def revoke(token: str) -> None:
-    payload = resolve(token)
-    frappe.cache.delete_value(_primary_key(token))
-    if payload:
-        frappe.cache.delete_value(_reverse_key(payload["user"], payload["package"]))
+	payload = resolve(token)
+	frappe.cache.delete_value(_primary_key(token))
+	if payload:
+		frappe.cache.delete_value(_reverse_key(payload["user"], payload["package"]))

@@ -21,44 +21,44 @@ from seminary.www.seminary import get_boot_data
 
 # Ships to every page load; each one an attacker would otherwise read for free.
 POSTURE_KEYS = (
-    "allow_error_traceback",
-    "enable_two_factor_auth",
-    "allow_consecutive_login_attempts",
-    "minimum_password_score",
-    "session_expiry",
-    "encrypt_backup",
-    "document_share_key_expiry",
-    "max_signups_allowed_per_hour",
+	"allow_error_traceback",
+	"enable_two_factor_auth",
+	"allow_consecutive_login_attempts",
+	"minimum_password_score",
+	"session_expiry",
+	"encrypt_backup",
+	"document_share_key_expiry",
+	"max_signups_allowed_per_hour",
 )
 
 
 class TestP010Boot(IntegrationTestCase):
-    def setUp(self):
-        frappe.set_user("Administrator")
+	def setUp(self):
+		frappe.set_user("Administrator")
 
-    def test_sysdefaults_is_not_in_boot(self):
-        self.assertNotIn("sysdefaults", get_boot_data())
+	def test_sysdefaults_is_not_in_boot(self):
+		self.assertNotIn("sysdefaults", get_boot_data())
 
-    def test_no_posture_value_reaches_the_page_under_any_key(self):
-        """Not just the key: the values must not arrive by another route."""
-        boot = get_boot_data()
-        flat = frappe.as_json(boot)
-        for key in POSTURE_KEYS:
-            self.assertNotIn(key, flat, f"{key} is still reaching the browser")
+	def test_no_posture_value_reaches_the_page_under_any_key(self):
+		"""Not just the key: the values must not arrive by another route."""
+		boot = get_boot_data()
+		flat = frappe.as_json(boot)
+		for key in POSTURE_KEYS:
+			self.assertNotIn(key, flat, f"{key} is still reaching the browser")
 
-    def test_csrf_token_is_still_shipped(self):
-        """The one boot value the SPA really uses -- 25 call sites."""
-        boot = get_boot_data()
-        self.assertTrue(boot.get("csrf_token"))
+	def test_csrf_token_is_still_shipped(self):
+		"""The one boot value the SPA really uses -- 25 call sites."""
+		boot = get_boot_data()
+		self.assertTrue(boot.get("csrf_token"))
 
-    def test_boot_surface_is_exactly_what_is_declared(self):
-        """A new key must be a deliberate edit, not a silent addition."""
-        self.assertEqual(
-            set(get_boot_data()),
-            # lang: the portal follows the user's language (aretenic 071).
-            {"user", "csrf_token", "sitename", "session", "lang"},
-        )
+	def test_boot_surface_is_exactly_what_is_declared(self):
+		"""A new key must be a deliberate edit, not a silent addition."""
+		self.assertEqual(
+			set(get_boot_data()),
+			# lang: the portal follows the user's language (aretenic 071).
+			{"user", "csrf_token", "sitename", "session", "lang"},
+		)
 
-    def test_session_carries_only_the_user(self):
-        """p006 F8: the sid stays in the cookie."""
-        self.assertEqual(set(get_boot_data()["session"]), {"user"})
+	def test_session_carries_only_the_user(self):
+		"""p006 F8: the sid stays in the cookie."""
+		self.assertEqual(set(get_boot_data()["session"]), {"user"})

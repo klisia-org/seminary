@@ -19,24 +19,24 @@ from frappe.model.document import Document
 
 
 class CohortAssignmentCriterion(Document):
-    def validate(self):
-        self.validate_handler_is_real()
+	def validate(self):
+		self.validate_handler_is_real()
 
-    def validate_handler_is_real(self):
-        from seminary.seminary.discipleship import criteria
+	def validate_handler_is_real(self):
+		from seminary.seminary.discipleship import criteria
 
-        known = criteria.registry().get(self.handler)
-        if not known:
-            frappe.throw(
-                _(
-                    "{0} is not a rule this system knows how to run. Assignment "
-                    "rules ship with the application -- you can rename, describe "
-                    "and retire them, but not invent one here."
-                ).format(frappe.bold(self.handler or _("(empty)")))
-            )
+		known = criteria.registry().get(self.handler)
+		if not known:
+			frappe.throw(
+				_(
+					"{0} is not a rule this system knows how to run. Assignment "
+					"rules ship with the application -- you can rename, describe "
+					"and retire them, but not invent one here."
+				).format(frappe.bold(self.handler or _("(empty)")))
+			)
 
-        # The kind and the field it reads are properties of the code, not
-        # choices: a Ranking recorded as a Filter would be ANDed into the pool,
-        # where it can only ever return "yes".
-        self.kind = known.kind
-        self.requires_field = known.requires_field
+		# The kind and the field it reads are properties of the code, not
+		# choices: a Ranking recorded as a Filter would be ANDed into the pool,
+		# where it can only ever return "yes".
+		self.kind = known.kind
+		self.requires_field = known.requires_field

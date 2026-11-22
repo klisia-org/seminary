@@ -20,71 +20,69 @@ NON_TEXT_TYPES = {"Image", "YouTube", "URL"}
 
 
 def _file_doc(file_url: str):
-    """Resolve a File by its url, tolerating the desk editor's ``?fid=`` suffix."""
-    if not file_url:
-        return None
-    base = file_url.split("?")[0]
-    name = frappe.db.get_value(
-        "File", {"file_url": base}, "name"
-    ) or frappe.db.get_value("File", {"file_url": file_url}, "name")
-    return frappe.get_doc("File", name) if name else None
+	"""Resolve a File by its url, tolerating the desk editor's ``?fid=`` suffix."""
+	if not file_url:
+		return None
+	base = file_url.split("?")[0]
+	name = frappe.db.get_value("File", {"file_url": base}, "name") or frappe.db.get_value(
+		"File", {"file_url": file_url}, "name"
+	)
+	return frappe.get_doc("File", name) if name else None
 
 
 def _pdf_to_text(content: bytes) -> str:
-    from io import BytesIO
+	from io import BytesIO
 
-    from pypdf import PdfReader
+	from pypdf import PdfReader
 
-    reader = PdfReader(BytesIO(content))
-    return "\n".join((page.extract_text() or "") for page in reader.pages)
+	reader = PdfReader(BytesIO(content))
+	return "\n".join((page.extract_text() or "") for page in reader.pages)
 
 
 def _docx_to_text(content: bytes) -> str:
-    from io import BytesIO
+	from io import BytesIO
 
-    import docx
+	import docx
 
-    document = docx.Document(BytesIO(content))
-    return "\n".join(p.text for p in document.paragraphs)
+	document = docx.Document(BytesIO(content))
+	return "\n".join(p.text for p in document.paragraphs)
 
 
 def _attachment_text(file_url: str) -> str:
-    file_doc = _file_doc(file_url)
-    if not file_doc:
-        return ""
-    try:
-        content = file_doc.get_content()
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), f"Plagiarism: read {file_url}")
-        return ""
-    if isinstance(content, str):
-        # Plain-text attachment.
-        return content
-    lower = (file_doc.file_name or file_url).lower()
-    try:
-        if lower.endswith(".pdf"):
-            return _pdf_to_text(content)
-        if lower.endswith(".docx"):
-            return _docx_to_text(content)
-        if lower.endswith((".txt", ".md")):
-            return content.decode("utf-8", errors="ignore")
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), f"Plagiarism: parse {file_url}")
-    return ""
+	file_doc = _file_doc(file_url)
+	if not file_doc:
+		return ""
+	try:
+		content = file_doc.get_content()
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), f"Plagiarism: read {file_url}")
+		return ""
+	if isinstance(content, str):
+		# Plain-text attachment.
+		return content
+	lower = (file_doc.file_name or file_url).lower()
+	try:
+		if lower.endswith(".pdf"):
+			return _pdf_to_text(content)
+		if lower.endswith(".docx"):
+			return _docx_to_text(content)
+		if lower.endswith((".txt", ".md")):
+			return content.decode("utf-8", errors="ignore")
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), f"Plagiarism: parse {file_url}")
+	return ""
 
 
 def extract_text(submission) -> str:
-    """Combined comparable text for a submission doc (or dict-like). Returns a
-    capped plain-text string; empty when there is nothing to compare (e.g. an
-    Image/URL/YouTube submission)."""
-    answer = submission.get("answer") if hasattr(submission, "get") else None
-    parts = []
-    if answer:
-        parts.append(strip_html(answer))
-    file_url = (
-        submission.get("assignment_attachment") if hasattr(submission, "get") else None
-    )
-    if file_url:
-        parts.append(_attachment_text(file_url))
-    text = "\n".join(p for p in parts if p).strip()
-    return text[:MAX_CHARS]
+	"""Combined comparable text for a submission doc (or dict-like). Returns a
+	capped plain-text string; empty when there is nothing to compare (e.g. an
+	Image/URL/YouTube submission)."""
+	answer = submission.get("answer") if hasattr(submission, "get") else None
+	parts = []
+	if answer:
+		parts.append(strip_html(answer))
+	file_url = submission.get("assignment_attachment") if hasattr(submission, "get") else None
+	if file_url:
+		parts.append(_attachment_text(file_url))
+	text = "\n".join(p for p in parts if p).strip()
+	return text[:MAX_CHARS]

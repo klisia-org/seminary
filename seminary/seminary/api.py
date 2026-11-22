@@ -2,508 +2,499 @@
 # For license information, please see license.txt
 
 
-import json
-
-import frappe
-from frappe import _
-from frappe.rate_limiter import rate_limit
-from frappe.email.doctype.email_group.email_group import add_subscribers
-from frappe.desk.reportview import get_filters_cond, get_match_cond
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import (
-    cstr,
-    flt,
-    getdate,
-    get_time,
-    unique,
-    get_datetime,
-    cint,
-    now,
-    add_days,
-    format_date,
-    date_diff,
-    get_url,
-)
-from frappe.model.document import Document
-from frappe.translate import get_all_translations
 import calendar
-from datetime import timedelta
-from dateutil import relativedelta
-from datetime import datetime
+import json
 import re
 import zipfile
-import defusedxml.ElementTree as ET
-from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
+from datetime import datetime, timedelta
+
 import bleach
+import defusedxml.ElementTree as ET
+import frappe
+from dateutil import relativedelta
+from frappe import _
+from frappe.desk.reportview import get_filters_cond, get_match_cond
+from frappe.email.doctype.email_group.email_group import add_subscribers
+from frappe.model.document import Document
+from frappe.model.mapper import get_mapped_doc
+from frappe.rate_limiter import rate_limit
+from frappe.translate import get_all_translations
+from frappe.utils import (
+	add_days,
+	cint,
+	cstr,
+	date_diff,
+	flt,
+	format_date,
+	get_datetime,
+	get_time,
+	get_url,
+	getdate,
+	now,
+	unique,
+)
+
 from seminary.seminary import absence_decisions, guards
+from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 from seminary.seminary.guards import (
-    REGISTRAR_ROLES,
-    SCHOOL_ROLES,
-    is_course_staff,
-    own_or_staff,
-    require_course_staff,
-    require_enrolled,
-    require_grader,
-    require_outline_editor,
-    require_own_enrollment,
-    require_own_student,
-    require_registrar,
+	REGISTRAR_ROLES,
+	SCHOOL_ROLES,
+	is_course_staff,
+	own_or_staff,
+	require_course_staff,
+	require_enrolled,
+	require_grader,
+	require_outline_editor,
+	require_own_enrollment,
+	require_own_student,
+	require_registrar,
 )
 
 ALLOWED_TAGS = [
-    "p",
-    "br",
-    "strong",
-    "em",
-    "u",
-    "ol",
-    "ul",
-    "li",
-    "blockquote",
-    "a",
-    "h1",
-    "h2",
-    "h3",
-    "span",
+	"p",
+	"br",
+	"strong",
+	"em",
+	"u",
+	"ol",
+	"ul",
+	"li",
+	"blockquote",
+	"a",
+	"h1",
+	"h2",
+	"h3",
+	"span",
 ]
 
 ALLOWED_ATTRIBUTES = {
-    "a": ["href", "target", "rel"],
-    "span": ["class"],
+	"a": ["href", "target", "rel"],
+	"span": ["class"],
 }
 
 DEFAULT_APPLICATION_WEB_FORM_ROUTE = "student-applicant"
 
 
 def get_application_web_form_route(program: str | None = None) -> str:
-    """Resolve the apply Web Form route for a program.
+	"""Resolve the apply Web Form route for a program.
 
-    Resolution order: the program's own ``application_web_form`` →
-    ``Seminary Settings.default_application_web_form`` → the built-in
-    ``student-applicant`` form. Blank links or forms that no longer exist are
-    skipped so a deleted/renamed web form degrades gracefully to the fallback.
-    """
+	Resolution order: the program's own ``application_web_form`` →
+	``Seminary Settings.default_application_web_form`` → the built-in
+	``student-applicant`` form. Blank links or forms that no longer exist are
+	skipped so a deleted/renamed web form degrades gracefully to the fallback.
+	"""
 
-    def _route(web_form: str | None) -> str | None:
-        if not web_form:
-            return None
-        return frappe.db.get_value("Web Form", web_form, "route")
+	def _route(web_form: str | None) -> str | None:
+		if not web_form:
+			return None
+		return frappe.db.get_value("Web Form", web_form, "route")
 
-    if program:
-        route = _route(frappe.db.get_value("Program", program, "application_web_form"))
-        if route:
-            return route
+	if program:
+		route = _route(frappe.db.get_value("Program", program, "application_web_form"))
+		if route:
+			return route
 
-    route = _route(
-        frappe.db.get_single_value("Seminary Settings", "default_application_web_form")
-    )
-    return route or DEFAULT_APPLICATION_WEB_FORM_ROUTE
+	route = _route(frappe.db.get_single_value("Seminary Settings", "default_application_web_form"))
+	return route or DEFAULT_APPLICATION_WEB_FORM_ROUTE
 
 
 def sanitize_html(html):
-    if not html:
-        return html
-    return bleach.clean(
-        html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True
-    )
+	if not html:
+		return html
+	return bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True)
 
 
 def sanitize_submission(doc, method):
-    if doc.original_post:
-        doc.original_post = sanitize_html(doc.original_post)
+	if doc.original_post:
+		doc.original_post = sanitize_html(doc.original_post)
 
 
 def sanitize_reply(doc, method):
-    if doc.reply:
-        doc.reply = sanitize_html(doc.reply)
+	if doc.reply:
+		doc.reply = sanitize_html(doc.reply)
 
 
 @frappe.whitelist()
 def get_student_group(course_name: str | None = None, user: str | None = None):
-    require_enrolled(course_name)
-    user = own_or_staff(user, kind="user")
-    group = frappe.db.sql(
-        """
+	require_enrolled(course_name)
+	user = own_or_staff(user, kind="user")
+	group = frappe.db.sql(
+		"""
 		select r.stuname_roster, r.student, r.stuemail_rc, k.student_group, k.group_instructor
 		from `tabScheduled Course Roster` r, `tabStudent Group Link` k, `tabStudent Group` g, `tabStudent Group Members` m
 		where r.course_sc = %s and k.parent = r.course_sc and k.student_group = g.name and g.name = m.parent and m.student = r.student and r.stuemail_rc = %s""",
-        (course_name, user),
-        as_dict=1,
-    )
-    return group[0] if group else {}
+		(course_name, user),
+		as_dict=1,
+	)
+	return group[0] if group else {}
 
 
 @frappe.whitelist()
 def get_student_groups_simple(course_name: str | None = None):
-    require_enrolled(course_name)
-    groups = frappe.db.sql(
-        """
+	require_enrolled(course_name)
+	groups = frappe.db.sql(
+		"""
 		select k.student_group, k.group_instructor
 		from `tabCourse Schedule` cs, `tabStudent Group Link` k, `tabStudent Group` g
 		where cs.name = %s and k.parent = cs.name and k.student_group = g.name""",
-        course_name,
-        as_dict=1,
-    )
-    return groups
+		course_name,
+		as_dict=1,
+	)
+	return groups
 
 
 @frappe.whitelist()
 def get_student_groups(course_name: str | None = None):
-    require_course_staff(course_name)
-    return _student_groups(course_name)
+	require_course_staff(course_name)
+	return _student_groups(course_name)
 
 
 def _student_groups(course_name):
-    groups = frappe.db.sql(
-        """
+	groups = frappe.db.sql(
+		"""
 		select k.student_group, k.group_instructor, m.student, m.student_name
 		from `tabCourse Schedule` cs, `tabStudent Group Link` k, `tabStudent Group` g, `tabStudent Group Members` m
 		where cs.name = %s and k.parent = cs.name and k.student_group = g.name and g.name = m.parent""",
-        course_name,
-        as_dict=1,
-    )
-    return groups
+		course_name,
+		as_dict=1,
+	)
+	return groups
 
 
 def _visible_classmates(course_name, discussion_id, user=None):
-    """Which classmates' posts this user may read and answer.
+	"""Which classmates' posts this user may read and answer.
 
-    None means every post: the section's staff, and readers who are not on its
-    roster. For a student on the roster, the activity's two settings are kept
-    here and not only in the browser: with "post before reply" nothing is
-    visible until they have posted, and with student groups only their own
-    group's posts are. Returns the visible authors' Users otherwise.
-    """
-    user = user or frappe.session.user
-    if is_course_staff(course_name, include_registrar=True, user=user):
-        return None
-    me = frappe.db.get_value(
-        "Scheduled Course Roster",
-        {"course_sc": course_name, "stuemail_rc": user, "active": 1},
-        "student",
-    )
-    if not me:
-        return None
-    settings = (
-        frappe.db.get_value(
-            "Discussion Activity",
-            discussion_id,
-            ["post_before", "use_studentgroup"],
-            as_dict=True,
-        )
-        or frappe._dict()
-    )
-    if settings.post_before and not frappe.db.exists(
-        "Discussion Submission",
-        {"coursesc": course_name, "disc_activity": discussion_id, "member": user},
-    ):
-        return set()
-    roster = frappe.get_all(
-        "Scheduled Course Roster",
-        filters={"course_sc": course_name, "stuemail_rc": ["is", "set"]},
-        fields=["student", "stuemail_rc"],
-    )
-    if not settings.use_studentgroup:
-        return {r.stuemail_rc for r in roster}
-    group_of = {}
-    for row in _student_groups(course_name):
-        group_of.setdefault(row.student, row.student_group)
-    mine = group_of.get(me)
-    return {r.stuemail_rc for r in roster if group_of.get(r.student) == mine}
+	None means every post: the section's staff, and readers who are not on its
+	roster. For a student on the roster, the activity's two settings are kept
+	here and not only in the browser: with "post before reply" nothing is
+	visible until they have posted, and with student groups only their own
+	group's posts are. Returns the visible authors' Users otherwise.
+	"""
+	user = user or frappe.session.user
+	if is_course_staff(course_name, include_registrar=True, user=user):
+		return None
+	me = frappe.db.get_value(
+		"Scheduled Course Roster",
+		{"course_sc": course_name, "stuemail_rc": user, "active": 1},
+		"student",
+	)
+	if not me:
+		return None
+	settings = (
+		frappe.db.get_value(
+			"Discussion Activity",
+			discussion_id,
+			["post_before", "use_studentgroup"],
+			as_dict=True,
+		)
+		or frappe._dict()
+	)
+	if settings.post_before and not frappe.db.exists(
+		"Discussion Submission",
+		{"coursesc": course_name, "disc_activity": discussion_id, "member": user},
+	):
+		return set()
+	roster = frappe.get_all(
+		"Scheduled Course Roster",
+		filters={"course_sc": course_name, "stuemail_rc": ["is", "set"]},
+		fields=["student", "stuemail_rc"],
+	)
+	if not settings.use_studentgroup:
+		return {r.stuemail_rc for r in roster}
+	group_of = {}
+	for row in _student_groups(course_name):
+		group_of.setdefault(row.student, row.student_group)
+	mine = group_of.get(me)
+	return {r.stuemail_rc for r in roster if group_of.get(r.student) == mine}
 
 
 def _get_discussion_replies(parent_name: str) -> list[dict]:
-    """Return replies for a given discussion submission."""
-    replies = frappe.get_all(
-        "Discussion Submission Replies",
-        filters={"parent": parent_name},
-        fields=[
-            "name",
-            "in_reply_to",
-            "member",
-            "reply",
-            "reply_attach",
-            "member_name",
-            "owner",
-            "creation",
-            "reply_dt",
-        ],
-        order_by="creation asc",
-    )
-    return replies
+	"""Return replies for a given discussion submission."""
+	replies = frappe.get_all(
+		"Discussion Submission Replies",
+		filters={"parent": parent_name},
+		fields=[
+			"name",
+			"in_reply_to",
+			"member",
+			"reply",
+			"reply_attach",
+			"member_name",
+			"owner",
+			"creation",
+			"reply_dt",
+		],
+		order_by="creation asc",
+	)
+	return replies
 
 
 @frappe.whitelist()
 def get_discussion_submissions(
-    course_name: str | None = None,
-    discussion_id: str | None = None,
-    member: str | None = None,
+	course_name: str | None = None,
+	discussion_id: str | None = None,
+	member: str | None = None,
 ):
-    """Fetch submissions for a discussion activity within a course."""
-    if not course_name or not discussion_id:
-        raise frappe.ValidationError(_("Course and discussion are required."))
-    require_enrolled(course_name)
+	"""Fetch submissions for a discussion activity within a course."""
+	if not course_name or not discussion_id:
+		raise frappe.ValidationError(_("Course and discussion are required."))
+	require_enrolled(course_name)
 
-    filters = {
-        "coursesc": course_name,
-        "disc_activity": discussion_id,
-    }
+	filters = {
+		"coursesc": course_name,
+		"disc_activity": discussion_id,
+	}
 
-    if member:
-        filters["member"] = ["!=", member]
+	if member:
+		filters["member"] = ["!=", member]
 
-    visible = _visible_classmates(course_name, discussion_id)
-    if visible is not None:
-        visible = visible - {member}
-        if not visible:
-            return []
-        filters["member"] = ["in", list(visible)]
+	visible = _visible_classmates(course_name, discussion_id)
+	if visible is not None:
+		visible = visible - {member}
+		if not visible:
+			return []
+		filters["member"] = ["in", list(visible)]
 
-    submissions = frappe.get_all(
-        "Discussion Submission",
-        filters=filters,
-        fields=[
-            "name",
-            "member",
-            "student",
-            "student_name",
-            "original_post",
-            "original_attachment",
-            "owner",
-            "creation",
-        ],
-        order_by="creation desc",
-    )
+	submissions = frappe.get_all(
+		"Discussion Submission",
+		filters=filters,
+		fields=[
+			"name",
+			"member",
+			"student",
+			"student_name",
+			"original_post",
+			"original_attachment",
+			"owner",
+			"creation",
+		],
+		order_by="creation desc",
+	)
 
-    # Fetch student groups for the course
-    student_groups = _student_groups(course_name)
+	# Fetch student groups for the course
+	student_groups = _student_groups(course_name)
 
-    # Append student group and group instructor to each submission
-    for submission in submissions:
-        submission["replies"] = _get_discussion_replies(submission["name"])
-        submission["student_group"] = None
-        submission["group_instructor"] = None
-        for group in student_groups:
-            if group["student"] == submission["student"]:
-                submission["student_group"] = group["student_group"]
-                submission["group_instructor"] = group["group_instructor"]
-                break
+	# Append student group and group instructor to each submission
+	for submission in submissions:
+		submission["replies"] = _get_discussion_replies(submission["name"])
+		submission["student_group"] = None
+		submission["group_instructor"] = None
+		for group in student_groups:
+			if group["student"] == submission["student"]:
+				submission["student_group"] = group["student_group"]
+				submission["group_instructor"] = group["group_instructor"]
+				break
 
-    from seminary.seminary import discussion_threads
+	from seminary.seminary import discussion_threads
 
-    return discussion_threads.annotate(submissions, course_name, discussion_id)
+	return discussion_threads.annotate(submissions, course_name, discussion_id)
 
 
 @frappe.whitelist()
-def reply_to_discussion_submission(
-    submission, reply, reply_attach=None, in_reply_to=None
-):
-    """Reply to a classmate's post in a graded Discussion Activity.
+def reply_to_discussion_submission(submission, reply, reply_attach=None, in_reply_to=None):
+	"""Reply to a classmate's post in a graded Discussion Activity.
 
-    The portal used to insert the child row with `frappe.client.insert`, which
-    saves the *parent* and so needs write on the classmate's submission. p007
-    §2.1 took that away (a student writes only their own submission), so the
-    reply is written here: anyone who may open the section may reply, the
-    author fields come from the session and not from the request, and the row
-    is inserted on its own so the classmate's grade fields are never part of
-    the save.
-    """
-    row = frappe.db.get_value(
-        "Discussion Submission",
-        submission,
-        ["name", "coursesc", "disc_activity", "student", "member"],
-        as_dict=True,
-    )
-    if not row:
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
-    require_enrolled(row.coursesc)
-    # A post the student may not read is one they may not answer either.
-    if row.member != frappe.session.user:
-        visible = _visible_classmates(row.coursesc, row.disc_activity)
-        if visible is not None and row.member not in visible:
-            frappe.throw(_("Not permitted."), frappe.PermissionError)
-    # A reply may answer another reply on the same post (decisions/097 §2).
-    if in_reply_to and not frappe.db.exists(
-        "Discussion Submission Replies",
-        {
-            "name": in_reply_to,
-            "parent": row.name,
-            "parenttype": "Discussion Submission",
-        },
-    ):
-        frappe.throw(_("The reply you are answering is not on this post."))
+	The portal used to insert the child row with `frappe.client.insert`, which
+	saves the *parent* and so needs write on the classmate's submission. p007
+	§2.1 took that away (a student writes only their own submission), so the
+	reply is written here: anyone who may open the section may reply, the
+	author fields come from the session and not from the request, and the row
+	is inserted on its own so the classmate's grade fields are never part of
+	the save.
+	"""
+	row = frappe.db.get_value(
+		"Discussion Submission",
+		submission,
+		["name", "coursesc", "disc_activity", "student", "member"],
+		as_dict=True,
+	)
+	if not row:
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+	require_enrolled(row.coursesc)
+	# A post the student may not read is one they may not answer either.
+	if row.member != frappe.session.user:
+		visible = _visible_classmates(row.coursesc, row.disc_activity)
+		if visible is not None and row.member not in visible:
+			frappe.throw(_("Not permitted."), frappe.PermissionError)
+	# A reply may answer another reply on the same post (decisions/097 §2).
+	if in_reply_to and not frappe.db.exists(
+		"Discussion Submission Replies",
+		{
+			"name": in_reply_to,
+			"parent": row.name,
+			"parenttype": "Discussion Submission",
+		},
+	):
+		frappe.throw(_("The reply you are answering is not on this post."))
 
-    # The reply counts toward the replier's own grade, so their cut-off
-    # closes it (decisions/082).
-    from seminary.seminary import deadlines
+	# The reply counts toward the replier's own grade, so their cut-off
+	# closes it (decisions/082).
+	from seminary.seminary import deadlines
 
-    priced = deadlines.assert_reply_open(row.name)
+	priced = deadlines.assert_reply_open(row.name)
 
-    reply = frappe.utils.sanitize_html(reply or "", always_sanitize=True)
-    if not frappe.utils.strip_html(reply).strip() and not reply_attach:
-        frappe.throw(_("Reply cannot be empty"))
+	reply = frappe.utils.sanitize_html(reply or "", always_sanitize=True)
+	if not frappe.utils.strip_html(reply).strip() and not reply_attach:
+		frappe.throw(_("Reply cannot be empty"))
 
-    from seminary.seminary import file_policy
-    from seminary.seminary.guards import current_student
+	from seminary.seminary import file_policy
+	from seminary.seminary.guards import current_student
 
-    user = frappe.session.user
-    host = ("Course Schedule", row.coursesc)
-    if reply_attach:
-        # Classmates read the attachment through the section (p007 §8.2); a
-        # URL the sender cannot read themselves is not adopted.
-        reply_attach = file_policy.adopt(reply_attach, host)
-    for raw in file_policy.find_urls(reply):
-        file_policy.adopt(file_policy._lookup_url(raw), host)
+	user = frappe.session.user
+	host = ("Course Schedule", row.coursesc)
+	if reply_attach:
+		# Classmates read the attachment through the section (p007 §8.2); a
+		# URL the sender cannot read themselves is not adopted.
+		reply_attach = file_policy.adopt(reply_attach, host)
+	for raw in file_policy.find_urls(reply):
+		file_policy.adopt(file_policy._lookup_url(raw), host)
 
-    doc = frappe.get_doc(
-        {
-            "doctype": "Discussion Submission Replies",
-            "parent": row.name,
-            "parenttype": "Discussion Submission",
-            "parentfield": "replies",
-            "idx": frappe.db.count(
-                "Discussion Submission Replies", {"parent": row.name}
-            )
-            + 1,
-            "member": user,
-            "student": current_student(user),
-            "member_name": frappe.db.get_value("User", user, "full_name"),
-            "reply": reply,
-            "reply_attach": reply_attach or None,
-            "reply_dt": frappe.utils.now_datetime(),
-            "in_reply_to": in_reply_to or None,
-        }
-    )
-    doc.insert(ignore_permissions=True)
-    from seminary.seminary import discussion_threads
+	doc = frappe.get_doc(
+		{
+			"doctype": "Discussion Submission Replies",
+			"parent": row.name,
+			"parenttype": "Discussion Submission",
+			"parentfield": "replies",
+			"idx": frappe.db.count("Discussion Submission Replies", {"parent": row.name}) + 1,
+			"member": user,
+			"student": current_student(user),
+			"member_name": frappe.db.get_value("User", user, "full_name"),
+			"reply": reply,
+			"reply_attach": reply_attach or None,
+			"reply_dt": frappe.utils.now_datetime(),
+			"in_reply_to": in_reply_to or None,
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	from seminary.seminary import discussion_threads
 
-    discussion_threads.notify_discussion_reply(row.name, doc.name, in_reply_to)
-    if priced:
-        # A reply by the replies due date can lift a missing-reply deduction.
-        deadlines.refresh(priced[0], [priced[1]])
-    return doc.name
+	discussion_threads.notify_discussion_reply(row.name, doc.name, in_reply_to)
+	if priced:
+		# A reply by the replies due date can lift a missing-reply deduction.
+		deadlines.refresh(priced[0], [priced[1]])
+	return doc.name
 
 
 @frappe.whitelist()
 def get_user_discussion_submission(
-    course_name: str | None = None,
-    discussion_id: str | None = None,
-    owner: str | None = None,
+	course_name: str | None = None,
+	discussion_id: str | None = None,
+	owner: str | None = None,
 ):
-    require_enrolled(course_name)
-    if not is_course_staff(course_name):
-        owner = frappe.session.user
-    submissions = frappe.get_all(
-        "Discussion Submission",
-        filters={
-            "coursesc": course_name,
-            "disc_activity": discussion_id,
-            "owner": owner,
-        },
-        fields=[
-            "name",
-            "student_name",
-            "student",
-            "student_name",
-            "original_post",
-            "original_attachment",
-            "owner",
-            "creation",
-        ],
-        order_by="creation desc",
-    )
+	require_enrolled(course_name)
+	if not is_course_staff(course_name):
+		owner = frappe.session.user
+	submissions = frappe.get_all(
+		"Discussion Submission",
+		filters={
+			"coursesc": course_name,
+			"disc_activity": discussion_id,
+			"owner": owner,
+		},
+		fields=[
+			"name",
+			"student_name",
+			"student",
+			"student_name",
+			"original_post",
+			"original_attachment",
+			"owner",
+			"creation",
+		],
+		order_by="creation desc",
+	)
 
-    for submission in submissions:
-        submission["replies"] = _get_discussion_replies(submission["name"])
+	for submission in submissions:
+		submission["replies"] = _get_discussion_replies(submission["name"])
 
-    from seminary.seminary import discussion_threads
+	from seminary.seminary import discussion_threads
 
-    return discussion_threads.annotate(submissions, course_name, discussion_id)
+	return discussion_threads.annotate(submissions, course_name, discussion_id)
 
 
 @frappe.whitelist()
 def get_user_discussion_replies(
-    course_name: str | None = None,
-    discussion_id: str | None = None,
-    member: str | None = None,
+	course_name: str | None = None,
+	discussion_id: str | None = None,
+	member: str | None = None,
 ):
-    require_enrolled(course_name)
-    if not is_course_staff(course_name):
-        member = frappe.session.user
-    replies = frappe.db.sql(
-        """
+	require_enrolled(course_name)
+	if not is_course_staff(course_name):
+		member = frappe.session.user
+	replies = frappe.db.sql(
+		"""
 		select r.reply, r.reply_attach, r.member_name, r.reply_dt, s.original_post, s.student_name
 		from `tabDiscussion Submission Replies` r, `tabDiscussion Submission` s
 		where s.coursesc = %s and s.disc_activity = %s and r.parent = s.name and r.member = %s
 		order by r.creation asc""",
-        (course_name, discussion_id, member),
-        as_dict=1,
-    )
-    return replies
+		(course_name, discussion_id, member),
+		as_dict=1,
+	)
+	return replies
 
 
 @frappe.whitelist()
 def get_discussion_submission_summary(
-    course_name: str,
-    discussion_id: str,
+	course_name: str,
+	discussion_id: str,
 ):
-    """Per-student summary for the discussion submissions list view.
+	"""Per-student summary for the discussion submissions list view.
 
-    Returns one row per student in the roster with:
-    - submission info (name, creation, grade, status) or None if not submitted
-    - reply_count: number of replies BY the student on other students' posts
-    - student_group info
-    """
-    if not course_name or not discussion_id:
-        frappe.throw(_("Course and discussion are required."))
-    require_course_staff(course_name)
+	Returns one row per student in the roster with:
+	- submission info (name, creation, grade, status) or None if not submitted
+	- reply_count: number of replies BY the student on other students' posts
+	- student_group info
+	"""
+	if not course_name or not discussion_id:
+		frappe.throw(_("Course and discussion are required."))
+	require_course_staff(course_name)
 
-    # 1. All students in roster
-    roster_rows = frappe.db.sql(
-        """
+	# 1. All students in roster
+	roster_rows = frappe.db.sql(
+		"""
         SELECT r.stuemail_rc AS member, r.stuname_roster AS student_name, r.student
         FROM `tabScheduled Course Roster` r
         WHERE r.course_sc = %s
         """,
-        course_name,
-        as_dict=True,
-    )
+		course_name,
+		as_dict=True,
+	)
 
-    # Build student-to-group mapping from get_student_groups
-    group_data = _student_groups(course_name)
-    student_to_group = {}
-    for g in group_data:
-        student_to_group[g["student"]] = g["student_group"]
+	# Build student-to-group mapping from get_student_groups
+	group_data = _student_groups(course_name)
+	student_to_group = {}
+	for g in group_data:
+		student_to_group[g["student"]] = g["student_group"]
 
-    roster = []
-    for r in roster_rows:
-        r["student_group"] = student_to_group.get(r["student"], "")
-        roster.append(r)
+	roster = []
+	for r in roster_rows:
+		r["student_group"] = student_to_group.get(r["student"], "")
+		roster.append(r)
 
-    # 2. Submissions for this discussion + course schedule
-    submissions = frappe.get_all(
-        "Discussion Submission",
-        filters={"coursesc": course_name, "disc_activity": discussion_id},
-        fields=[
-            "name",
-            "member",
-            "student_name",
-            "creation",
-            "grade",
-            "percentage",
-            "status",
-            "extra_credit",
-            "fudge_points",
-            "late",
-        ],
-    )
-    sub_by_member = {s["member"]: s for s in submissions}
+	# 2. Submissions for this discussion + course schedule
+	submissions = frappe.get_all(
+		"Discussion Submission",
+		filters={"coursesc": course_name, "disc_activity": discussion_id},
+		fields=[
+			"name",
+			"member",
+			"student_name",
+			"creation",
+			"grade",
+			"percentage",
+			"status",
+			"extra_credit",
+			"fudge_points",
+			"late",
+		],
+	)
+	sub_by_member = {s["member"]: s for s in submissions}
 
-    # 3. Qualifying reply counts BY each student: distinct *other-student*
-    # Submissions on which this student has at least one reply row.
-    # Self-replies (member == parent submission's author) never count.
-    reply_counts = frappe.db.sql(
-        """
+	# 3. Qualifying reply counts BY each student: distinct *other-student*
+	# Submissions on which this student has at least one reply row.
+	# Self-replies (member == parent submission's author) never count.
+	reply_counts = frappe.db.sql(
+		"""
         SELECT r.member, COUNT(DISTINCT r.parent) AS reply_count
         FROM `tabDiscussion Submission Replies` r
         JOIN `tabDiscussion Submission` s ON s.name = r.parent
@@ -512,303 +503,292 @@ def get_discussion_submission_summary(
           AND s.member <> r.member
         GROUP BY r.member
         """,
-        (course_name, discussion_id),
-        as_dict=True,
-    )
-    replies_by_member = {rc["member"]: rc["reply_count"] for rc in reply_counts}
+		(course_name, discussion_id),
+		as_dict=True,
+	)
+	replies_by_member = {rc["member"]: rc["reply_count"] for rc in reply_counts}
 
-    min_replies_required = (
-        frappe.db.get_value(
-            "Discussion Activity", discussion_id, "min_replies_required"
-        )
-        or 0
-    )
+	min_replies_required = (
+		frappe.db.get_value("Discussion Activity", discussion_id, "min_replies_required") or 0
+	)
 
-    # 4. Merge into one row per student
-    result = []
-    for student in roster:
-        member = student["member"]
-        sub = sub_by_member.get(member)
-        result.append(
-            {
-                "member": member,
-                "student_name": student["student_name"],
-                "student_group": student["student_group"],
-                "submission_name": sub["name"] if sub else None,
-                "original_post_date": sub["creation"] if sub else None,
-                "grade": sub["grade"] if sub else None,
-                "percentage": sub["percentage"] if sub else None,
-                "status": sub["status"] if sub else "Not Submitted",
-                "extra_credit": sub.get("extra_credit") if sub else None,
-                "fudge_points": sub.get("fudge_points") if sub else None,
-                "late": sub.get("late") if sub else None,
-                "reply_count": replies_by_member.get(member, 0),
-                "min_replies_required": min_replies_required,
-            }
-        )
+	# 4. Merge into one row per student
+	result = []
+	for student in roster:
+		member = student["member"]
+		sub = sub_by_member.get(member)
+		result.append(
+			{
+				"member": member,
+				"student_name": student["student_name"],
+				"student_group": student["student_group"],
+				"submission_name": sub["name"] if sub else None,
+				"original_post_date": sub["creation"] if sub else None,
+				"grade": sub["grade"] if sub else None,
+				"percentage": sub["percentage"] if sub else None,
+				"status": sub["status"] if sub else "Not Submitted",
+				"extra_credit": sub.get("extra_credit") if sub else None,
+				"fudge_points": sub.get("fudge_points") if sub else None,
+				"late": sub.get("late") if sub else None,
+				"reply_count": replies_by_member.get(member, 0),
+				"min_replies_required": min_replies_required,
+			}
+		)
 
-    # Sort: submitted first (by date desc), then not submitted (alphabetical)
-    result.sort(key=lambda x: (x["original_post_date"] is None, x["student_name"]))
-    return result
+	# Sort: submitted first (by date desc), then not submitted (alphabetical)
+	result.sort(key=lambda x: (x["original_post_date"] is None, x["student_name"]))
+	return result
 
 
 @frappe.whitelist()
 def save_discussion_submission_grade(submission_name: str, grade: float):
-    """Save grade for a discussion submission."""
-    require_grader()
-    if not submission_name:
-        raise frappe.ValidationError(_("Submission name is required."))
+	"""Save grade for a discussion submission."""
+	require_grader()
+	if not submission_name:
+		raise frappe.ValidationError(_("Submission name is required."))
 
-    submission = frappe.get_doc("Discussion Submission", submission_name)
-    require_course_staff(submission.coursesc)
-    submission.grade = float(grade)
-    submission.status = "Graded"
+	submission = frappe.get_doc("Discussion Submission", submission_name)
+	require_course_staff(submission.coursesc)
+	submission.grade = float(grade)
+	submission.status = "Graded"
 
-    # Compute score_out_of from the grading scale max
-    max_grade = frappe.db.get_value(
-        "Course Schedule", submission.coursesc, "maxnumgrade"
-    )
-    if max_grade:
-        submission.score_out_of = float(max_grade)
-        fudge = float(submission.fudge_points or 0)
-        submission.percentage = round(
-            (float(grade) / float(max_grade)) * 100 + fudge, 2
-        )
+	# Compute score_out_of from the grading scale max
+	max_grade = frappe.db.get_value("Course Schedule", submission.coursesc, "maxnumgrade")
+	if max_grade:
+		submission.score_out_of = float(max_grade)
+		fudge = float(submission.fudge_points or 0)
+		submission.percentage = round((float(grade) / float(max_grade)) * 100 + fudge, 2)
 
-    submission.save()
-    return {"status": "success", "message": "Grade saved successfully."}
+	submission.save()
+	return {"status": "success", "message": "Grade saved successfully."}
 
 
 @frappe.whitelist()
 def add_grading_comment(submission_name: str, comment: str):
-    """Add a grading comment to a discussion submission."""
-    if not submission_name or not comment:
-        frappe.throw(_("Submission name and comment are required."))
+	"""Add a grading comment to a discussion submission."""
+	if not submission_name or not comment:
+		frappe.throw(_("Submission name and comment are required."))
 
-    submission = frappe.get_doc("Discussion Submission", submission_name)
+	submission = frappe.get_doc("Discussion Submission", submission_name)
 
-    # Permission: must be the submission owner OR an instructor/moderator/evaluator
-    user = frappe.session.user
-    user_doc = frappe.get_doc("User", user)
-    is_owner = submission.member == user
-    is_staff = any(
-        r.role in ("Instructor", "Program Chair", "Seminary Manager", "System Manager")
-        for r in user_doc.roles
-    )
-    if not is_owner and not is_staff:
-        frappe.throw(_("You do not have permission to comment on this submission."))
+	# Permission: must be the submission owner OR an instructor/moderator/evaluator
+	user = frappe.session.user
+	user_doc = frappe.get_doc("User", user)
+	is_owner = submission.member == user
+	is_staff = any(
+		r.role in ("Instructor", "Program Chair", "Seminary Manager", "System Manager")
+		for r in user_doc.roles
+	)
+	if not is_owner and not is_staff:
+		frappe.throw(_("You do not have permission to comment on this submission."))
 
-    author_name = frappe.db.get_value("User", user, "full_name") or user
-    submission.append(
-        "grading_comments",
-        {
-            "author": user,
-            "author_name": author_name,
-            "comment": comment,
-            "comment_dt": frappe.utils.now_datetime(),
-        },
-    )
-    submission.save(ignore_permissions=True)
-    return submission.grading_comments[-1].as_dict()
+	author_name = frappe.db.get_value("User", user, "full_name") or user
+	submission.append(
+		"grading_comments",
+		{
+			"author": user,
+			"author_name": author_name,
+			"comment": comment,
+			"comment_dt": frappe.utils.now_datetime(),
+		},
+	)
+	submission.save(ignore_permissions=True)
+	return submission.grading_comments[-1].as_dict()
 
 
 @frappe.whitelist()
 def get_grading_comments(submission_name: str):
-    """Get all grading comments for a discussion submission."""
-    if not submission_name:
-        frappe.throw(_("Submission name is required."))
-    sub = frappe.db.get_value(
-        "Discussion Submission", submission_name, ["member", "coursesc"], as_dict=True
-    )
-    if not sub or not (
-        sub.member == frappe.session.user or is_course_staff(sub.coursesc)
-    ):
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
+	"""Get all grading comments for a discussion submission."""
+	if not submission_name:
+		frappe.throw(_("Submission name is required."))
+	sub = frappe.db.get_value("Discussion Submission", submission_name, ["member", "coursesc"], as_dict=True)
+	if not sub or not (sub.member == frappe.session.user or is_course_staff(sub.coursesc)):
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
 
-    comments = frappe.get_all(
-        "Grading Comment",
-        filters={"parent": submission_name},
-        fields=["author", "author_name", "comment", "comment_dt", "name"],
-        order_by="comment_dt asc",
-    )
-    return comments
+	comments = frappe.get_all(
+		"Grading Comment",
+		filters={"parent": submission_name},
+		fields=["author", "author_name", "comment", "comment_dt", "name"],
+		order_by="comment_dt asc",
+	)
+	return comments
 
 
 @frappe.whitelist()
 def get_discussion_dashboard(course_name: str, discussion_id: str):
-    """Mini dashboard stats for instructor view of a discussion activity.
+	"""Mini dashboard stats for instructor view of a discussion activity.
 
-    Only counts submissions and replies by students in the course roster
-    (excludes instructor/moderator posts).
-    """
-    if not course_name or not discussion_id:
-        frappe.throw(_("Course and discussion are required."))
-    require_enrolled(course_name)
+	Only counts submissions and replies by students in the course roster
+	(excludes instructor/moderator posts).
+	"""
+	if not course_name or not discussion_id:
+		frappe.throw(_("Course and discussion are required."))
+	require_enrolled(course_name)
 
-    # Get student emails from roster to filter out instructor posts
-    roster_emails = frappe.db.sql_list(
-        """
+	# Get student emails from roster to filter out instructor posts
+	roster_emails = frappe.db.sql_list(
+		"""
         SELECT r.stuemail_rc
         FROM `tabScheduled Course Roster` r
         WHERE r.course_sc = %s
         """,
-        course_name,
-    )
+		course_name,
+	)
 
-    if not roster_emails:
-        return {"submission_count": 0, "avg_replies": 0}
+	if not roster_emails:
+		return {"submission_count": 0, "avg_replies": 0}
 
-    submission_count = frappe.db.count(
-        "Discussion Submission",
-        filters={
-            "coursesc": course_name,
-            "disc_activity": discussion_id,
-            "member": ["in", roster_emails],
-        },
-    )
+	submission_count = frappe.db.count(
+		"Discussion Submission",
+		filters={
+			"coursesc": course_name,
+			"disc_activity": discussion_id,
+			"member": ["in", roster_emails],
+		},
+	)
 
-    reply_count = 0
-    if submission_count:
-        placeholders = ", ".join(["%s"] * len(roster_emails))
-        reply_count = (
-            frappe.db.sql(
-                f"""
+	reply_count = 0
+	if submission_count:
+		placeholders = ", ".join(["%s"] * len(roster_emails))
+		reply_count = (
+			frappe.db.sql(
+				f"""
             SELECT COUNT(*) FROM `tabDiscussion Submission Replies` r
             JOIN `tabDiscussion Submission` s ON s.name = r.parent
             WHERE s.coursesc = %s AND s.disc_activity = %s
             AND r.member IN ({placeholders})
             """,  # nosec B608 -- interpolates %s placeholders; the values are bound
-                [course_name, discussion_id] + roster_emails,
-            )[0][0]
-            or 0
-        )
+				[course_name, discussion_id, *roster_emails],
+			)[0][0]
+			or 0
+		)
 
-    avg_replies = round(reply_count / submission_count, 1) if submission_count else 0
+	avg_replies = round(reply_count / submission_count, 1) if submission_count else 0
 
-    return {
-        "submission_count": submission_count,
-        "avg_replies": avg_replies,
-    }
+	return {
+		"submission_count": submission_count,
+		"avg_replies": avg_replies,
+	}
 
 
 @frappe.whitelist()
 def get_quiz_dashboard(course_name: str, quiz_id: str):
-    """Mini dashboard stats for the instructor view of a quiz: how many
-    students attempted it and the average number of attempts per student.
+	"""Mini dashboard stats for the instructor view of a quiz: how many
+	students attempted it and the average number of attempts per student.
 
-    Only counts submissions by students on the course roster.
-    """
-    if not course_name or not quiz_id:
-        frappe.throw(_("Course and quiz are required."))
-    require_course_staff(course_name)
+	Only counts submissions by students on the course roster.
+	"""
+	if not course_name or not quiz_id:
+		frappe.throw(_("Course and quiz are required."))
+	require_course_staff(course_name)
 
-    roster_emails = frappe.db.sql_list(
-        """
+	roster_emails = frappe.db.sql_list(
+		"""
         SELECT r.stuemail_rc
         FROM `tabScheduled Course Roster` r
         WHERE r.course_sc = %s
         """,
-        course_name,
-    )
-    if not roster_emails:
-        return {"student_count": 0, "avg_attempts": 0}
+		course_name,
+	)
+	if not roster_emails:
+		return {"student_count": 0, "avg_attempts": 0}
 
-    placeholders = ", ".join(["%s"] * len(roster_emails))
-    rows = frappe.db.sql(
-        f"""
+	placeholders = ", ".join(["%s"] * len(roster_emails))
+	rows = frappe.db.sql(
+		f"""
         SELECT member, COUNT(*) AS attempts
         FROM `tabQuiz Submission`
         WHERE quiz = %s AND course = %s AND member IN ({placeholders})
         GROUP BY member
         """,  # nosec B608 -- interpolates %s placeholders; the values are bound
-        [quiz_id, course_name] + roster_emails,
-        as_dict=True,
-    )
+		[quiz_id, course_name, *roster_emails],
+		as_dict=True,
+	)
 
-    student_count = len(rows)
-    total_attempts = sum(row.attempts for row in rows)
-    avg_attempts = round(total_attempts / student_count, 1) if student_count else 0
+	student_count = len(rows)
+	total_attempts = sum(row.attempts for row in rows)
+	avg_attempts = round(total_attempts / student_count, 1) if student_count else 0
 
-    return {
-        "student_count": student_count,
-        "avg_attempts": avg_attempts,
-    }
+	return {
+		"student_count": student_count,
+		"avg_attempts": avg_attempts,
+	}
 
 
 @frappe.whitelist()
 def get_exam_dashboard(course_name, exam_id):
-    """Instructor dashboard stat for an exam: how many roster students have
-    taken (submitted) it."""
-    if not course_name or not exam_id:
-        frappe.throw(_("Course and exam are required."))
-    require_course_staff(course_name)
+	"""Instructor dashboard stat for an exam: how many roster students have
+	taken (submitted) it."""
+	if not course_name or not exam_id:
+		frappe.throw(_("Course and exam are required."))
+	require_course_staff(course_name)
 
-    roster_emails = frappe.db.sql_list(
-        """
+	roster_emails = frappe.db.sql_list(
+		"""
         SELECT r.stuemail_rc
         FROM `tabScheduled Course Roster` r
         WHERE r.course_sc = %s
         """,
-        course_name,
-    )
-    if not roster_emails:
-        return {"student_count": 0}
+		course_name,
+	)
+	if not roster_emails:
+		return {"student_count": 0}
 
-    placeholders = ", ".join(["%s"] * len(roster_emails))
-    student_count = (
-        frappe.db.sql(
-            f"""
+	placeholders = ", ".join(["%s"] * len(roster_emails))
+	student_count = (
+		frappe.db.sql(
+			f"""
             SELECT COUNT(DISTINCT member)
             FROM `tabExam Submission`
             WHERE exam = %s AND course = %s
             AND status != 'Not Submitted'
             AND member IN ({placeholders})
             """,  # nosec B608 -- interpolates %s placeholders; the values are bound
-            [exam_id, course_name] + roster_emails,
-        )[0][0]
-        or 0
-    )
-    return {"student_count": student_count}
+			[exam_id, course_name, *roster_emails],
+		)[0][0]
+		or 0
+	)
+	return {"student_count": student_count}
 
 
 @frappe.whitelist()
 def get_assignment_dashboard(course_name, assignment_id):
-    """Instructor dashboard stat for an assignment: how many roster students
-    have submitted it."""
-    if not course_name or not assignment_id:
-        frappe.throw(_("Course and assignment are required."))
-    require_course_staff(course_name)
+	"""Instructor dashboard stat for an assignment: how many roster students
+	have submitted it."""
+	if not course_name or not assignment_id:
+		frappe.throw(_("Course and assignment are required."))
+	require_course_staff(course_name)
 
-    roster_emails = frappe.db.sql_list(
-        """
+	roster_emails = frappe.db.sql_list(
+		"""
         SELECT r.stuemail_rc
         FROM `tabScheduled Course Roster` r
         WHERE r.course_sc = %s
         """,
-        course_name,
-    )
-    if not roster_emails:
-        return {"student_count": 0}
+		course_name,
+	)
+	if not roster_emails:
+		return {"student_count": 0}
 
-    # `course` is allowed to be NULL on legacy/Text Assignment Submissions —
-    # roughly a third of historical rows in production aren't course-tagged.
-    # Roster membership is the real scope here, so include NULL-course rows
-    # while excluding submissions explicitly tagged to a *different* course.
-    placeholders = ", ".join(["%s"] * len(roster_emails))
-    student_count = (
-        frappe.db.sql(
-            f"""
+	# `course` is allowed to be NULL on legacy/Text Assignment Submissions —
+	# roughly a third of historical rows in production aren't course-tagged.
+	# Roster membership is the real scope here, so include NULL-course rows
+	# while excluding submissions explicitly tagged to a *different* course.
+	placeholders = ", ".join(["%s"] * len(roster_emails))
+	student_count = (
+		frappe.db.sql(
+			f"""
             SELECT COUNT(DISTINCT member)
             FROM `tabAssignment Submission`
             WHERE assignment = %s
               AND (course = %s OR course IS NULL)
               AND member IN ({placeholders})
             """,  # nosec B608 -- interpolates %s placeholders; the values are bound
-            [assignment_id, course_name] + roster_emails,
-        )[0][0]
-        or 0
-    )
-    return {"student_count": student_count}
+			[assignment_id, course_name, *roster_emails],
+		)[0][0]
+		or 0
+	)
+	return {"student_count": student_count}
 
 
 # The heaviest guest response on the site (p005a A06-6), but it returns the
@@ -819,619 +799,588 @@ def get_assignment_dashboard(course_name, assignment_id):
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_translations():
-    if frappe.session.user != "Guest":
-        language = frappe.db.get_value("User", frappe.session.user, "language")
-    else:
-        language = frappe.db.get_single_value("System Settings", "language")
-    return get_all_translations(language)
+	if frappe.session.user != "Guest":
+		language = frappe.db.get_value("User", frappe.session.user, "language")
+	else:
+		language = frappe.db.get_single_value("System Settings", "language")
+	return get_all_translations(language)
 
 
 @frappe.whitelist()
 def get_enabled_languages():
-    """Return all enabled languages and the current user's language preference."""
-    from seminary.language import native_choices
+	"""Return all enabled languages and the current user's language preference."""
+	from seminary.language import native_choices
 
-    # Each language in its own name, so the person finds theirs.
-    languages = [
-        {"language_code": code, "language_name": name}
-        for code, name in native_choices(enabled_only=True)
-    ]
-    current = frappe.db.get_value("User", frappe.session.user, "language") or ""
-    return {"languages": languages, "current": current}
+	# Each language in its own name, so the person finds theirs.
+	languages = [
+		{"language_code": code, "language_name": name} for code, name in native_choices(enabled_only=True)
+	]
+	current = frappe.db.get_value("User", frappe.session.user, "language") or ""
+	return {"languages": languages, "current": current}
 
 
 @frappe.whitelist()
 def set_user_language(language):
-    """Set the current user's UI language preference."""
-    frappe.db.set_value("User", frappe.session.user, "language", language)
-    return {"success": True}
+	"""Set the current user's UI language preference."""
+	frappe.db.set_value("User", frappe.session.user, "language", language)
+	return {"success": True}
 
 
 @frappe.whitelist()
 def get_file_info(file_url):
-    """Get file info for the given file URL (p007 §2.5: only a File the caller
-    may read)."""
-    file_info = frappe.db.get_value(
-        "File",
-        {"file_url": file_url},
-        ["name", "file_name", "file_size", "file_url"],
-        as_dict=1,
-    )
-    if not file_info:
-        return None
-    if not frappe.has_permission("File", "read", file_info.name):
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
-    file_info.pop("name", None)
-    return file_info
+	"""Get file info for the given file URL (p007 §2.5: only a File the caller
+	may read)."""
+	file_info = frappe.db.get_value(
+		"File",
+		{"file_url": file_url},
+		["name", "file_name", "file_size", "file_url"],
+		as_dict=1,
+	)
+	if not file_info:
+		return None
+	if not frappe.has_permission("File", "read", file_info.name):
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+	file_info.pop("name", None)
+	return file_info
 
 
 @frappe.whitelist()
 def save_course(course, course_data):
-    require_course_staff(course)
+	require_course_staff(course)
 
-    try:
-        if isinstance(course_data, str):
-            course_data = json.loads(course_data)
-        # First, because it is the only field here that a controller can refuse:
-        # the rest are written with set_value, which skips validation, so doing
-        # this last would leave them applied while the save reported failure.
-        # Sent only when the form owns the setting, so a client that does not
-        # show the field cannot clear an override it knows nothing about
-        # (ADR 065 section 2).
-        if "content_release_override" in course_data:
-            cs = frappe.get_doc("Course Schedule", course)
-            cs.content_release_override = (
-                course_data.get("content_release_override") or None
-            )
-            cs.save()
+	try:
+		if isinstance(course_data, str):
+			course_data = json.loads(course_data)
+		# First, because it is the only field here that a controller can refuse:
+		# the rest are written with set_value, which skips validation, so doing
+		# this last would leave them applied while the save reported failure.
+		# Sent only when the form owns the setting, so a client that does not
+		# show the field cannot clear an override it knows nothing about
+		# (ADR 065 section 2).
+		if "content_release_override" in course_data:
+			cs = frappe.get_doc("Course Schedule", course)
+			cs.content_release_override = course_data.get("content_release_override") or None
+			cs.save()
 
-        # Update course details
-        frappe.db.set_value(
-            "Course Schedule",
-            course,
-            "short_introduction",
-            course_data["short_introduction"],
-        )
-        frappe.db.set_value(
-            "Course Schedule",
-            course,
-            "course_description_for_lms",
-            course_data["course_description_for_lms"],
-        )
-        frappe.db.set_value(
-            "Course Schedule",
-            course,
-            "course_image",
-            (
-                course_data["course_image"]["file_url"]
-                if course_data["course_image"]
-                else None
-            ),
-        )
-        frappe.db.set_value(
-            "Course Schedule", course, "published", course_data["published"]
-        )
-        # How the tile frames the image (ADR 080). Only when sent, so a client
-        # without the editor cannot reset a framing it never showed.
-        for field, low, high, default in (
-            ("image_focus_x", 0, 100, 50),
-            ("image_focus_y", 0, 100, 50),
-            ("image_zoom", 1, 3, 1),
-        ):
-            if field in course_data:
-                value = course_data[field]
-                value = default if value is None else min(max(flt(value), low), high)
-                frappe.db.set_value("Course Schedule", course, field, value)
-        frappe.db.set_value(
-            "Course Schedule",
-            course,
-            "web_meeting",
-            course_data.get("web_meeting"),
-        )
+		# Update course details
+		frappe.db.set_value(
+			"Course Schedule",
+			course,
+			"short_introduction",
+			course_data["short_introduction"],
+		)
+		frappe.db.set_value(
+			"Course Schedule",
+			course,
+			"course_description_for_lms",
+			course_data["course_description_for_lms"],
+		)
+		frappe.db.set_value(
+			"Course Schedule",
+			course,
+			"course_image",
+			(course_data["course_image"]["file_url"] if course_data["course_image"] else None),
+		)
+		frappe.db.set_value("Course Schedule", course, "published", course_data["published"])
+		# How the tile frames the image (ADR 080). Only when sent, so a client
+		# without the editor cannot reset a framing it never showed.
+		for field, low, high, default in (
+			("image_focus_x", 0, 100, 50),
+			("image_focus_y", 0, 100, 50),
+			("image_zoom", 1, 3, 1),
+		):
+			if field in course_data:
+				value = course_data[field]
+				value = default if value is None else min(max(flt(value), low), high)
+				frappe.db.set_value("Course Schedule", course, field, value)
+		frappe.db.set_value(
+			"Course Schedule",
+			course,
+			"web_meeting",
+			course_data.get("web_meeting"),
+		)
 
-        frappe.db.commit()
-        return {"success": True}
+		frappe.db.commit()
+		return {"success": True}
 
-    except Exception as e:
-        # Drop whatever did land: the writes above are a mix of validated and
-        # unvalidated, and half-saving a course is worse than not saving it.
-        frappe.db.rollback()
-        frappe.log_error(frappe.get_traceback(), "Error saving course")
-        # `error` is the key the portal reads; `message` is kept for anything
-        # that already relied on it.
-        return {"success": False, "error": str(e), "message": str(e)}
+	except Exception as e:
+		# Drop whatever did land: the writes above are a mix of validated and
+		# unvalidated, and half-saving a course is worse than not saving it.
+		frappe.db.rollback()
+		frappe.log_error(frappe.get_traceback(), "Error saving course")
+		# `error` is the key the portal reads; `message` is kept for anything
+		# that already relied on it.
+		return {"success": False, "error": str(e), "message": str(e)}
 
 
 _CS_MEETING_STAFF_ROLES = {
-    "Registrar",
-    "Program Chair",
-    "Seminary Manager",
-    "System Manager",
+	"Registrar",
+	"Program Chair",
+	"Seminary Manager",
+	"System Manager",
 }
 
 
 def _can_manage_virtual_meetings(course_schedule):
-    """An instructor of the section (or staff) may self-manage online meetings —
-    no registrar needed (ADR 051)."""
-    if _CS_MEETING_STAFF_ROLES & set(frappe.get_roles()):
-        return True
-    return bool(
-        frappe.db.exists(
-            "Course Schedule Instructors",
-            {
-                "parent": course_schedule,
-                "parenttype": "Course Schedule",
-                "user": frappe.session.user,
-            },
-        )
-    )
+	"""An instructor of the section (or staff) may self-manage online meetings —
+	no registrar needed (ADR 051)."""
+	if _CS_MEETING_STAFF_ROLES & set(frappe.get_roles()):
+		return True
+	return bool(
+		frappe.db.exists(
+			"Course Schedule Instructors",
+			{
+				"parent": course_schedule,
+				"parenttype": "Course Schedule",
+				"user": frappe.session.user,
+			},
+		)
+	)
 
 
 @frappe.whitelist()
 def get_virtual_meetings(course_schedule):
-    """Online meetings on a section's calendar (cs_online rows) for the course form."""
-    require_course_staff(course_schedule, include_registrar=True)
-    return frappe.get_all(
-        "Course Schedule Meeting Dates",
-        filters={
-            "parent": course_schedule,
-            "parenttype": "Course Schedule",
-            "cs_online": 1,
-        },
-        fields=[
-            "name",
-            "cs_meetdate",
-            "cs_fromtime",
-            "cs_totime",
-            "cs_web_meeting",
-            "attendance",
-            # School meetings (decisions/051a): staff only, as this endpoint is.
-            "cs_meeting_account",
-            "cs_meeting_status",
-            "cs_meeting_error",
-            "cs_meeting_hosts",
-            "cs_host_key",
-        ],
-        order_by="cs_meetdate asc, cs_fromtime asc",
-    )
+	"""Online meetings on a section's calendar (cs_online rows) for the course form."""
+	require_course_staff(course_schedule, include_registrar=True)
+	return frappe.get_all(
+		"Course Schedule Meeting Dates",
+		filters={
+			"parent": course_schedule,
+			"parenttype": "Course Schedule",
+			"cs_online": 1,
+		},
+		fields=[
+			"name",
+			"cs_meetdate",
+			"cs_fromtime",
+			"cs_totime",
+			"cs_web_meeting",
+			"attendance",
+			# School meetings (decisions/051a): staff only, as this endpoint is.
+			"cs_meeting_account",
+			"cs_meeting_status",
+			"cs_meeting_error",
+			"cs_meeting_hosts",
+			"cs_host_key",
+		],
+		order_by="cs_meetdate asc, cs_fromtime asc",
+	)
 
 
 @frappe.whitelist()
 def add_virtual_meeting(course_schedule, meeting_date, from_time, to_time, link=None):
-    """Instructor self-service: add an online class session to the section
-    calendar — no room, no registrar. It flows to subscribers' calendars via the
-    per-meeting iCal feed (ADR 051). Online-only: no room or modality options."""
-    if not _can_manage_virtual_meetings(course_schedule):
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
-    if not (meeting_date and from_time and to_time):
-        frappe.throw(_("Date, From and To times are required."))
-    if get_time(from_time) > get_time(to_time):
-        frappe.throw(_("From Time cannot be after To Time."))
+	"""Instructor self-service: add an online class session to the section
+	calendar — no room, no registrar. It flows to subscribers' calendars via the
+	per-meeting iCal feed (ADR 051). Online-only: no room or modality options."""
+	if not _can_manage_virtual_meetings(course_schedule):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	if not (meeting_date and from_time and to_time):
+		frappe.throw(_("Date, From and To times are required."))
+	if get_time(from_time) > get_time(to_time):
+		frappe.throw(_("From Time cannot be after To Time."))
 
-    doc = frappe.get_doc("Course Schedule", course_schedule)
-    doc.append(
-        "cs_meetinfo",
-        {
-            "cs_meetdate": meeting_date,
-            "cs_fromtime": from_time,
-            "cs_totime": to_time,
-            "cs_online": 1,
-            # A school meeting gets its link from the provider (decisions/051a).
-            "cs_web_meeting": None if doc.school_meeting else (link or doc.web_meeting),
-        },
-    )
-    doc.hasmtgdate = 1
-    doc.flags.ignore_permissions = True
-    doc.save()
-    frappe.db.commit()
-    return {"success": True}
+	doc = frappe.get_doc("Course Schedule", course_schedule)
+	doc.append(
+		"cs_meetinfo",
+		{
+			"cs_meetdate": meeting_date,
+			"cs_fromtime": from_time,
+			"cs_totime": to_time,
+			"cs_online": 1,
+			# A school meeting gets its link from the provider (decisions/051a).
+			"cs_web_meeting": None if doc.school_meeting else (link or doc.web_meeting),
+		},
+	)
+	doc.hasmtgdate = 1
+	doc.flags.ignore_permissions = True
+	doc.save()
+	frappe.db.commit()
+	return {"success": True}
 
 
 @frappe.whitelist()
 def remove_virtual_meeting(course_schedule, meeting):
-    """Remove an online meeting the instructor added. Online rows only — room-based
-    meetings stay registrar-managed."""
-    if not _can_manage_virtual_meetings(course_schedule):
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
+	"""Remove an online meeting the instructor added. Online rows only — room-based
+	meetings stay registrar-managed."""
+	if not _can_manage_virtual_meetings(course_schedule):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
-    doc = frappe.get_doc("Course Schedule", course_schedule)
-    row = next((r for r in doc.cs_meetinfo if r.name == meeting), None)
-    if not row:
-        frappe.throw(_("Meeting not found."))
-    if not row.cs_online:
-        frappe.throw(_("Only online meetings added here can be removed."))
+	doc = frappe.get_doc("Course Schedule", course_schedule)
+	row = next((r for r in doc.cs_meetinfo if r.name == meeting), None)
+	if not row:
+		frappe.throw(_("Meeting not found."))
+	if not row.cs_online:
+		frappe.throw(_("Only online meetings added here can be removed."))
 
-    # Don't orphan attendance: a meeting students have already been marked for
-    # can't be deleted (reschedule a future one instead).
-    if frappe.db.exists("Student Attendance", {"meeting": meeting}):
-        frappe.throw(
-            _(
-                "Attendance has already been recorded for this meeting, so it "
-                "can't be removed."
-            )
-        )
+	# Don't orphan attendance: a meeting students have already been marked for
+	# can't be deleted (reschedule a future one instead).
+	if frappe.db.exists("Student Attendance", {"meeting": meeting}):
+		frappe.throw(_("Attendance has already been recorded for this meeting, so it can't be removed."))
 
-    doc.cs_meetinfo.remove(row)
-    doc.flags.ignore_permissions = True
-    doc.save()
-    frappe.db.commit()
-    return {"success": True}
+	doc.cs_meetinfo.remove(row)
+	doc.flags.ignore_permissions = True
+	doc.save()
+	frappe.db.commit()
+	return {"success": True}
 
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_user_info():
-    if frappe.session.user == "Guest":
-        return None
-    user = frappe.db.get_value(
-        "User",
-        frappe.session.user,
-        [
-            "name",
-            "email",
-            "enabled",
-            "user_image",
-            "full_name",
-            "user_type",
-            "username",
-        ],
-        as_dict=1,
-    )
-    user["roles"] = frappe.get_roles(user.name)
-    # LMS portal vocabulary mapped onto Seminary roles. Both the teaching
-    # Instructor and the curriculum-authority Program Chair get the instructor
-    # course view; the Instructor role drives the grading ("evaluator") view.
-    _roles = set(user.roles)
-    user.is_instructor = bool({"Instructor", "Program Chair"} & _roles)
-    user.is_moderator = "Seminary Manager" in _roles
-    user.is_evaluator = "Instructor" in _roles
-    user.is_student = "Student" in _roles
-    user.is_alumni = "Alumni" in user.roles
-    user.is_registrar = "Registrar" in user.roles
-    user.is_system_manager = "System Manager" in user.roles
-    # Partner portal (ADR 053): the org this user manages, if any.
-    user.is_partner = "Partner" in _roles
-    user.partner_org = frappe.db.get_value(
-        "Partner Contact", {"portal_user": user.name, "portal_access": 1}, "parent"
-    )
-    # Reported for the optional, separately-distributed Aretenic accreditation
-    # app (its own role; created by that app, never required by seminary).
-    user.is_aretenic = "Aretenic User" in _roles
-    # Whether the Aretenic app is installed at all (distinct from the per-user role above):
-    # gates optional aretenic-aware UI such as the CLO assessment mapper, so seminary runs
-    # cleanly when aretenic is absent (ADR 030: seminary never requires aretenic).
-    _installed = frappe.get_installed_apps()
-    user.has_aretenic = "aretenic" in _installed
-    # Same idea for the donor portal (ADR 074). /donate/donorportal is a
-    # website_route_rule owned by koinonia, so without the app the route
-    # does not exist and the switcher's Donate tile led to a 404.
-    user.has_giving = "koinonia" in _installed
-    user.student = frappe.db.get_value(
-        "Student", {"user": user.name, "enabled": 1}, "name"
-    )
-    user.instructor = frappe.db.get_value("Instructor", {"user": user.name}, "name")
-    # p007 §2.8: how far this instructor reaches, for the Courses page control.
-    from seminary.seminary.guards import faculty_read_scope, instructor_tier
+	if frappe.session.user == "Guest":
+		return None
+	user = frappe.db.get_value(
+		"User",
+		frappe.session.user,
+		[
+			"name",
+			"email",
+			"enabled",
+			"user_image",
+			"full_name",
+			"user_type",
+			"username",
+		],
+		as_dict=1,
+	)
+	user["roles"] = frappe.get_roles(user.name)
+	# LMS portal vocabulary mapped onto Seminary roles. Both the teaching
+	# Instructor and the curriculum-authority Program Chair get the instructor
+	# course view; the Instructor role drives the grading ("evaluator") view.
+	_roles = set(user.roles)
+	user.is_instructor = bool({"Instructor", "Program Chair"} & _roles)
+	user.is_moderator = "Seminary Manager" in _roles
+	user.is_evaluator = "Instructor" in _roles
+	user.is_student = "Student" in _roles
+	user.is_alumni = "Alumni" in user.roles
+	user.is_registrar = "Registrar" in user.roles
+	user.is_system_manager = "System Manager" in user.roles
+	# Partner portal (ADR 053): the org this user manages, if any.
+	user.is_partner = "Partner" in _roles
+	user.partner_org = frappe.db.get_value(
+		"Partner Contact", {"portal_user": user.name, "portal_access": 1}, "parent"
+	)
+	# Reported for the optional, separately-distributed Aretenic accreditation
+	# app (its own role; created by that app, never required by seminary).
+	user.is_aretenic = "Aretenic User" in _roles
+	# Whether the Aretenic app is installed at all (distinct from the per-user role above):
+	# gates optional aretenic-aware UI such as the CLO assessment mapper, so seminary runs
+	# cleanly when aretenic is absent (ADR 030: seminary never requires aretenic).
+	_installed = frappe.get_installed_apps()
+	user.has_aretenic = "aretenic" in _installed
+	# Same idea for the donor portal (ADR 074). /donate/donorportal is a
+	# website_route_rule owned by koinonia, so without the app the route
+	# does not exist and the switcher's Donate tile led to a 404.
+	user.has_giving = "koinonia" in _installed
+	user.student = frappe.db.get_value("Student", {"user": user.name, "enabled": 1}, "name")
+	user.instructor = frappe.db.get_value("Instructor", {"user": user.name}, "name")
+	# p007 §2.8: how far this instructor reaches, for the Courses page control.
+	from seminary.seminary.guards import faculty_read_scope, instructor_tier
 
-    user.instructor_tier = instructor_tier(user.name)
-    user.faculty_read_scope = faculty_read_scope()
-    user.can_list_all_courses = bool(
-        _roles & {"Program Chair", "Seminary Manager", "System Manager"}
-        or user.instructor_tier == "record"
-    )
-    # Faculty-capability routing (ADR 059): the units/capabilities this instructor
-    # is wired to drive which worklist tabs (advising, verifications, placement
-    # exams) the portal shows.
-    from seminary.seminary import faculty
+	user.instructor_tier = instructor_tier(user.name)
+	user.faculty_read_scope = faculty_read_scope()
+	user.can_list_all_courses = bool(
+		_roles & {"Program Chair", "Seminary Manager", "System Manager"} or user.instructor_tier == "record"
+	)
+	# Faculty-capability routing (ADR 059): the units/capabilities this instructor
+	# is wired to drive which worklist tabs (advising, verifications, placement
+	# exams) the portal shows.
+	from seminary.seminary import faculty
 
-    _fc = faculty.faculty_context(user.name)
-    user.faculty_units = _fc["units"]
-    user.faculty_capabilities = _fc["capabilities"]
-    # One flag decides the Faculty Worklist sidebar link (ADR 074). The link used
-    # to hand-check two capabilities while the page rendered more sections than
-    # that, stranding mentors; link and page now ask the same question, on the
-    # server, where the sections' data comes from. Pass the context we already
-    # resolved so the flag costs no extra capability query.
-    user.has_faculty_worklist = faculty.has_faculty_worklist(user.name, _fc)
-    # Requirements page link and badge (decisions/091 §11).
-    from seminary.seminary import requirements
+	_fc = faculty.faculty_context(user.name)
+	user.faculty_units = _fc["units"]
+	user.faculty_capabilities = _fc["capabilities"]
+	# One flag decides the Faculty Worklist sidebar link (ADR 074). The link used
+	# to hand-check two capabilities while the page rendered more sections than
+	# that, stranding mentors; link and page now ask the same question, on the
+	# server, where the sections' data comes from. Pass the context we already
+	# resolved so the flag costs no extra capability query.
+	user.has_faculty_worklist = faculty.has_faculty_worklist(user.name, _fc)
+	# Requirements page link and badge (decisions/091 §11).
+	from seminary.seminary import requirements
 
-    user.open_requirements = requirements.open_count(user.name)
-    user.has_requirements = bool(
-        user.open_requirements
-        or frappe.db.exists(
-            "Person Requirement",
-            {
-                "person": frappe.db.get_value("Person", {"user": user.name}, "name")
-                or ""
-            },
-        )
-    )
-    # External examiners are NOT instructors (reduced access, ADR 059/060): gate
-    # their CP views on this flag, never on is_instructor.
-    user.is_external_examiner = "External Examiner" in _roles
-    user.external_examiner = None
-    if user.is_external_examiner:
-        _person = frappe.db.get_value("Person", {"user": user.name}, "name")
-        if _person:
-            user.external_examiner = frappe.db.get_value(
-                "External Examiner", {"person": _person}, "name"
-            )
-    # Compute after external_examiner so an external reader (who is neither student
-    # nor instructor) still gets the Culminating Project sidebar link.
-    user.has_culminating_projects = _has_culminating_projects(
-        user.student, user.instructor, user.external_examiner
-    )
-    # My Formation (privatedocs p012 decision 3): a student in any competency
-    # section. Same question the page asks, so link and page agree.
-    from seminary.seminary.cbe_api import my_cbe_sections
+	user.open_requirements = requirements.open_count(user.name)
+	user.has_requirements = bool(
+		user.open_requirements
+		or frappe.db.exists(
+			"Person Requirement",
+			{"person": frappe.db.get_value("Person", {"user": user.name}, "name") or ""},
+		)
+	)
+	# External examiners are NOT instructors (reduced access, ADR 059/060): gate
+	# their CP views on this flag, never on is_instructor.
+	user.is_external_examiner = "External Examiner" in _roles
+	user.external_examiner = None
+	if user.is_external_examiner:
+		_person = frappe.db.get_value("Person", {"user": user.name}, "name")
+		if _person:
+			user.external_examiner = frappe.db.get_value("External Examiner", {"person": _person}, "name")
+	# Compute after external_examiner so an external reader (who is neither student
+	# nor instructor) still gets the Culminating Project sidebar link.
+	user.has_culminating_projects = _has_culminating_projects(
+		user.student, user.instructor, user.external_examiner
+	)
+	# My Formation (privatedocs p012 decision 3): a student in any competency
+	# section. Same question the page asks, so link and page agree.
+	from seminary.seminary.cbe_api import my_cbe_sections
 
-    user.has_formation = bool(user.student and my_cbe_sections(user.student))
-    from seminary.seminary.cbe_overview import has_overview
+	user.has_formation = bool(user.student and my_cbe_sections(user.student))
+	from seminary.seminary.cbe_overview import has_overview
 
-    user.has_cbe_overview = has_overview(user.name)
-    return user
+	user.has_cbe_overview = has_overview(user.name)
+	return user
 
 
 def _has_culminating_projects(student, instructor, external_examiner=None):
-    """Whether the user owns (student), reads (advisor/2nd/3rd), or serves as an
-    External Examiner on any Culminating Project — gates the workbench sidebar
-    link."""
-    if student and frappe.db.exists("Culminating Project", {"student": student}):
-        return True
-    if instructor and frappe.get_all(
-        "Culminating Project",
-        or_filters={
-            "advisor": instructor,
-            "second_reader": instructor,
-            "third_reader": instructor,
-        },
-        limit=1,
-    ):
-        return True
-    if external_examiner:
-        from seminary.seminary.doctype.culminating_project.culminating_project import (
-            cp_names_for_external_examiner,
-        )
+	"""Whether the user owns (student), reads (advisor/2nd/3rd), or serves as an
+	External Examiner on any Culminating Project — gates the workbench sidebar
+	link."""
+	if student and frappe.db.exists("Culminating Project", {"student": student}):
+		return True
+	if instructor and frappe.get_all(
+		"Culminating Project",
+		or_filters={
+			"advisor": instructor,
+			"second_reader": instructor,
+			"third_reader": instructor,
+		},
+		limit=1,
+	):
+		return True
+	if external_examiner:
+		from seminary.seminary.doctype.culminating_project.culminating_project import (
+			cp_names_for_external_examiner,
+		)
 
-        if cp_names_for_external_examiner(external_examiner):
-            return True
-    return False
+		if cp_names_for_external_examiner(external_examiner):
+			return True
+	return False
 
 
 @frappe.whitelist()
 def get_instructor_info():
-    instructor = frappe.db.get_value(
-        "Instructor",
-        {"user": frappe.session.user},
-        [
-            "name",
-            "instructor_name",
-            "user",
-            "status",
-            "bio",
-            "shortbio",
-            "profileimage",
-            "prof_email",
-            "phone_message",
-            "person",
-            "students_may_contact",
-        ],
-        as_dict=1,
-    )
-    if instructor:
-        from seminary.seminary.utils import get_instructor_contact_channels
-        from seminary.seminary.comms import WHATSAPP_CHANNEL
+	instructor = frappe.db.get_value(
+		"Instructor",
+		{"user": frappe.session.user},
+		[
+			"name",
+			"instructor_name",
+			"user",
+			"status",
+			"bio",
+			"shortbio",
+			"profileimage",
+			"prof_email",
+			"phone_message",
+			"person",
+			"students_may_contact",
+		],
+		as_dict=1,
+	)
+	if instructor:
+		from seminary.seminary.comms import WHATSAPP_CHANNEL
+		from seminary.seminary.utils import get_instructor_contact_channels
 
-        instructor["contact_channels"] = get_instructor_contact_channels(
-            instructor.name
-        )
-        # The editable WhatsApp number (other channels are managed on the
-        # Communication Preferences page / via bot onboarding).
-        instructor["whatsapp"] = (
-            frappe.db.get_value(
-                "Person Channel Address",
-                {
-                    "parent": instructor.person,
-                    "parenttype": "Person",
-                    "channel": WHATSAPP_CHANNEL,
-                    "status": "Active",
-                },
-                "value",
-            )
-            if instructor.person
-            else None
-        )
-    return instructor
+		instructor["contact_channels"] = get_instructor_contact_channels(instructor.name)
+		# The editable WhatsApp number (other channels are managed on the
+		# Communication Preferences page / via bot onboarding).
+		instructor["whatsapp"] = (
+			frappe.db.get_value(
+				"Person Channel Address",
+				{
+					"parent": instructor.person,
+					"parenttype": "Person",
+					"channel": WHATSAPP_CHANNEL,
+					"status": "Active",
+				},
+				"value",
+			)
+			if instructor.person
+			else None
+		)
+	return instructor
 
 
 @frappe.whitelist()
 def save_student_profile(
-    mobile,
-    address_line_1,
-    address_line_2,
-    city,
-    pincode,
-    state,
-    country,
-    image=None,
-    tax_id=None,
+	mobile,
+	address_line_1,
+	address_line_2,
+	city,
+	pincode,
+	state,
+	country,
+	image=None,
+	tax_id=None,
 ):
-    """Self-service profile edit, written to the Person spine.
+	"""Self-service profile edit, written to the Person spine.
 
-    This used to `db.set_value` straight onto the Student — no hooks, no Person
-    write — so a student's own edit diverged from the spine permanently, and
-    their mobile number was then silently reverted by the next Person save.
-    The address columns it wrote no longer exist on Student at all (ADR 068
-    phase 4); the mailing address has lived on the Person since ADR 046.
-    """
-    from seminary.seminary.person import find_person, update_person
+	This used to `db.set_value` straight onto the Student — no hooks, no Person
+	write — so a student's own edit diverged from the spine permanently, and
+	their mobile number was then silently reverted by the next Person save.
+	The address columns it wrote no longer exist on Student at all (ADR 068
+	phase 4); the mailing address has lived on the Person since ADR 046.
+	"""
+	from seminary.seminary.person import find_person, update_person
 
-    # Every field here lives on the Person, so a user with the Student role but
-    # no Student record of their own -- staff, a pastor -- still has somewhere
-    # to save it. Before, they got "Student record not found" and a dialog that
-    # silently did nothing.
-    person = frappe.db.get_value(
-        "Student", {"user": frappe.session.user}, "person"
-    ) or find_person(user=frappe.session.user)
-    if not person:
-        frappe.throw(_("Your account is not linked to a person record yet."))
+	# Every field here lives on the Person, so a user with the Student role but
+	# no Student record of their own -- staff, a pastor -- still has somewhere
+	# to save it. Before, they got "Student record not found" and a dialog that
+	# silently did nothing.
+	person = frappe.db.get_value("Student", {"user": frappe.session.user}, "person") or find_person(
+		user=frappe.session.user
+	)
+	if not person:
+		frappe.throw(_("Your account is not linked to a person record yet."))
 
-    update_person(
-        person,
-        mobile=mobile,
-        address_line_1=address_line_1,
-        address_line_2=address_line_2,
-        city=city,
-        pincode=pincode,
-        state=state,
-        # The postal country, not the messaging-routing one (ADR 068 phase 2).
-        mailing_country=country,
-        image=image or None,
-        # Validated per country by `tax_ids.py` in `Person.validate` (ADR 071),
-        # so a malformed one is refused here rather than reaching a gateway.
-        tax_id=tax_id,
-        overwrite=True,
-    )
-    row = frappe.db.get_value(
-        "Person",
-        person,
-        [
-            "primary_mobile",
-            "address_line_1",
-            "address_line_2",
-            "city",
-            "pincode",
-            "state",
-            "mailing_country",
-            "tax_id",
-            "image",
-        ],
-        as_dict=True,
-    )
-    # Keep the payload shape the profile modal already expects.
-    return {
-        "student_mobile_number": row.primary_mobile,
-        "address_line_1": row.address_line_1,
-        "address_line_2": row.address_line_2,
-        "city": row.city,
-        "pincode": row.pincode,
-        "state": row.state,
-        "country": row.mailing_country,
-        "tax_id": row.tax_id,
-        "image": row.image,
-    }
+	update_person(
+		person,
+		mobile=mobile,
+		address_line_1=address_line_1,
+		address_line_2=address_line_2,
+		city=city,
+		pincode=pincode,
+		state=state,
+		# The postal country, not the messaging-routing one (ADR 068 phase 2).
+		mailing_country=country,
+		image=image or None,
+		# Validated per country by `tax_ids.py` in `Person.validate` (ADR 071),
+		# so a malformed one is refused here rather than reaching a gateway.
+		tax_id=tax_id,
+		overwrite=True,
+	)
+	row = frappe.db.get_value(
+		"Person",
+		person,
+		[
+			"primary_mobile",
+			"address_line_1",
+			"address_line_2",
+			"city",
+			"pincode",
+			"state",
+			"mailing_country",
+			"tax_id",
+			"image",
+		],
+		as_dict=True,
+	)
+	# Keep the payload shape the profile modal already expects.
+	return {
+		"student_mobile_number": row.primary_mobile,
+		"address_line_1": row.address_line_1,
+		"address_line_2": row.address_line_2,
+		"city": row.city,
+		"pincode": row.pincode,
+		"state": row.state,
+		"country": row.mailing_country,
+		"tax_id": row.tax_id,
+		"image": row.image,
+	}
 
 
 @frappe.whitelist()
 def save_instructor_profile(
-    instructor_name,
-    shortbio,
-    bio,
-    prof_email=None,
-    phone_message=None,
-    students_may_contact=None,
-    whatsapp=None,
-    profileimage=None,
+	instructor_name,
+	shortbio,
+	bio,
+	prof_email=None,
+	phone_message=None,
+	students_may_contact=None,
+	whatsapp=None,
+	profileimage=None,
 ):
-    """Self-service instructor profile.
+	"""Self-service instructor profile.
 
-    The identity half now goes to the Person (ADR 068 phases 4-5). This used to
-    set `instructor_name` on the Instructor and save, which does *not* rename
-    the document — so `Instructor.name` and `instructor_name` silently diverged
-    on any name edit. The name, email, phone and photo are `fetch_from
-    person.*` mirrors; only the bio and the contact-consent flag are genuinely
-    about the teaching role.
-    """
-    from seminary.seminary.person import update_person
+	The identity half now goes to the Person (ADR 068 phases 4-5). This used to
+	set `instructor_name` on the Instructor and save, which does *not* rename
+	the document — so `Instructor.name` and `instructor_name` silently diverged
+	on any name edit. The name, email, phone and photo are `fetch_from
+	person.*` mirrors; only the bio and the contact-consent flag are genuinely
+	about the teaching role.
+	"""
+	from seminary.seminary.person import update_person
 
-    doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
-    if doc.person:
-        parts = (instructor_name or "").strip().split(" ", 1)
-        update_person(
-            doc.person,
-            first_name=parts[0] or None,
-            last_name=parts[1] if len(parts) > 1 else None,
-            email=prof_email or None,
-            mobile=phone_message or None,
-            image=profileimage or None,
-            overwrite=True,
-        )
-    doc.shortbio = shortbio
-    doc.bio = bio
-    if students_may_contact is not None:
-        doc.students_may_contact = cint(students_may_contact)
-    doc.save(ignore_permissions=False)
-    doc.reload()
+	doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
+	if doc.person:
+		parts = (instructor_name or "").strip().split(" ", 1)
+		update_person(
+			doc.person,
+			first_name=parts[0] or None,
+			last_name=parts[1] if len(parts) > 1 else None,
+			email=prof_email or None,
+			mobile=phone_message or None,
+			image=profileimage or None,
+			overwrite=True,
+		)
+	doc.shortbio = shortbio
+	doc.bio = bio
+	if students_may_contact is not None:
+		doc.students_may_contact = cint(students_may_contact)
+	doc.save(ignore_permissions=False)
+	doc.reload()
 
-    if whatsapp is not None and doc.person:
-        from seminary.seminary.person import set_channel_address
-        from seminary.seminary.comms import WHATSAPP_CHANNEL
+	if whatsapp is not None and doc.person:
+		from seminary.seminary.comms import WHATSAPP_CHANNEL
+		from seminary.seminary.person import set_channel_address
 
-        set_channel_address(doc.person, WHATSAPP_CHANNEL, whatsapp)
+		set_channel_address(doc.person, WHATSAPP_CHANNEL, whatsapp)
 
-    return {
-        "instructor_name": doc.instructor_name,
-        "shortbio": doc.shortbio,
-        "bio": doc.bio,
-        "prof_email": doc.prof_email,
-        "phone_message": doc.phone_message,
-        "students_may_contact": doc.students_may_contact,
-        "profileimage": doc.profileimage,
-    }
+	return {
+		"instructor_name": doc.instructor_name,
+		"shortbio": doc.shortbio,
+		"bio": doc.bio,
+		"prof_email": doc.prof_email,
+		"phone_message": doc.phone_message,
+		"students_may_contact": doc.students_may_contact,
+		"profileimage": doc.profileimage,
+	}
 
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_school_abbr_logo():
-    abbr = frappe.db.get_single_value("Website Settings", "app_name")
-    logo = frappe.db.get_single_value("Seminary Settings", "logo_portal")
-    logo_dark = frappe.db.get_single_value("Seminary Settings", "logo_dark")
-    support_user = frappe.db.get_single_value("Seminary Settings", "support_user")
-    date_format = (
-        frappe.db.get_single_value("System Settings", "date_format") or "yyyy-mm-dd"
-    )
-    allow_portal_enroll = (
-        frappe.db.get_single_value("Seminary Settings", "allow_portal_enroll") or 0
-    )
-    allow_alumni_partner_directory = (
-        frappe.db.get_single_value(
-            "Seminary Settings", "allow_alumni_view_partner_directory"
-        )
-        or 0
-    )
-    return {
-        "name": abbr,
-        "logo": logo,
-        "logo_dark": logo_dark,
-        "support_user": support_user,
-        "date_format": date_format,
-        "allow_portal_enroll": allow_portal_enroll,
-        "allow_alumni_partner_directory": allow_alumni_partner_directory,
-    }
+	abbr = frappe.db.get_single_value("Website Settings", "app_name")
+	logo = frappe.db.get_single_value("Seminary Settings", "logo_portal")
+	logo_dark = frappe.db.get_single_value("Seminary Settings", "logo_dark")
+	support_user = frappe.db.get_single_value("Seminary Settings", "support_user")
+	date_format = frappe.db.get_single_value("System Settings", "date_format") or "yyyy-mm-dd"
+	allow_portal_enroll = frappe.db.get_single_value("Seminary Settings", "allow_portal_enroll") or 0
+	allow_alumni_partner_directory = (
+		frappe.db.get_single_value("Seminary Settings", "allow_alumni_view_partner_directory") or 0
+	)
+	return {
+		"name": abbr,
+		"logo": logo,
+		"logo_dark": logo_dark,
+		"support_user": support_user,
+		"date_format": date_format,
+		"allow_portal_enroll": allow_portal_enroll,
+		"allow_alumni_partner_directory": allow_alumni_partner_directory,
+	}
 
 
 def get_course(program):
-    """Return list of courses for a particular program
-    :param program: Program
-    """
-    courses = frappe.db.sql(
-        """select course, course_name from `tabProgram Course` where parent=%s and disabled = 0
+	"""Return list of courses for a particular program
+	:param program: Program
+	"""
+	courses = frappe.db.sql(
+		"""select course, course_name from `tabProgram Course` where parent=%s and disabled = 0
 		UNION select program_track_course from `tabProgram Track Courses` where parent=%s""",
-        (program),
-        as_dict=1,
-    )
-    return courses
+		(program),
+		as_dict=1,
+	)
+	return courses
 
 
 @frappe.whitelist()
 def get_student_programs(student):
-    """Return list of programs for a particular student, with their grades and PE summary.
-    :param student: Student
-    """
-    student = own_or_staff(student)
-    grades = frappe.db.sql(
-        """SELECT pe.program, pe.name AS program_enrollment, pe.pgmenrol_active,
+	"""Return list of programs for a particular student, with their grades and PE summary.
+	:param student: Student
+	"""
+	student = own_or_staff(student)
+	grades = frappe.db.sql(
+		"""SELECT pe.program, pe.name AS program_enrollment, pe.pgmenrol_active,
             pe.student, pe.totalcredits,
             pec.course AS course_schedule,
             pec.course_name, pec.academic_term, pec.credits,
@@ -1439,50 +1388,41 @@ def get_student_programs(student):
         FROM `tabProgram Enrollment` pe
         INNER JOIN `tabProgram Enrollment Course` pec ON pe.name = pec.parent
         WHERE pe.student = %s""",
-        (student),
-        as_dict=1,
-    )
+		(student),
+		as_dict=1,
+	)
 
-    # Enrich with program-level data (credits_complete) and emphasis summary per PE
-    pe_summary = {}
-    for row in grades:
-        pe_name = row.program_enrollment
-        if pe_name not in pe_summary:
-            credits_complete = (
-                frappe.db.get_value("Program", row.program, "credits_complete") or 0
-            )
-            emphases = frappe.get_all(
-                "Program Enrollment Emphasis",
-                filters={"parent": pe_name, "status": ["in", ["Active", "Completed"]]},
-                fields=["emphasis_track", "trackcredits"],
-            )
-            emphasis_summary = []
-            for emph in emphases:
-                track_name = frappe.db.get_value(
-                    "Program Track", emph.emphasis_track, "track_name"
-                )
-                addcredits = (
-                    frappe.db.get_value(
-                        "Program Track", emph.emphasis_track, "addcredits"
-                    )
-                    or 0
-                )
-                emphasis_summary.append(
-                    {
-                        "track_name": track_name,
-                        "trackcredits": emph.trackcredits or 0,
-                        "credits_required": addcredits,
-                    }
-                )
-            pe_summary[pe_name] = {
-                "credits_complete": credits_complete,
-                "emphases": emphasis_summary,
-            }
+	# Enrich with program-level data (credits_complete) and emphasis summary per PE
+	pe_summary = {}
+	for row in grades:
+		pe_name = row.program_enrollment
+		if pe_name not in pe_summary:
+			credits_complete = frappe.db.get_value("Program", row.program, "credits_complete") or 0
+			emphases = frappe.get_all(
+				"Program Enrollment Emphasis",
+				filters={"parent": pe_name, "status": ["in", ["Active", "Completed"]]},
+				fields=["emphasis_track", "trackcredits"],
+			)
+			emphasis_summary = []
+			for emph in emphases:
+				track_name = frappe.db.get_value("Program Track", emph.emphasis_track, "track_name")
+				addcredits = frappe.db.get_value("Program Track", emph.emphasis_track, "addcredits") or 0
+				emphasis_summary.append(
+					{
+						"track_name": track_name,
+						"trackcredits": emph.trackcredits or 0,
+						"credits_required": addcredits,
+					}
+				)
+			pe_summary[pe_name] = {
+				"credits_complete": credits_complete,
+				"emphases": emphasis_summary,
+			}
 
-        row["credits_complete"] = pe_summary[pe_name]["credits_complete"]
-        row["emphases"] = pe_summary[pe_name]["emphases"]
+		row["credits_complete"] = pe_summary[pe_name]["credits_complete"]
+		row["emphases"] = pe_summary[pe_name]["emphases"]
 
-    return grades
+	return grades
 
 
 # `first_term` lived here: a second writer of `iscurrent_acterm`, called from
@@ -1497,460 +1437,444 @@ def get_student_programs(student):
 
 
 def _assert_may_course_enroll(pe_name):
-    from seminary.seminary.utils import get_current_student, has_super_access
+	from seminary.seminary.utils import get_current_student, has_super_access
 
-    if has_super_access() or (set(frappe.get_roles()) & REGISTRAR_ROLES):
-        return
-    student = get_current_student()
-    owner = frappe.db.get_value("Program Enrollment", pe_name, "student")
-    if not (student and owner and owner == student.name):
-        frappe.throw(
-            _("You can only enroll in courses under your own program enrollment."),
-            frappe.PermissionError,
-        )
-    if not frappe.db.get_single_value("Seminary Settings", "allow_portal_enroll"):
-        frappe.throw(
-            _("Self-enrollment from the portal is not enabled."),
-            frappe.PermissionError,
-        )
-    program = frappe.db.get_value("Program Enrollment", pe_name, "program")
-    if frappe.db.get_value("Program", program, "staff_enroll_only"):
-        frappe.throw(
-            _("Your school enrolls you in the courses of this program."),
-            frappe.PermissionError,
-        )
-    from seminary.seminary.requirements import assert_may_self_enroll
+	if has_super_access() or (set(frappe.get_roles()) & REGISTRAR_ROLES):
+		return
+	student = get_current_student()
+	owner = frappe.db.get_value("Program Enrollment", pe_name, "student")
+	if not (student and owner and owner == student.name):
+		frappe.throw(
+			_("You can only enroll in courses under your own program enrollment."),
+			frappe.PermissionError,
+		)
+	if not frappe.db.get_single_value("Seminary Settings", "allow_portal_enroll"):
+		frappe.throw(
+			_("Self-enrollment from the portal is not enabled."),
+			frappe.PermissionError,
+		)
+	program = frappe.db.get_value("Program Enrollment", pe_name, "program")
+	if frappe.db.get_value("Program", program, "staff_enroll_only"):
+		frappe.throw(
+			_("Your school enrolls you in the courses of this program."),
+			frappe.PermissionError,
+		)
+	from seminary.seminary.requirements import assert_may_self_enroll
 
-    assert_may_self_enroll(pe_name)
+	assert_may_self_enroll(pe_name)
 
 
 @frappe.whitelist()
 def course_enroll(pe_name, course):
-    """Enroll student in a course schedule. Creates a draft CEI document.
+	"""Enroll student in a course schedule. Creates a draft CEI document.
 
-    Over the wire this acts only on the caller's own Program Enrollment, and
-    only while Seminary Settings.allow_portal_enroll is on (p006 §2.14). Staff
-    (``has_super_access`` or a registrar role) may enrol anyone: that keeps the
-    server caller ``required_enrollment`` (under the Program Enrollment /
-    Course Schedule hooks) working unchanged.
-    """
-    _assert_may_course_enroll(pe_name)
-    return enroll_in_section(pe_name, course)
+	Over the wire this acts only on the caller's own Program Enrollment, and
+	only while Seminary Settings.allow_portal_enroll is on (p006 §2.14). Staff
+	(``has_super_access`` or a registrar role) may enrol anyone: that keeps the
+	server caller ``required_enrollment`` (under the Program Enrollment /
+	Course Schedule hooks) working unchanged.
+	"""
+	_assert_may_course_enroll(pe_name)
+	return enroll_in_section(pe_name, course)
 
 
 def enroll_in_section(pe_name, course, submit_blocked=False):
-    """The enrollment itself, for callers that have already checked who may
-    enroll. ``submit_blocked`` submits the CEI even where the program sets
-    ``registrar_block_cei``: Bulk Course Enrollment is the registrar enrolling,
-    so there is no one left to approve it (ADR 083 §2). Not whitelisted, so a
-    student can never pass it."""
-    student = frappe.get_value("Program Enrollment", pe_name, "student")
-    if not student:
-        frappe.throw(_("Invalid Program Enrollment"))
+	"""The enrollment itself, for callers that have already checked who may
+	enroll. ``submit_blocked`` submits the CEI even where the program sets
+	``registrar_block_cei``: Bulk Course Enrollment is the registrar enrolling,
+	so there is no one left to approve it (ADR 083 §2). Not whitelisted, so a
+	student can never pass it."""
+	student = frappe.get_value("Program Enrollment", pe_name, "student")
+	if not student:
+		frappe.throw(_("Invalid Program Enrollment"))
 
-    # Validate the Course Schedule exists and is open for enrollment
-    cs = frappe.db.get_value(
-        "Course Schedule", course, ["name", "workflow_state"], as_dict=True
-    )
-    if not cs:
-        frappe.throw(_("Course Schedule not found"))
-    if cs.workflow_state != "Open for Enrollment":
-        frappe.throw(_("This course is not open for enrollment"))
+	# Validate the Course Schedule exists and is open for enrollment
+	cs = frappe.db.get_value("Course Schedule", course, ["name", "workflow_state"], as_dict=True)
+	if not cs:
+		frappe.throw(_("Course Schedule not found"))
+	if cs.workflow_state != "Open for Enrollment":
+		frappe.throw(_("This course is not open for enrollment"))
 
-    doc = frappe.new_doc("Course Enrollment Individual")
-    doc.program_ce = pe_name
-    doc.student_ce = student
-    doc.coursesc_ce = cs.name
-    doc.docstatus = 0
+	doc = frappe.new_doc("Course Enrollment Individual")
+	doc.program_ce = pe_name
+	doc.student_ce = student
+	doc.coursesc_ce = cs.name
+	doc.docstatus = 0
 
-    # Populate fetch_from fields so get_credits() can resolve them
-    doc.program_data = frappe.db.get_value("Program Enrollment", pe_name, "program")
-    doc.course_data = frappe.db.get_value("Course Schedule", cs.name, "course")
+	# Populate fetch_from fields so get_credits() can resolve them
+	doc.program_data = frappe.db.get_value("Program Enrollment", pe_name, "program")
+	doc.course_data = frappe.db.get_value("Course Schedule", cs.name, "course")
 
-    doc.credits = doc.get_credits()
-    # The Student create row on CEI is gone (p007 §2.1); the gate above already
-    # established this is the caller's own enrollment.
-    doc.insert(ignore_permissions=True)
+	doc.credits = doc.get_credits()
+	# The Student create row on CEI is gone (p007 §2.1); the gate above already
+	# established this is the caller's own enrollment.
+	doc.insert(ignore_permissions=True)
 
-    # Without registrar gating (per-Program flag), advance the draft
-    # immediately. submit() raises docstatus and fires on_submit (which
-    # creates the Sales Invoice); workflow_state is then nudged via
-    # db_set, which skips validate_workflow's role check (the student
-    # fails it even with ignore_permissions). Program conditions decide
-    # the target state.
-    if submit_blocked or not doc.registrar_block_cei:
-        from seminary.seminary.waitlist import (
-            assign_waitlist_positions,
-            is_seat_available,
-            recount,
-        )
+	# Without registrar gating (per-Program flag), advance the draft
+	# immediately. submit() raises docstatus and fires on_submit (which
+	# creates the Sales Invoice); workflow_state is then nudged via
+	# db_set, which skips validate_workflow's role check (the student
+	# fails it even with ignore_permissions). Program conditions decide
+	# the target state.
+	if submit_blocked or not doc.registrar_block_cei:
+		from seminary.seminary.waitlist import (
+			assign_waitlist_positions,
+			is_seat_available,
+			recount,
+		)
 
-        # This path sets workflow_state directly (bypassing apply_workflow), so
-        # the seat_available workflow condition never runs here — enforce the
-        # capacity routing explicitly: a full section sends the student to the
-        # waitlist instead of a seat (ADR 038).
-        if not is_seat_available(cs.name):
-            target_state = "Waitlisted"
-        elif doc.is_free or not doc.require_pay_submit:
-            target_state = "Submitted"
-        else:
-            target_state = "Awaiting Payment"
+		# This path sets workflow_state directly (bypassing apply_workflow), so
+		# the seat_available workflow condition never runs here — enforce the
+		# capacity routing explicitly: a full section sends the student to the
+		# waitlist instead of a seat (ADR 038).
+		if not is_seat_available(cs.name):
+			target_state = "Waitlisted"
+		elif doc.is_free or not doc.require_pay_submit:
+			target_state = "Submitted"
+		else:
+			target_state = "Awaiting Payment"
 
-        doc.flags.ignore_permissions = True
-        # Set the state before submit so on_submit sees "Waitlisted" and skips
-        # invoicing (waitlisted students hold a queue spot, not a seat).
-        doc.workflow_state = target_state
-        doc.submit()
-        doc.db_set("workflow_state", target_state, update_modified=False)
+		doc.flags.ignore_permissions = True
+		# Set the state before submit so on_submit sees "Waitlisted" and skips
+		# invoicing (waitlisted students hold a queue spot, not a seat).
+		doc.workflow_state = target_state
+		doc.submit()
+		doc.db_set("workflow_state", target_state, update_modified=False)
 
-        # db_set bypasses on_update_after_submit, so on_workflow_update never
-        # fires. Free / no-payment-required enrollments land in Submitted here
-        # with no further trigger, so run the post-submit side effects (roster
-        # + PEC creation) explicitly, mirroring _advance_cei_to_submitted.
-        if target_state == "Submitted":
-            from seminary.seminary.cei_lifecycle import enroll_student
+		# db_set bypasses on_update_after_submit, so on_workflow_update never
+		# fires. Free / no-payment-required enrollments land in Submitted here
+		# with no further trigger, so run the post-submit side effects (roster
+		# + PEC creation) explicitly, mirroring _advance_cei_to_submitted.
+		if target_state == "Submitted":
+			from seminary.seminary.cei_lifecycle import enroll_student
 
-            enroll_student(frappe.get_doc("Course Enrollment Individual", doc.name))
-        elif target_state == "Waitlisted":
-            assign_waitlist_positions(cs.name)
+			enroll_student(frappe.get_doc("Course Enrollment Individual", doc.name))
+		elif target_state == "Waitlisted":
+			assign_waitlist_positions(cs.name)
 
-        # Keep the section's seat/demand caches honest (this path doesn't ride
-        # the CEI workflow hook that normally recounts).
-        recount(cs.name)
+		# Keep the section's seat/demand caches honest (this path doesn't ride
+		# the CEI workflow hook that normally recounts).
+		recount(cs.name)
 
-    return {
-        "name": doc.name,
-        "course_data": doc.course_data,
-        "academic_term": doc.academic_term,
-        "credits": doc.credits,
-        "workflow_state": frappe.db.get_value(
-            "Course Enrollment Individual", doc.name, "workflow_state"
-        ),
-    }
+	return {
+		"name": doc.name,
+		"course_data": doc.course_data,
+		"academic_term": doc.academic_term,
+		"credits": doc.credits,
+		"workflow_state": frappe.db.get_value("Course Enrollment Individual", doc.name, "workflow_state"),
+	}
 
 
 def current_academic_term():
-    """The current academic term — the app-wide answer, or None.
+	"""The current academic term — the app-wide answer, or None.
 
-    `Academic Term.iscurrent_acterm` is where a school states this, and
-    `tasks._update_term_flags` keeps exactly one term carrying it. Everything
-    that needs "what term is it" asks here, so there is one definition to fix if
-    it is ever wrong.
+	`Academic Term.iscurrent_acterm` is where a school states this, and
+	`tasks._update_term_flags` keeps exactly one term carrying it. Everything
+	that needs "what term is it" asks here, so there is one definition to fix if
+	it is ever wrong.
 
-    Degrades the same way `_resolve_display_terms` does, because the flag can be
-    momentarily stale (the daily task not yet run on a fresh site) and refusing
-    to answer would be worse than answering from the dates.
-    """
-    terms = _resolve_display_terms()
-    return terms[0] if terms else None
+	Degrades the same way `_resolve_display_terms` does, because the flag can be
+	momentarily stale (the daily task not yet run on a fresh site) and refusing
+	to answer would be worse than answering from the dates.
+	"""
+	terms = _resolve_display_terms()
+	return terms[0] if terms else None
 
 
 def _resolve_display_terms():
-    """Academic term(s) to treat as 'this term' for the portal.
+	"""Academic term(s) to treat as 'this term' for the portal.
 
-    Returns a list only because of its fallback arm; with the single-current
-    invariant enforced (`AcademicTerm.enforce_single_current_term`,
-    `tasks._update_term_flags`) the first two branches yield at most one term.
-    Prefer `current_academic_term()` unless you specifically want the list.
+	Returns a list only because of its fallback arm; with the single-current
+	invariant enforced (`AcademicTerm.enforce_single_current_term`,
+	`tasks._update_term_flags`) the first two branches yield at most one term.
+	Prefer `current_academic_term()` unless you specifically want the list.
 
-    Prefers the flagged current term, but degrades gracefully so the student's
-    "My Enrollments This Term" panel never blanks out just because the daily
-    scheduler hasn't reasserted ``iscurrent_acterm`` or because today falls in a
-    gap between consecutive terms:
-      1. the flagged current term;
-      2. else the term whose date range contains today (flag not yet set);
-      3. else, during an inter-term gap, the nearest OPEN term by date distance
-         (the upcoming term the student is enrolling into).
-    """
-    today = frappe.utils.getdate(frappe.utils.today())
+	Prefers the flagged current term, but degrades gracefully so the student's
+	"My Enrollments This Term" panel never blanks out just because the daily
+	scheduler hasn't reasserted ``iscurrent_acterm`` or because today falls in a
+	gap between consecutive terms:
+	  1. the flagged current term;
+	  2. else the term whose date range contains today (flag not yet set);
+	  3. else, during an inter-term gap, the nearest OPEN term by date distance
+	     (the upcoming term the student is enrolling into).
+	"""
+	today = frappe.utils.getdate(frappe.utils.today())
 
-    flagged = frappe.get_all(
-        "Academic Term", filters={"iscurrent_acterm": 1}, pluck="name"
-    )
-    if flagged:
-        return flagged
+	flagged = frappe.get_all("Academic Term", filters={"iscurrent_acterm": 1}, pluck="name")
+	if flagged:
+		return flagged
 
-    covering = frappe.get_all(
-        "Academic Term",
-        filters={
-            "term_start_date": ["<=", today],
-            "term_end_date": [">=", today],
-        },
-        pluck="name",
-    )
-    if covering:
-        return covering
+	covering = frappe.get_all(
+		"Academic Term",
+		filters={
+			"term_start_date": ["<=", today],
+			"term_end_date": [">=", today],
+		},
+		pluck="name",
+	)
+	if covering:
+		return covering
 
-    open_terms = frappe.get_all(
-        "Academic Term",
-        filters={"open": 1},
-        fields=["name", "term_start_date", "term_end_date"],
-    )
-    if not open_terms:
-        return []
+	open_terms = frappe.get_all(
+		"Academic Term",
+		filters={"open": 1},
+		fields=["name", "term_start_date", "term_end_date"],
+	)
+	if not open_terms:
+		return []
 
-    def distance(t):
-        if t.term_start_date and today < t.term_start_date:
-            return (t.term_start_date - today).days
-        if t.term_end_date and today > t.term_end_date:
-            return (today - t.term_end_date).days
-        return 0
+	def distance(t):
+		if t.term_start_date and today < t.term_start_date:
+			return (t.term_start_date - today).days
+		if t.term_end_date and today > t.term_end_date:
+			return (today - t.term_end_date).days
+		return 0
 
-    open_terms.sort(key=distance)
-    return [open_terms[0].name]
+	open_terms.sort(key=distance)
+	return [open_terms[0].name]
 
 
 @frappe.whitelist()
 def get_student_enrollments_for_term(program_enrollment):
-    """Return the student's CEIs for the current academic term (with a graceful
-    fallback during inter-term gaps — see _resolve_display_terms)."""
-    require_own_enrollment(program_enrollment)
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    student = pe.student
-    if not student:
-        return []
+	"""Return the student's CEIs for the current academic term (with a graceful
+	fallback during inter-term gaps — see _resolve_display_terms)."""
+	require_own_enrollment(program_enrollment)
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	student = pe.student
+	if not student:
+		return []
 
-    current_terms = _resolve_display_terms()
-    if not current_terms:
-        return []
+	current_terms = _resolve_display_terms()
+	if not current_terms:
+		return []
 
-    # Same Required / Track / Elective badges the enrollment picker shows, so a
-    # student can see whether an already-enrolled course is required or elective.
-    category_map = _course_category_map(
-        pe, frappe.get_cached_doc("Program", pe.program)
-    )
+	# Same Required / Track / Elective badges the enrollment picker shows, so a
+	# student can see whether an already-enrolled course is required or elective.
+	category_map = _course_category_map(pe, frappe.get_cached_doc("Program", pe.program))
 
-    ceis = frappe.get_all(
-        "Course Enrollment Individual",
-        filters={
-            "student_ce": student,
-            "program_ce": program_enrollment,
-            "academic_term": ["in", current_terms],
-            "docstatus": ["!=", 2],
-            "course_cancelled": 0,
-        },
-        fields=[
-            "name",
-            "course_data",
-            "academic_term",
-            "coursesc_ce",
-            "docstatus",
-            "audit",
-            "withdrawn",
-            "credits",
-            "workflow_state",
-            "paid_percent",
-            "waitlist_position",
-        ],
-        order_by="docstatus asc, course_data asc",
-    )
+	ceis = frappe.get_all(
+		"Course Enrollment Individual",
+		filters={
+			"student_ce": student,
+			"program_ce": program_enrollment,
+			"academic_term": ["in", current_terms],
+			"docstatus": ["!=", 2],
+			"course_cancelled": 0,
+		},
+		fields=[
+			"name",
+			"course_data",
+			"academic_term",
+			"coursesc_ce",
+			"docstatus",
+			"audit",
+			"withdrawn",
+			"credits",
+			"workflow_state",
+			"paid_percent",
+			"waitlist_position",
+		],
+		order_by="docstatus asc, course_data asc",
+	)
 
-    # Map CEI workflow_state to a student-facing status. The workflow is
-    # the canonical source post-ADR 016 — `withdrawn` and docstatus alone
-    # can't distinguish Awaiting Payment (invoiced, not on roster) from
-    # Submitted (fully enrolled).
-    for cei in ceis:
-        cei["categories"] = category_map.get(cei.course_data) or [{"type": "Elective"}]
-        cs_info = (
-            frappe.db.get_value(
-                "Course Schedule",
-                cei.coursesc_ce,
-                ["c_datestart", "workflow_state"],
-                as_dict=True,
-            )
-            or {}
-        )
-        cei["start_date"] = cs_info.get("c_datestart")
-        # Drives the portal: an unpaid seat can only be self-released while the
-        # section is still open for enrollment (see cancel_unpaid_enrollment).
-        cei["enrollment_open"] = cs_info.get("workflow_state") == "Open for Enrollment"
+	# Map CEI workflow_state to a student-facing status. The workflow is
+	# the canonical source post-ADR 016 — `withdrawn` and docstatus alone
+	# can't distinguish Awaiting Payment (invoiced, not on roster) from
+	# Submitted (fully enrolled).
+	for cei in ceis:
+		cei["categories"] = category_map.get(cei.course_data) or [{"type": "Elective"}]
+		cs_info = (
+			frappe.db.get_value(
+				"Course Schedule",
+				cei.coursesc_ce,
+				["c_datestart", "workflow_state"],
+				as_dict=True,
+			)
+			or {}
+		)
+		cei["start_date"] = cs_info.get("c_datestart")
+		# Drives the portal: an unpaid seat can only be self-released while the
+		# section is still open for enrollment (see cancel_unpaid_enrollment).
+		cei["enrollment_open"] = cs_info.get("workflow_state") == "Open for Enrollment"
 
-        if cei.docstatus == 0:
-            cei["status"] = "Draft"
-        elif cei.workflow_state == "Awaiting Payment":
-            cei["status"] = "Awaiting Payment"
-        elif cei.workflow_state == "Waitlisted":
-            cei["status"] = "Waitlisted"
-        elif cei.workflow_state == "Unseated":
-            cei["status"] = "Unseated"
-        elif cei.workflow_state == "Withdrawn" or cei.withdrawn:
-            cei["status"] = "Withdrawn"
-        else:
-            cei["status"] = "Enrolled"
+		if cei.docstatus == 0:
+			cei["status"] = "Draft"
+		elif cei.workflow_state == "Awaiting Payment":
+			cei["status"] = "Awaiting Payment"
+		elif cei.workflow_state == "Waitlisted":
+			cei["status"] = "Waitlisted"
+		elif cei.workflow_state == "Unseated":
+			cei["status"] = "Unseated"
+		elif cei.workflow_state == "Withdrawn" or cei.withdrawn:
+			cei["status"] = "Withdrawn"
+		else:
+			cei["status"] = "Enrolled"
 
-        # For Awaiting Payment, surface the unpaid invoice (a financial fact owned
-        # by the backend) so the student can click through to pay. None with no
-        # backend — a Frappe-only enrollment never sits in Awaiting Payment.
-        cei["sales_invoice"] = None
-        if cei["status"] == "Awaiting Payment":
-            from seminary.seminary.financial.backend import get_financial_backend
+		# For Awaiting Payment, surface the unpaid invoice (a financial fact owned
+		# by the backend) so the student can click through to pay. None with no
+		# backend — a Frappe-only enrollment never sits in Awaiting Payment.
+		cei["sales_invoice"] = None
+		if cei["status"] == "Awaiting Payment":
+			from seminary.seminary.financial.backend import get_financial_backend
 
-            cei["sales_invoice"] = get_financial_backend().unpaid_invoice_for_cei(
-                cei.name
-            )
+			cei["sales_invoice"] = get_financial_backend().unpaid_invoice_for_cei(cei.name)
 
-    return ceis
+	return ceis
 
 
 @frappe.whitelist()
 def cancel_draft_enrollment(cei_name):
-    """Cancel (delete) a draft CEI. Only works on draft documents."""
-    doc = frappe.get_doc("Course Enrollment Individual", cei_name)
-    if doc.docstatus != 0:
-        frappe.throw(_("Only draft enrollments can be cancelled"))
-    if doc.student_ce != frappe.db.get_value(
-        "Student", {"user": frappe.session.user}, "name"
-    ):
-        frappe.throw(_("You can only cancel your own enrollments"))
-    doc.delete(ignore_permissions=True)
-    return {"success": True}
+	"""Cancel (delete) a draft CEI. Only works on draft documents."""
+	doc = frappe.get_doc("Course Enrollment Individual", cei_name)
+	if doc.docstatus != 0:
+		frappe.throw(_("Only draft enrollments can be cancelled"))
+	if doc.student_ce != frappe.db.get_value("Student", {"user": frappe.session.user}, "name"):
+		frappe.throw(_("You can only cancel your own enrollments"))
+	doc.delete(ignore_permissions=True)
+	return {"success": True}
 
 
 @frappe.whitelist()
 def cancel_unpaid_enrollment(cei_name):
-    """Release an unpaid 'Awaiting Payment' enrollment before paying.
+	"""Release an unpaid 'Awaiting Payment' enrollment before paying.
 
-    Cancels the CEI (which cancels its linked unpaid Sales Invoice via the CEI's
-    on_cancel) and frees the seat so the waitlist can promote. This is a clean
-    release, not a Withdrawal Request — the student never started the course, so
-    it leaves no transcript trace. Blocked once any payment has been made (use a
-    withdrawal/refund instead) or once the course has started (before_cancel).
-    """
-    doc = frappe.get_doc("Course Enrollment Individual", cei_name)
+	Cancels the CEI (which cancels its linked unpaid Sales Invoice via the CEI's
+	on_cancel) and frees the seat so the waitlist can promote. This is a clean
+	release, not a Withdrawal Request — the student never started the course, so
+	it leaves no transcript trace. Blocked once any payment has been made (use a
+	withdrawal/refund instead) or once the course has started (before_cancel).
+	"""
+	doc = frappe.get_doc("Course Enrollment Individual", cei_name)
 
-    owns = doc.student_ce == frappe.db.get_value(
-        "Student", {"user": frappe.session.user}, "name"
-    )
-    staff = bool(
-        {"Registrar", "Program Chair", "Seminary Manager", "System Manager"}
-        & set(frappe.get_roles(frappe.session.user))
-    )
-    if not (owns or staff):
-        frappe.throw(_("You can only cancel your own enrollments"))
+	owns = doc.student_ce == frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
+	staff = bool(
+		{"Registrar", "Program Chair", "Seminary Manager", "System Manager"}
+		& set(frappe.get_roles(frappe.session.user))
+	)
+	if not (owns or staff):
+		frappe.throw(_("You can only cancel your own enrollments"))
 
-    if doc.docstatus != 1 or doc.workflow_state != "Awaiting Payment":
-        frappe.throw(
-            _("Only an unpaid 'Awaiting Payment' enrollment can be released here.")
-        )
+	if doc.docstatus != 1 or doc.workflow_state != "Awaiting Payment":
+		frappe.throw(_("Only an unpaid 'Awaiting Payment' enrollment can be released here."))
 
-    if flt(doc.paid_percent) > 0:
-        frappe.throw(
-            _(
-                "A payment has already been made on this enrollment. "
-                "Please request a withdrawal/refund instead."
-            )
-        )
+	if flt(doc.paid_percent) > 0:
+		frappe.throw(
+			_(
+				"A payment has already been made on this enrollment. "
+				"Please request a withdrawal/refund instead."
+			)
+		)
 
-    course_schedule = doc.coursesc_ce
-    # Gate on the enrollment window, not the course start date: an unpaid,
-    # unseated student can release their seat while the section is still open
-    # for enrollment (which can extend past the start date). Once enrollment
-    # closes, the seat allocation is final — route to the registrar.
-    cs_state = frappe.db.get_value("Course Schedule", course_schedule, "workflow_state")
-    if cs_state != "Open for Enrollment":
-        frappe.throw(
-            _(
-                "This section is no longer open for enrollment, so the seat "
-                "can't be self-released. Please contact the registrar or file "
-                "a Withdrawal Request."
-            )
-        )
+	course_schedule = doc.coursesc_ce
+	# Gate on the enrollment window, not the course start date: an unpaid,
+	# unseated student can release their seat while the section is still open
+	# for enrollment (which can extend past the start date). Once enrollment
+	# closes, the seat allocation is final — route to the registrar.
+	cs_state = frappe.db.get_value("Course Schedule", course_schedule, "workflow_state")
+	if cs_state != "Open for Enrollment":
+		frappe.throw(
+			_(
+				"This section is no longer open for enrollment, so the seat "
+				"can't be self-released. Please contact the registrar or file "
+				"a Withdrawal Request."
+			)
+		)
 
-    doc.flags.ignore_permissions = True
-    doc.flags.allow_unpaid_release = True
-    doc.cancel()  # on_cancel cancels the unpaid Sales Invoice
+	doc.flags.ignore_permissions = True
+	doc.flags.allow_unpaid_release = True
+	doc.cancel()  # on_cancel cancels the unpaid Sales Invoice
 
-    from seminary.seminary.waitlist import recount_and_promote
+	from seminary.seminary.waitlist import recount_and_promote
 
-    recount_and_promote(course_schedule)
-    return {"success": True}
+	recount_and_promote(course_schedule)
+	return {"success": True}
 
 
 _CONFLICT_STAFF_ROLES = {
-    "Registrar",
-    "Program Chair",
-    "Seminary Manager",
-    "System Manager",
+	"Registrar",
+	"Program Chair",
+	"Seminary Manager",
+	"System Manager",
 }
 
 
 def _is_conflict_staff():
-    return bool(_CONFLICT_STAFF_ROLES & set(frappe.get_roles(frappe.session.user)))
+	return bool(_CONFLICT_STAFF_ROLES & set(frappe.get_roles(frappe.session.user)))
 
 
 @frappe.whitelist()
 def check_schedule_conflicts(student, course_schedule, exclude_cei=None):
-    """Active enrollments of ``student`` that clash with ``course_schedule`` (ADR 050).
+	"""Active enrollments of ``student`` that clash with ``course_schedule`` (ADR 050).
 
-    Backs the CEI form's "Proceed Anyway / Cancel" confirm. Non-staff callers may
-    only check their own student record, so a portal user can't probe another
-    student's calendar.
-    """
-    if not _is_conflict_staff():
-        own = frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
-        if not own or student != own:
-            frappe.throw(_("Not permitted"), frappe.PermissionError)
+	Backs the CEI form's "Proceed Anyway / Cancel" confirm. Non-staff callers may
+	only check their own student record, so a portal user can't probe another
+	student's calendar.
+	"""
+	if not _is_conflict_staff():
+		own = frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
+		if not own or student != own:
+			frappe.throw(_("Not permitted"), frappe.PermissionError)
 
-    from seminary.seminary.utils import student_schedule_conflicts
+	from seminary.seminary.utils import student_schedule_conflicts
 
-    return student_schedule_conflicts(student, course_schedule, exclude_cei=exclude_cei)
+	return student_schedule_conflicts(student, course_schedule, exclude_cei=exclude_cei)
 
 
 @frappe.whitelist()
 def resolve_schedule_conflict(cei_name):
-    """Registrar one-click resolution of a conflicting enrollment (ADR 050).
+	"""Registrar one-click resolution of a conflicting enrollment (ADR 050).
 
-    Picks the safe path by state so the conflict worksheet calls a single
-    endpoint: a Draft is deleted, an unpaid Awaiting Payment seat is released
-    (freeing the seat + promoting the waitlist). Submitted / Waitlisted (or any
-    paid) enrollment is NOT dropped here — it carries financial/grade weight, so
-    we return ``action: "withdrawal"`` and let the UI route to a Withdrawal
-    Request, preserving the audit trail.
-    """
-    if not _is_conflict_staff():
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
+	Picks the safe path by state so the conflict worksheet calls a single
+	endpoint: a Draft is deleted, an unpaid Awaiting Payment seat is released
+	(freeing the seat + promoting the waitlist). Submitted / Waitlisted (or any
+	paid) enrollment is NOT dropped here — it carries financial/grade weight, so
+	we return ``action: "withdrawal"`` and let the UI route to a Withdrawal
+	Request, preserving the audit trail.
+	"""
+	if not _is_conflict_staff():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
-    doc = frappe.get_doc("Course Enrollment Individual", cei_name)
+	doc = frappe.get_doc("Course Enrollment Individual", cei_name)
 
-    if doc.docstatus == 0:
-        doc.delete(ignore_permissions=True)
-        return {"success": True, "action": "deleted"}
+	if doc.docstatus == 0:
+		doc.delete(ignore_permissions=True)
+		return {"success": True, "action": "deleted"}
 
-    if doc.workflow_state == "Awaiting Payment" and flt(doc.paid_percent) == 0:
-        # Reuse the audited unpaid-release path (cancels the invoice + promotes).
-        return cancel_unpaid_enrollment(cei_name)
+	if doc.workflow_state == "Awaiting Payment" and flt(doc.paid_percent) == 0:
+		# Reuse the audited unpaid-release path (cancels the invoice + promotes).
+		return cancel_unpaid_enrollment(cei_name)
 
-    return {
-        "success": False,
-        "action": "withdrawal",
-        "message": _(
-            "This enrollment is {0}. Resolve it through a Withdrawal Request to "
-            "keep the financial and grade record intact."
-        ).format(doc.workflow_state or _("active")),
-    }
+	return {
+		"success": False,
+		"action": "withdrawal",
+		"message": _(
+			"This enrollment is {0}. Resolve it through a Withdrawal Request to "
+			"keep the financial and grade record intact."
+		).format(doc.workflow_state or _("active")),
+	}
 
 
 def credits_pe_track():
-    """Recalculate track credits for all active program enrollments.
-    Iterates over each emphasis in the Program Enrollment Emphasis child table,
-    sums passed credits from matching track courses, and applies the credit ceiling.
-    """
-    enrollments = frappe.get_all(
-        "Program Enrollment",
-        filters={"pgmenrol_active": 1},
-        fields=["name", "program"],
-    )
+	"""Recalculate track credits for all active program enrollments.
+	Iterates over each emphasis in the Program Enrollment Emphasis child table,
+	sums passed credits from matching track courses, and applies the credit ceiling.
+	"""
+	enrollments = frappe.get_all(
+		"Program Enrollment",
+		filters={"pgmenrol_active": 1},
+		fields=["name", "program"],
+	)
 
-    for pe in enrollments:
-        emphases = frappe.get_all(
-            "Program Enrollment Emphasis",
-            filters={"parent": pe.name, "status": ["in", ["Active", "Completed"]]},
-            fields=["name", "emphasis_track"],
-        )
+	for pe in enrollments:
+		emphases = frappe.get_all(
+			"Program Enrollment Emphasis",
+			filters={"parent": pe.name, "status": ["in", ["Active", "Completed"]]},
+			fields=["name", "emphasis_track"],
+		)
 
-        for emphasis in emphases:
-            credits = frappe.db.sql(
-                """SELECT COALESCE(SUM(pec.credits), 0)
+		for emphasis in emphases:
+			credits = frappe.db.sql(
+				"""SELECT COALESCE(SUM(pec.credits), 0)
                 FROM `tabProgram Enrollment Course` pec
                 INNER JOIN `tabProgram Track Courses` ptc
                     ON ptc.program_track_course = pec.course_name
@@ -1958,90 +1882,80 @@ def credits_pe_track():
                     AND ptc.program_track = %s
                 WHERE pec.parent = %s
                     AND pec.status = 'Pass'""",
-                (pe.program, emphasis.emphasis_track, pe.name),
-            )[0][0]
+				(pe.program, emphasis.emphasis_track, pe.name),
+			)[0][0]
 
-            # Apply credit ceiling if set
-            max_credits = frappe.db.get_value(
-                "Program Track", emphasis.emphasis_track, "max_credits"
-            )
-            if max_credits and max_credits > 0 and credits > max_credits:
-                credits = max_credits
+			# Apply credit ceiling if set
+			max_credits = frappe.db.get_value("Program Track", emphasis.emphasis_track, "max_credits")
+			if max_credits and max_credits > 0 and credits > max_credits:
+				credits = max_credits
 
-            frappe.db.set_value(
-                "Program Enrollment Emphasis",
-                emphasis.name,
-                "trackcredits",
-                int(credits),
-            )
+			frappe.db.set_value(
+				"Program Enrollment Emphasis",
+				emphasis.name,
+				"trackcredits",
+				int(credits),
+			)
 
 
 def _requirement_choice_options(sgr):
-    """Options for a pending choice on an SGR row (for the portal Choose modal).
-    Empty unless a choice is pending: umbrella -> sub-GRIs, CP -> allowed types."""
-    if not sgr.choice_pending or not sgr.grad_requirement_item:
-        return []
-    gri = frappe.get_cached_doc(
-        "Graduation Requirement Item", sgr.grad_requirement_item
-    )
-    if sgr.requirement_type == "Choose Option":
-        return [
-            {
-                "value": o.grad_req_item,
-                "label": frappe.db.get_value(
-                    "Graduation Requirement Item", o.grad_req_item, "requirement_name"
-                )
-                or o.grad_req_item,
-            }
-            for o in (gri.grad_req_option or [])
-            if o.grad_req_item
-        ]
-    if sgr.link_doctype == "Culminating Project":
-        return [
-            {"value": o.culminating_project_type, "label": o.culminating_project_type}
-            for o in (gri.culm_proj_types or [])
-            if o.culminating_project_type
-        ]
-    return []
+	"""Options for a pending choice on an SGR row (for the portal Choose modal).
+	Empty unless a choice is pending: umbrella -> sub-GRIs, CP -> allowed types."""
+	if not sgr.choice_pending or not sgr.grad_requirement_item:
+		return []
+	gri = frappe.get_cached_doc("Graduation Requirement Item", sgr.grad_requirement_item)
+	if sgr.requirement_type == "Choose Option":
+		return [
+			{
+				"value": o.grad_req_item,
+				"label": frappe.db.get_value(
+					"Graduation Requirement Item", o.grad_req_item, "requirement_name"
+				)
+				or o.grad_req_item,
+			}
+			for o in (gri.grad_req_option or [])
+			if o.grad_req_item
+		]
+	if sgr.link_doctype == "Culminating Project":
+		return [
+			{"value": o.culminating_project_type, "label": o.culminating_project_type}
+			for o in (gri.culm_proj_types or [])
+			if o.culminating_project_type
+		]
+	return []
 
 
 def _requirement_choice_summary(sgr):
-    """(has_choice, chosen_label) for the audit's Choices section. A requirement
-    offers a choice when it's a 'Choose Option' umbrella or a Culminating Project
-    with more than one allowed type."""
-    if sgr.requirement_type == "Choose Option":
-        label = None
-        if sgr.chosen_option:
-            label = (
-                frappe.db.get_value(
-                    "Graduation Requirement Item", sgr.chosen_option, "requirement_name"
-                )
-                or sgr.chosen_option
-            )
-        return True, label
-    if sgr.link_doctype == "Culminating Project" and sgr.grad_requirement_item:
-        gri = frappe.get_cached_doc(
-            "Graduation Requirement Item", sgr.grad_requirement_item
-        )
-        types = [
-            t.culminating_project_type
-            for t in (gri.culm_proj_types or [])
-            if t.culminating_project_type
-        ]
-        if len(types) > 1:
-            return True, (sgr.chosen_project_type or None)
-    return False, None
+	"""(has_choice, chosen_label) for the audit's Choices section. A requirement
+	offers a choice when it's a 'Choose Option' umbrella or a Culminating Project
+	with more than one allowed type."""
+	if sgr.requirement_type == "Choose Option":
+		label = None
+		if sgr.chosen_option:
+			label = (
+				frappe.db.get_value("Graduation Requirement Item", sgr.chosen_option, "requirement_name")
+				or sgr.chosen_option
+			)
+		return True, label
+	if sgr.link_doctype == "Culminating Project" and sgr.grad_requirement_item:
+		gri = frappe.get_cached_doc("Graduation Requirement Item", sgr.grad_requirement_item)
+		types = [
+			t.culminating_project_type for t in (gri.culm_proj_types or []) if t.culminating_project_type
+		]
+		if len(types) > 1:
+			return True, (sgr.chosen_project_type or None)
+	return False, None
 
 
 @frappe.whitelist()
 def get_program_audit(program_enrollment):
-    """Return comprehensive program progress data for a given Program Enrollment.
+	"""Return comprehensive program progress data for a given Program Enrollment.
 
-    Includes credit progress, emphasis status, mandatory course completion,
-    and graduation eligibility.
-    """
-    require_own_enrollment(program_enrollment)
-    return _program_audit(program_enrollment)
+	Includes credit progress, emphasis status, mandatory course completion,
+	and graduation eligibility.
+	"""
+	require_own_enrollment(program_enrollment)
+	return _program_audit(program_enrollment)
 
 
 # A course can have several attempts, one Program Enrollment Course row each.
@@ -2053,1116 +1967,1059 @@ _ATTEMPT_RANK = {"Pass": 3, "Exempt": 3, "Enrolled": 2, "": 2, None: 2}  # nosec
 
 
 def _best_attempt_per_course(pec_rows):
-    """One attempt per course for the audit; among equal ranks the later row
-    is kept."""
-    best, ranks = {}, {}
-    for pec in pec_rows:
-        rank = _ATTEMPT_RANK.get(pec.status, 1)
-        if ranks.get(pec.course_name, 0) > rank:
-            continue
-        ranks[pec.course_name] = rank
-        best[pec.course_name] = {
-            "course_schedule": pec.course,
-            "course": pec.course_name,
-            "academic_term": pec.academic_term,
-            "credits": pec.credits or 0,
-            "grade_code": pec.pec_finalgradecode,
-            "grade_num": pec.pec_finalgradenum,
-            "status": pec.status,
-        }
-    return best
+	"""One attempt per course for the audit; among equal ranks the later row
+	is kept."""
+	best, ranks = {}, {}
+	for pec in pec_rows:
+		rank = _ATTEMPT_RANK.get(pec.status, 1)
+		if ranks.get(pec.course_name, 0) > rank:
+			continue
+		ranks[pec.course_name] = rank
+		best[pec.course_name] = {
+			"course_schedule": pec.course,
+			"course": pec.course_name,
+			"academic_term": pec.academic_term,
+			"credits": pec.credits or 0,
+			"grade_code": pec.pec_finalgradecode,
+			"grade_num": pec.pec_finalgradenum,
+			"status": pec.status,
+		}
+	return best
 
 
 _SATISFIED_STATUSES = ("Completed", "Exempt", "Waived")
 
 
-def _mandatory_course_line(
-    course, student_courses, in_progress_courses, exempted, exceptions
-):
-    """Status of one required course for the audit, read the way the
-    graduation check reads it (decisions/098 §5): passed, placed out (058),
-    waived, or satisfied by an approved substitute."""
-    sc = student_courses.get(course)
-    ex = exceptions.get(course)
-    approved = ex and ex.status == "Approved"
-    shown = sc
-    if sc and sc["status"] == "Pass":
-        status = "Completed"
-    elif course in exempted:
-        status = "Exempt"
-    elif approved and ex.kind == "Course Waiver":
-        status = "Waived"
-    elif approved and ex.kind == "Substitution":
-        shown = student_courses.get(ex.substitute_course)
-        if shown and shown["status"] == "Pass":
-            status = "Completed"
-        elif ex.substitute_course in in_progress_courses or (
-            shown and not shown["status"]
-        ):
-            status = "In Progress"
-        else:
-            status = "Not Started"
-    elif course in in_progress_courses or (sc and not sc["status"]):
-        status = "In Progress"
-    else:
-        status = "Not Started"
+def _mandatory_course_line(course, student_courses, in_progress_courses, exempted, exceptions):
+	"""Status of one required course for the audit, read the way the
+	graduation check reads it (decisions/098 §5): passed, placed out (058),
+	waived, or satisfied by an approved substitute."""
+	sc = student_courses.get(course)
+	ex = exceptions.get(course)
+	approved = ex and ex.status == "Approved"
+	shown = sc
+	if sc and sc["status"] == "Pass":
+		status = "Completed"
+	elif course in exempted:
+		status = "Exempt"
+	elif approved and ex.kind == "Course Waiver":
+		status = "Waived"
+	elif approved and ex.kind == "Substitution":
+		shown = student_courses.get(ex.substitute_course)
+		if shown and shown["status"] == "Pass":
+			status = "Completed"
+		elif ex.substitute_course in in_progress_courses or (shown and not shown["status"]):
+			status = "In Progress"
+		else:
+			status = "Not Started"
+	elif course in in_progress_courses or (sc and not sc["status"]):
+		status = "In Progress"
+	else:
+		status = "Not Started"
 
-    exception = None
-    if ex:
-        exception = {
-            "name": ex.name,
-            "kind": ex.kind,
-            "status": ex.status,
-            "substitute_course": ex.substitute_course,
-            "substitute_course_name": (
-                frappe.db.get_value("Course", ex.substitute_course, "course_name")
-                if ex.substitute_course
-                else None
-            ),
-            "reason": ex.reason,
-            "decision_note": ex.decision_note,
-        }
-    substituted = bool(approved and ex.kind == "Substitution")
-    return {
-        "status": status,
-        "grade_code": shown["grade_code"] if shown else None,
-        "grade_num": shown["grade_num"] if shown else None,
-        # B's credits count as B's own (098 §4).
-        "earned_credits": (
-            (shown["credits"] if shown else 0)
-            if substituted and status == "Completed"
-            else None
-        ),
-        "exception": exception,
-    }
+	exception = None
+	if ex:
+		exception = {
+			"name": ex.name,
+			"kind": ex.kind,
+			"status": ex.status,
+			"substitute_course": ex.substitute_course,
+			"substitute_course_name": (
+				frappe.db.get_value("Course", ex.substitute_course, "course_name")
+				if ex.substitute_course
+				else None
+			),
+			"reason": ex.reason,
+			"decision_note": ex.decision_note,
+		}
+	substituted = bool(approved and ex.kind == "Substitution")
+	return {
+		"status": status,
+		"grade_code": shown["grade_code"] if shown else None,
+		"grade_num": shown["grade_num"] if shown else None,
+		# B's credits count as B's own (098 §4).
+		"earned_credits": (
+			(shown["credits"] if shown else 0) if substituted and status == "Completed" else None
+		),
+		"exception": exception,
+	}
 
 
 def _program_audit(program_enrollment):
-    """Server callers (alumni portal, the program progress report) gate on
-    their own terms and call this."""
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    program = frappe.get_cached_doc("Program", pe.program)
+	"""Server callers (alumni portal, the program progress report) gate on
+	their own terms and call this."""
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	program = frappe.get_cached_doc("Program", pe.program)
 
-    result = {
-        "program": pe.program,
-        "program_enrollment": pe.name,
-        "student": pe.student,
-        "student_name": pe.student_name,
-        "program_type": program.program_type,
-        "credits_required": program.credits_complete or 0,
-        "credits_earned": pe.totalcredits or 0,
-        "terms_required": program.terms_complete or 0,
-        "current_term": pe.current_std_term or 0,
-        "emphasis_overlap_policy": program.emphasis_overlap_policy
-        or "Shared Credit Pool",
-        "active": pe.pgmenrol_active,
-    }
+	result = {
+		"program": pe.program,
+		"program_enrollment": pe.name,
+		"student": pe.student,
+		"student_name": pe.student_name,
+		"program_type": program.program_type,
+		"credits_required": program.credits_complete or 0,
+		"credits_earned": pe.totalcredits or 0,
+		"terms_required": program.terms_complete or 0,
+		"current_term": pe.current_std_term or 0,
+		"emphasis_overlap_policy": program.emphasis_overlap_policy or "Shared Credit Pool",
+		"active": pe.pgmenrol_active,
+	}
 
-    # Get all program courses with their mandatory/required status
-    program_courses = {
-        pc.course: {
-            "course": pc.course,
-            "course_name": pc.course_name,
-            "credits": pc.pgmcourse_credits or 0,
-            "course_term": pc.course_term or 0,
-            "required": pc.required,
-        }
-        for pc in program.courses
-        if not pc.disabled
-    }
+	# Get all program courses with their mandatory/required status
+	program_courses = {
+		pc.course: {
+			"course": pc.course,
+			"course_name": pc.course_name,
+			"credits": pc.pgmcourse_credits or 0,
+			"course_term": pc.course_term or 0,
+			"required": pc.required,
+		}
+		for pc in program.courses
+		if not pc.disabled
+	}
 
-    # Get student's completed/in-progress courses
-    student_courses = _best_attempt_per_course(pe.courses)
+	# Get student's completed/in-progress courses
+	student_courses = _best_attempt_per_course(pe.courses)
 
-    # Also check in-progress enrollments (Course Enrollment Individual, not yet graded)
-    in_progress = frappe.get_all(
-        "Course Enrollment Individual",
-        filters={
-            "program_ce": pe.name,
-            "docstatus": 1,
-            "withdrawn": 0,
-            "course_cancelled": 0,
-        },
-        fields=["course_data", "coursesc_ce"],
-    )
-    in_progress_courses = {cei.course_data for cei in in_progress}
+	# Also check in-progress enrollments (Course Enrollment Individual, not yet graded)
+	in_progress = frappe.get_all(
+		"Course Enrollment Individual",
+		filters={
+			"program_ce": pe.name,
+			"docstatus": 1,
+			"withdrawn": 0,
+			"course_cancelled": 0,
+		},
+		fields=["course_data", "coursesc_ce"],
+	)
+	in_progress_courses = {cei.course_data for cei in in_progress}
 
-    from seminary.seminary.exceptions import course_exceptions
-    from seminary.seminary.leveling import leveling_sets
+	from seminary.seminary.exceptions import course_exceptions
+	from seminary.seminary.leveling import leveling_sets
 
-    exempted = leveling_sets(pe.name)[0]
-    exceptions = course_exceptions(pe.name)
+	exempted = leveling_sets(pe.name)[0]
+	exceptions = course_exceptions(pe.name)
 
-    # Build emphases data FIRST so we can deduplicate the program mandatory list
-    emphases_data = []
-    active_emphases = [
-        e for e in (pe.emphases or []) if e.status in ("Active", "Completed")
-    ]
-    courses_in_emphases = (
-        set()
-    )  # courses shown under an emphasis — exclude from program list
+	# Build emphases data FIRST so we can deduplicate the program mandatory list
+	emphases_data = []
+	active_emphases = [e for e in (pe.emphases or []) if e.status in ("Active", "Completed")]
+	courses_in_emphases = set()  # courses shown under an emphasis — exclude from program list
 
-    for emphasis in active_emphases:
-        track = frappe.db.get_value(
-            "Program Track",
-            emphasis.emphasis_track,
-            ["track_name", "addcredits", "max_credits", "advisory_only"],
-            as_dict=True,
-        )
-        if not track:
-            continue
+	for emphasis in active_emphases:
+		track = frappe.db.get_value(
+			"Program Track",
+			emphasis.emphasis_track,
+			["track_name", "addcredits", "max_credits", "advisory_only"],
+			as_dict=True,
+		)
+		if not track:
+			continue
 
-        # Get mandatory track courses
-        track_courses = frappe.get_all(
-            "Program Track Courses",
-            filters={
-                "parent": pe.program,
-                "program_track": emphasis.emphasis_track,
-                "pgm_track_course_mandatory": 1,
-            },
-            fields=["program_track_course"],
-        )
+		# Get mandatory track courses
+		track_courses = frappe.get_all(
+			"Program Track Courses",
+			filters={
+				"parent": pe.program,
+				"program_track": emphasis.emphasis_track,
+				"pgm_track_course_mandatory": 1,
+			},
+			fields=["program_track_course"],
+		)
 
-        mandatory_remaining = []
-        track_mandatory_courses = []
-        for tc in track_courses:
-            course_name_display = tc.program_track_course
-            # Try to get a readable name from Program Course table
-            pc_info = program_courses.get(tc.program_track_course)
-            if pc_info:
-                course_name_display = pc_info["course_name"] or tc.program_track_course
+		mandatory_remaining = []
+		track_mandatory_courses = []
+		for tc in track_courses:
+			course_name_display = tc.program_track_course
+			# Try to get a readable name from Program Course table
+			pc_info = program_courses.get(tc.program_track_course)
+			if pc_info:
+				course_name_display = pc_info["course_name"] or tc.program_track_course
 
-            line = _mandatory_course_line(
-                tc.program_track_course,
-                student_courses,
-                in_progress_courses,
-                exempted,
-                exceptions,
-            )
-            status = line["status"]
-            if status not in _SATISFIED_STATUSES:
-                mandatory_remaining.append(tc.program_track_course)
+			line = _mandatory_course_line(
+				tc.program_track_course,
+				student_courses,
+				in_progress_courses,
+				exempted,
+				exceptions,
+			)
+			status = line["status"]
+			if status not in _SATISFIED_STATUSES:
+				mandatory_remaining.append(tc.program_track_course)
 
-            course_term = pc_info["course_term"] if pc_info else 0
-            track_mandatory_courses.append(
-                {
-                    "course": tc.program_track_course,
-                    "course_name": course_name_display,
-                    "credits": pc_info["credits"] if pc_info else 0,
-                    "course_term": course_term,
-                    "status": status,
-                    "grade_code": line["grade_code"],
-                    "exception": line["exception"],
-                }
-            )
-            courses_in_emphases.add(tc.program_track_course)
+			course_term = pc_info["course_term"] if pc_info else 0
+			track_mandatory_courses.append(
+				{
+					"course": tc.program_track_course,
+					"course_name": course_name_display,
+					"credits": pc_info["credits"] if pc_info else 0,
+					"course_term": course_term,
+					"status": status,
+					"grade_code": line["grade_code"],
+					"exception": line["exception"],
+				}
+			)
+			courses_in_emphases.add(tc.program_track_course)
 
-        # Sort track courses by term, then name
-        track_mandatory_courses.sort(key=lambda x: (x["course_term"], x["course_name"]))
+		# Sort track courses by term, then name
+		track_mandatory_courses.sort(key=lambda x: (x["course_term"], x["course_name"]))
 
-        credits_earned = emphasis.trackcredits or 0
-        credits_capped = credits_earned
-        if (
-            track.max_credits
-            and track.max_credits > 0
-            and credits_earned > track.max_credits
-        ):
-            credits_capped = track.max_credits
+		credits_earned = emphasis.trackcredits or 0
+		credits_capped = credits_earned
+		if track.max_credits and track.max_credits > 0 and credits_earned > track.max_credits:
+			credits_capped = track.max_credits
 
-        emphases_data.append(
-            {
-                "track_name": track.track_name,
-                "emphasis_track": emphasis.emphasis_track,
-                "credits_required": track.addcredits or 0,
-                "credits_earned": credits_earned,
-                "credits_capped": credits_capped,
-                "max_credits": track.max_credits or 0,
-                "mandatory_remaining": mandatory_remaining,
-                "mandatory_courses": track_mandatory_courses,
-                "advisory_only": track.advisory_only,
-                "status": emphasis.status,
-            }
-        )
+		emphases_data.append(
+			{
+				"track_name": track.track_name,
+				"emphasis_track": emphasis.emphasis_track,
+				"credits_required": track.addcredits or 0,
+				"credits_earned": credits_earned,
+				"credits_capped": credits_capped,
+				"max_credits": track.max_credits or 0,
+				"mandatory_remaining": mandatory_remaining,
+				"mandatory_courses": track_mandatory_courses,
+				"advisory_only": track.advisory_only,
+				"status": emphasis.status,
+			}
+		)
 
-    result["emphases"] = emphases_data
+	result["emphases"] = emphases_data
 
-    # Build program mandatory courses list, EXCLUDING courses already shown under an emphasis
-    mandatory_courses = []
-    for course_name, pc in program_courses.items():
-        if not pc["required"]:
-            continue
-        if course_name in courses_in_emphases:
-            continue
-        line = _mandatory_course_line(
-            course_name, student_courses, in_progress_courses, exempted, exceptions
-        )
+	# Build program mandatory courses list, EXCLUDING courses already shown under an emphasis
+	mandatory_courses = []
+	for course_name, pc in program_courses.items():
+		if not pc["required"]:
+			continue
+		if course_name in courses_in_emphases:
+			continue
+		line = _mandatory_course_line(course_name, student_courses, in_progress_courses, exempted, exceptions)
 
-        mandatory_courses.append(
-            {
-                "course": course_name,
-                "course_name": pc["course_name"],
-                "credits": pc["credits"],
-                "course_term": pc["course_term"],
-                "status": line["status"],
-                "grade_code": line["grade_code"],
-                "grade_num": line["grade_num"],
-                "earned_credits": line["earned_credits"],
-                "exception": line["exception"],
-            }
-        )
+		mandatory_courses.append(
+			{
+				"course": course_name,
+				"course_name": pc["course_name"],
+				"credits": pc["credits"],
+				"course_term": pc["course_term"],
+				"status": line["status"],
+				"grade_code": line["grade_code"],
+				"grade_num": line["grade_num"],
+				"earned_credits": line["earned_credits"],
+				"exception": line["exception"],
+			}
+		)
 
-    # Sort by course_term, then course_name
-    mandatory_courses.sort(key=lambda x: (x["course_term"], x["course_name"]))
-    result["mandatory_courses"] = mandatory_courses
+	# Sort by course_term, then course_name
+	mandatory_courses.sort(key=lambda x: (x["course_term"], x["course_name"]))
+	result["mandatory_courses"] = mandatory_courses
 
-    # Add disclaimer
-    result["disclaimer"] = (
-        "This audit reflects the declared emphasis at the time of generation."
-    )
+	# Add disclaimer
+	result["disclaimer"] = "This audit reflects the declared emphasis at the time of generation."
 
-    # Calculate effective total required based on overlap policy
-    effective_total = program.credits_complete or 0
-    if (
-        program.emphasis_overlap_policy == "Additional Credits Required"
-        and len(active_emphases) > 1
-    ):
-        for emph in emphases_data[1:]:
-            effective_total += emph["credits_required"]
-    result["effective_credits_required"] = effective_total
+	# Calculate effective total required based on overlap policy
+	effective_total = program.credits_complete or 0
+	if program.emphasis_overlap_policy == "Additional Credits Required" and len(active_emphases) > 1:
+		for emph in emphases_data[1:]:
+			effective_total += emph["credits_required"]
+	result["effective_credits_required"] = effective_total
 
-    # Elective credits calculation
-    # Committed credits = program mandatory credits + emphasis track required credits (addcredits)
-    # The emphasis carve-out is the full track credit requirement, not just the few mandatory courses
-    program_mandatory_credits = sum(mc["credits"] for mc in mandatory_courses)
-    emphasis_committed_credits = sum(emph["credits_required"] for emph in emphases_data)
-    committed_total = program_mandatory_credits + emphasis_committed_credits
+	# Elective credits calculation
+	# Committed credits = program mandatory credits + emphasis track required credits (addcredits)
+	# The emphasis carve-out is the full track credit requirement, not just the few mandatory courses
+	program_mandatory_credits = sum(mc["credits"] for mc in mandatory_courses)
+	emphasis_committed_credits = sum(emph["credits_required"] for emph in emphases_data)
+	committed_total = program_mandatory_credits + emphasis_committed_credits
 
-    mandatory_credits_earned = sum(
-        mc["credits"] if mc["earned_credits"] is None else mc["earned_credits"]
-        for mc in mandatory_courses
-        if mc["status"] == "Completed"
-    )
-    emphasis_credits_earned = sum(emph["credits_earned"] for emph in emphases_data)
+	mandatory_credits_earned = sum(
+		mc["credits"] if mc["earned_credits"] is None else mc["earned_credits"]
+		for mc in mandatory_courses
+		if mc["status"] == "Completed"
+	)
+	emphasis_credits_earned = sum(emph["credits_earned"] for emph in emphases_data)
 
-    result["elective_credits_earned"] = max(
-        0, (pe.totalcredits or 0) - mandatory_credits_earned - emphasis_credits_earned
-    )
-    result["elective_credits_needed"] = (
-        max(0, effective_total - committed_total)
-        if program.program_type == "Credits-based"
-        else 0
-    )
+	result["elective_credits_earned"] = max(
+		0, (pe.totalcredits or 0) - mandatory_credits_earned - emphasis_credits_earned
+	)
+	result["elective_credits_needed"] = (
+		max(0, effective_total - committed_total) if program.program_type == "Credits-based" else 0
+	)
 
-    # Ongoing programs have no graduation concept — short-circuit the eligibility
-    # block and return `graduation_eligible=None` so frontends can distinguish
-    # "not applicable" from "blocked".
-    if program.is_ongoing:
-        result["graduation_requirements"] = []
-        result["graduation_policy"] = pe.graduation_policy
-        result["expected_graduation_date"] = pe.expected_graduation_date
-        result["graduation_eligible"] = None
-        return result
+	# Ongoing programs have no graduation concept — short-circuit the eligibility
+	# block and return `graduation_eligible=None` so frontends can distinguish
+	# "not applicable" from "blocked".
+	if program.is_ongoing:
+		result["graduation_requirements"] = []
+		result["graduation_policy"] = pe.graduation_policy
+		result["expected_graduation_date"] = pe.expected_graduation_date
+		result["graduation_eligible"] = None
+		return result
 
-    # Graduation eligibility check
-    graduation_eligible = True
+	# Graduation eligibility check
+	graduation_eligible = True
 
-    # GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
-    min_gpa = float(program.get("min_graduation_gpa") or 0)
-    if min_gpa > 0 and float(pe.current_gpa or 0) < min_gpa:
-        graduation_eligible = False
+	# GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
+	min_gpa = float(program.get("min_graduation_gpa") or 0)
+	if min_gpa > 0 and float(pe.current_gpa or 0) < min_gpa:
+		graduation_eligible = False
 
-    if program.program_type == "Credits-based":
-        if (pe.totalcredits or 0) < effective_total:
-            graduation_eligible = False
-    elif program.program_type == "Time-based":
-        if (pe.current_std_term or 0) < (program.terms_complete or 0):
-            graduation_eligible = False
+	if program.program_type == "Credits-based":
+		if (pe.totalcredits or 0) < effective_total:
+			graduation_eligible = False
+	elif program.program_type == "Time-based":
+		if (pe.current_std_term or 0) < (program.terms_complete or 0):
+			graduation_eligible = False
 
-    # All mandatory program courses passed?
-    if any(mc["status"] not in _SATISFIED_STATUSES for mc in mandatory_courses):
-        graduation_eligible = False
+	# All mandatory program courses passed?
+	if any(mc["status"] not in _SATISFIED_STATUSES for mc in mandatory_courses):
+		graduation_eligible = False
 
-    # All emphasis requirements met?
-    for emph in emphases_data:
-        if emph["advisory_only"]:
-            continue
-        if emph["credits_capped"] < emph["credits_required"]:
-            graduation_eligible = False
-        if emph["mandatory_remaining"]:
-            graduation_eligible = False
+	# All emphasis requirements met?
+	for emph in emphases_data:
+		if emph["advisory_only"]:
+			continue
+		if emph["credits_capped"] < emph["credits_required"]:
+			graduation_eligible = False
+		if emph["mandatory_remaining"]:
+			graduation_eligible = False
 
-    # Fallback emphasis check
-    if not active_emphases and program.fallback_emphasis:
-        fallback_track = frappe.db.get_value(
-            "Program Track",
-            program.fallback_emphasis,
-            ["addcredits", "max_credits", "advisory_only"],
-            as_dict=True,
-        )
-        if fallback_track and not fallback_track.advisory_only:
-            # Check fallback track credits
-            fallback_credits = frappe.db.sql(
-                """SELECT COALESCE(SUM(pec.credits), 0)
+	# Fallback emphasis check
+	if not active_emphases and program.fallback_emphasis:
+		fallback_track = frappe.db.get_value(
+			"Program Track",
+			program.fallback_emphasis,
+			["addcredits", "max_credits", "advisory_only"],
+			as_dict=True,
+		)
+		if fallback_track and not fallback_track.advisory_only:
+			# Check fallback track credits
+			fallback_credits = frappe.db.sql(
+				"""SELECT COALESCE(SUM(pec.credits), 0)
                 FROM `tabProgram Enrollment Course` pec
                 INNER JOIN `tabProgram Track Courses` ptc
                     ON ptc.program_track_course = pec.course_name
                     AND ptc.parent = %s
                     AND ptc.program_track = %s
                 WHERE pec.parent = %s AND pec.status = 'Pass'""",
-                (pe.program, program.fallback_emphasis, pe.name),
-            )[0][0]
-            if fallback_track.max_credits and fallback_track.max_credits > 0:
-                fallback_credits = min(fallback_credits, fallback_track.max_credits)
-            if fallback_credits < (fallback_track.addcredits or 0):
-                graduation_eligible = False
+				(pe.program, program.fallback_emphasis, pe.name),
+			)[0][0]
+			if fallback_track.max_credits and fallback_track.max_credits > 0:
+				fallback_credits = min(fallback_credits, fallback_track.max_credits)
+			if fallback_credits < (fallback_track.addcredits or 0):
+				graduation_eligible = False
 
-    # Graduation requirements (non-course evidence: letters, theses, manual
-    # verifications, etc.) — see seminary/seminary/graduation.py
-    from seminary.seminary.graduation import evaluate_activation
+	# Graduation requirements (non-course evidence: letters, theses, manual
+	# verifications, etc.) — see seminary/seminary/graduation.py
+	from seminary.seminary.graduation import evaluate_activation
 
-    grad_requirements = []
-    grad_requirements_blocking = False
-    for sgr in pe.graduation_requirements or []:
-        active = evaluate_activation(sgr, pe)
-        satisfied = sgr.status in ("Fulfilled", "Waived")
-        if sgr.mandatory and active and not satisfied:
-            grad_requirements_blocking = True
-        has_choice, chosen_label = _requirement_choice_summary(sgr)
-        grad_requirements.append(
-            {
-                "name": sgr.name,
-                "requirement_name": sgr.requirement_name,
-                "requirement_type": sgr.requirement_type,
-                "mandatory": bool(sgr.mandatory),
-                "slot_index": sgr.slot_index or 1,
-                "status": sgr.status,
-                "active": active,
-                "due_date": sgr.due_date,
-                "fulfilled_on": sgr.fulfilled_on,
-                "link_doctype": sgr.link_doctype,
-                "linked_doc": sgr.linked_doc,
-                "student_evidence_attachment": sgr.student_evidence_attachment,
-                "staff_evidence_attachment": sgr.staff_evidence_attachment,
-                "verified_by": sgr.verified_by,
-                "verified_on": sgr.verified_on,
-                "waived": bool(sgr.waived),
-                "waiver_reason": sgr.waiver_reason,
-                "notes": sgr.notes,
-                "grad_requirement_item": sgr.grad_requirement_item,
-                "student_choice": bool(sgr.student_choice),
-                "choice_pending": bool(sgr.choice_pending),
-                "chosen_project_type": sgr.chosen_project_type,
-                "chosen_option": sgr.chosen_option,
-                "has_choice": has_choice,
-                "chosen_label": chosen_label,
-                "options": _requirement_choice_options(sgr),
-                "required_count": sgr.required_count or 0,
-                "attended_count": sgr.attended_count or 0,
-            }
-        )
+	grad_requirements = []
+	grad_requirements_blocking = False
+	for sgr in pe.graduation_requirements or []:
+		active = evaluate_activation(sgr, pe)
+		satisfied = sgr.status in ("Fulfilled", "Waived")
+		if sgr.mandatory and active and not satisfied:
+			grad_requirements_blocking = True
+		has_choice, chosen_label = _requirement_choice_summary(sgr)
+		grad_requirements.append(
+			{
+				"name": sgr.name,
+				"requirement_name": sgr.requirement_name,
+				"requirement_type": sgr.requirement_type,
+				"mandatory": bool(sgr.mandatory),
+				"slot_index": sgr.slot_index or 1,
+				"status": sgr.status,
+				"active": active,
+				"due_date": sgr.due_date,
+				"fulfilled_on": sgr.fulfilled_on,
+				"link_doctype": sgr.link_doctype,
+				"linked_doc": sgr.linked_doc,
+				"student_evidence_attachment": sgr.student_evidence_attachment,
+				"staff_evidence_attachment": sgr.staff_evidence_attachment,
+				"verified_by": sgr.verified_by,
+				"verified_on": sgr.verified_on,
+				"waived": bool(sgr.waived),
+				"waiver_reason": sgr.waiver_reason,
+				"notes": sgr.notes,
+				"grad_requirement_item": sgr.grad_requirement_item,
+				"student_choice": bool(sgr.student_choice),
+				"choice_pending": bool(sgr.choice_pending),
+				"chosen_project_type": sgr.chosen_project_type,
+				"chosen_option": sgr.chosen_option,
+				"has_choice": has_choice,
+				"chosen_label": chosen_label,
+				"options": _requirement_choice_options(sgr),
+				"required_count": sgr.required_count or 0,
+				"attended_count": sgr.attended_count or 0,
+			}
+		)
 
-    result["graduation_requirements"] = grad_requirements
-    result["graduation_policy"] = pe.graduation_policy
-    result["expected_graduation_date"] = pe.expected_graduation_date
+	result["graduation_requirements"] = grad_requirements
+	result["graduation_policy"] = pe.graduation_policy
+	result["expected_graduation_date"] = pe.expected_graduation_date
 
-    if grad_requirements_blocking:
-        graduation_eligible = False
+	if grad_requirements_blocking:
+		graduation_eligible = False
 
-    result["graduation_eligible"] = graduation_eligible
+	result["graduation_eligible"] = graduation_eligible
 
-    # Graduation Request CTA inputs (consumed by ProgramAudit.vue).
-    from seminary.seminary.graduation_candidate import (
-        evaluate_candidacy_safe,
-        resolve_request_trigger,
-    )
+	# Graduation Request CTA inputs (consumed by ProgramAudit.vue).
+	from seminary.seminary.graduation_candidate import (
+		evaluate_candidacy_safe,
+		resolve_request_trigger,
+	)
 
-    result["students_can_request_graduation"] = bool(
-        getattr(program, "students_can_request_graduation", 0)
-    )
-    result["graduation_request_trigger"] = resolve_request_trigger(program)
-    # Recompute rather than trusting the stored flag: `grad_candidate` is
-    # maintained by hooks that several paths bypass (status changes go through
-    # set_program_status's db_set, and a program's graduation config can be
-    # turned on long after the student enrolled), so a stale 0 would silently
-    # hide the CTA from a student who is in fact a candidate. The evaluator
-    # persists the fresh value itself; we use its return so the answer is right
-    # even on a request whose write never commits.
-    result["grad_candidate"] = evaluate_candidacy_safe(pe.name)
-    result["graduation_request"] = _active_graduation_request_summary(pe.name)
-    # The phonetic name lives on the Person since ADR 068 phase 4 — it is how a
-    # human's name is pronounced, not a fact about their enrollment.
-    person = frappe.db.get_value("Student", pe.student, "person")
-    result["student_phonetic_name"] = (
-        frappe.db.get_value("Person", person, "phonetic_name") if person else ""
-    ) or ""
+	result["students_can_request_graduation"] = bool(getattr(program, "students_can_request_graduation", 0))
+	result["graduation_request_trigger"] = resolve_request_trigger(program)
+	# Recompute rather than trusting the stored flag: `grad_candidate` is
+	# maintained by hooks that several paths bypass (status changes go through
+	# set_program_status's db_set, and a program's graduation config can be
+	# turned on long after the student enrolled), so a stale 0 would silently
+	# hide the CTA from a student who is in fact a candidate. The evaluator
+	# persists the fresh value itself; we use its return so the answer is right
+	# even on a request whose write never commits.
+	result["grad_candidate"] = evaluate_candidacy_safe(pe.name)
+	result["graduation_request"] = _active_graduation_request_summary(pe.name)
+	# The phonetic name lives on the Person since ADR 068 phase 4 — it is how a
+	# human's name is pronounced, not a fact about their enrollment.
+	person = frappe.db.get_value("Student", pe.student, "person")
+	result["student_phonetic_name"] = (
+		frappe.db.get_value("Person", person, "phonetic_name") if person else ""
+	) or ""
 
-    return result
+	return result
 
 
 def _active_graduation_request_summary(pe_name):
-    """Return the most recent non-cancelled Graduation Request for this PE,
-    or None. Frontend uses this to render the CTA state."""
-    rows = frappe.get_all(
-        "Graduation Request",
-        filters={"program_enrollment": pe_name, "docstatus": ("!=", 2)},
-        fields=[
-            "name",
-            "workflow_state",
-            "paid_percent",
-            "request_date",
-            "is_free",
-        ],
-        order_by="creation desc",
-        limit=1,
-    )
-    if not rows:
-        return None
-    gr = rows[0]
-    # The linked invoices are a financial fact owned by the backend; a Frappe-only
-    # seminary's graduation request simply carries none.
-    from seminary.seminary.financial.backend import get_financial_backend
+	"""Return the most recent non-cancelled Graduation Request for this PE,
+	or None. Frontend uses this to render the CTA state."""
+	rows = frappe.get_all(
+		"Graduation Request",
+		filters={"program_enrollment": pe_name, "docstatus": ("!=", 2)},
+		fields=[
+			"name",
+			"workflow_state",
+			"paid_percent",
+			"request_date",
+			"is_free",
+		],
+		order_by="creation desc",
+		limit=1,
+	)
+	if not rows:
+		return None
+	gr = rows[0]
+	# The linked invoices are a financial fact owned by the backend; a Frappe-only
+	# seminary's graduation request simply carries none.
+	from seminary.seminary.financial.backend import get_financial_backend
 
-    return {
-        **gr,
-        "sales_invoices": get_financial_backend().graduation_request_invoices(gr.name),
-    }
+	return {
+		**gr,
+		"sales_invoices": get_financial_backend().graduation_request_invoices(gr.name),
+	}
 
 
 @frappe.whitelist()
-def create_graduation_request(
-    program_enrollment, legal_name_at_graduation, phonetic_name=None
-):
-    """Create + submit a Graduation Request for the given Program Enrollment.
+def create_graduation_request(program_enrollment, legal_name_at_graduation, phonetic_name=None):
+	"""Create + submit a Graduation Request for the given Program Enrollment.
 
-    Permission model:
-      - Caller is the student linked to the PE (portal flow), OR
-      - Caller has the Program Chair or Registrar role (staff acting on behalf).
+	Permission model:
+	  - Caller is the student linked to the PE (portal flow), OR
+	  - Caller has the Program Chair or Registrar role (staff acting on behalf).
 
-    Captures the legal name (required) and phonetic spelling (optional) for
-    the diploma. The phonetic name is also persisted on the Student record so
-    it's reusable beyond graduation. Validates trigger / candidacy at the
-    controller level (`before_submit`). Returns a summary suitable for
-    refreshing the audit page CTA.
-    """
-    legal_name_at_graduation = (legal_name_at_graduation or "").strip()
-    if not legal_name_at_graduation:
-        frappe.throw(_("Legal name is required."))
-    phonetic_name = (phonetic_name or "").strip() or None
+	Captures the legal name (required) and phonetic spelling (optional) for
+	the diploma. The phonetic name is also persisted on the Student record so
+	it's reusable beyond graduation. Validates trigger / candidacy at the
+	controller level (`before_submit`). Returns a summary suitable for
+	refreshing the audit page CTA.
+	"""
+	legal_name_at_graduation = (legal_name_at_graduation or "").strip()
+	if not legal_name_at_graduation:
+		frappe.throw(_("Legal name is required."))
+	phonetic_name = (phonetic_name or "").strip() or None
 
-    pe = frappe.db.get_value(
-        "Program Enrollment",
-        program_enrollment,
-        [
-            "name",
-            "student",
-            "program",
-            "expected_graduation_date",
-            "docstatus",
-            "pgmenrol_active",
-        ],
-        as_dict=True,
-    )
-    if not pe:
-        frappe.throw(_("Program Enrollment {0} not found.").format(program_enrollment))
+	pe = frappe.db.get_value(
+		"Program Enrollment",
+		program_enrollment,
+		[
+			"name",
+			"student",
+			"program",
+			"expected_graduation_date",
+			"docstatus",
+			"pgmenrol_active",
+		],
+		as_dict=True,
+	)
+	if not pe:
+		frappe.throw(_("Program Enrollment {0} not found.").format(program_enrollment))
 
-    # Permission gate
-    user = frappe.session.user
-    user_roles = set(frappe.get_roles(user))
-    is_staff = bool(
-        user_roles
-        & {"Program Chair", "Registrar", "Seminary Manager", "System Manager"}
-    )
-    is_owner = False
-    if not is_staff:
-        student_for_user = frappe.db.get_value(
-            "Student", {"student_email_id": user}, "name"
-        )
-        is_owner = bool(student_for_user and student_for_user == pe.student)
-    if not (is_staff or is_owner):
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
+	# Permission gate
+	user = frappe.session.user
+	user_roles = set(frappe.get_roles(user))
+	is_staff = bool(user_roles & {"Program Chair", "Registrar", "Seminary Manager", "System Manager"})
+	is_owner = False
+	if not is_staff:
+		student_for_user = frappe.db.get_value("Student", {"student_email_id": user}, "name")
+		is_owner = bool(student_for_user and student_for_user == pe.student)
+	if not (is_staff or is_owner):
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
 
-    # Quick guards (controller re-validates with full context)
-    if pe.docstatus != 1 or not pe.pgmenrol_active:
-        frappe.throw(_("Program Enrollment is not active."))
-    program_flags = frappe.db.get_value(
-        "Program",
-        pe.program,
-        ["students_can_request_graduation"],
-        as_dict=True,
-    )
-    if not program_flags or not program_flags.students_can_request_graduation:
-        frappe.throw(_("This program does not allow Graduation Requests."))
-    # Recompute instead of reading the stored flag — see get_program_audit.
-    from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+	# Quick guards (controller re-validates with full context)
+	if pe.docstatus != 1 or not pe.pgmenrol_active:
+		frappe.throw(_("Program Enrollment is not active."))
+	program_flags = frappe.db.get_value(
+		"Program",
+		pe.program,
+		["students_can_request_graduation"],
+		as_dict=True,
+	)
+	if not program_flags or not program_flags.students_can_request_graduation:
+		frappe.throw(_("This program does not allow Graduation Requests."))
+	# Recompute instead of reading the stored flag — see get_program_audit.
+	from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
 
-    if not evaluate_candidacy_safe(pe.name):
-        frappe.throw(_("Not yet a graduation candidate."))
+	if not evaluate_candidacy_safe(pe.name):
+		frappe.throw(_("Not yet a graduation candidate."))
 
-    if phonetic_name:
-        # Reusable beyond this graduation, so it belongs on the Person (ADR 068
-        # phase 4) — the Graduation Request keeps its own *snapshot* of the
-        # value below, which is what reaches the diploma and must not move if
-        # the person is renamed later.
-        person = frappe.db.get_value("Student", pe.student, "person")
-        if person:
-            frappe.db.set_value(
-                "Person",
-                person,
-                "phonetic_name",
-                phonetic_name,
-                update_modified=False,
-            )
+	if phonetic_name:
+		# Reusable beyond this graduation, so it belongs on the Person (ADR 068
+		# phase 4) — the Graduation Request keeps its own *snapshot* of the
+		# value below, which is what reaches the diploma and must not move if
+		# the person is renamed later.
+		person = frappe.db.get_value("Student", pe.student, "person")
+		if person:
+			frappe.db.set_value(
+				"Person",
+				person,
+				"phonetic_name",
+				phonetic_name,
+				update_modified=False,
+			)
 
-    gr = frappe.get_doc(
-        {
-            "doctype": "Graduation Request",
-            "student": pe.student,
-            "program_enrollment": pe.name,
-            "program": pe.program,
-            "expected_graduation_date": pe.expected_graduation_date,
-            "legal_name_at_graduation": legal_name_at_graduation,
-            "phonetic_name_snapshot": phonetic_name,
-        }
-    )
-    gr.insert(ignore_permissions=is_owner)
-    gr.submit()
+	gr = frappe.get_doc(
+		{
+			"doctype": "Graduation Request",
+			"student": pe.student,
+			"program_enrollment": pe.name,
+			"program": pe.program,
+			"expected_graduation_date": pe.expected_graduation_date,
+			"legal_name_at_graduation": legal_name_at_graduation,
+			"phonetic_name_snapshot": phonetic_name,
+		}
+	)
+	gr.insert(ignore_permissions=is_owner)
+	gr.submit()
 
-    return _active_graduation_request_summary(pe.name)
+	return _active_graduation_request_summary(pe.name)
 
 
 @frappe.whitelist()
 def get_pe_unpaid_invoices(program_enrollment):
-    """Unpaid invoices for a Program Enrollment, grouped by payer (empty on a
-    Frappe-only seminary)."""
-    from seminary.seminary.financial.backend import get_financial_backend
+	"""Unpaid invoices for a Program Enrollment, grouped by payer (empty on a
+	Frappe-only seminary)."""
+	from seminary.seminary.financial.backend import get_financial_backend
 
-    require_own_enrollment(program_enrollment)
-    return get_financial_backend().pe_unpaid_invoices(program_enrollment)
+	require_own_enrollment(program_enrollment)
+	return get_financial_backend().pe_unpaid_invoices(program_enrollment)
 
 
 def _course_category_map(pe, program):
-    """course -> [category badge dicts] for one program enrollment.
+	"""course -> [category badge dicts] for one program enrollment.
 
-    Shared by the enrollment picker and the My Enrollments list so a course's
-    Required / Track / Elective badges read identically in both. Mirrors the
-    Program Mandatory + active-emphasis Track logic; defaults to Elective.
-    """
-    active_tracks = {
-        e.emphasis_track for e in (pe.emphases or []) if e.status == "Active"
-    }
-    track_course_map = {}
-    if active_tracks:
-        for tc in frappe.get_all(
-            "Program Track Courses",
-            filters={"parent": pe.program},
-            fields=[
-                "program_track",
-                "program_track_course",
-                "pgm_track_course_mandatory",
-            ],
-        ):
-            if tc.program_track not in active_tracks:
-                continue
-            track_course_map.setdefault(tc.program_track_course, []).append(
-                {
-                    "track": tc.program_track,
-                    "track_name": frappe.db.get_value(
-                        "Program Track", tc.program_track, "track_name"
-                    ),
-                    "mandatory": tc.pgm_track_course_mandatory,
-                }
-            )
+	Shared by the enrollment picker and the My Enrollments list so a course's
+	Required / Track / Elective badges read identically in both. Mirrors the
+	Program Mandatory + active-emphasis Track logic; defaults to Elective.
+	"""
+	active_tracks = {e.emphasis_track for e in (pe.emphases or []) if e.status == "Active"}
+	track_course_map = {}
+	if active_tracks:
+		for tc in frappe.get_all(
+			"Program Track Courses",
+			filters={"parent": pe.program},
+			fields=[
+				"program_track",
+				"program_track_course",
+				"pgm_track_course_mandatory",
+			],
+		):
+			if tc.program_track not in active_tracks:
+				continue
+			track_course_map.setdefault(tc.program_track_course, []).append(
+				{
+					"track": tc.program_track,
+					"track_name": frappe.db.get_value("Program Track", tc.program_track, "track_name"),
+					"mandatory": tc.pgm_track_course_mandatory,
+				}
+			)
 
-    category_map = {}
-    for pc in program.courses:
-        if pc.disabled:
-            continue
-        cats = []
-        if pc.required:
-            cats.append({"type": "Program Mandatory"})
-        for ti in track_course_map.get(pc.course, []):
-            cats.append(
-                {
-                    "type": "Track Mandatory" if ti["mandatory"] else "Track Elective",
-                    "track": ti["track"],
-                    "track_name": ti["track_name"],
-                }
-            )
-        category_map[pc.course] = cats or [{"type": "Elective"}]
-    return category_map
+	category_map = {}
+	for pc in program.courses:
+		if pc.disabled:
+			continue
+		cats = []
+		if pc.required:
+			cats.append({"type": "Program Mandatory"})
+		for ti in track_course_map.get(pc.course, []):
+			cats.append(
+				{
+					"type": "Track Mandatory" if ti["mandatory"] else "Track Elective",
+					"track": ti["track"],
+					"track_name": ti["track_name"],
+				}
+			)
+		category_map[pc.course] = cats or [{"type": "Elective"}]
+	return category_map
 
 
 @frappe.whitelist()
 def get_available_courses_categorized(program_enrollment):
-    """Return available courses for enrollment with category metadata.
+	"""Return available courses for enrollment with category metadata.
 
-    Each course includes its categories (Program Mandatory, Track Mandatory, Elective)
-    and available course schedules.
-    """
-    from seminary.seminary.utils import student_schedule_conflicts
+	Each course includes its categories (Program Mandatory, Track Mandatory, Elective)
+	and available course schedules.
+	"""
+	from seminary.seminary.utils import student_schedule_conflicts
 
-    require_own_enrollment(program_enrollment)
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    program = frappe.get_cached_doc("Program", pe.program)
+	require_own_enrollment(program_enrollment)
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	program = frappe.get_cached_doc("Program", pe.program)
 
-    # Get all available courses using existing logic
-    available_courses = courses_for_student(program_enrollment)
+	# Get all available courses using existing logic
+	available_courses = courses_for_student(program_enrollment)
 
-    if not available_courses:
-        return []
+	if not available_courses:
+		return []
 
-    # Build lookup maps
-    program_course_map = {}
-    for pc in program.courses:
-        if pc.disabled:
-            continue
-        program_course_map[pc.course] = {
-            "required": pc.required,
-            "credits": pc.pgmcourse_credits or 0,
-            "course_name": pc.course_name,
-        }
+	# Build lookup maps
+	program_course_map = {}
+	for pc in program.courses:
+		if pc.disabled:
+			continue
+		program_course_map[pc.course] = {
+			"required": pc.required,
+			"credits": pc.pgmcourse_credits or 0,
+			"course_name": pc.course_name,
+		}
 
-    # course -> [category badges]; shared with the My Enrollments list so a
-    # course's Required / Track / Elective badges read identically in both.
-    category_map = _course_category_map(pe, program)
+	# course -> [category badges]; shared with the My Enrollments list so a
+	# course's Required / Track / Elective badges read identically in both.
+	category_map = _course_category_map(pe, program)
 
-    # Get course schedules for available courses in current term
-    course_schedules = frappe.get_all(
-        "Course Schedule",
-        filters={
-            "course": ["in", available_courses],
-            "workflow_state": "Open for Enrollment",
-        },
-        fields=[
-            "name",
-            "course",
-            "academic_term",
-            "section",
-            "modality",
-            "c_datestart",
-            "c_dateend",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
-            "from_time",
-            "to_time",
-        ],
-    )
-    schedule_map = {}
-    for cs in course_schedules:
-        # Build day initials for presential/hybrid
-        days = ""
-        if cs.modality in ("Presential", "Hybrid"):
-            day_map = [
-                (cs.monday, "M"),
-                (cs.tuesday, "T"),
-                (cs.wednesday, "W"),
-                (cs.thursday, "Th"),
-                (cs.friday, "F"),
-                (cs.saturday, "Sa"),
-                (cs.sunday, "Su"),
-            ]
-            days = "".join(abbr for checked, abbr in day_map if checked)
+	# Get course schedules for available courses in current term
+	course_schedules = frappe.get_all(
+		"Course Schedule",
+		filters={
+			"course": ["in", available_courses],
+			"workflow_state": "Open for Enrollment",
+		},
+		fields=[
+			"name",
+			"course",
+			"academic_term",
+			"section",
+			"modality",
+			"c_datestart",
+			"c_dateend",
+			"monday",
+			"tuesday",
+			"wednesday",
+			"thursday",
+			"friday",
+			"saturday",
+			"sunday",
+			"from_time",
+			"to_time",
+		],
+	)
+	schedule_map = {}
+	for cs in course_schedules:
+		# Build day initials for presential/hybrid
+		days = ""
+		if cs.modality in ("Presential", "Hybrid"):
+			day_map = [
+				(cs.monday, "M"),
+				(cs.tuesday, "T"),
+				(cs.wednesday, "W"),
+				(cs.thursday, "Th"),
+				(cs.friday, "F"),
+				(cs.saturday, "Sa"),
+				(cs.sunday, "Su"),
+			]
+			days = "".join(abbr for checked, abbr in day_map if checked)
 
-        # Format time range for presential/hybrid
-        time_range = ""
-        if cs.modality in ("Presential", "Hybrid") and cs.from_time:
-            from_t = frappe.utils.format_time(cs.from_time, "h:mm a")
-            if cs.to_time:
-                to_t = frappe.utils.format_time(cs.to_time, "h:mm a")
-                time_range = f"{from_t} – {to_t}"
-            else:
-                time_range = from_t
+		# Format time range for presential/hybrid
+		time_range = ""
+		if cs.modality in ("Presential", "Hybrid") and cs.from_time:
+			from_t = frappe.utils.format_time(cs.from_time, "h:mm a")
+			if cs.to_time:
+				to_t = frappe.utils.format_time(cs.to_time, "h:mm a")
+				time_range = f"{from_t} – {to_t}"
+			else:
+				time_range = from_t
 
-        # Get instructors
-        instructors = frappe.get_all(
-            "Course Schedule Instructors",
-            filters={"parent": cs.name},
-            fields=["instructor"],
-        )
-        instructor_names = ", ".join(i.instructor for i in instructors if i.instructor)
+		# Get instructors
+		instructors = frappe.get_all(
+			"Course Schedule Instructors",
+			filters={"parent": cs.name},
+			fields=["instructor"],
+		)
+		instructor_names = ", ".join(i.instructor for i in instructors if i.instructor)
 
-        # Format dates as short form
-        date_range = ""
-        if cs.c_datestart and cs.c_dateend:
-            date_range = f"{frappe.utils.formatdate(cs.c_datestart, 'MMM d')} – {frappe.utils.formatdate(cs.c_dateend, 'MMM d, yyyy')}"
-        elif cs.c_datestart:
-            date_range = frappe.utils.formatdate(cs.c_datestart, "MMM d, yyyy")
+		# Format dates as short form
+		date_range = ""
+		if cs.c_datestart and cs.c_dateend:
+			date_range = f"{frappe.utils.formatdate(cs.c_datestart, 'MMM d')} – {frappe.utils.formatdate(cs.c_dateend, 'MMM d, yyyy')}"
+		elif cs.c_datestart:
+			date_range = frappe.utils.formatdate(cs.c_datestart, "MMM d, yyyy")
 
-        # ADR 050: flag (don't hide) sections that overlap the student's existing
-        # active enrollments, so the picker can show a hint and an "Enroll Anyway"
-        # confirm. Enrollment is never blocked.
-        conflicts = [
-            {
-                "course": c.title or c.course_schedule,
-                "date": frappe.utils.formatdate(c.meetdate, "MMM d"),
-                "from_time": (
-                    frappe.utils.format_time(c.from_time, "h:mm a")
-                    if c.from_time
-                    else ""
-                ),
-                "to_time": (
-                    frappe.utils.format_time(c.to_time, "h:mm a") if c.to_time else ""
-                ),
-            }
-            for c in student_schedule_conflicts(pe.student, cs.name)
-        ]
+		# ADR 050: flag (don't hide) sections that overlap the student's existing
+		# active enrollments, so the picker can show a hint and an "Enroll Anyway"
+		# confirm. Enrollment is never blocked.
+		conflicts = [
+			{
+				"course": c.title or c.course_schedule,
+				"date": frappe.utils.formatdate(c.meetdate, "MMM d"),
+				"from_time": (frappe.utils.format_time(c.from_time, "h:mm a") if c.from_time else ""),
+				"to_time": (frappe.utils.format_time(c.to_time, "h:mm a") if c.to_time else ""),
+			}
+			for c in student_schedule_conflicts(pe.student, cs.name)
+		]
 
-        if cs.course not in schedule_map:
-            schedule_map[cs.course] = []
-        schedule_map[cs.course].append(
-            {
-                "name": cs.name,
-                "academic_term": cs.academic_term,
-                "section": cs.section or "",
-                "modality": cs.modality or "",
-                "instructors": instructor_names,
-                "date_range": date_range,
-                "days": days,
-                "time_range": time_range,
-                "schedule_conflict": conflicts,
-            }
-        )
+		if cs.course not in schedule_map:
+			schedule_map[cs.course] = []
+		schedule_map[cs.course].append(
+			{
+				"name": cs.name,
+				"academic_term": cs.academic_term,
+				"section": cs.section or "",
+				"modality": cs.modality or "",
+				"instructors": instructor_names,
+				"date_range": date_range,
+				"days": days,
+				"time_range": time_range,
+				"schedule_conflict": conflicts,
+			}
+		)
 
-    # Fetch descriptions in one query
-    course_descriptions = {
-        d.name: d.description
-        for d in frappe.get_all(
-            "Course",
-            filters={"name": ["in", available_courses]},
-            fields=["name", "description"],
-        )
-    }
+	# Fetch descriptions in one query
+	course_descriptions = {
+		d.name: d.description
+		for d in frappe.get_all(
+			"Course",
+			filters={"name": ["in", available_courses]},
+			fields=["name", "description"],
+		)
+	}
 
-    # Map which available courses are prerequisites for other courses, so the UI
-    # can flag them and students can prioritize them.
-    prerequisite_for_map = {}
-    dependent_courses = set()
-    for row in frappe.get_all(
-        "Course_prerequisite",
-        filters={"course": ["in", available_courses], "parenttype": "Course"},
-        fields=["parent", "course", "prereq_mandatory"],
-    ):
-        dependent_courses.add(row.parent)
-        prerequisite_for_map.setdefault(row.course, []).append(
-            {"course": row.parent, "mandatory": row.prereq_mandatory or "Recommended"}
-        )
+	# Map which available courses are prerequisites for other courses, so the UI
+	# can flag them and students can prioritize them.
+	prerequisite_for_map = {}
+	dependent_courses = set()
+	for row in frappe.get_all(
+		"Course_prerequisite",
+		filters={"course": ["in", available_courses], "parenttype": "Course"},
+		fields=["parent", "course", "prereq_mandatory"],
+	):
+		dependent_courses.add(row.parent)
+		prerequisite_for_map.setdefault(row.course, []).append(
+			{"course": row.parent, "mandatory": row.prereq_mandatory or "Recommended"}
+		)
 
-    dependent_course_names = (
-        {
-            d.name: d.course_name
-            for d in frappe.get_all(
-                "Course",
-                filters={"name": ["in", list(dependent_courses)]},
-                fields=["name", "course_name"],
-            )
-        }
-        if dependent_courses
-        else {}
-    )
-    for deps in prerequisite_for_map.values():
-        for dep in deps:
-            dep["course_name"] = (
-                dependent_course_names.get(dep["course"]) or dep["course"]
-            )
+	dependent_course_names = (
+		{
+			d.name: d.course_name
+			for d in frappe.get_all(
+				"Course",
+				filters={"name": ["in", list(dependent_courses)]},
+				fields=["name", "course_name"],
+			)
+		}
+		if dependent_courses
+		else {}
+	)
+	for deps in prerequisite_for_map.values():
+		for dep in deps:
+			dep["course_name"] = dependent_course_names.get(dep["course"]) or dep["course"]
 
-    # Build categorized result
-    result = []
-    for course in available_courses:
-        pc = program_course_map.get(course, {})
-        course_name = pc.get("course_name") or frappe.db.get_value(
-            "Course", course, "course_name"
-        )
-        credits = pc.get("credits", 0)
-        description = course_descriptions.get(course) or ""
+	# Build categorized result
+	result = []
+	for course in available_courses:
+		pc = program_course_map.get(course, {})
+		course_name = pc.get("course_name") or frappe.db.get_value("Course", course, "course_name")
+		credits = pc.get("credits", 0)
+		description = course_descriptions.get(course) or ""
 
-        categories = category_map.get(course) or [{"type": "Elective"}]
+		categories = category_map.get(course) or [{"type": "Elective"}]
 
-        result.append(
-            {
-                "course": course,
-                "course_name": course_name,
-                "description": description,
-                "categories": categories,
-                "credits": credits,
-                "course_schedules": schedule_map.get(course, []),
-                "prerequisite_for": prerequisite_for_map.get(course, []),
-            }
-        )
+		result.append(
+			{
+				"course": course,
+				"course_name": course_name,
+				"description": description,
+				"categories": categories,
+				"credits": credits,
+				"course_schedules": schedule_map.get(course, []),
+				"prerequisite_for": prerequisite_for_map.get(course, []),
+			}
+		)
 
-    # Sort: Program Mandatory first, then Track Mandatory, then Elective
-    priority = {
-        "Program Mandatory": 0,
-        "Track Mandatory": 1,
-        "Track Elective": 2,
-        "Elective": 3,
-    }
-    result.sort(key=lambda x: min(priority.get(c["type"], 99) for c in x["categories"]))
+	# Sort: Program Mandatory first, then Track Mandatory, then Elective
+	priority = {
+		"Program Mandatory": 0,
+		"Track Mandatory": 1,
+		"Track Elective": 2,
+		"Elective": 3,
+	}
+	result.sort(key=lambda x: min(priority.get(c["type"], 99) for c in x["categories"]))
 
-    return result
+	return result
 
 
 @frappe.whitelist()
 def enroll_student(source_name):
-    """Creates a Student Record and returns a Program Enrollment.
+	"""Creates a Student Record and returns a Program Enrollment.
 
-    :param source_name: Student Applicant.
-    """
-    require_registrar()
-    frappe.publish_realtime(
-        "enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user
-    )
-    from seminary.seminary import intake
+	:param source_name: Student Applicant.
+	"""
+	require_registrar()
+	frappe.publish_realtime("enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user)
+	from seminary.seminary import intake
 
-    student = get_mapped_doc(
-        "Student Applicant",
-        source_name,
-        {
-            "Student Applicant": {
-                "doctype": "Student",
-                "field_map": {
-                    "name": "student_applicant",
-                    # `person` is `no_copy` on the applicant, and the mapper
-                    # builds its no-copy set from the *source* meta — so
-                    # same-name copying can never carry the link, and without
-                    # an explicit entry admission forked a second identity for
-                    # the same human. `field_map` bypasses no_copy.
-                    "person": "person",
-                },
-            },
-            # Child tables are skipped unless mapped, so the emergency contacts
-            # and references collected on the public form were being discarded
-            # at admission. Both applicant fields use this child doctype and
-            # land in `Student.contacts`; the row's `emergency` flag is what
-            # distinguishes a contact from a reference.
-            "Student Contacts": {"doctype": "Student Contacts"},
-        },
-        ignore_permissions=True,
-    )
-    student.person = intake.person_for_applicant(source_name)
-    student.save()
+	student = get_mapped_doc(
+		"Student Applicant",
+		source_name,
+		{
+			"Student Applicant": {
+				"doctype": "Student",
+				"field_map": {
+					"name": "student_applicant",
+					# `person` is `no_copy` on the applicant, and the mapper
+					# builds its no-copy set from the *source* meta — so
+					# same-name copying can never carry the link, and without
+					# an explicit entry admission forked a second identity for
+					# the same human. `field_map` bypasses no_copy.
+					"person": "person",
+				},
+			},
+			# Child tables are skipped unless mapped, so the emergency contacts
+			# and references collected on the public form were being discarded
+			# at admission. Both applicant fields use this child doctype and
+			# land in `Student.contacts`; the row's `emergency` flag is what
+			# distinguishes a contact from a reference.
+			"Student Contacts": {"doctype": "Student Contacts"},
+		},
+		ignore_permissions=True,
+	)
+	student.person = intake.person_for_applicant(source_name)
+	student.save()
 
-    student_applicant = frappe.db.get_value(
-        "Student Applicant",
-        source_name,
-        ["program", "academic_term"],
-        as_dict=True,
-    )
-    program_enrollment = frappe.new_doc("Program Enrollment")
-    program_enrollment.student = student.name
-    program_enrollment.student_name = student.student_name
-    program_enrollment.program = student_applicant.program
-    program_enrollment.academic_term = student_applicant.academic_term
-    program_enrollment.save()
+	student_applicant = frappe.db.get_value(
+		"Student Applicant",
+		source_name,
+		["program", "academic_term"],
+		as_dict=True,
+	)
+	program_enrollment = frappe.new_doc("Program Enrollment")
+	program_enrollment.student = student.name
+	program_enrollment.student_name = student.student_name
+	program_enrollment.program = student_applicant.program
+	program_enrollment.academic_term = student_applicant.academic_term
+	program_enrollment.save()
 
-    frappe.publish_realtime(
-        "enroll_student_progress", {"progress": [2, 4]}, user=frappe.session.user
-    )
-    return program_enrollment
+	frappe.publish_realtime("enroll_student_progress", {"progress": [2, 4]}, user=frappe.session.user)
+	return program_enrollment
 
 
 def check_attendance_records_exist(course_schedule=None, date=None):
-    """Check if Attendance Records are made against the specified Course Schedule
+	"""Check if Attendance Records are made against the specified Course Schedule
 
-    :param course_schedule: Course Schedule.
+	:param course_schedule: Course Schedule.
 
-    :param date: Date.
-    """
-    if course_schedule:
-        return frappe.get_list(
-            "Student Attendance", filters={"course_schedule": course_schedule}
-        )
+	:param date: Date.
+	"""
+	if course_schedule:
+		return frappe.get_list("Student Attendance", filters={"course_schedule": course_schedule})
 
 
 @frappe.whitelist()
 def mark_attendance(
-    students_present,
-    students_absent,
-    students_tardy=None,
-    course_schedule=None,
-    date=None,
-    meeting=None,
-    students_excused=None,
+	students_present,
+	students_absent,
+	students_tardy=None,
+	course_schedule=None,
+	date=None,
+	meeting=None,
+	students_excused=None,
 ):
-    """Creates Multiple Attendance Records.
+	"""Creates Multiple Attendance Records.
 
-    :param students_present: Students Present JSON.
-    :param students_absent: Students Absent JSON.
-    :param students_tardy: Students Tardy JSON (optional).
-    :param students_excused: Students Excused JSON (optional). For a meeting that
-        has not happened yet this is the whole list: an Excused row for anyone
-        left out is removed (ADR 081).
-    :param course_schedule: Course Schedule.
-    :param date: Date.
-    :param meeting: Course Schedule Meeting Dates row (the specific class meeting
-        — a section can meet more than once on the same date; ADR 051).
-    """
-    require_grader(include_registrar=True)
-    if not course_schedule:
-        return {"success": False}
-    require_course_staff(course_schedule, include_registrar=True)
+	:param students_present: Students Present JSON.
+	:param students_absent: Students Absent JSON.
+	:param students_tardy: Students Tardy JSON (optional).
+	:param students_excused: Students Excused JSON (optional). For a meeting that
+	    has not happened yet this is the whole list: an Excused row for anyone
+	    left out is removed (ADR 081).
+	:param course_schedule: Course Schedule.
+	:param date: Date.
+	:param meeting: Course Schedule Meeting Dates row (the specific class meeting
+	    — a section can meet more than once on the same date; ADR 051).
+	"""
+	require_grader(include_registrar=True)
+	if not course_schedule:
+		return {"success": False}
+	require_course_staff(course_schedule, include_registrar=True)
 
-    def _as_list(value):
-        if value is None:
-            return []
-        return value if isinstance(value, list) else json.loads(value)
+	def _as_list(value):
+		if value is None:
+			return []
+		return value if isinstance(value, list) else json.loads(value)
 
-    buckets = (
-        ("Present", _as_list(students_present)),
-        ("Absent", _as_list(students_absent)),
-        ("Tardy", _as_list(students_tardy)),
-        ("Excused", _as_list(students_excused)),
-    )
+	buckets = (
+		("Present", _as_list(students_present)),
+		("Absent", _as_list(students_absent)),
+		("Tardy", _as_list(students_tardy)),
+		("Excused", _as_list(students_excused)),
+	)
 
-    meeting_date = (
-        frappe.db.get_value("Course Schedule Meeting Dates", meeting, "cs_meetdate")
-        if meeting
-        else None
-    ) or date
-    if meeting_date and getdate(meeting_date) > getdate():
-        excused = {d["student"] for d in buckets[3][1]}
-        for name, student in frappe.get_all(
-            "Student Attendance",
-            filters={
-                "course_schedule": course_schedule,
-                "meeting": meeting,
-                "status": "Excused",
-                "docstatus": ("!=", 2),
-            },
-            fields=["name", "student"],
-            as_list=True,
-        ):
-            if student not in excused:
-                frappe.delete_doc("Student Attendance", name, ignore_permissions=True)
+	meeting_date = (
+		frappe.db.get_value("Course Schedule Meeting Dates", meeting, "cs_meetdate") if meeting else None
+	) or date
+	if meeting_date and getdate(meeting_date) > getdate():
+		excused = {d["student"] for d in buckets[3][1]}
+		for name, student in frappe.get_all(
+			"Student Attendance",
+			filters={
+				"course_schedule": course_schedule,
+				"meeting": meeting,
+				"status": "Excused",
+				"docstatus": ("!=", 2),
+			},
+			fields=["name", "student"],
+			as_list=True,
+		):
+			if student not in excused:
+				frappe.delete_doc("Student Attendance", name, ignore_permissions=True)
 
-    for status, rows in buckets:
-        for d in rows:
-            make_attendance_records(
-                d["student"],
-                d["stuname_roster"],
-                status,
-                course_schedule,
-                date,
-                meeting=meeting,
-            )
+	for status, rows in buckets:
+		for d in rows:
+			make_attendance_records(
+				d["student"],
+				d["stuname_roster"],
+				status,
+				course_schedule,
+				date,
+				meeting=meeting,
+			)
 
-    frappe.db.commit()
-    return {"success": True}
+	frappe.db.commit()
+	return {"success": True}
 
 
-def make_attendance_records(
-    student, stuname_roster, status, course_schedule=None, date=None, meeting=None
-):
-    """Creates/Update Attendance Record.
+def make_attendance_records(student, stuname_roster, status, course_schedule=None, date=None, meeting=None):
+	"""Creates/Update Attendance Record.
 
-    Keyed by the specific class MEETING when given (a section can meet more than
-    once on a date — ADR 051), falling back to (student, course, date) for legacy
-    callers/rows. ``date`` is always stored for display/reporting.
+	Keyed by the specific class MEETING when given (a section can meet more than
+	once on a date — ADR 051), falling back to (student, course, date) for legacy
+	callers/rows. ``date`` is always stored for display/reporting.
 
-    :param student: Student.
-    :param stuname_roster: Student Name.
-    :param status: Status (Present/Absent/Tardy).
-    :param course_schedule: Course Schedule.
-    :param date: Date.
-    :param meeting: Course Schedule Meeting Dates row name (the class meeting).
-    """
-    # Resolve the meeting row from the date when the caller didn't pass one, so
-    # attendance is keyed per-meeting wherever the date has a single meeting.
-    if not meeting and date and course_schedule:
-        meeting = frappe.db.get_value(
-            "Course Schedule Meeting Dates",
-            {"cs_meetdate": date, "parent": course_schedule},
-            "name",
-        )
+	:param student: Student.
+	:param stuname_roster: Student Name.
+	:param status: Status (Present/Absent/Tardy).
+	:param course_schedule: Course Schedule.
+	:param date: Date.
+	:param meeting: Course Schedule Meeting Dates row name (the class meeting).
+	"""
+	# Resolve the meeting row from the date when the caller didn't pass one, so
+	# attendance is keyed per-meeting wherever the date has a single meeting.
+	if not meeting and date and course_schedule:
+		meeting = frappe.db.get_value(
+			"Course Schedule Meeting Dates",
+			{"cs_meetdate": date, "parent": course_schedule},
+			"name",
+		)
 
-    # Match an existing record by meeting (preferred) or by date (legacy rows
-    # without a meeting set). Backfill the meeting on a legacy match.
-    if meeting:
-        match = {
-            "student": student,
-            "course_schedule": course_schedule,
-            "meeting": meeting,
-            "docstatus": ("!=", 2),
-        }
-        legacy_match = {
-            "student": student,
-            "course_schedule": course_schedule,
-            "date": date,
-            "meeting": ("in", (None, "")),
-            "docstatus": ("!=", 2),
-        }
-        HasAttendance = frappe.db.exists(
-            "Student Attendance", match
-        ) or frappe.db.exists("Student Attendance", legacy_match)
-    else:
-        HasAttendance = frappe.db.exists(
-            "Student Attendance",
-            {
-                "student": student,
-                "course_schedule": course_schedule,
-                "date": date,
-                "docstatus": ("!=", 2),
-            },
-        )
+	# Match an existing record by meeting (preferred) or by date (legacy rows
+	# without a meeting set). Backfill the meeting on a legacy match.
+	if meeting:
+		match = {
+			"student": student,
+			"course_schedule": course_schedule,
+			"meeting": meeting,
+			"docstatus": ("!=", 2),
+		}
+		legacy_match = {
+			"student": student,
+			"course_schedule": course_schedule,
+			"date": date,
+			"meeting": ("in", (None, "")),
+			"docstatus": ("!=", 2),
+		}
+		HasAttendance = frappe.db.exists("Student Attendance", match) or frappe.db.exists(
+			"Student Attendance", legacy_match
+		)
+	else:
+		HasAttendance = frappe.db.exists(
+			"Student Attendance",
+			{
+				"student": student,
+				"course_schedule": course_schedule,
+				"date": date,
+				"docstatus": ("!=", 2),
+			},
+		)
 
-    if HasAttendance:
-        # Fetch the existing record and update it
-        student_attendance = frappe.get_doc("Student Attendance", HasAttendance)
-        student_attendance.status = status
-        student_attendance.stuname_roster = stuname_roster
-        if meeting:
-            student_attendance.meeting = meeting
-        student_attendance.save(ignore_permissions=True)
-    else:
-        # Create a new attendance record
-        student_attendance = frappe.new_doc("Student Attendance")
-        student_attendance.student = student
-        student_attendance.stuname_roster = stuname_roster
-        student_attendance.course_schedule = course_schedule
-        student_attendance.date = date
-        student_attendance.meeting = meeting
-        student_attendance.status = status
-        student_attendance.insert(ignore_permissions=True)
+	if HasAttendance:
+		# Fetch the existing record and update it
+		student_attendance = frappe.get_doc("Student Attendance", HasAttendance)
+		student_attendance.status = status
+		student_attendance.stuname_roster = stuname_roster
+		if meeting:
+			student_attendance.meeting = meeting
+		student_attendance.save(ignore_permissions=True)
+	else:
+		# Create a new attendance record
+		student_attendance = frappe.new_doc("Student Attendance")
+		student_attendance.student = student
+		student_attendance.stuname_roster = stuname_roster
+		student_attendance.course_schedule = course_schedule
+		student_attendance.date = date
+		student_attendance.meeting = meeting
+		student_attendance.status = status
+		student_attendance.insert(ignore_permissions=True)
 
-    # Flag the specific meeting row as having attendance taken. Excusing a
-    # student ahead of the class is not taking the roll.
-    if meeting and not (status == "Excused" and date and getdate(date) > getdate()):
-        frappe.db.set_value("Course Schedule Meeting Dates", meeting, "attendance", 1)
+	# Flag the specific meeting row as having attendance taken. Excusing a
+	# student ahead of the class is not taking the roll.
+	if meeting and not (status == "Excused" and date and getdate(date) > getdate()):
+		frappe.db.set_value("Course Schedule Meeting Dates", meeting, "attendance", 1)
 
 
 def get_student_contacts(student):
-    """Returns List of contacts of a Student.
+	"""Returns List of contacts of a Student.
 
-    :param student: Student.
-    """
-    contacts = frappe.get_all(
-        "Student Contacts",
-        fields=["contact_name", "relation", "emergency"],
-        filters={"parent": student},
-    )
-    return contacts
+	:param student: Student.
+	"""
+	contacts = frappe.get_all(
+		"Student Contacts",
+		fields=["contact_name", "relation", "emergency"],
+		filters={"parent": student},
+	)
+	return contacts
 
 
 @frappe.whitelist()
 def get_course_schedule_events(start, end, filters=None):
-    """Returns events for Course Schedule Calendar view rendering.
+	"""Returns events for Course Schedule Calendar view rendering.
 
-    :param start: Start date-time.
-    :param end: End date-time.
-    :param filters: Filters (JSON).
-    """
-    frappe.only_for(list(SCHOOL_ROLES | {"Instructor"}))
-    filters = json.loads(filters)
-    from frappe.desk.calendar import get_event_conditions
+	:param start: Start date-time.
+	:param end: End date-time.
+	:param filters: Filters (JSON).
+	"""
+	frappe.only_for(list(SCHOOL_ROLES | {"Instructor"}))
+	filters = json.loads(filters)
+	from frappe.desk.calendar import get_event_conditions
 
-    conditions = get_event_conditions("Course Schedule", filters)
+	conditions = get_event_conditions("Course Schedule", filters)
 
-    return frappe.db.sql(
-        """SELECT cs.name as name,
+	return frappe.db.sql(
+		"""SELECT cs.name as name,
 			CONCAT (cs.course, ' - ', COALESCE(cs.room, '')) as title,
 			cs.course as course,
 			timestamp(cm.cs_meetdate, cm.cs_fromtime) as dtstart,
@@ -3186,293 +3043,289 @@ def get_course_schedule_events(start, end, filters=None):
 		where
 		cs.name = scac.parent
 		and (scac.due_date between %(start)s and %(end)s )""".format(  # nosec B608 -- interpolates a clause built from constants in this function
-            conditions=conditions
-        ),
-        {"start": start, "end": end},
-        as_dict=True,
-        update={"allDay": 0},
-    )
+			conditions=conditions
+		),
+		{"start": start, "end": end},
+		as_dict=True,
+		update={"allDay": 0},
+	)
 
 
 def get_assessment_criteria(course):
-    """Returns Assessmemt Criteria and their Weightage from Course Master.
+	"""Returns Assessmemt Criteria and their Weightage from Course Master.
 
-    :param Course: Course
-    """
-    return frappe.get_all(
-        "Course Assessment Criteria",
-        fields=["assessment_criteria", "weightage"],
-        filters={"parent": course},
-        order_by="idx",
-    )
+	:param Course: Course
+	"""
+	return frappe.get_all(
+		"Course Assessment Criteria",
+		fields=["assessment_criteria", "weightage"],
+		filters={"parent": course},
+		order_by="idx",
+	)
 
 
 def _grading_scale_intervals(grading_scale):
-    """Return a scale's intervals, cached per request and keyed by scale name.
+	"""Return a scale's intervals, cached per request and keyed by scale name.
 
-    Both get_grade and get_gradepass read this. The cache must be keyed by scale
-    name: a single request routinely touches more than one scale (a transcript
-    render, or a Points course alongside a Competency-based education course),
-    and an unkeyed cache would serve the first scale's intervals to all of them.
-    All three columns are fetched together so the two callers cannot populate a
-    shared cache with each other's missing fields.
-    """
-    if not hasattr(frappe.local, "grading_scale_intervals"):
-        frappe.local.grading_scale_intervals = {}
-    cache = frappe.local.grading_scale_intervals
-    if grading_scale not in cache:
-        cache[grading_scale] = frappe.get_all(
-            "Grading Scale Interval",
-            fields=["grade_code", "threshold", "grade_pass"],
-            filters={"parent": grading_scale},
-        )
-    return cache[grading_scale]
+	Both get_grade and get_gradepass read this. The cache must be keyed by scale
+	name: a single request routinely touches more than one scale (a transcript
+	render, or a Points course alongside a Competency-based education course),
+	and an unkeyed cache would serve the first scale's intervals to all of them.
+	All three columns are fetched together so the two callers cannot populate a
+	shared cache with each other's missing fields.
+	"""
+	if not hasattr(frappe.local, "grading_scale_intervals"):
+		frappe.local.grading_scale_intervals = {}
+	cache = frappe.local.grading_scale_intervals
+	if grading_scale not in cache:
+		cache[grading_scale] = frappe.get_all(
+			"Grading Scale Interval",
+			fields=["grade_code", "threshold", "grade_pass"],
+			filters={"parent": grading_scale},
+		)
+	return cache[grading_scale]
 
 
 def _resolve_interval(grading_scale, percentage, field):
-    """Walk a scale's thresholds downwards and return `field` of the first match."""
-    intervals_by_threshold = {
-        d.threshold: d.get(field) for d in _grading_scale_intervals(grading_scale)
-    }
-    result = ""
-    for threshold in sorted(intervals_by_threshold.keys(), key=float, reverse=True):
-        if flt(percentage) >= threshold:
-            result = intervals_by_threshold.get(threshold)
-            break
-    return result
+	"""Walk a scale's thresholds downwards and return `field` of the first match."""
+	intervals_by_threshold = {d.threshold: d.get(field) for d in _grading_scale_intervals(grading_scale)}
+	result = ""
+	for threshold in sorted(intervals_by_threshold.keys(), key=float, reverse=True):
+		if flt(percentage) >= threshold:
+			result = intervals_by_threshold.get(threshold)
+			break
+	return result
 
 
 def get_grade(grading_scale, percentage):
-    """Returns Grade based on the Grading Scale and Score.
+	"""Returns Grade based on the Grading Scale and Score.
 
-    :param Grading Scale: Grading Scale
-    :param Percentage: Score Percentage Percentage
-    """
-    return _resolve_interval(grading_scale, percentage, "grade_code")
+	:param Grading Scale: Grading Scale
+	:param Percentage: Score Percentage Percentage
+	"""
+	return _resolve_interval(grading_scale, percentage, "grade_code")
 
 
 def narrative_section(course_schedule):
-    """True when this section's scale stores a *level* in `rawscore_card`.
+	"""True when this section's scale stores a *level* in `rawscore_card`.
 
-    A Descriptive scale's cell holds an interval threshold — the grade-point
-    value, Distinction = 4.0 — and not a percentage (ADR 072). This is the twin
-    of the `cbe.framework_for` check: both say "an auto-grader must not write a
-    percentage into this cell, because it will be read back as a level."
-    """
-    scale = frappe.db.get_value("Course Schedule", course_schedule, "gradesc_cs")
-    if not scale:
-        return False
-    return frappe.db.get_value("Grading Scale", scale, "grscale_type") == "Descriptive"
+	A Descriptive scale's cell holds an interval threshold — the grade-point
+	value, Distinction = 4.0 — and not a percentage (ADR 072). This is the twin
+	of the `cbe.framework_for` check: both say "an auto-grader must not write a
+	percentage into this cell, because it will be read back as a level."
+	"""
+	scale = frappe.db.get_value("Course Schedule", course_schedule, "gradesc_cs")
+	if not scale:
+		return False
+	return frappe.db.get_value("Grading Scale", scale, "grscale_type") == "Descriptive"
 
 
 def quizresult_to_card(doc, method):
-    # Fetch max grade of the grading scale used for calculations
-    # Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
-    course_schedule = getattr(doc, "coursesc", None) or doc.course
-    # On a competency section the same cell holds a *level* written by
-    # cbe.rollup_activity_grades (ADR 065 section 7). A percentage out of 100
-    # written here would overwrite it and be read back as a level, so the
-    # numeric path stands down and the competency roll-up owns the cell.
-    from seminary.seminary import cbe
+	# Fetch max grade of the grading scale used for calculations
+	# Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
+	course_schedule = getattr(doc, "coursesc", None) or doc.course
+	# On a competency section the same cell holds a *level* written by
+	# cbe.rollup_activity_grades (ADR 065 section 7). A percentage out of 100
+	# written here would overwrite it and be read back as a level, so the
+	# numeric path stands down and the competency roll-up owns the cell.
+	from seminary.seminary import cbe
 
-    if cbe.framework_for(course_schedule):
-        return
-    # Same trap on a Descriptive section, and the same answer: the cell holds a
-    # level the evaluator chose, so the numeric path stands down (ADR 072).
-    if narrative_section(course_schedule):
-        return
-    max_grade = frappe.db.get_value("Course Schedule", course_schedule, "maxnumgrade")
-    # Fetch the corresponding Course Assess Results Detail record
-    cardname = frappe.db.get_value(
-        "Course Assess Results Detail",
-        {"assessment_criteria": doc.course_assess, "student_card": doc.student},
-        "name",
-    )
-    if not cardname:
-        frappe.log_error(
-            (
-                f"No Course Assess Results Detail found for "
-                f"{doc.doctype} {doc.name}: assessment_criteria={doc.course_assess!r}, "
-                f"student={doc.student!r}, course={course_schedule!r}. "
-                f"Grade was not propagated to the gradebook."
-            ),
-            "quizresult_to_card: missing CARD row",
-        )
-        return
-    card = frappe.get_doc("Course Assess Results Detail", cardname)
+	if cbe.framework_for(course_schedule):
+		return
+	# Same trap on a Descriptive section, and the same answer: the cell holds a
+	# level the evaluator chose, so the numeric path stands down (ADR 072).
+	if narrative_section(course_schedule):
+		return
+	max_grade = frappe.db.get_value("Course Schedule", course_schedule, "maxnumgrade")
+	# Fetch the corresponding Course Assess Results Detail record
+	cardname = frappe.db.get_value(
+		"Course Assess Results Detail",
+		{"assessment_criteria": doc.course_assess, "student_card": doc.student},
+		"name",
+	)
+	if not cardname:
+		frappe.log_error(
+			(
+				f"No Course Assess Results Detail found for "
+				f"{doc.doctype} {doc.name}: assessment_criteria={doc.course_assess!r}, "
+				f"student={doc.student!r}, course={course_schedule!r}. "
+				f"Grade was not propagated to the gradebook."
+			),
+			"quizresult_to_card: missing CARD row",
+		)
+		return
+	card = frappe.get_doc("Course Assess Results Detail", cardname)
 
-    # Update the raw score and extra credit points
-    card.rawscore_card = doc.percentage if not doc.extra_credit else ""
-    card.actualextrapt_card = (
-        (doc.percentage / max_grade) * card.maxextrapoints_card
-        if doc.extra_credit
-        else ""
-    )
-    # Mark the cell as carrying a real grade (vs. the Float column's NOT NULL
-    # default 0). Cleared if the prof unsets the submission grade.
-    card.graded_card = 1 if doc.percentage not in (None, "") else 0
-    # Late deduction (decisions/082): the card holds the score that counts,
-    # the raw percentage and what was taken off sit beside it.
-    from seminary.seminary import deadlines
+	# Update the raw score and extra credit points
+	card.rawscore_card = doc.percentage if not doc.extra_credit else ""
+	card.actualextrapt_card = (
+		(doc.percentage / max_grade) * card.maxextrapoints_card if doc.extra_credit else ""
+	)
+	# Mark the cell as carrying a real grade (vs. the Float column's NOT NULL
+	# default 0). Cleared if the prof unsets the submission grade.
+	card.graded_card = 1 if doc.percentage not in (None, "") else 0
+	# Late deduction (decisions/082): the card holds the score that counts,
+	# the raw percentage and what was taken off sit beside it.
+	from seminary.seminary import deadlines
 
-    deadlines.apply_to_card(card, doc)
-    # Save the updated card
-    card.save(ignore_permissions=True)
+	deadlines.apply_to_card(card, doc)
+	# Save the updated card
+	card.save(ignore_permissions=True)
 
 
 @frappe.whitelist()
 def save_course_assessment(course, assessment_data, categories=None):
-    """Save Course Assessment Criteria.
+	"""Save Course Assessment Criteria.
 
-    :param course: Course.
-    :param assessment_data: Assessment Data (JSON).
-    :param categories: the section's assessment categories (JSON list), or
-        None to leave them as they are (decisions/096).
-    """
-    require_outline_editor()
-    require_course_staff(course)
-    import json
+	:param course: Course.
+	:param assessment_data: Assessment Data (JSON).
+	:param categories: the section's assessment categories (JSON list), or
+	    None to leave them as they are (decisions/096).
+	"""
+	require_outline_editor()
+	require_course_staff(course)
+	import json
 
-    # If assessment_data is a string, convert it to a dictionary/list
-    if isinstance(assessment_data, str):
-        assessment_data = json.loads(assessment_data)
+	# If assessment_data is a string, convert it to a dictionary/list
+	if isinstance(assessment_data, str):
+		assessment_data = json.loads(assessment_data)
 
-    # Get existing documents for the course
-    existing_docs = frappe.db.get_all(
-        "Scheduled Course Assess Criteria", filters={"parent": course}, fields=["name"]
-    )
-    existing_doc_names = {doc["name"] for doc in existing_docs}
+	# Get existing documents for the course
+	existing_docs = frappe.db.get_all(
+		"Scheduled Course Assess Criteria", filters={"parent": course}, fields=["name"]
+	)
+	existing_doc_names = {doc["name"] for doc in existing_docs}
 
-    for data in assessment_data:
-        # Check if the record exists by verifying if "name" is provided and is in existing_docs.
-        if data.get("name") and data["name"] in existing_doc_names:
-            # Update the existing record
-            doc = frappe.get_doc("Scheduled Course Assess Criteria", data["name"])
-            doc.title = data.get("title", "")
-            doc.assesscriteria_scac = data.get("assesscriteria_scac", "")
-            doc.type = data.get("type", "")
-            doc.weight_scac = data.get("weight_scac", 0)
-            doc.extracredit_scac = data.get("extracredit_scac", "")
-            doc.fudgepoints_scac = data.get("fudgepoints_scac", "")
-            doc.quiz = data.get("quiz", "")
-            doc.assignment = data.get("assignment", "")
-            doc.discussion = data.get("discussion", "")
-            doc.oral = data.get("oral", "")
-            doc.exam = data.get("exam", "")
-            doc.due_date = data.get("due_date", None)
-            # Cut-off, replies due date and the late opt-out (decisions/082),
-            # written only when sent, like the competency fields below.
-            for field in ("cutoff_date", "replies_due_date"):
-                if field in data:
-                    doc.set(field, data.get(field) or None)
-            if "late_policy_exempt" in data:
-                doc.late_policy_exempt = 1 if data.get("late_policy_exempt") else 0
-            # Category and never-drop (decisions/096), likewise only when sent.
-            if "category_code" in data:
-                doc.category_code = data.get("category_code") or None
-            if "never_drop" in data:
-                doc.never_drop = 1 if data.get("never_drop") else 0
-            # Competency wiring (ADR 065 section 11b). Written only when the
-            # form sent the key, so a caller that does not show these fields
-            # cannot blank a mapping it knows nothing about.
-            if "course_competency" in data:
-                doc.course_competency = data.get("course_competency") or None
-            if "grading_mode_override" in data:
-                doc.grading_mode_override = data.get("grading_mode_override") or None
-            # These are usually already set, but include them if needed:
-            doc.parent = course
-            doc.parentfield = "courseassescrit_sc"
-            doc.parenttype = "Course Schedule"
-            doc.save(ignore_permissions=True)
-        else:
-            # Create a new record if no matching "name" is found.
-            doc = frappe.get_doc(
-                {
-                    "doctype": "Scheduled Course Assess Criteria",
-                    "parent": course,
-                    "parentfield": "courseassescrit_sc",
-                    "parenttype": "Course Schedule",
-                    "title": data.get("title", ""),
-                    "assesscriteria_scac": data.get("assesscriteria_scac", ""),
-                    "type": data.get("type", ""),
-                    "weight_scac": data.get("weight_scac", 0),
-                    "extracredit_scac": data.get("extracredit_scac", ""),
-                    "fudgepoints_scac": data.get("fudgepoints_scac", ""),
-                    "quiz": data.get("quiz", ""),
-                    "assignment": data.get("assignment", ""),
-                    "exam": data.get("exam", ""),
-                    "discussion": data.get("discussion", ""),
-                    "oral": data.get("oral", ""),
-                    "course_competency": data.get("course_competency") or None,
-                    "grading_mode_override": data.get("grading_mode_override") or None,
-                    "due_date": data.get("due_date") or None,
-                    "cutoff_date": data.get("cutoff_date") or None,
-                    "replies_due_date": data.get("replies_due_date") or None,
-                    "late_policy_exempt": 1 if data.get("late_policy_exempt") else 0,
-                    "category_code": data.get("category_code") or None,
-                    "never_drop": 1 if data.get("never_drop") else 0,
-                }
-            )
-            doc.insert(ignore_permissions=True)
+	for data in assessment_data:
+		# Check if the record exists by verifying if "name" is provided and is in existing_docs.
+		if data.get("name") and data["name"] in existing_doc_names:
+			# Update the existing record
+			doc = frappe.get_doc("Scheduled Course Assess Criteria", data["name"])
+			doc.title = data.get("title", "")
+			doc.assesscriteria_scac = data.get("assesscriteria_scac", "")
+			doc.type = data.get("type", "")
+			doc.weight_scac = data.get("weight_scac", 0)
+			doc.extracredit_scac = data.get("extracredit_scac", "")
+			doc.fudgepoints_scac = data.get("fudgepoints_scac", "")
+			doc.quiz = data.get("quiz", "")
+			doc.assignment = data.get("assignment", "")
+			doc.discussion = data.get("discussion", "")
+			doc.oral = data.get("oral", "")
+			doc.exam = data.get("exam", "")
+			doc.due_date = data.get("due_date", None)
+			# Cut-off, replies due date and the late opt-out (decisions/082),
+			# written only when sent, like the competency fields below.
+			for field in ("cutoff_date", "replies_due_date"):
+				if field in data:
+					doc.set(field, data.get(field) or None)
+			if "late_policy_exempt" in data:
+				doc.late_policy_exempt = 1 if data.get("late_policy_exempt") else 0
+			# Category and never-drop (decisions/096), likewise only when sent.
+			if "category_code" in data:
+				doc.category_code = data.get("category_code") or None
+			if "never_drop" in data:
+				doc.never_drop = 1 if data.get("never_drop") else 0
+			# Competency wiring (ADR 065 section 11b). Written only when the
+			# form sent the key, so a caller that does not show these fields
+			# cannot blank a mapping it knows nothing about.
+			if "course_competency" in data:
+				doc.course_competency = data.get("course_competency") or None
+			if "grading_mode_override" in data:
+				doc.grading_mode_override = data.get("grading_mode_override") or None
+			# These are usually already set, but include them if needed:
+			doc.parent = course
+			doc.parentfield = "courseassescrit_sc"
+			doc.parenttype = "Course Schedule"
+			doc.save(ignore_permissions=True)
+		else:
+			# Create a new record if no matching "name" is found.
+			doc = frappe.get_doc(
+				{
+					"doctype": "Scheduled Course Assess Criteria",
+					"parent": course,
+					"parentfield": "courseassescrit_sc",
+					"parenttype": "Course Schedule",
+					"title": data.get("title", ""),
+					"assesscriteria_scac": data.get("assesscriteria_scac", ""),
+					"type": data.get("type", ""),
+					"weight_scac": data.get("weight_scac", 0),
+					"extracredit_scac": data.get("extracredit_scac", ""),
+					"fudgepoints_scac": data.get("fudgepoints_scac", ""),
+					"quiz": data.get("quiz", ""),
+					"assignment": data.get("assignment", ""),
+					"exam": data.get("exam", ""),
+					"discussion": data.get("discussion", ""),
+					"oral": data.get("oral", ""),
+					"course_competency": data.get("course_competency") or None,
+					"grading_mode_override": data.get("grading_mode_override") or None,
+					"due_date": data.get("due_date") or None,
+					"cutoff_date": data.get("cutoff_date") or None,
+					"replies_due_date": data.get("replies_due_date") or None,
+					"late_policy_exempt": 1 if data.get("late_policy_exempt") else 0,
+					"category_code": data.get("category_code") or None,
+					"never_drop": 1 if data.get("never_drop") else 0,
+				}
+			)
+			doc.insert(ignore_permissions=True)
 
-    # Save the parent once at the end: the weight total and the
-    # chapter -> lesson -> assessment competency check live on the Course
-    # Schedule controller (ADR 023), and saving child rows one at a time never
-    # runs them.
-    cs = frappe.get_doc("Course Schedule", course)
-    if categories is not None:
-        if isinstance(categories, str):
-            categories = json.loads(categories)
-        cs.set(
-            "assess_categories",
-            [
-                {
-                    "category_code": c.get("category_code") or None,
-                    "title": c.get("title"),
-                    "weight": c.get("weight") or 0,
-                    "drop_lowest": c.get("drop_lowest") or 0,
-                }
-                for c in categories or []
-            ],
-        )
-    cs.save(ignore_permissions=True)
+	# Save the parent once at the end: the weight total and the
+	# chapter -> lesson -> assessment competency check live on the Course
+	# Schedule controller (ADR 023), and saving child rows one at a time never
+	# runs them.
+	cs = frappe.get_doc("Course Schedule", course)
+	if categories is not None:
+		if isinstance(categories, str):
+			categories = json.loads(categories)
+		cs.set(
+			"assess_categories",
+			[
+				{
+					"category_code": c.get("category_code") or None,
+					"title": c.get("title"),
+					"weight": c.get("weight") or 0,
+					"drop_lowest": c.get("drop_lowest") or 0,
+				}
+				for c in categories or []
+			],
+		)
+	cs.save(ignore_permissions=True)
 
-    frappe.db.commit()
-    return {"success": True}
+	frappe.db.commit()
+	return {"success": True}
 
 
 def get_scholarship(student):
-    # Back-compat shim: scholarships are now first-class Scholarship Awards.
-    from seminary.seminary.scholarship import get_student_scholarship
+	# Back-compat shim: scholarships are now first-class Scholarship Awards.
+	from seminary.seminary.scholarship import get_student_scholarship
 
-    return get_student_scholarship(student)
+	return get_student_scholarship(student)
 
 
 @frappe.whitelist()
 def get_student_invoices(student=None):
-    """The student's invoices for the Fees page (empty on a Frappe-only seminary).
+	"""The student's invoices for the Fees page (empty on a Frappe-only seminary).
 
-    Gated on the target (p010 H15, p005a A01-17). Harmless on a Frappe-only
-    bench, where `NullFinancialBackend` returns `[]` for anybody -- **which is
-    exactly why this was missed**, here and in five siblings. With the oikonomos
-    bridge installed it is another student's invoice list. The sibling
-    `get_pe_unpaid_invoices` was fixed; these were not.
-    """
-    from seminary.seminary.financial.backend import get_financial_backend
+	Gated on the target (p010 H15, p005a A01-17). Harmless on a Frappe-only
+	bench, where `NullFinancialBackend` returns `[]` for anybody -- **which is
+	exactly why this was missed**, here and in five siblings. With the oikonomos
+	bridge installed it is another student's invoice list. The sibling
+	`get_pe_unpaid_invoices` was fixed; these were not.
+	"""
+	from seminary.seminary.financial.backend import get_financial_backend
 
-    require_own_student(student or guards.current_student())
-    return get_financial_backend().student_invoices(student)
+	require_own_student(student or guards.current_student())
+	return get_financial_backend().student_invoices(student)
 
 
 @frappe.whitelist()
 def courses_for_student(program_ce):
-    require_own_enrollment(program_ce)
-    pgen_name = program_ce
-    # Get available scheduled courses for the student based on program enrollment,
-    # emphasis tracks (from child table), academic term, and prerequisites
+	require_own_enrollment(program_ce)
+	pgen_name = program_ce
+	# Get available scheduled courses for the student based on program enrollment,
+	# emphasis tracks (from child table), academic term, and prerequisites
 
-    courses = frappe.db.sql(
-        """SELECT cs.course
+	courses = frappe.db.sql(
+		"""SELECT cs.course
         FROM `tabCourse Schedule` cs
         INNER JOIN `tabAcademic Term` aterm ON aterm.name = cs.academic_term
         WHERE cs.workflow_state = 'Open for Enrollment'
@@ -3543,103 +3396,103 @@ def courses_for_student(program_ce):
                     AND COALESCE(pec.status, '') != 'Fail'
                     AND cei.program_ce = %s
             )""",
-        (pgen_name, pgen_name, pgen_name, pgen_name, pgen_name, pgen_name),
-        as_list=1,
-    )
-    # Flatten the list of tuples into a list of strings
-    courses = [course[0] for course in courses]
-    return courses
+		(pgen_name, pgen_name, pgen_name, pgen_name, pgen_name, pgen_name),
+		as_list=1,
+	)
+	# Flatten the list of tuples into a list of strings
+	courses = [course[0] for course in courses]
+	return courses
 
 
 def copy_data_to_scheduled_course_roster(doc, method):
-    student_ce = doc.student_ce
-    program = doc.program_data
-    coursesc_ce = doc.coursesc_ce
-    audit = doc.audit
-    student_name = doc.student_name
-    student_email = doc.stu_user
-    image = doc.stuimage
+	student_ce = doc.student_ce
+	program = doc.program_data
+	coursesc_ce = doc.coursesc_ce
+	audit = doc.audit
+	student_name = doc.student_name
+	student_email = doc.stu_user
+	image = doc.stuimage
 
-    if coursesc_ce and student_ce:
-        items = []
-        criteria = []
-        # Seat/demand caches (enrollments, seats_used, registrations,
-        # waitlist_count) are recomputed from enrollment state by
-        # seminary.seminary.waitlist.recount — invoked from enroll_student and
-        # the CEI workflow hook. The old increment-only counter here drifted
-        # upward because withdrawals never decremented it (see ADR 035).
-        criteria = frappe.db.sql(
-            """select distinct scac.name, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
+	if coursesc_ce and student_ce:
+		items = []
+		criteria = []
+		# Seat/demand caches (enrollments, seats_used, registrations,
+		# waitlist_count) are recomputed from enrollment state by
+		# seminary.seminary.waitlist.recount — invoked from enroll_student and
+		# the CEI workflow hook. The old increment-only counter here drifted
+		# upward because withdrawals never decremented it (see ADR 035).
+		criteria = frappe.db.sql(
+			"""select distinct scac.name, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and
 			scac.parent = %s""",
-            coursesc_ce,
-            as_list=1,
-        )
-        rows = frappe.db.sql(
-            """select count(distinct scac.name) from `tabScheduled Course Assess Criteria` scac
+			coursesc_ce,
+			as_list=1,
+		)
+		rows = frappe.db.sql(
+			"""select count(distinct scac.name) from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and
 			scac.parent = %s""",
-            coursesc_ce,
-        )[0][0]
-        i = 0
-        while i < rows:
-            if criteria:
-                items.append(
-                    {
-                        "doctype": "Course Assess Results Detail",
-                        "student_card": student_ce,
-                        "assessment_criteria": criteria[i][0],
-                        "maximum_score": criteria[i][1],
-                        "extracredit_card": criteria[i][2],
-                        "maxextrapoints_card": criteria[i][3],
-                    }
-                )
-                i += 1
+			coursesc_ce,
+		)[0][0]
+		i = 0
+		while i < rows:
+			if criteria:
+				items.append(
+					{
+						"doctype": "Course Assess Results Detail",
+						"student_card": student_ce,
+						"assessment_criteria": criteria[i][0],
+						"maximum_score": criteria[i][1],
+						"extracredit_card": criteria[i][2],
+						"maxextrapoints_card": criteria[i][3],
+					}
+				)
+				i += 1
 
-        roster = frappe.get_doc(
-            {
-                "doctype": "Scheduled Course Roster",
-                "course_sc": coursesc_ce,
-                "stuname_roster": student_name,
-                "student": student_ce,
-                "stuemail_rc": student_email,
-                "program_std_scr": program,
-                "audit_bool": audit,
-                "active": 1,
-                "stuimage": image,
-                "fscore": "",
-                "fgrade": "",
-                "stdroster_grade": items,
-            }
-        )
-        roster.insert(ignore_permissions=True)
-    return
+		roster = frappe.get_doc(
+			{
+				"doctype": "Scheduled Course Roster",
+				"course_sc": coursesc_ce,
+				"stuname_roster": student_name,
+				"student": student_ce,
+				"stuemail_rc": student_email,
+				"program_std_scr": program,
+				"audit_bool": audit,
+				"active": 1,
+				"stuimage": image,
+				"fscore": "",
+				"fgrade": "",
+				"stdroster_grade": items,
+			}
+		)
+		roster.insert(ignore_permissions=True)
+	return
 
 
 def copy_data_to_program_enrollment_course(doc, method):
-    cei = doc.program_ce
-    course_lnk = doc.coursesc_ce
-    course = doc.course_data
-    ac_term = doc.academic_term
-    credits = doc.credits
+	cei = doc.program_ce
+	course_lnk = doc.coursesc_ce
+	course = doc.course_data
+	ac_term = doc.academic_term
+	credits = doc.credits
 
-    if cei:
-        program_enrollment_course = frappe.new_doc("Program Enrollment Course")
-        program_enrollment_course.parent = cei
-        program_enrollment_course.parenttype = "Program Enrollment"
-        program_enrollment_course.parentfield = "courses"
-        program_enrollment_course.course = course_lnk
-        program_enrollment_course.course_name = course
-        program_enrollment_course.academic_term = ac_term
-        program_enrollment_course.credits = credits
-        program_enrollment_course.status = "Enrolled"
-        program_enrollment_course.insert(ignore_permissions=True)
+	if cei:
+		program_enrollment_course = frappe.new_doc("Program Enrollment Course")
+		program_enrollment_course.parent = cei
+		program_enrollment_course.parenttype = "Program Enrollment"
+		program_enrollment_course.parentfield = "courses"
+		program_enrollment_course.course = course_lnk
+		program_enrollment_course.course_name = course
+		program_enrollment_course.academic_term = ac_term
+		program_enrollment_course.credits = credits
+		program_enrollment_course.status = "Enrolled"
+		program_enrollment_course.insert(ignore_permissions=True)
 
 
 def update_card(doc, method):
-    # define who needs update
-    existings = frappe.db.sql(
-        """
+	# define who needs update
+	existings = frappe.db.sql(
+		"""
 				SELECT r.name
 				FROM `tabCourse Assess Results Detail` r, `tabScheduled Course Roster` cr
 				WHERE r.parent = cr.name
@@ -3651,33 +3504,33 @@ def update_card(doc, method):
 					AND scac.name = %s
 				)
 				""",
-        (doc.parent, doc.name),
-        as_dict=True,
-    )
-    # The row's own weight is right only without categories or excuses;
-    # gradebook_weights.on_row_update fixes the rest once, after this, rather
-    # than once per card (decisions/096).
-    frappe.flags.seminary_weights_batch = True
-    try:
-        _update_cards(doc, existings)
-    finally:
-        frappe.flags.seminary_weights_batch = False
+		(doc.parent, doc.name),
+		as_dict=True,
+	)
+	# The row's own weight is right only without categories or excuses;
+	# gradebook_weights.on_row_update fixes the rest once, after this, rather
+	# than once per card (decisions/096).
+	frappe.flags.seminary_weights_batch = True
+	try:
+		_update_cards(doc, existings)
+	finally:
+		frappe.flags.seminary_weights_batch = False
 
 
 def _update_cards(doc, existings):
-    if existings:
-        for existing in existings:
-            # Update the existing record
-            changed = frappe.get_doc("Course Assess Results Detail", existing)
-            changed.maximum_score = doc.weight_scac
-            changed.extracredit_card = doc.extracredit_scac
-            changed.maxextrapoints_card = doc.fudgepoints_scac
-            changed.assessment_title = doc.title
-            changed.save()
-    else:
-        # Get need data for new records
-        new_records = frappe.db.sql(
-            """
+	if existings:
+		for existing in existings:
+			# Update the existing record
+			changed = frappe.get_doc("Course Assess Results Detail", existing)
+			changed.maximum_score = doc.weight_scac
+			changed.extracredit_card = doc.extracredit_scac
+			changed.maxextrapoints_card = doc.fudgepoints_scac
+			changed.assessment_title = doc.title
+			changed.save()
+	else:
+		# Get need data for new records
+		new_records = frappe.db.sql(
+			"""
 			SELECT DISTINCT cr.name, cr.student
 			FROM `tabScheduled Course Roster` cr
 			WHERE cr.course_sc = %s
@@ -3687,583 +3540,559 @@ def _update_cards(doc, existings):
 				WHERE r.assessment_criteria = %s
 			)
 			""",
-            (doc.parent, doc.name),
-            as_dict=True,
-        )
+			(doc.parent, doc.name),
+			as_dict=True,
+		)
 
-        for record in new_records:
-            new = frappe.new_doc("Course Assess Results Detail")
-            new.parent = record.name
-            new.parenttype = "Scheduled Course Roster"
-            new.parentfield = "stdroster_grade"
-            new.student_card = record.student
-            new.assessment_criteria = doc.name
-            new.maximum_score = doc.weight_scac
-            new.extracredit_card = doc.extracredit_scac
-            new.maxextrapoints_card = doc.fudgepoints_scac
-            new.assessment_title = doc.title
-            # System side-effect of an assessment criterion the caller was
-            # already allowed to create: Import Course Template runs this for
-            # a Registrar, who holds no create permission on grade cards.
-            new.flags.ignore_permissions = True
-            new.insert()
+		for record in new_records:
+			new = frappe.new_doc("Course Assess Results Detail")
+			new.parent = record.name
+			new.parenttype = "Scheduled Course Roster"
+			new.parentfield = "stdroster_grade"
+			new.student_card = record.student
+			new.assessment_criteria = doc.name
+			new.maximum_score = doc.weight_scac
+			new.extracredit_card = doc.extracredit_scac
+			new.maxextrapoints_card = doc.fudgepoints_scac
+			new.assessment_title = doc.title
+			# System side-effect of an assessment criterion the caller was
+			# already allowed to create: Import Course Template runs this for
+			# a Registrar, who holds no create permission on grade cards.
+			new.flags.ignore_permissions = True
+			new.insert()
 
 
 @frappe.whitelist()
 def insert_cs_assessment(criteria):
-    require_outline_editor()
-    # If criteria is already a dict, use it directly.
-    # If it's a string, then parse it.
-    if isinstance(criteria, str):
-        criteria = json.loads(criteria)
-    require_course_staff(criteria.get("parent"))
+	require_outline_editor()
+	# If criteria is already a dict, use it directly.
+	# If it's a string, then parse it.
+	if isinstance(criteria, str):
+		criteria = json.loads(criteria)
+	require_course_staff(criteria.get("parent"))
 
-    # The section and the title, not the caller's whole payload (p010 H4):
-    # this wrote an arbitrary caller-supplied dict into the shared worker log
-    # at INFO from a whitelisted endpoint.
-    frappe.logger("seminary").debug(
-        "insert_cs_assessment for %s (%s)"
-        % (criteria.get("parent"), criteria.get("type"))
-    )
+	# The section and the title, not the caller's whole payload (p010 H4):
+	# this wrote an arbitrary caller-supplied dict into the shared worker log
+	# at INFO from a whitelisted endpoint.
+	frappe.logger("seminary").debug(
+		"insert_cs_assessment for %s (%s)" % (criteria.get("parent"), criteria.get("type"))
+	)
 
-    # Insert your logic to save the assessment, for example:
-    doc = frappe.get_doc(
-        {
-            "doctype": "Scheduled Course Assess Criteria",
-            "parent": criteria.get("parent"),
-            "parenttype": "Course Schedule",
-            "parentfield": "courseassescrit_sc",
-            "title": criteria.get("title"),
-            "assesscriteria_scac": criteria.get("assesscriteria_scac"),
-            "type": criteria.get("type"),
-            "weight_scac": criteria.get("weight_scac"),
-            "quiz": criteria.get("quiz"),
-            "exam": criteria.get("exam"),
-            "assignment": criteria.get("assignment"),
-            "discussion": criteria.get("discussion"),
-            "oral": criteria.get("oral"),
-            "extracredit_scac": criteria.get("extracredit_scac"),
-            "fudgepoints_scac": criteria.get("fudgepoints_scac"),
-            "category_code": criteria.get("category_code") or None,
-        }
-    )
-    # A bare child insert skips Course Schedule's validate, which is where an
-    # assessment inside a chapter takes that chapter's competency.
-    from seminary.seminary.utils import chapter_competency_for
+	# Insert your logic to save the assessment, for example:
+	doc = frappe.get_doc(
+		{
+			"doctype": "Scheduled Course Assess Criteria",
+			"parent": criteria.get("parent"),
+			"parenttype": "Course Schedule",
+			"parentfield": "courseassescrit_sc",
+			"title": criteria.get("title"),
+			"assesscriteria_scac": criteria.get("assesscriteria_scac"),
+			"type": criteria.get("type"),
+			"weight_scac": criteria.get("weight_scac"),
+			"quiz": criteria.get("quiz"),
+			"exam": criteria.get("exam"),
+			"assignment": criteria.get("assignment"),
+			"discussion": criteria.get("discussion"),
+			"oral": criteria.get("oral"),
+			"extracredit_scac": criteria.get("extracredit_scac"),
+			"fudgepoints_scac": criteria.get("fudgepoints_scac"),
+			"category_code": criteria.get("category_code") or None,
+		}
+	)
+	# A bare child insert skips Course Schedule's validate, which is where an
+	# assessment inside a chapter takes that chapter's competency.
+	from seminary.seminary.utils import chapter_competency_for
 
-    doc.course_competency = chapter_competency_for(doc.parent, doc)
-    doc.insert(ignore_permissions=True)
-    frappe.db.commit()
+	doc.course_competency = chapter_competency_for(doc.parent, doc)
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()
 
-    return {"success": True}
+	return {"success": True}
 
 
 @frappe.whitelist()
 def get_pgmenrollments(name):
-    name = own_or_staff(name)
-    program_enrollments = frappe.get_all(
-        "Program Enrollment",
-        filters={"student": name, "docstatus": 1},
-        fields=[
-            "name",
-            "program",
-            "pgmenrol_active",
-            "enrollment_date",
-            "date_of_conclusion",
-        ],
-        order_by="pgmenrol_active desc, enrollment_date desc",
-    )
-    for pe in program_enrollments:
-        # The portal says the school enrolls them, instead of offering courses.
-        pe["staff_enrolled"] = cint(
-            frappe.db.get_value("Program", pe.program, "staff_enroll_only")
-        )
-    return program_enrollments or []
+	name = own_or_staff(name)
+	program_enrollments = frappe.get_all(
+		"Program Enrollment",
+		filters={"student": name, "docstatus": 1},
+		fields=[
+			"name",
+			"program",
+			"pgmenrol_active",
+			"enrollment_date",
+			"date_of_conclusion",
+		],
+		order_by="pgmenrol_active desc, enrollment_date desc",
+	)
+	for pe in program_enrollments:
+		# The portal says the school enrolls them, instead of offering courses.
+		pe["staff_enrolled"] = cint(frappe.db.get_value("Program", pe.program, "staff_enroll_only"))
+	return program_enrollments or []
 
 
 @frappe.whitelist()
 def get_course_rosters(name):
-    require_course_staff(name, include_registrar=True)
-    course_rosters = []
-    course_rosters = frappe.get_all(
-        "Scheduled Course Roster",
-        filters={"course_sc": name},
-        fields=[
-            "name",
-            "course_sc",
-            "stuname_roster",
-            "stuimage",
-            "student",
-            "stuemail_rc",
-            "program_std_scr",
-            "audit_bool",
-            "active",
-        ],
-    )
-    if not course_rosters:
-        return []
-    # The course grade beside each student (decisions/096a).
-    from seminary.seminary.grade_projection import course_grades
+	require_course_staff(name, include_registrar=True)
+	course_rosters = []
+	course_rosters = frappe.get_all(
+		"Scheduled Course Roster",
+		filters={"course_sc": name},
+		fields=[
+			"name",
+			"course_sc",
+			"stuname_roster",
+			"stuimage",
+			"student",
+			"stuemail_rc",
+			"program_std_scr",
+			"audit_bool",
+			"active",
+		],
+	)
+	if not course_rosters:
+		return []
+	# The course grade beside each student (decisions/096a).
+	from seminary.seminary.grade_projection import course_grades
 
-    grades = course_grades(name, [r.name for r in course_rosters])
-    for r in course_rosters:
-        r["course_grade"] = grades.get(r.name)
-    return course_rosters
+	grades = course_grades(name, [r.name for r in course_rosters])
+	for r in course_rosters:
+		r["course_grade"] = grades.get(r.name)
+	return course_rosters
 
 
 @frappe.whitelist()
 def grade_thisstudent(name):
-    """Desk entry point (scheduled_course_roster.js); server callers use
-    ``_grade_thisstudent`` directly (p006 §2.7)."""
-    require_grader(include_registrar=True)
-    require_course_staff(_roster_section(name), include_registrar=True)
-    return _grade_thisstudent(name)
+	"""Desk entry point (scheduled_course_roster.js); server callers use
+	``_grade_thisstudent`` directly (p006 §2.7)."""
+	require_grader(include_registrar=True)
+	require_course_staff(_roster_section(name), include_registrar=True)
+	return _grade_thisstudent(name)
 
 
 def _grade_thisstudent(name):
-    # The final weights, with drops among every row (decisions/096 section 5),
-    # are set here and saved with the roster; the live refresh stands down.
-    frappe.flags.seminary_grading = True
-    try:
-        return _grade_roster(name)
-    finally:
-        frappe.flags.seminary_grading = False
+	# The final weights, with drops among every row (decisions/096 section 5),
+	# are set here and saved with the roster; the live refresh stands down.
+	frappe.flags.seminary_grading = True
+	try:
+		return _grade_roster(name)
+	finally:
+		frappe.flags.seminary_grading = False
 
 
 def _grade_roster(name):
-    from seminary.seminary import gradebook_weights
+	from seminary.seminary import gradebook_weights
 
-    csr = frappe.get_doc("Scheduled Course Roster", name)
-    cs = csr.course_sc
-    course = frappe.get_doc("Course Schedule", cs)
-    gscale = course.gradesc_cs
-    grading_scale = frappe.get_doc("Grading Scale", gscale)
-    gmax = grading_scale.maxnumgrade
-    detail = csr.stdroster_grade
-    if grading_scale.grscale_type != "Competency-based education":
-        gradebook_weights.apply_to_roster_doc(csr, final=True)
-    if grading_scale.grscale_type == "Points":
-        for row in detail:
-            score = row.rawscore_card
-            maxscore = row.maximum_score
-            named = row.name
-            extracredit = row.extracredit_card
-            if score is not None and extracredit == 0:
-                wscore = round((score / gmax) * maxscore, 2)
-                row.grade = get_grade(grading_scale.name, score)
-                row.score = wscore
+	csr = frappe.get_doc("Scheduled Course Roster", name)
+	cs = csr.course_sc
+	course = frappe.get_doc("Course Schedule", cs)
+	gscale = course.gradesc_cs
+	grading_scale = frappe.get_doc("Grading Scale", gscale)
+	gmax = grading_scale.maxnumgrade
+	detail = csr.stdroster_grade
+	if grading_scale.grscale_type != "Competency-based education":
+		gradebook_weights.apply_to_roster_doc(csr, final=True)
+	if grading_scale.grscale_type == "Points":
+		for row in detail:
+			score = row.rawscore_card
+			maxscore = row.maximum_score
+			named = row.name
+			extracredit = row.extracredit_card
+			if score is not None and extracredit == 0:
+				wscore = round((score / gmax) * maxscore, 2)
+				row.grade = get_grade(grading_scale.name, score)
+				row.score = wscore
 
-            frappe.db.set_value(
-                "Course Assess Results Detail",
-                named,
-                {"grade": row.grade, "score": row.score},
-            )
-        csr.save()
-        return "done"
+			frappe.db.set_value(
+				"Course Assess Results Detail",
+				named,
+				{"grade": row.grade, "score": row.score},
+			)
+		csr.save()
+		return "done"
 
-    if grading_scale.grscale_type == "Competency-based education":
-        # rawscore_card holds a *level* (1-4), not a percentage, so there is no
-        # weighting to apply: the cell's grade is simply the level it landed on.
-        # The competency roll-up that produced it lives in cbe.py (ADR 065).
-        for row in detail:
-            if row.rawscore_card is not None:
-                row.grade = get_grade(grading_scale.name, row.rawscore_card)
-                row.score = row.rawscore_card
-                frappe.db.set_value(
-                    "Course Assess Results Detail",
-                    row.name,
-                    {"grade": row.grade, "score": row.score},
-                )
-        csr.save()
-        return "done"
+	if grading_scale.grscale_type == "Competency-based education":
+		# rawscore_card holds a *level* (1-4), not a percentage, so there is no
+		# weighting to apply: the cell's grade is simply the level it landed on.
+		# The competency roll-up that produced it lives in cbe.py (ADR 065).
+		for row in detail:
+			if row.rawscore_card is not None:
+				row.grade = get_grade(grading_scale.name, row.rawscore_card)
+				row.score = row.rawscore_card
+				frappe.db.set_value(
+					"Course Assess Results Detail",
+					row.name,
+					{"grade": row.grade, "score": row.score},
+				)
+		csr.save()
+		return "done"
 
-    if grading_scale.grscale_type == "Descriptive":
-        # rawscore_card holds the chosen interval's *threshold* — the grade-point
-        # value (Distinction = 4.0), not a percentage. The cell's grade is just
-        # the band that threshold lands in; the weighting happens in
-        # _fgrade_this_std, whose denominator is only known once the whole row is
-        # in hand (ADR 072). graded_card, not the Float, says whether a cell was
-        # graded: an ungraded cell reads back as 0.0 and 0.0 is a real level.
-        for row in detail:
-            if row.graded_card and not row.extracredit_card:
-                row.grade = get_grade(grading_scale.name, row.rawscore_card)
-                row.score = row.rawscore_card
-                frappe.db.set_value(
-                    "Course Assess Results Detail",
-                    row.name,
-                    {"grade": row.grade, "score": row.score},
-                )
-        csr.save()
-        return "done"
+	if grading_scale.grscale_type == "Descriptive":
+		# rawscore_card holds the chosen interval's *threshold* — the grade-point
+		# value (Distinction = 4.0), not a percentage. The cell's grade is just
+		# the band that threshold lands in; the weighting happens in
+		# _fgrade_this_std, whose denominator is only known once the whole row is
+		# in hand (ADR 072). graded_card, not the Float, says whether a cell was
+		# graded: an ungraded cell reads back as 0.0 and 0.0 is a real level.
+		for row in detail:
+			if row.graded_card and not row.extracredit_card:
+				row.grade = get_grade(grading_scale.name, row.rawscore_card)
+				row.score = row.rawscore_card
+				frappe.db.set_value(
+					"Course Assess Results Detail",
+					row.name,
+					{"grade": row.grade, "score": row.score},
+				)
+		csr.save()
+		return "done"
 
 
 def descriptive_fscore(rows):
-    """The weighted mean of a Descriptive roster's graded cells, in threshold units.
+	"""The weighted mean of a Descriptive roster's graded cells, in threshold units.
 
-    Kept free of frappe so the unit trap ADR 072 exists to prevent is testable
-    without a site: the Points branch builds a weighted *sum* out of 0-100, and
-    handing that to `get_grade` against a scale whose bands run 0-4 puts every
-    student in the top one. A mean cannot leave the scale's own units.
+	Kept free of frappe so the unit trap ADR 072 exists to prevent is testable
+	without a site: the Points branch builds a weighted *sum* out of 0-100, and
+	handing that to `get_grade` against a scale whose bands run 0-4 puts every
+	student in the top one. A mean cannot leave the scale's own units.
 
-    `rows` carry `rawscore_card` and `maximum_score` (the assessment's weight),
-    already filtered to graded, non-extra-credit cells. Dividing by the weights
-    actually present renormalizes a section whose weights do not total 100.
-    Returns None when there is nothing to average, which is not a zero.
-    """
-    weight = sum(flt(r["maximum_score"]) for r in rows)
-    if not weight:
-        return None
-    return sum(flt(r["rawscore_card"]) * flt(r["maximum_score"]) for r in rows) / weight
+	`rows` carry `rawscore_card` and `maximum_score` (the assessment's weight),
+	already filtered to graded, non-extra-credit cells. Dividing by the weights
+	actually present renormalizes a section whose weights do not total 100.
+	Returns None when there is nothing to average, which is not a zero.
+	"""
+	weight = sum(flt(r["maximum_score"]) for r in rows)
+	if not weight:
+		return None
+	return sum(flt(r["rawscore_card"]) * flt(r["maximum_score"]) for r in rows) / weight
 
 
 def get_gradepass(grading_scale, percentage):
-    """Returns Pass/Fail based on the Grading Scale and Score.
+	"""Returns Pass/Fail based on the Grading Scale and Score.
 
-    :param Grading Scale: Grading Scale
-    :param Percentage: Score Percentage Percentage
-    """
-    return _resolve_interval(grading_scale, percentage, "grade_pass")
+	:param Grading Scale: Grading Scale
+	:param Percentage: Score Percentage Percentage
+	"""
+	return _resolve_interval(grading_scale, percentage, "grade_pass")
 
 
 @frappe.whitelist()
 def fgrade_this_std(name):
-    """Desk entry point (scheduled_course_roster.js); server callers use
-    ``_fgrade_this_std`` directly (p006 §2.7)."""
-    require_grader(include_registrar=True)
-    require_course_staff(_roster_section(name), include_registrar=True)
-    return _fgrade_this_std(name)
+	"""Desk entry point (scheduled_course_roster.js); server callers use
+	``_fgrade_this_std`` directly (p006 §2.7)."""
+	require_grader(include_registrar=True)
+	require_course_staff(_roster_section(name), include_registrar=True)
+	return _fgrade_this_std(name)
 
 
 def _roster_section(roster_name):
-    return frappe.db.get_value("Scheduled Course Roster", roster_name, "course_sc")
+	return frappe.db.get_value("Scheduled Course Roster", roster_name, "course_sc")
 
 
 def _require_send_scope(course_schedule):
-    """Registrar, chair and manager send grades anywhere; an Instructor only
-    for a section they are listed on (p007 §2.4)."""
-    if set(frappe.get_roles()) & SCHOOL_ROLES:
-        return
-    require_course_staff(course_schedule)
+	"""Registrar, chair and manager send grades anywhere; an Instructor only
+	for a section they are listed on (p007 §2.4)."""
+	if set(frappe.get_roles()) & SCHOOL_ROLES:
+		return
+	require_course_staff(course_schedule)
 
 
 def _fgrade_this_std(name):
-    csr = frappe.get_doc("Scheduled Course Roster", name)
-    cs = csr.course_sc
-    course = frappe.get_doc("Course Schedule", cs)
-    gscale = course.gradesc_cs
-    grading_scale = frappe.get_doc("Grading Scale", gscale)
-    if grading_scale.grscale_type == "Points":
-        fscore1 = frappe.db.sql(
-            """select sum(score) from `tabCourse Assess Results Detail` where parent = %s""",
-            (name),
-        )
-        fscore1 = fscore1[0][0] if fscore1 and fscore1[0][0] is not None else 0
-        fscore2 = frappe.db.sql(
-            """select sum(actualextrapt_card) from `tabCourse Assess Results Detail` where extracredit_card = 1 and parent = %s""",
-            (name),
-        )
-        fscore2 = fscore2[0][0] if fscore2 and fscore2[0][0] is not None else 0
-        fscore = fscore1 + fscore2
-        if fscore >= 100:
-            fscore = 100
-        else:
-            fscore = fscore
-        frappe.db.set_value("Scheduled Course Roster", name, "fscore", fscore)
-        fgrade = get_grade(grading_scale.name, fscore)
-        fgradepass = get_gradepass(grading_scale.name, fscore)
-        # Registrar override: fail for unexcused absences regardless of score.
-        if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
-            fgrade = grading_scale.fa_code
-            fgradepass = "Fail"
-        frappe.db.set_value(
-            "Scheduled Course Roster",
-            name,
-            {"fgrade": fgrade, "fgradepass": fgradepass},
-        )
-        return "done"
+	csr = frappe.get_doc("Scheduled Course Roster", name)
+	cs = csr.course_sc
+	course = frappe.get_doc("Course Schedule", cs)
+	gscale = course.gradesc_cs
+	grading_scale = frappe.get_doc("Grading Scale", gscale)
+	if grading_scale.grscale_type == "Points":
+		fscore1 = frappe.db.sql(
+			"""select sum(score) from `tabCourse Assess Results Detail` where parent = %s""",
+			(name),
+		)
+		fscore1 = fscore1[0][0] if fscore1 and fscore1[0][0] is not None else 0
+		fscore2 = frappe.db.sql(
+			"""select sum(actualextrapt_card) from `tabCourse Assess Results Detail` where extracredit_card = 1 and parent = %s""",
+			(name),
+		)
+		fscore2 = fscore2[0][0] if fscore2 and fscore2[0][0] is not None else 0
+		fscore = fscore1 + fscore2
+		if fscore >= 100:
+			fscore = 100
+		else:
+			fscore = fscore
+		frappe.db.set_value("Scheduled Course Roster", name, "fscore", fscore)
+		fgrade = get_grade(grading_scale.name, fscore)
+		fgradepass = get_gradepass(grading_scale.name, fscore)
+		# Registrar override: fail for unexcused absences regardless of score.
+		if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+			fgrade = grading_scale.fa_code
+			fgradepass = "Fail"
+		frappe.db.set_value(
+			"Scheduled Course Roster",
+			name,
+			{"fgrade": fgrade, "fgradepass": fgradepass},
+		)
+		return "done"
 
-    if grading_scale.grscale_type == "Competency-based education":
-        from seminary.seminary import cbe
+	if grading_scale.grscale_type == "Competency-based education":
+		from seminary.seminary import cbe
 
-        # The course's standing is its competencies combined, not a sum of
-        # weighted percentages. Each Competency Result has already been through
-        # the ADR 065 section 6a pipeline, so this only combines them.
-        cbe.rollup_all_for_roster(csr)
-        results = frappe.get_all(
-            "Competency Result",
-            filters={"student": csr.student, "course_schedule": cs},
-            fields=["final_value"],
-        )
-        values = [r.final_value for r in results if r.final_value is not None]
-        framework = cbe.framework_doc(cs)
-        fscore = (
-            cbe.aggregate(
-                values,
-                framework.aggregation_method if framework else "Average",
-                None,
-                framework.rounding if framework else None,
-            )
-            if values
-            else None
-        )
-        fgrade = get_grade(grading_scale.name, fscore) if fscore is not None else None
-        fgradepass = (
-            get_gradepass(grading_scale.name, fscore) if fscore is not None else None
-        )
-        if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
-            fgrade = grading_scale.fa_code
-            fgradepass = "Fail"
-        frappe.db.set_value(
-            "Scheduled Course Roster",
-            name,
-            {"fscore": fscore, "fgrade": fgrade, "fgradepass": fgradepass},
-        )
-        return "done"
+		# The course's standing is its competencies combined, not a sum of
+		# weighted percentages. Each Competency Result has already been through
+		# the ADR 065 section 6a pipeline, so this only combines them.
+		cbe.rollup_all_for_roster(csr)
+		results = frappe.get_all(
+			"Competency Result",
+			filters={"student": csr.student, "course_schedule": cs},
+			fields=["final_value"],
+		)
+		values = [r.final_value for r in results if r.final_value is not None]
+		framework = cbe.framework_doc(cs)
+		fscore = (
+			cbe.aggregate(
+				values,
+				framework.aggregation_method if framework else "Average",
+				None,
+				framework.rounding if framework else None,
+			)
+			if values
+			else None
+		)
+		fgrade = get_grade(grading_scale.name, fscore) if fscore is not None else None
+		fgradepass = get_gradepass(grading_scale.name, fscore) if fscore is not None else None
+		if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+			fgrade = grading_scale.fa_code
+			fgradepass = "Fail"
+		frappe.db.set_value(
+			"Scheduled Course Roster",
+			name,
+			{"fscore": fscore, "fgrade": fgrade, "fgradepass": fgradepass},
+		)
+		return "done"
 
-    if grading_scale.grscale_type == "Descriptive":
-        # A narrative scale's interval threshold is the grade-point value
-        # (Distinction = 4.0), not a percentage, so the final is a weighted
-        # *mean* in threshold units — not the Points branch's weighted sum. A
-        # 0-100 number resolved against 0-4 bands would put every student in the
-        # top band (ADR 072). Dividing by the weights actually present also
-        # renormalizes a section whose weights do not total 100.
-        rows = frappe.get_all(
-            "Course Assess Results Detail",
-            filters={"parent": name, "graded_card": 1, "extracredit_card": 0},
-            fields=["rawscore_card", "maximum_score"],
-        )
-        # An ungraded assessment leaves the denominator as well as the numerator:
-        # a mean has a denominator, unlike the Points sum that can treat a
-        # missing score as 0. Extra credit has no meaning on a narrative band and
-        # is filtered out by the query above.
-        fscore = descriptive_fscore(rows)
-        fgrade = get_grade(grading_scale.name, fscore) if fscore is not None else None
-        fgradepass = (
-            get_gradepass(grading_scale.name, fscore) if fscore is not None else None
-        )
-        if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
-            fgrade = grading_scale.fa_code
-            fgradepass = "Fail"
-        frappe.db.set_value(
-            "Scheduled Course Roster",
-            name,
-            {"fscore": fscore, "fgrade": fgrade, "fgradepass": fgradepass},
-        )
-        return "done"
+	if grading_scale.grscale_type == "Descriptive":
+		# A narrative scale's interval threshold is the grade-point value
+		# (Distinction = 4.0), not a percentage, so the final is a weighted
+		# *mean* in threshold units — not the Points branch's weighted sum. A
+		# 0-100 number resolved against 0-4 bands would put every student in the
+		# top band (ADR 072). Dividing by the weights actually present also
+		# renormalizes a section whose weights do not total 100.
+		rows = frappe.get_all(
+			"Course Assess Results Detail",
+			filters={"parent": name, "graded_card": 1, "extracredit_card": 0},
+			fields=["rawscore_card", "maximum_score"],
+		)
+		# An ungraded assessment leaves the denominator as well as the numerator:
+		# a mean has a denominator, unlike the Points sum that can treat a
+		# missing score as 0. Extra credit has no meaning on a narrative band and
+		# is filtered out by the query above.
+		fscore = descriptive_fscore(rows)
+		fgrade = get_grade(grading_scale.name, fscore) if fscore is not None else None
+		fgradepass = get_gradepass(grading_scale.name, fscore) if fscore is not None else None
+		if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+			fgrade = grading_scale.fa_code
+			fgradepass = "Fail"
+		frappe.db.set_value(
+			"Scheduled Course Roster",
+			name,
+			{"fscore": fscore, "fgrade": fgrade, "fgradepass": fgradepass},
+		)
+		return "done"
 
-    if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
-        # Non-points scale: still honor the FA override.
-        frappe.db.set_value(
-            "Scheduled Course Roster",
-            name,
-            {"fgrade": grading_scale.fa_code, "fgradepass": "Fail"},
-        )
-        return "done"
+	if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+		# Non-points scale: still honor the FA override.
+		frappe.db.set_value(
+			"Scheduled Course Roster",
+			name,
+			{"fgrade": grading_scale.fa_code, "fgradepass": "Fail"},
+		)
+		return "done"
 
 
 FA_OVERRIDE_ROLES = {"Registrar", "Program Chair", "Seminary Manager", "System Manager"}
 
 
 def _assert_fa_roles():
-    if not (FA_OVERRIDE_ROLES & set(frappe.get_roles(frappe.session.user))):
-        frappe.throw(
-            _("Only the registrar or Program Chair can fail a student for absences."),
-            frappe.PermissionError,
-        )
+	if not (FA_OVERRIDE_ROLES & set(frappe.get_roles(frappe.session.user))):
+		frappe.throw(
+			_("Only the registrar or Program Chair can fail a student for absences."),
+			frappe.PermissionError,
+		)
 
 
 def _pe_and_pec(roster):
-    """Resolve (program_enrollment, program_enrollment_course) for a roster,
-    scoped to the roster's own program so it stays correct when a student is
-    enrolled in more than one program."""
-    pe = frappe.db.get_value(
-        "Program Enrollment",
-        {"student": roster.student, "program": roster.program_std_scr},
-        "name",
-    )
-    pec = (
-        frappe.db.get_value(
-            "Program Enrollment Course",
-            {"parent": pe, "course": roster.course_sc},
-            "name",
-        )
-        if pe
-        else None
-    )
-    return pe, pec
+	"""Resolve (program_enrollment, program_enrollment_course) for a roster,
+	scoped to the roster's own program so it stays correct when a student is
+	enrolled in more than one program."""
+	pe = frappe.db.get_value(
+		"Program Enrollment",
+		{"student": roster.student, "program": roster.program_std_scr},
+		"name",
+	)
+	pec = (
+		frappe.db.get_value(
+			"Program Enrollment Course",
+			{"parent": pe, "course": roster.course_sc},
+			"name",
+		)
+		if pe
+		else None
+	)
+	return pe, pec
 
 
 @frappe.whitelist()
 def fail_for_absence(name):
-    """Registrar action: fail a student for unexcused absences despite otherwise
-    passing scores. Sets the sticky `failed_for_absence` flag (so re-grading keeps
-    the FA), forces the roster grade to the Grading Scale's FA code + Fail, and
-    propagates Fail to the Program Enrollment Course (transcript), removing the
-    course's credits from the enrollment total if it had been counted as passed."""
-    from seminary.seminary.absence_decisions import FAIL, record
+	"""Registrar action: fail a student for unexcused absences despite otherwise
+	passing scores. Sets the sticky `failed_for_absence` flag (so re-grading keeps
+	the FA), forces the roster grade to the Grading Scale's FA code + Fail, and
+	propagates Fail to the Program Enrollment Course (transcript), removing the
+	course's credits from the enrollment total if it had been counted as passed."""
+	from seminary.seminary.absence_decisions import FAIL, record
 
-    _assert_fa_roles()
-    if frappe.db.get_value("Scheduled Course Roster", name, "failed_for_absence"):
-        return {"failed_for_absence": 1}
-    record(name, FAIL)
-    return {
-        "failed_for_absence": 1,
-        "fa_code": frappe.db.get_value("Scheduled Course Roster", name, "fgrade"),
-    }
+	_assert_fa_roles()
+	if frappe.db.get_value("Scheduled Course Roster", name, "failed_for_absence"):
+		return {"failed_for_absence": 1}
+	record(name, FAIL)
+	return {
+		"failed_for_absence": 1,
+		"fa_code": frappe.db.get_value("Scheduled Course Roster", name, "fgrade"),
+	}
 
 
 def _fail_for_absence(name):
-    """The FA itself, for the registrar's action and the instructor's decision
-    at Send Grades (ADR 081). Callers gate."""
-    roster = frappe.get_doc("Scheduled Course Roster", name)
-    if roster.failed_for_absence:
-        return {"failed_for_absence": 1}
+	"""The FA itself, for the registrar's action and the instructor's decision
+	at Send Grades (ADR 081). Callers gate."""
+	roster = frappe.get_doc("Scheduled Course Roster", name)
+	if roster.failed_for_absence:
+		return {"failed_for_absence": 1}
 
-    scale = frappe.db.get_value("Course Schedule", roster.course_sc, "gradesc_cs")
-    fa_code = frappe.db.get_value("Grading Scale", scale, "fa_code") if scale else None
-    if not fa_code:
-        frappe.throw(
-            _(
-                "Set a 'Code for Failure for Absences' on the course's Grading Scale first."
-            )
-        )
-    fa_gpa = frappe.db.get_value("Grading Scale", scale, "fa_gpa") or 0
+	scale = frappe.db.get_value("Course Schedule", roster.course_sc, "gradesc_cs")
+	fa_code = frappe.db.get_value("Grading Scale", scale, "fa_code") if scale else None
+	if not fa_code:
+		frappe.throw(_("Set a 'Code for Failure for Absences' on the course's Grading Scale first."))
+	fa_gpa = frappe.db.get_value("Grading Scale", scale, "fa_gpa") or 0
 
-    frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 1)
-    _fgrade_this_std(name)  # now forces FA / Fail on the roster
+	frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 1)
+	_fgrade_this_std(name)  # now forces FA / Fail on the roster
 
-    # Always reflect FA/Fail on the transcript (Program Enrollment Course) — the
-    # student may already be graded, or graded-but-skipped (still Enrolled). Only
-    # touch the denormalized credit total for *finalized* rosters (active=0);
-    # for still-active ones Send Grades is the authority and would double-count.
-    pe, pec = _pe_and_pec(roster)
-    if pec:
-        prev_status = frappe.db.get_value("Program Enrollment Course", pec, "status")
-        frappe.db.set_value(
-            "Program Enrollment Course",
-            pec,
-            {
-                "pec_finalgradecode": fa_code,
-                "status": "Fail",
-                "count_in_gpa": 1 if fa_gpa else 0,
-            },
-        )
-        if roster.active == 0 and prev_status == "Pass":
-            credits = (
-                frappe.db.get_value("Program Enrollment Course", pec, "credits") or 0
-            )
-            total = frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
-            frappe.db.set_value(
-                "Program Enrollment",
-                pe,
-                "totalcredits",
-                max(0, int(total) - int(credits)),
-            )
+	# Always reflect FA/Fail on the transcript (Program Enrollment Course) — the
+	# student may already be graded, or graded-but-skipped (still Enrolled). Only
+	# touch the denormalized credit total for *finalized* rosters (active=0);
+	# for still-active ones Send Grades is the authority and would double-count.
+	pe, pec = _pe_and_pec(roster)
+	if pec:
+		prev_status = frappe.db.get_value("Program Enrollment Course", pec, "status")
+		frappe.db.set_value(
+			"Program Enrollment Course",
+			pec,
+			{
+				"pec_finalgradecode": fa_code,
+				"status": "Fail",
+				"count_in_gpa": 1 if fa_gpa else 0,
+			},
+		)
+		if roster.active == 0 and prev_status == "Pass":
+			credits = frappe.db.get_value("Program Enrollment Course", pec, "credits") or 0
+			total = frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
+			frappe.db.set_value(
+				"Program Enrollment",
+				pe,
+				"totalcredits",
+				max(0, int(total) - int(credits)),
+			)
 
-    roster.add_comment(
-        "Info",
-        _("Failed for absences ({0}) by {1}.").format(fa_code, frappe.session.user),
-    )
-    frappe.db.commit()
-    return {"failed_for_absence": 1, "fa_code": fa_code}
+	roster.add_comment(
+		"Info",
+		_("Failed for absences ({0}) by {1}.").format(fa_code, frappe.session.user),
+	)
+	frappe.db.commit()
+	return {"failed_for_absence": 1, "fa_code": fa_code}
 
 
 @frappe.whitelist()
 def undo_fail_for_absence(name, reason=None):
-    """Reverse a Fail-for-Absence: clear the flag, recompute the real grade from
-    scores, and restore the Program Enrollment Course (and credits, if the course
-    now passes and grades were already finalized). Recorded as the registrar
-    keeping the grade (ADR 081)."""
-    from seminary.seminary.absence_decisions import KEEP, record
+	"""Reverse a Fail-for-Absence: clear the flag, recompute the real grade from
+	scores, and restore the Program Enrollment Course (and credits, if the course
+	now passes and grades were already finalized). Recorded as the registrar
+	keeping the grade (ADR 081)."""
+	from seminary.seminary.absence_decisions import KEEP, record
 
-    _assert_fa_roles()
-    roster = frappe.get_doc("Scheduled Course Roster", name)
-    if not roster.failed_for_absence:
-        return {"failed_for_absence": 0}
-    record(name, KEEP, reason)
+	_assert_fa_roles()
+	roster = frappe.get_doc("Scheduled Course Roster", name)
+	if not roster.failed_for_absence:
+		return {"failed_for_absence": 0}
+	record(name, KEEP, reason)
 
-    grades_sent = roster.active == 0
-    frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 0)
-    _grade_thisstudent(name)
-    _fgrade_this_std(name)
-    new = frappe.db.get_value(
-        "Scheduled Course Roster", name, ["fgrade", "fgradepass"], as_dict=True
-    )
+	grades_sent = roster.active == 0
+	frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 0)
+	_grade_thisstudent(name)
+	_fgrade_this_std(name)
+	new = frappe.db.get_value("Scheduled Course Roster", name, ["fgrade", "fgradepass"], as_dict=True)
 
-    pe, pec = _pe_and_pec(roster)
-    if pec:
-        prev_status = frappe.db.get_value("Program Enrollment Course", pec, "status")
-        if grades_sent:
-            # Finalized: restore the recomputed grade and re-add credits if it
-            # now passes (FA had it as Fail).
-            frappe.db.set_value(
-                "Program Enrollment Course",
-                pec,
-                {"pec_finalgradecode": new.fgrade, "status": new.fgradepass},
-            )
-            if new.fgradepass == "Pass" and prev_status != "Pass":
-                credits = (
-                    frappe.db.get_value("Program Enrollment Course", pec, "credits")
-                    or 0
-                )
-                total = (
-                    frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
-                )
-                frappe.db.set_value(
-                    "Program Enrollment", pe, "totalcredits", int(total) + int(credits)
-                )
-        else:
-            # Not yet graded: revert the PEC to its pre-grade default so Send
-            # Grades can grade it normally later.
-            frappe.db.set_value(
-                "Program Enrollment Course",
-                pec,
-                {"pec_finalgradecode": "", "status": "Enrolled"},
-            )
+	pe, pec = _pe_and_pec(roster)
+	if pec:
+		prev_status = frappe.db.get_value("Program Enrollment Course", pec, "status")
+		if grades_sent:
+			# Finalized: restore the recomputed grade and re-add credits if it
+			# now passes (FA had it as Fail).
+			frappe.db.set_value(
+				"Program Enrollment Course",
+				pec,
+				{"pec_finalgradecode": new.fgrade, "status": new.fgradepass},
+			)
+			if new.fgradepass == "Pass" and prev_status != "Pass":
+				credits = frappe.db.get_value("Program Enrollment Course", pec, "credits") or 0
+				total = frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
+				frappe.db.set_value("Program Enrollment", pe, "totalcredits", int(total) + int(credits))
+		else:
+			# Not yet graded: revert the PEC to its pre-grade default so Send
+			# Grades can grade it normally later.
+			frappe.db.set_value(
+				"Program Enrollment Course",
+				pec,
+				{"pec_finalgradecode": "", "status": "Enrolled"},
+			)
 
-    roster.add_comment(
-        "Info", _("Failure-for-absences cleared by {0}.").format(frappe.session.user)
-    )
-    frappe.db.commit()
-    return {"failed_for_absence": 0}
+	roster.add_comment("Info", _("Failure-for-absences cleared by {0}.").format(frappe.session.user))
+	frappe.db.commit()
+	return {"failed_for_absence": 0}
 
 
 # Sending grades writes transcript rows, awards credits and closes a section.
 # It had no role check at all before ADR 065 — any authenticated user, a student
 # included, could call it.
 GRADE_SEND_ROLES = {
-    "Instructor",
-    "Program Chair",
-    "Seminary Manager",
-    "Registrar",
-    "System Manager",
+	"Instructor",
+	"Program Chair",
+	"Seminary Manager",
+	"Registrar",
+	"System Manager",
 }
 
 
 def _assert_may_send_grades():
-    if not (GRADE_SEND_ROLES & set(frappe.get_roles(frappe.session.user))):
-        frappe.throw(
-            _("Only teaching staff and the registrar can send grades."),
-            frappe.PermissionError,
-        )
+	if not (GRADE_SEND_ROLES & set(frappe.get_roles(frappe.session.user))):
+		frappe.throw(
+			_("Only teaching staff and the registrar can send grades."),
+			frappe.PermissionError,
+		)
 
 
 def _ungraded_roster_count(course_schedule, rosters=None):
-    """How many still-active students have an ungraded cell.
+	"""How many still-active students have an ungraded cell.
 
-    Already-finalized students are excluded for free: finalize_roster clears
-    `active`, and this counts only active rosters.
-    """
-    params = [course_schedule]
-    scope = ""
-    if rosters is not None:
-        if not rosters:
-            return 0
-        scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
-        params.extend(rosters)
+	Already-finalized students are excluded for free: finalize_roster clears
+	`active`, and this counts only active rosters.
+	"""
+	params = [course_schedule]
+	scope = ""
+	if rosters is not None:
+		if not rosters:
+			return 0
+		scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
+		params.extend(rosters)
 
-    rows = frappe.db.sql(
-        """
+	rows = frappe.db.sql(
+		"""
         SELECT COUNT(DISTINCT scr.name)
         FROM `tabCourse Assess Results Detail` card
         JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
@@ -4278,46 +4107,46 @@ def _ungraded_roster_count(course_schedule, rosters=None):
           AND COALESCE(card.graded_card, 0) = 0
           AND COALESCE(card.excused, 0) = 0
         """
-        + scope,  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
-        params,
-    )
-    return rows[0][0] if rows else 0
+		+ scope,  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
+		params,
+	)
+	return rows[0][0] if rows else 0
 
 
 def _assert_cbe_gradable(course_schedule, rosters=None):
-    """Name what blocks a competency section's send (decisions/090).
+	"""Name what blocks a competency section's send (decisions/090).
 
-    The numeric message ("fill in 0") cannot be followed here: a level is
-    recorded on the activity, and an assessment with no competency cannot be
-    graded at all, so its result card would block the send forever.
-    """
-    from seminary.seminary import cbe
+	The numeric message ("fill in 0") cannot be followed here: a level is
+	recorded on the activity, and an assessment with no competency cannot be
+	graded at all, so its result card would block the send forever.
+	"""
+	from seminary.seminary import cbe
 
-    if not cbe.framework_for(course_schedule):
-        return
-    unmapped = frappe.get_all(
-        "Scheduled Course Assess Criteria",
-        filters={"parent": course_schedule, "course_competency": ("is", "not set")},
-        pluck="title",
-    )
-    if unmapped:
-        frappe.throw(
-            _(
-                "These assessments have no competency, so they cannot be graded: "
-                "{0}. Choose a competency for each in Configure Assessments, or "
-                "remove it."
-            ).format(", ".join(t or _("(untitled)") for t in unmapped))
-        )
+	if not cbe.framework_for(course_schedule):
+		return
+	unmapped = frappe.get_all(
+		"Scheduled Course Assess Criteria",
+		filters={"parent": course_schedule, "course_competency": ("is", "not set")},
+		pluck="title",
+	)
+	if unmapped:
+		frappe.throw(
+			_(
+				"These assessments have no competency, so they cannot be graded: "
+				"{0}. Choose a competency for each in Configure Assessments, or "
+				"remove it."
+			).format(", ".join(t or _("(untitled)") for t in unmapped))
+		)
 
-    params = [course_schedule]
-    scope = ""
-    if rosters is not None:
-        if not rosters:
-            return
-        scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
-        params.extend(rosters)
-    ungraded = frappe.db.sql(
-        """
+	params = [course_schedule]
+	scope = ""
+	if rosters is not None:
+		if not rosters:
+			return
+		scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
+		params.extend(rosters)
+	ungraded = frappe.db.sql(
+		"""
         SELECT scr.stuname_roster, scac.title
         FROM `tabCourse Assess Results Detail` card
         JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
@@ -4333,628 +4162,603 @@ def _assert_cbe_gradable(course_schedule, rosters=None):
           AND COALESCE(cei.course_cancelled, 0) = 0
           AND COALESCE(card.graded_card, 0) = 0
         """
-        + scope  # nosec B608 -- placeholders only, never a request value
-        + " ORDER BY scr.stuname_roster, scac.idx",
-        params,
-    )
-    if ungraded:
-        frappe.throw(
-            _("Cannot send grades yet. Not graded:")
-            + "<br>"
-            + "<br>".join(
-                "{0}: {1}".format(s, t or _("(untitled)")) for s, t in ungraded[:20]
-            )
-        )
+		+ scope  # nosec B608 -- placeholders only, never a request value
+		+ " ORDER BY scr.stuname_roster, scac.idx",
+		params,
+	)
+	if ungraded:
+		frappe.throw(
+			_("Cannot send grades yet. Not graded:")
+			+ "<br>"
+			+ "<br>".join("{0}: {1}".format(s, t or _("(untitled)")) for s, t in ungraded[:20])
+		)
 
 
 def _assert_evaluators_finished(course_schedule, roster_names):
-    """Block a send while a required evaluator still owes a grade (ADR 065).
+	"""Block a send while a required evaluator still owes a grade (ADR 065).
 
-    Named rather than counted: an instructor told only that "someone has not
-    graded" has to go hunting, which is the delay the whole mentor-resolution
-    design exists to remove.
-    """
-    from seminary.seminary import cbe
+	Named rather than counted: an instructor told only that "someone has not
+	graded" has to go hunting, which is the delay the whole mentor-resolution
+	design exists to remove.
+	"""
+	from seminary.seminary import cbe
 
-    if not cbe.framework_for(course_schedule):
-        return
-    outstanding = []
-    for name in roster_names:
-        outstanding.extend(m.message for m in cbe.missing_required_evaluators(name))
-    if outstanding:
-        frappe.throw(
-            _("Cannot send grades yet:") + "<br>" + "<br>".join(outstanding[:20])
-        )
+	if not cbe.framework_for(course_schedule):
+		return
+	outstanding = []
+	for name in roster_names:
+		outstanding.extend(m.message for m in cbe.missing_required_evaluators(name))
+	if outstanding:
+		frappe.throw(_("Cannot send grades yet:") + "<br>" + "<br>".join(outstanding[:20]))
 
 
 def _assert_pdp_complete(course_schedule, roster_names):
-    """Block a send while a required development plan is missing (ADR 065 §8).
+	"""Block a send while a required development plan is missing (ADR 065 §8).
 
-    Two settings, deliberately separate: `require_pdp` says the plan is part of
-    the course, `pdp_blocks_completion` says the course cannot close without it.
-    A school can ask for the plan and still not hold a grade hostage to it, and
-    most will — so only the second gate blocks, and it names the students rather
-    than reporting a count.
-    """
-    from seminary.seminary import cbe
+	Two settings, deliberately separate: `require_pdp` says the plan is part of
+	the course, `pdp_blocks_completion` says the course cannot close without it.
+	A school can ask for the plan and still not hold a grade hostage to it, and
+	most will — so only the second gate blocks, and it names the students rather
+	than reporting a count.
+	"""
+	from seminary.seminary import cbe
 
-    framework = cbe.framework_doc(course_schedule)
-    if not framework or not cint(framework.pdp_blocks_completion):
-        return
+	framework = cbe.framework_doc(course_schedule)
+	if not framework or not cint(framework.pdp_blocks_completion):
+		return
 
-    missing = []
-    for name in roster_names:
-        if frappe.db.exists(
-            "Personal Development Plan",
-            {"roster": name, "status": ("!=", "Draft")},
-        ):
-            continue
-        missing.append(
-            frappe.db.get_value("Scheduled Course Roster", name, "stuname_roster")
-            or name
-        )
-    if missing:
-        frappe.throw(
-            _("These students have not submitted a development plan yet:")
-            + "<br>"
-            + "<br>".join(missing[:20])
-        )
+	missing = []
+	for name in roster_names:
+		if frappe.db.exists(
+			"Personal Development Plan",
+			{"roster": name, "status": ("!=", "Draft")},
+		):
+			continue
+		missing.append(frappe.db.get_value("Scheduled Course Roster", name, "stuname_roster") or name)
+	if missing:
+		frappe.throw(
+			_("These students have not submitted a development plan yet:")
+			+ "<br>"
+			+ "<br>".join(missing[:20])
+		)
 
 
 def _assert_grade_computed(roster_name, fgrade, fgradepass):
-    """Refuse to finalize a roster the grading engine produced no grade for.
+	"""Refuse to finalize a roster the grading engine produced no grade for.
 
-    Credits are awarded unless ``fgradepass`` is exactly "Fail", so a blank one
-    awards credit against an empty transcript row. That is how the missing
-    Descriptive calculation path stayed silent for as long as it did: the scale
-    had no branch, nothing was written, and finalization carried on (ADR 072).
-    """
-    if fgrade and fgradepass:
-        return
-    frappe.throw(
-        _(
-            "Cannot send grades for {0}: the grading scale produced no final "
-            "grade. Check the section's Grading Scale — every interval needs a "
-            "Pass/Fail value, and the scale type needs a calculation path."
-        ).format(roster_name)
-    )
+	Credits are awarded unless ``fgradepass`` is exactly "Fail", so a blank one
+	awards credit against an empty transcript row. That is how the missing
+	Descriptive calculation path stayed silent for as long as it did: the scale
+	had no branch, nothing was written, and finalization carried on (ADR 072).
+	"""
+	if fgrade and fgradepass:
+		return
+	frappe.throw(
+		_(
+			"Cannot send grades for {0}: the grading scale produced no final "
+			"grade. Check the section's Grading Scale — every interval needs a "
+			"Pass/Fail value, and the scale type needs a calculation path."
+		).format(roster_name)
+	)
 
 
 def finalize_roster(roster_name):
-    """Finalize one student: grade, write the transcript row, award credits.
+	"""Finalize one student: grade, write the transcript row, award credits.
 
-    Extracted so send_grades and send_selected_grades cannot drift apart.
+	Extracted so send_grades and send_selected_grades cannot drift apart.
 
-    Idempotent by construction: it acts only on a roster that is still `active`
-    and clears the flag as its last step. That matters more than it looks —
-    credits are *accumulated* into Program Enrollment.totalcredits rather than
-    recomputed, so a second pass over the same roster would silently double a
-    student's credit total.
+	Idempotent by construction: it acts only on a roster that is still `active`
+	and clears the flag as its last step. That matters more than it looks —
+	credits are *accumulated* into Program Enrollment.totalcredits rather than
+	recomputed, so a second pass over the same roster would silently double a
+	student's credit total.
 
-    Returns the Program Enrollment it touched, or None when there was nothing
-    to do.
-    """
-    record = frappe.db.get_value(
-        "Scheduled Course Roster",
-        roster_name,
-        ["name", "course_sc", "student", "program_std_scr", "audit_bool", "active"],
-        as_dict=True,
-    )
-    if not record or record.audit_bool or not record.active:
-        return None
+	Returns the Program Enrollment it touched, or None when there was nothing
+	to do.
+	"""
+	record = frappe.db.get_value(
+		"Scheduled Course Roster",
+		roster_name,
+		["name", "course_sc", "student", "program_std_scr", "audit_bool", "active"],
+		as_dict=True,
+	)
+	if not record or record.audit_bool or not record.active:
+		return None
 
-    pe = frappe.db.get_value(
-        "Program Enrollment",
-        {"student": record.student, "program": record.program_std_scr},
-        "name",
-    )
-    if not pe:
-        return None
-    totalcredits = frappe.db.get_value("Program Enrollment", pe, "totalcredits")
+	pe = frappe.db.get_value(
+		"Program Enrollment",
+		{"student": record.student, "program": record.program_std_scr},
+		"name",
+	)
+	if not pe:
+		return None
+	totalcredits = frappe.db.get_value("Program Enrollment", pe, "totalcredits")
 
-    _grade_thisstudent(record.name)
-    _fgrade_this_std(record.name)
-    fscore, fgrade, fgradepass = frappe.db.get_value(
-        "Scheduled Course Roster", record.name, ["fscore", "fgrade", "fgradepass"]
-    )
-    _assert_grade_computed(record.name, fgrade, fgradepass)
+	_grade_thisstudent(record.name)
+	_fgrade_this_std(record.name)
+	fscore, fgrade, fgradepass = frappe.db.get_value(
+		"Scheduled Course Roster", record.name, ["fscore", "fgrade", "fgradepass"]
+	)
+	_assert_grade_computed(record.name, fgrade, fgradepass)
 
-    pec = frappe.db.get_value(
-        "Program Enrollment Course",
-        {"parent": pe, "course": record.course_sc},
-        "name",
-    )
-    if not pec:
-        return None
-    credits = frappe.db.get_value("Program Enrollment Course", pec, "credits")
-    if fgradepass == "Fail":
-        credits = 0
-    # Leveling / remedial courses (ADR 058) never count toward the degree.
-    elif frappe.db.exists(
-        "Program Enrollment Leveling",
-        {"parent": pe, "course": record.course_sc, "kind": "Leveling Course"},
-    ):
-        credits = 0
-    newcredits = (int(totalcredits) if totalcredits else 0) + (
-        int(credits) if credits is not None else 0
-    )
+	pec = frappe.db.get_value(
+		"Program Enrollment Course",
+		{"parent": pe, "course": record.course_sc},
+		"name",
+	)
+	if not pec:
+		return None
+	credits = frappe.db.get_value("Program Enrollment Course", pec, "credits")
+	if fgradepass == "Fail":
+		credits = 0
+	# Leveling / remedial courses (ADR 058) never count toward the degree.
+	elif frappe.db.exists(
+		"Program Enrollment Leveling",
+		{"parent": pe, "course": record.course_sc, "kind": "Leveling Course"},
+	):
+		credits = 0
+	newcredits = (int(totalcredits) if totalcredits else 0) + (int(credits) if credits is not None else 0)
 
-    values = {
-        "pec_finalgradenum": fscore,
-        "pec_finalgradecode": fgrade,
-        "status": fgradepass,
-    }
-    # Competency-based programs report levels, not a grade point average, unless
-    # the framework asks for one (ADR 065 section 7). Excluding the row from the
-    # denominator as well as the numerator is what keeps a mixed school's GPA
-    # honest rather than silently diluted.
-    gpa_flag = _cbe_count_in_gpa(record.course_sc)
-    if gpa_flag is not None:
-        values["count_in_gpa"] = gpa_flag
+	values = {
+		"pec_finalgradenum": fscore,
+		"pec_finalgradecode": fgrade,
+		"status": fgradepass,
+	}
+	# Competency-based programs report levels, not a grade point average, unless
+	# the framework asks for one (ADR 065 section 7). Excluding the row from the
+	# denominator as well as the numerator is what keeps a mixed school's GPA
+	# honest rather than silently diluted.
+	gpa_flag = _cbe_count_in_gpa(record.course_sc)
+	if gpa_flag is not None:
+		values["count_in_gpa"] = gpa_flag
 
-    frappe.db.set_value("Program Enrollment Course", pec, values)
-    frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
-    # The send date is kept per student, not per section: an open-ended section
-    # sends students one by one (send_selected_grades). Retention of graded
-    # evidence, such as oral recordings (ADR 100 §8), counts from it.
-    frappe.db.set_value(
-        "Scheduled Course Roster",
-        record.name,
-        {"active": 0, "grades_sent_on": frappe.utils.now_datetime()},
-    )
-    return pe
+	frappe.db.set_value("Program Enrollment Course", pec, values)
+	frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
+	# The send date is kept per student, not per section: an open-ended section
+	# sends students one by one (send_selected_grades). Retention of graded
+	# evidence, such as oral recordings (ADR 100 §8), counts from it.
+	frappe.db.set_value(
+		"Scheduled Course Roster",
+		record.name,
+		{"active": 0, "grades_sent_on": frappe.utils.now_datetime()},
+	)
+	return pe
 
 
 def _cbe_count_in_gpa(course_schedule):
-    """1/0 for a competency-based section, or None when the question does not apply."""
-    from seminary.seminary import cbe
+	"""1/0 for a competency-based section, or None when the question does not apply."""
+	from seminary.seminary import cbe
 
-    framework = cbe.framework_doc(course_schedule)
-    if not framework:
-        return None
-    return 1 if framework.emit_gpa else 0
+	framework = cbe.framework_doc(course_schedule)
+	if not framework:
+		return None
+	return 1 if framework.emit_gpa else 0
 
 
 def _conclude_enrollments(course_schedule, students=None):
-    filters = {
-        "coursesc_ce": course_schedule,
-        "workflow_state": "Submitted",
-        "docstatus": 1,
-    }
-    if students is not None:
-        if not students:
-            return
-        filters["student_ce"] = ("in", list(students))
-    frappe.db.set_value(
-        "Course Enrollment Individual",
-        filters,
-        "workflow_state",
-        "Concluded",
-        update_modified=False,
-    )
+	filters = {
+		"coursesc_ce": course_schedule,
+		"workflow_state": "Submitted",
+		"docstatus": 1,
+	}
+	if students is not None:
+		if not students:
+			return
+		filters["student_ce"] = ("in", list(students))
+	frappe.db.set_value(
+		"Course Enrollment Individual",
+		filters,
+		"workflow_state",
+		"Concluded",
+		update_modified=False,
+	)
 
 
 def _post_finalization(pe_names):
-    from seminary.seminary.gpa import recompute_program_enrollment_gpa
+	from seminary.seminary.gpa import recompute_program_enrollment_gpa
 
-    for pe_name in pe_names:
-        _recalculate_emphasis_credits(pe_name)
-        _check_auto_grant_emphases(pe_name)
-        recompute_program_enrollment_gpa(pe_name)
+	for pe_name in pe_names:
+		_recalculate_emphasis_credits(pe_name)
+		_check_auto_grant_emphases(pe_name)
+		recompute_program_enrollment_gpa(pe_name)
 
 
 @frappe.whitelist()
 def send_selected_grades(course_schedule, rosters):
-    """Finalize some students without closing the section (ADR 065 section 7a).
+	"""Finalize some students without closing the section (ADR 065 section 7a).
 
-    Offered only for open-ended sections. Those serve a self-paced competency
-    framework, where by design there is no moment when everyone is done — so a
-    terminal-only operation would mean grades never reach the transcript, and
-    one student still working would hold every classmate's transcript row
-    hostage. Every dated section keeps its all-or-nothing guarantee.
+	Offered only for open-ended sections. Those serve a self-paced competency
+	framework, where by design there is no moment when everyone is done — so a
+	terminal-only operation would mean grades never reach the transcript, and
+	one student still working would hold every classmate's transcript row
+	hostage. Every dated section keeps its all-or-nothing guarantee.
 
-    `open_ended` is the only check needed: a section may only carry that flag
-    when its course sits in a self-paced competency-based program, which
-    CourseSchedule.validate_open_ended enforces at the source. Re-deriving the
-    pacing here would be a second condition that can fall out of step with the
-    first.
-    """
-    _assert_may_send_grades()
-    _require_send_scope(course_schedule)
+	`open_ended` is the only check needed: a section may only carry that flag
+	when its course sits in a self-paced competency-based program, which
+	CourseSchedule.validate_open_ended enforces at the source. Re-deriving the
+	pacing here would be a second condition that can fall out of step with the
+	first.
+	"""
+	_assert_may_send_grades()
+	_require_send_scope(course_schedule)
 
-    if isinstance(rosters, str):
-        rosters = json.loads(rosters)
-    rosters = [r for r in (rosters or [])]
-    if not rosters:
-        frappe.throw(_("Select at least one student."))
+	if isinstance(rosters, str):
+		rosters = json.loads(rosters)
+	rosters = [r for r in (rosters or [])]
+	if not rosters:
+		frappe.throw(_("Select at least one student."))
 
-    cs = frappe.db.get_value(
-        "Course Schedule",
-        course_schedule,
-        ["workflow_state", "open_ended"],
-        as_dict=True,
-    )
-    if not cs:
-        frappe.throw(_("Course Schedule {0} not found.").format(course_schedule))
-    if not cs.open_ended:
-        frappe.throw(
-            _(
-                "This section has an end date, so grades are sent for the whole "
-                "class at once. Sending grades for selected students is only "
-                "available for open-ended sections in self-paced programs."
-            )
-        )
-    if cs.workflow_state != "Grading":
-        frappe.throw(
-            _(
-                "Send Grades is only available while the course is in the "
-                "Grading state. Current state: {0}."
-            ).format(cs.workflow_state or _("(none)"))
-        )
+	cs = frappe.db.get_value(
+		"Course Schedule",
+		course_schedule,
+		["workflow_state", "open_ended"],
+		as_dict=True,
+	)
+	if not cs:
+		frappe.throw(_("Course Schedule {0} not found.").format(course_schedule))
+	if not cs.open_ended:
+		frappe.throw(
+			_(
+				"This section has an end date, so grades are sent for the whole "
+				"class at once. Sending grades for selected students is only "
+				"available for open-ended sections in self-paced programs."
+			)
+		)
+	if cs.workflow_state != "Grading":
+		frappe.throw(
+			_(
+				"Send Grades is only available while the course is in the Grading state. Current state: {0}."
+			).format(cs.workflow_state or _("(none)"))
+		)
 
-    stray = [
-        r
-        for r in rosters
-        if frappe.db.get_value("Scheduled Course Roster", r, "course_sc")
-        != course_schedule
-    ]
-    if stray:
-        frappe.throw(
-            _("These rosters do not belong to this section: {0}.").format(
-                ", ".join(stray)
-            )
-        )
+	stray = [
+		r
+		for r in rosters
+		if frappe.db.get_value("Scheduled Course Roster", r, "course_sc") != course_schedule
+	]
+	if stray:
+		frappe.throw(_("These rosters do not belong to this section: {0}.").format(", ".join(stray)))
 
-    _assert_cbe_gradable(course_schedule, rosters)
-    missing_count = _ungraded_roster_count(course_schedule, rosters)
-    if missing_count:
-        frappe.throw(
-            _(
-                "Cannot send grades: {0} of the selected student(s) still have "
-                "ungraded assessments. Fill in all grades (or 0 explicitly) "
-                "before sending."
-            ).format(missing_count)
-        )
-    _assert_evaluators_finished(course_schedule, rosters)
-    _assert_pdp_complete(course_schedule, rosters)
-    absence_decisions.assert_decided(course_schedule, rosters)
+	_assert_cbe_gradable(course_schedule, rosters)
+	missing_count = _ungraded_roster_count(course_schedule, rosters)
+	if missing_count:
+		frappe.throw(
+			_(
+				"Cannot send grades: {0} of the selected student(s) still have "
+				"ungraded assessments. Fill in all grades (or 0 explicitly) "
+				"before sending."
+			).format(missing_count)
+		)
+	_assert_evaluators_finished(course_schedule, rosters)
+	_assert_pdp_complete(course_schedule, rosters)
+	absence_decisions.assert_decided(course_schedule, rosters)
 
-    finalized, students, pes = [], set(), set()
-    for roster_name in rosters:
-        student = frappe.db.get_value("Scheduled Course Roster", roster_name, "student")
-        pe = finalize_roster(roster_name)
-        if pe:
-            finalized.append(roster_name)
-            students.add(student)
-            pes.add(pe)
+	finalized, students, pes = [], set(), set()
+	for roster_name in rosters:
+		student = frappe.db.get_value("Scheduled Course Roster", roster_name, "student")
+		pe = finalize_roster(roster_name)
+		if pe:
+			finalized.append(roster_name)
+			students.add(student)
+			pes.add(pe)
 
-    _conclude_enrollments(course_schedule, students)
-    _post_finalization(pes)
-    # A student's last grade of the term decides their next term (decisions/084).
-    from seminary.seminary.progression import after_grades_sent
+	_conclude_enrollments(course_schedule, students)
+	_post_finalization(pes)
+	# A student's last grade of the term decides their next term (decisions/084).
+	from seminary.seminary.progression import after_grades_sent
 
-    after_grades_sent(course_schedule, pes)
+	after_grades_sent(course_schedule, pes)
 
-    return {"finalized": len(finalized), "rosters": finalized}
+	return {"finalized": len(finalized), "rosters": finalized}
 
 
 @frappe.whitelist()
 def send_grades(doc=None, **kwargs):
-    _assert_may_send_grades()
+	_assert_may_send_grades()
 
-    if isinstance(doc, str):
-        # Parse the JSON string if it's a string
-        document_data = json.loads(doc)
-        docname = document_data.get("name")
-    else:
-        # Use doc.get("name") if it's already a dictionary (fallback)
-        docname = doc.get("name")
-    _require_send_scope(docname)
+	if isinstance(doc, str):
+		# Parse the JSON string if it's a string
+		document_data = json.loads(doc)
+		docname = document_data.get("name")
+	else:
+		# Use doc.get("name") if it's already a dictionary (fallback)
+		docname = doc.get("name")
+	_require_send_scope(docname)
 
-    state = frappe.db.get_value("Course Schedule", docname, "workflow_state")
-    if state == "Closed":
-        return "All grades sent"
-    if state != "Grading":
-        frappe.throw(
-            _(
-                "Send Grades is only available while the course is in the "
-                "Grading state. Current state: {0}."
-            ).format(state or _("(none)"))
-        )
+	state = frappe.db.get_value("Course Schedule", docname, "workflow_state")
+	if state == "Closed":
+		return "All grades sent"
+	if state != "Grading":
+		frappe.throw(
+			_(
+				"Send Grades is only available while the course is in the Grading state. Current state: {0}."
+			).format(state or _("(none)"))
+		)
 
-    _assert_cbe_gradable(docname)
-    missing_count = _ungraded_roster_count(docname)
-    if missing_count:
-        frappe.throw(
-            _(
-                "Cannot send grades: {0} student(s) still have ungraded "
-                "assessments. Fill in all grades (or 0 explicitly) before sending."
-            ).format(missing_count)
-        )
+	_assert_cbe_gradable(docname)
+	missing_count = _ungraded_roster_count(docname)
+	if missing_count:
+		frappe.throw(
+			_(
+				"Cannot send grades: {0} student(s) still have ungraded "
+				"assessments. Fill in all grades (or 0 explicitly) before sending."
+			).format(missing_count)
+		)
 
-    records = frappe.get_all(
-        "Scheduled Course Roster",
-        filters={"course_sc": docname, "active": 1, "audit_bool": 0},
-        fields=["name"],
-    )
-    _assert_evaluators_finished(docname, [r.name for r in records])
-    _assert_pdp_complete(docname, [r.name for r in records])
-    absence_decisions.assert_decided(docname)
+	records = frappe.get_all(
+		"Scheduled Course Roster",
+		filters={"course_sc": docname, "active": 1, "audit_bool": 0},
+		fields=["name"],
+	)
+	_assert_evaluators_finished(docname, [r.name for r in records])
+	_assert_pdp_complete(docname, [r.name for r in records])
+	absence_decisions.assert_decided(docname)
 
-    affected_pes = set()
-    for record in records:
-        pe = finalize_roster(record.name)
-        if pe:
-            affected_pes.add(pe)
+	affected_pes = set()
+	for record in records:
+		pe = finalize_roster(record.name)
+		if pe:
+			affected_pes.add(pe)
 
-    # System-driven transition: bypass the workflow validator (the "Send
-    # Grades" transition is intentionally absent from the workflow fixture
-    # so the Desk Action menu can't bypass the grade computation and PEC
-    # update above). Mirrors the cancel_course pattern.
-    frappe.db.set_value("Course Schedule", docname, "workflow_state", "Closed")
+	# System-driven transition: bypass the workflow validator (the "Send
+	# Grades" transition is intentionally absent from the workflow fixture
+	# so the Desk Action menu can't bypass the grade computation and PEC
+	# update above). Mirrors the cancel_course pattern.
+	frappe.db.set_value("Course Schedule", docname, "workflow_state", "Closed")
 
-    # Mirror the schedule's terminal "Closed" state onto each student's Course
-    # Enrollment Individual: with grades sent, every active enrollment in this
-    # section is now historical, so Submitted -> Concluded. System-driven like
-    # the schedule transition above (no Desk action, intentionally absent from
-    # the workflow fixture). Audit enrollments also sit in Submitted and are
-    # likewise concluded. Withdrawn / Waitlisted / Awaiting Payment / Unseated
-    # are left untouched — they never became active enrollments here. This is
-    # what makes "currently enrolled" = workflow_state == "Submitted".
-    _conclude_enrollments(docname)
+	# Mirror the schedule's terminal "Closed" state onto each student's Course
+	# Enrollment Individual: with grades sent, every active enrollment in this
+	# section is now historical, so Submitted -> Concluded. System-driven like
+	# the schedule transition above (no Desk action, intentionally absent from
+	# the workflow fixture). Audit enrollments also sit in Submitted and are
+	# likewise concluded. Withdrawn / Waitlisted / Awaiting Payment / Unseated
+	# are left untouched — they never became active enrollments here. This is
+	# what makes "currently enrolled" = workflow_state == "Submitted".
+	_conclude_enrollments(docname)
 
-    # After grades are sent, recalculate track credits and check auto-grant emphases
-    _post_finalization(affected_pes)
-    # A student's last grade of the term decides their next term (decisions/084).
-    from seminary.seminary.progression import after_grades_sent
+	# After grades are sent, recalculate track credits and check auto-grant emphases
+	_post_finalization(affected_pes)
+	# A student's last grade of the term decides their next term (decisions/084).
+	from seminary.seminary.progression import after_grades_sent
 
-    after_grades_sent(docname, affected_pes)
+	after_grades_sent(docname, affected_pes)
 
-    # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
-    # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
-    # after commit so a snapshot failure can never roll back grades. Seminary never requires
-    # aretenic (ADR 030/032). Partial sends deliberately produce no snapshot: an
-    # attainment record for a half-graded offering would be an auditable claim
-    # about something unfinished (ADR 065 section 7a).
-    from seminary.seminary.utils import _aretenic_enabled
+	# Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
+	# auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
+	# after commit so a snapshot failure can never roll back grades. Seminary never requires
+	# aretenic (ADR 030/032). Partial sends deliberately produce no snapshot: an
+	# attainment record for a half-graded offering would be an auditable claim
+	# about something unfinished (ADR 065 section 7a).
+	from seminary.seminary.utils import _aretenic_enabled
 
-    if _aretenic_enabled():
-        frappe.enqueue(
-            "aretenic.attainment.snapshot_offering_on_send_grades",
-            queue="long",
-            enqueue_after_commit=True,
-            course_schedule=docname,
-        )
+	if _aretenic_enabled():
+		frappe.enqueue(
+			"aretenic.attainment.snapshot_offering_on_send_grades",
+			queue="long",
+			enqueue_after_commit=True,
+			course_schedule=docname,
+		)
 
-    return "All grades sent"
+	return "All grades sent"
 
 
 def _recalculate_emphasis_credits(pe_name):
-    """Recalculate track credits for all emphases on a single Program Enrollment."""
-    pe = frappe.get_doc("Program Enrollment", pe_name)
-    program_name = pe.program
+	"""Recalculate track credits for all emphases on a single Program Enrollment."""
+	pe = frappe.get_doc("Program Enrollment", pe_name)
+	program_name = pe.program
 
-    for emphasis in pe.emphases or []:
-        if emphasis.status not in ("Active", "Completed"):
-            continue
+	for emphasis in pe.emphases or []:
+		if emphasis.status not in ("Active", "Completed"):
+			continue
 
-        credits = frappe.db.sql(
-            """SELECT COALESCE(SUM(pec.credits), 0)
+		credits = frappe.db.sql(
+			"""SELECT COALESCE(SUM(pec.credits), 0)
             FROM `tabProgram Enrollment Course` pec
             INNER JOIN `tabProgram Track Courses` ptc
                 ON ptc.program_track_course = pec.course_name
                 AND ptc.parent = %s
                 AND ptc.program_track = %s
             WHERE pec.parent = %s AND pec.status = 'Pass'""",
-            (program_name, emphasis.emphasis_track, pe_name),
-        )[0][0]
+			(program_name, emphasis.emphasis_track, pe_name),
+		)[0][0]
 
-        max_credits = frappe.db.get_value(
-            "Program Track", emphasis.emphasis_track, "max_credits"
-        )
-        if max_credits and max_credits > 0 and credits > max_credits:
-            credits = max_credits
+		max_credits = frappe.db.get_value("Program Track", emphasis.emphasis_track, "max_credits")
+		if max_credits and max_credits > 0 and credits > max_credits:
+			credits = max_credits
 
-        frappe.db.set_value(
-            "Program Enrollment Emphasis", emphasis.name, "trackcredits", int(credits)
-        )
+		frappe.db.set_value("Program Enrollment Emphasis", emphasis.name, "trackcredits", int(credits))
 
 
 def _check_auto_grant_emphases(pe_name):
-    """Check if any auto-grant emphases should be awarded for this PE."""
-    pe = frappe.get_doc("Program Enrollment", pe_name)
-    program = frappe.get_cached_doc("Program", pe.program)
+	"""Check if any auto-grant emphases should be awarded for this PE."""
+	pe = frappe.get_doc("Program Enrollment", pe_name)
+	program = frappe.get_cached_doc("Program", pe.program)
 
-    existing_tracks = {e.emphasis_track for e in (pe.emphases or [])}
+	existing_tracks = {e.emphasis_track for e in (pe.emphases or [])}
 
-    for track in program.pgm_pgmtracks:
-        if not track.is_emphasis or track.emphasis_declaration != "Auto-grant":
-            continue
-        if track.name in existing_tracks:
-            continue
+	for track in program.pgm_pgmtracks:
+		if not track.is_emphasis or track.emphasis_declaration != "Auto-grant":
+			continue
+		if track.name in existing_tracks:
+			continue
 
-        # Check if student meets requirements: all mandatory track courses passed
-        mandatory_track_courses = frappe.get_all(
-            "Program Track Courses",
-            filters={
-                "parent": pe.program,
-                "program_track": track.name,
-                "pgm_track_course_mandatory": 1,
-            },
-            fields=["program_track_course"],
-        )
+		# Check if student meets requirements: all mandatory track courses passed
+		mandatory_track_courses = frappe.get_all(
+			"Program Track Courses",
+			filters={
+				"parent": pe.program,
+				"program_track": track.name,
+				"pgm_track_course_mandatory": 1,
+			},
+			fields=["program_track_course"],
+		)
 
-        all_mandatory_passed = True
-        for tc in mandatory_track_courses:
-            passed = frappe.db.exists(
-                "Program Enrollment Course",
-                {
-                    "parent": pe_name,
-                    "course_name": tc.program_track_course,
-                    "status": "Pass",
-                },
-            )
-            if not passed:
-                all_mandatory_passed = False
-                break
+		all_mandatory_passed = True
+		for tc in mandatory_track_courses:
+			passed = frappe.db.exists(
+				"Program Enrollment Course",
+				{
+					"parent": pe_name,
+					"course_name": tc.program_track_course,
+					"status": "Pass",
+				},
+			)
+			if not passed:
+				all_mandatory_passed = False
+				break
 
-        if not all_mandatory_passed:
-            continue
+		if not all_mandatory_passed:
+			continue
 
-        # Check track credit requirement
-        track_credits = frappe.db.sql(
-            """SELECT COALESCE(SUM(pec.credits), 0)
+		# Check track credit requirement
+		track_credits = frappe.db.sql(
+			"""SELECT COALESCE(SUM(pec.credits), 0)
             FROM `tabProgram Enrollment Course` pec
             INNER JOIN `tabProgram Track Courses` ptc
                 ON ptc.program_track_course = pec.course_name
                 AND ptc.parent = %s
                 AND ptc.program_track = %s
             WHERE pec.parent = %s AND pec.status = 'Pass'""",
-            (pe.program, track.name, pe_name),
-        )[0][0]
+			(pe.program, track.name, pe_name),
+		)[0][0]
 
-        if track_credits >= (track.addcredits or 0):
-            # Auto-grant this emphasis
-            pe.reload()
-            pe.append(
-                "emphases",
-                {
-                    "emphasis_track": track.name,
-                    "declared_date": frappe.utils.today(),
-                    "status": "Completed",
-                    "trackcredits": int(track_credits),
-                },
-            )
-            pe.flags.ignore_validate = True
-            # Auto-grant is system-driven: bypass the ADR 056 emphasis-freeze
-            # guard so granting an emphasis never fails an in-flight save.
-            pe.flags.ignore_emphasis_freeze = True
-            pe.save(ignore_permissions=True)
-            frappe.msgprint(
-                f"Emphasis '{track.track_name}' auto-granted for {pe.student_name}",
-                alert=True,
-            )
+		if track_credits >= (track.addcredits or 0):
+			# Auto-grant this emphasis
+			pe.reload()
+			pe.append(
+				"emphases",
+				{
+					"emphasis_track": track.name,
+					"declared_date": frappe.utils.today(),
+					"status": "Completed",
+					"trackcredits": int(track_credits),
+				},
+			)
+			pe.flags.ignore_validate = True
+			# Auto-grant is system-driven: bypass the ADR 056 emphasis-freeze
+			# guard so granting an emphasis never fails an in-flight save.
+			pe.flags.ignore_emphasis_freeze = True
+			pe.save(ignore_permissions=True)
+			frappe.msgprint(
+				f"Emphasis '{track.track_name}' auto-granted for {pe.student_name}",
+				alert=True,
+			)
 
 
 @frappe.whitelist()
 def course_event(name):
-    require_course_staff(name, include_registrar=True)
-    course = frappe.get_doc("Course Schedule", name)
-    # An open-ended section (ADR 065) has no end date and no meetings, so there
-    # is no bounded span to put on a calendar.
-    if not course.c_datestart or not course.c_dateend:
-        frappe.throw(
-            _(
-                "Course Schedule {0} has no start and end date, so it cannot be "
-                "placed on a calendar."
-            ).format(name)
-        )
-    color = course.color
-    datest = str(course.c_datestart)  # Convert datet to a string
-    timest = str(course.from_time)  # Convert timest to a string
-    datetimest = datest + " " + timest
-    datetimest = datetime.strptime(
-        datetimest, "%Y-%m-%d %H:%M:%S"
-    )  # Convert datetimest to a datetime object
-    datef = str(course.c_dateend)  # Convert datef to a string
-    timef = str(course.to_time)  # Convert timef to a string
-    datetimef = datef + " " + timef
-    datetimef = datetime.strptime(datetimef, "%Y-%m-%d %H:%M:%S")
-    datetimef2 = datest + " " + timef
-    datetimef2 = datetime.strptime(datetimef2, "%Y-%m-%d %H:%M:%S")
-    dateend = course.c_dateend
-    participants = []
-    participants = frappe.get_all(
-        "Scheduled Course Roster", filters={"course_sc": name}
-    )
-    event_participants = []  # Create an empty list for event participants
-    for participant in participants:
-        event_participants.append(
-            {
-                "reference_doctype": "Scheduled Course Roster",
-                "reference_docname": participant.name,
-                "email": participant.stuemail_rc,
-            }
-        )
-    instructors = []
-    instructors = frappe.get_all("Course Schedule Instructor", filters={"parent": name})
-    for instructor in instructors:
-        event_participants.append(
-            {
-                "reference_doctype": "Course Schedule Instructor",
-                "reference_docname": instructor.name,
-                "email": instructor.user,
-            }
-        )
-    if datef == datest:
-        # Create a new single day calendar event
-        event = frappe.get_doc(
-            {
-                "doctype": "Event",
-                "subject": name,
-                "starts_on": datetimest,
-                "ends_on": datetimef,
-                "event_type": "Public",
-                "event_category": "Event",
-                "color": color,
-                "description": name + " Room: " + (course.room or "N/A"),
-                "event_participants": event_participants,
-            }
-        )
-    elif datef > datest:
-        # Create a new calendar event for meeting dates
-        event = frappe.get_doc(
-            {
-                "doctype": "Event",
-                "subject": name,
-                "starts_on": datetimest,
-                "ends_on": datetimef2,
-                "repeat_this_event": 1,
-                "repeat_on": "Weekly",
-                "repeat_till": dateend,
-                "monday": course.monday,
-                "tuesday": course.tuesday,
-                "wednesday": course.wednesday,
-                "thursday": course.thursday,
-                "friday": course.friday,
-                "saturday": course.saturday,
-                "sunday": course.sunday,
-                "event_type": "Public",
-                "event_category": "Event",
-                "color": color,
-                "description": name + " Room: " + (course.room or "N/A"),
-                "event_participants": event_participants,
-            }
-        )
-    event.insert()
+	require_course_staff(name, include_registrar=True)
+	course = frappe.get_doc("Course Schedule", name)
+	# An open-ended section (ADR 065) has no end date and no meetings, so there
+	# is no bounded span to put on a calendar.
+	if not course.c_datestart or not course.c_dateend:
+		frappe.throw(
+			_("Course Schedule {0} has no start and end date, so it cannot be placed on a calendar.").format(
+				name
+			)
+		)
+	color = course.color
+	datest = str(course.c_datestart)  # Convert datet to a string
+	timest = str(course.from_time)  # Convert timest to a string
+	datetimest = datest + " " + timest
+	datetimest = datetime.strptime(datetimest, "%Y-%m-%d %H:%M:%S")  # Convert datetimest to a datetime object
+	datef = str(course.c_dateend)  # Convert datef to a string
+	timef = str(course.to_time)  # Convert timef to a string
+	datetimef = datef + " " + timef
+	datetimef = datetime.strptime(datetimef, "%Y-%m-%d %H:%M:%S")
+	datetimef2 = datest + " " + timef
+	datetimef2 = datetime.strptime(datetimef2, "%Y-%m-%d %H:%M:%S")
+	dateend = course.c_dateend
+	participants = []
+	participants = frappe.get_all("Scheduled Course Roster", filters={"course_sc": name})
+	event_participants = []  # Create an empty list for event participants
+	for participant in participants:
+		event_participants.append(
+			{
+				"reference_doctype": "Scheduled Course Roster",
+				"reference_docname": participant.name,
+				"email": participant.stuemail_rc,
+			}
+		)
+	instructors = []
+	instructors = frappe.get_all("Course Schedule Instructor", filters={"parent": name})
+	for instructor in instructors:
+		event_participants.append(
+			{
+				"reference_doctype": "Course Schedule Instructor",
+				"reference_docname": instructor.name,
+				"email": instructor.user,
+			}
+		)
+	if datef == datest:
+		# Create a new single day calendar event
+		event = frappe.get_doc(
+			{
+				"doctype": "Event",
+				"subject": name,
+				"starts_on": datetimest,
+				"ends_on": datetimef,
+				"event_type": "Public",
+				"event_category": "Event",
+				"color": color,
+				"description": name + " Room: " + (course.room or "N/A"),
+				"event_participants": event_participants,
+			}
+		)
+	elif datef > datest:
+		# Create a new calendar event for meeting dates
+		event = frappe.get_doc(
+			{
+				"doctype": "Event",
+				"subject": name,
+				"starts_on": datetimest,
+				"ends_on": datetimef2,
+				"repeat_this_event": 1,
+				"repeat_on": "Weekly",
+				"repeat_till": dateend,
+				"monday": course.monday,
+				"tuesday": course.tuesday,
+				"wednesday": course.wednesday,
+				"thursday": course.thursday,
+				"friday": course.friday,
+				"saturday": course.saturday,
+				"sunday": course.sunday,
+				"event_type": "Public",
+				"event_category": "Event",
+				"color": color,
+				"description": name + " Room: " + (course.room or "N/A"),
+				"event_participants": event_participants,
+			}
+		)
+	event.insert()
 
-    return "event created"
+	return "event created"
 
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=300, seconds=3600, ip_based=True)
 def get_doctrinal_statement():
-    """Return the current admission Doctrinal Statement for the web form.
+	"""Return the current admission Doctrinal Statement for the web form.
 
-    Picks the most recently created submitted DS that is both `active` and
-    flagged `use_in_student_admission`. Returns `{name, title, body}` or
-    None if none configured. The body is the HTML stored in the DS's
-    `doctrinal_statement` field, ready for direct injection.
-    """
-    row = frappe.db.get_value(
-        "Doctrinal Statement",
-        {
-            "active": 1,
-            "use_in_student_admission": 1,
-            "docstatus": 1,
-        },
-        ["name", "ds_title", "doctrinal_statement"],
-        as_dict=True,
-        order_by="creation desc",
-    )
-    if not row:
-        return None
-    return {"name": row.name, "title": row.ds_title, "body": row.doctrinal_statement}
+	Picks the most recently created submitted DS that is both `active` and
+	flagged `use_in_student_admission`. Returns `{name, title, body}` or
+	None if none configured. The body is the HTML stored in the DS's
+	`doctrinal_statement` field, ready for direct injection.
+	"""
+	row = frappe.db.get_value(
+		"Doctrinal Statement",
+		{
+			"active": 1,
+			"use_in_student_admission": 1,
+			"docstatus": 1,
+		},
+		["name", "ds_title", "doctrinal_statement"],
+		as_dict=True,
+		order_by="creation desc",
+	)
+	if not row:
+		return None
+	return {"name": row.name, "title": row.ds_title, "body": row.doctrinal_statement}
 
 
 # p006 F11 made the `access_key` check constant-time with one message for a
@@ -4964,123 +4768,117 @@ def get_doctrinal_statement():
 @frappe.whitelist(allow_guest=True)
 @rate_limit(key="applicant_name", limit=20, seconds=3600, ip_based=False)
 def get_application_payment_url(applicant_name, key=None):
-    """Payment URL + instructions for an applicant's Application invoice (public
-    web form). Delegates to the financial backend; None on a Frappe-only seminary.
+	"""Payment URL + instructions for an applicant's Application invoice (public
+	web form). Delegates to the financial backend; None on a Frappe-only seminary.
 
-    Guest-callable, so the caller must present the applicant's `access_key`
-    (ADR 068 phase 3). Without it this took a bare docname and would happily
-    hand over any applicant's payment link — and confirm that the application
-    exists — to anyone willing to try names. Every caller must match the key
-    except staff with ``has_super_access`` (p006 §2.11).
-    """
-    import hmac
+	Guest-callable, so the caller must present the applicant's `access_key`
+	(ADR 068 phase 3). Without it this took a bare docname and would happily
+	hand over any applicant's payment link — and confirm that the application
+	exists — to anyone willing to try names. Every caller must match the key
+	except staff with ``has_super_access`` (p006 §2.11).
+	"""
+	import hmac
 
-    from seminary.seminary.financial.backend import get_financial_backend
-    from seminary.seminary.utils import has_super_access
+	from seminary.seminary.financial.backend import get_financial_backend
+	from seminary.seminary.utils import has_super_access
 
-    if not has_super_access():
-        expected = frappe.db.get_value(
-            "Student Applicant", applicant_name, "access_key"
-        )
-        if not (expected and key and hmac.compare_digest(str(key), str(expected))):
-            frappe.throw(
-                _("This payment link is invalid or has expired."),
-                frappe.PermissionError,
-            )
+	if not has_super_access():
+		expected = frappe.db.get_value("Student Applicant", applicant_name, "access_key")
+		if not (expected and key and hmac.compare_digest(str(key), str(expected))):
+			frappe.throw(
+				_("This payment link is invalid or has expired."),
+				frappe.PermissionError,
+			)
 
-    return get_financial_backend().application_payment_url(applicant_name)
+	return get_financial_backend().application_payment_url(applicant_name)
 
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=300, seconds=3600, ip_based=True)
 def get_default_phone_country():
-    """Return the configured Seminary company's country as a full name
-    string (e.g. "United States"). Frappe's Phone control reads
-    `frappe.sys_defaults.country` and matches by name; web forms set this
-    on load to override the hard-coded "India" default."""
-    # The billing Company (and its country) is owned by the financial backend; on
-    # a Frappe-only install fall back to the system default country.
-    from seminary.seminary.financial.backend import get_financial_backend
+	"""Return the configured Seminary company's country as a full name
+	string (e.g. "United States"). Frappe's Phone control reads
+	`frappe.sys_defaults.country` and matches by name; web forms set this
+	on load to override the hard-coded "India" default."""
+	# The billing Company (and its country) is owned by the financial backend; on
+	# a Frappe-only install fall back to the system default country.
+	from seminary.seminary.financial.backend import get_financial_backend
 
-    country = get_financial_backend().company_country()
-    if country:
-        return country
-    return frappe.db.get_single_value("System Settings", "country")
+	country = get_financial_backend().company_country()
+	if country:
+		return country
+	return frappe.db.get_single_value("System Settings", "country")
 
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=300, seconds=3600, ip_based=True)
 def active_term():
-    at = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
-    ay = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "academic_year")
-    return {"academic_term": at, "academic_year": ay}
+	at = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
+	ay = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "academic_year")
+	return {"academic_term": at, "academic_year": ay}
 
 
 OUTLINE_EDIT_ROLES = {
-    "Instructor",
-    "Program Chair",
-    "Seminary Manager",
-    "System Manager",
+	"Instructor",
+	"Program Chair",
+	"Seminary Manager",
+	"System Manager",
 }
 
 
 @frappe.whitelist()
 def upsert_chapter(
-    chapter_title,
-    course,
-    is_scorm_package,
-    scorm_package,
-    name=None,
-    course_competency=None,
+	chapter_title,
+	course,
+	is_scorm_package,
+	scorm_package,
+	name=None,
+	course_competency=None,
 ):
-    require_course_staff(course)
-    course_title = frappe.get_value("Course Schedule", course, "course")
-    values = frappe._dict(
-        {
-            "chapter_title": chapter_title,
-            "coursesc": course,
-            "is_scorm_package": is_scorm_package,
-            "course_title": course_title,
-        }
-    )
+	require_course_staff(course)
+	course_title = frappe.get_value("Course Schedule", course, "course")
+	values = frappe._dict(
+		{
+			"chapter_title": chapter_title,
+			"coursesc": course,
+			"is_scorm_package": is_scorm_package,
+			"course_title": course_title,
+		}
+	)
 
-    # Absent means "leave the mapping alone" so callers that know nothing about
-    # competencies cannot clear one; an empty string is the explicit unlink
-    # (ADR 065 section 2).
-    if course_competency is not None:
-        values["course_competency"] = course_competency or None
+	# Absent means "leave the mapping alone" so callers that know nothing about
+	# competencies cannot clear one; an empty string is the explicit unlink
+	# (ADR 065 section 2).
+	if course_competency is not None:
+		values["course_competency"] = course_competency or None
 
-    package_file = None
-    if is_scorm_package:
-        # The package is STORED, never unpacked (p008 F8). See pin_scorm_package.
-        # a dict from the SPA's JSON body, or a JSON string from a form post
-        package_file = frappe._dict(frappe.parse_json(scorm_package) or {}).name
-        # Only the File. The three extracted-path fields went with p009 S1;
-        # `scorm_package_ref` is written by the explode job, not by the request.
-        values["scorm_package"] = package_file
+	package_file = None
+	if is_scorm_package:
+		# The package is STORED, never unpacked (p008 F8). See pin_scorm_package.
+		# a dict from the SPA's JSON body, or a JSON string from a form post
+		package_file = frappe._dict(frappe.parse_json(scorm_package) or {}).name
+		# Only the File. The three extracted-path fields went with p009 S1;
+		# `scorm_package_ref` is written by the explode job, not by the request.
+		values["scorm_package"] = package_file
 
-    if name:
-        chapter = frappe.get_doc("Course Schedule Chapter", name)
-    else:
-        chapter = frappe.new_doc("Course Schedule Chapter")
+	if name:
+		chapter = frappe.get_doc("Course Schedule Chapter", name)
+	else:
+		chapter = frappe.new_doc("Course Schedule Chapter")
 
-    if package_file:
-        _check_scorm_package(package_file)
-    previous_competency = chapter.course_competency
-    chapter.update(values)
-    chapter.save()
-    if package_file:
-        pin_scorm_package(chapter.name, package_file)
-        queue_scorm_unpack(chapter.name, package_file)
+	if package_file:
+		_check_scorm_package(package_file)
+	previous_competency = chapter.course_competency
+	chapter.update(values)
+	chapter.save()
+	if package_file:
+		pin_scorm_package(chapter.name, package_file)
+		queue_scorm_unpack(chapter.name, package_file)
 
-    if (
-        name
-        and chapter.course_competency
-        and chapter.course_competency != previous_competency
-    ):
-        chapter.set_onload("refiled", _refile_competencies(course))
+	if name and chapter.course_competency and chapter.course_competency != previous_competency:
+		chapter.set_onload("refiled", _refile_competencies(course))
 
-    return chapter
+	return chapter
 
 
 # --- SCORM packages are stored, not unpacked (privatedocs p008 F8) -------------
@@ -5103,132 +4901,126 @@ def upsert_chapter(
 
 
 def _check_scorm_archive(f):
-    """Open the package and bound it before anything accepts it.
+	"""Open the package and bound it before anything accepts it.
 
-    The rules live in `seminary.scorm.archive` because **two** things look at a
-    package now: this, which refuses a bad zip at the moment a chapter accepts
-    it, and the explode job, which re-runs the same checks before it writes a
-    byte (p009 §2.4). p008 F17e put them here when nothing opened a package.
-    Two copies of a bounds check are two copies that drift.
+	The rules live in `seminary.scorm.archive` because **two** things look at a
+	package now: this, which refuses a bad zip at the moment a chapter accepts
+	it, and the explode job, which re-runs the same checks before it writes a
+	byte (p009 §2.4). p008 F17e put them here when nothing opened a package.
+	Two copies of a bounds check are two copies that drift.
 
-    Everything is read from the central directory, so it costs no
-    decompression; a member that lies about its size cannot exceed the budget
-    anyway (`zf.read` stops at the declared size and then fails CRC -- verified,
-    p008 F17 -- and the explode job counts the bytes as well).
-    """
-    from seminary.scorm import archive
-    from seminary.storage.files import materialize
+	Everything is read from the central directory, so it costs no
+	decompression; a member that lies about its size cannot exceed the budget
+	anyway (`zf.read` stops at the declared size and then fails CRC -- verified,
+	p008 F17 -- and the explode job counts the bytes as well).
+	"""
+	from seminary.scorm import archive
+	from seminary.storage.files import materialize
 
-    try:
-        with materialize(f) as path:
-            with zipfile.ZipFile(path) as zf:
-                archive.check_bounds(zf, f.file_size or 0)
-    except zipfile.BadZipFile:
-        _refuse_scorm(f, "not a zip archive")
-        frappe.throw(_("This file is not a SCORM package (not a zip archive)."))
-    except FileNotFoundError:
-        frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
-    except archive.PackageError as e:
-        # The upload is refused here, synchronously, before a chapter exists --
-        # so `explode`'s own `scorm_explode_refused` line never gets written and
-        # this rejection would otherwise leave no trace at all. A zip bomb
-        # stopped at the door is exactly the event an operator wants to find.
-        _refuse_scorm(f, str(e))
-        frappe.throw(str(e))
+	try:
+		with materialize(f) as path:
+			with zipfile.ZipFile(path) as zf:
+				archive.check_bounds(zf, f.file_size or 0)
+	except zipfile.BadZipFile:
+		_refuse_scorm(f, "not a zip archive")
+		frappe.throw(_("This file is not a SCORM package (not a zip archive)."))
+	except FileNotFoundError:
+		frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
+	except archive.PackageError as e:
+		# The upload is refused here, synchronously, before a chapter exists --
+		# so `explode`'s own `scorm_explode_refused` line never gets written and
+		# this rejection would otherwise leave no trace at all. A zip bomb
+		# stopped at the door is exactly the event an operator wants to find.
+		_refuse_scorm(f, str(e))
+		frappe.throw(str(e))
 
 
 def _refuse_scorm(f, reason: str) -> None:
-    """One line for a package refused at ingest. Never raises, never blocks."""
-    from seminary.seminary import security_log
+	"""One line for a package refused at ingest. Never raises, never blocks."""
+	from seminary.seminary import security_log
 
-    security_log.record_denial(
-        "scorm_ingest_refused",
-        file=f.name,
-        file_size=f.file_size,
-        reason=reason,
-    )
+	security_log.record_denial(
+		"scorm_ingest_refused",
+		file=f.name,
+		file_size=f.file_size,
+		reason=reason,
+	)
 
 
 def _check_scorm_package(file_name):
-    """The caller may read the File, and it is a real, bounded SCORM zip. Runs
-    BEFORE the chapter is saved, so a refusal leaves nothing behind."""
-    if not file_name or not frappe.db.exists("File", file_name):
-        frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
-    f = frappe.get_doc("File", file_name)
-    f.check_permission("read")
-    if f.is_folder or not (f.file_name or "").lower().endswith(".zip"):
-        frappe.throw(_("A SCORM package must be a .zip file."))
-    _check_scorm_archive(f)
-    return f
+	"""The caller may read the File, and it is a real, bounded SCORM zip. Runs
+	BEFORE the chapter is saved, so a refusal leaves nothing behind."""
+	if not file_name or not frappe.db.exists("File", file_name):
+		frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
+	f = frappe.get_doc("File", file_name)
+	f.check_permission("read")
+	if f.is_folder or not (f.file_name or "").lower().endswith(".zip"):
+		frappe.throw(_("A SCORM package must be a .zip file."))
+	_check_scorm_archive(f)
+	return f
 
 
 def pin_scorm_package(chapter_name, file_name):
-    """Make the package private and, if it is attached to nothing, attach it to
-    its chapter -- so the section's staff can read it through the chapter rather
-    than only whoever uploaded it (p007 file policy reads through the host).
+	"""Make the package private and, if it is attached to nothing, attach it to
+	its chapter -- so the section's staff can read it through the chapter rather
+	than only whoever uploaded it (p007 file policy reads through the host).
 
-    A File already attached elsewhere is left where it is: a template import
-    shares one package between sections, and the read check above is the gate.
-    """
-    f = frappe.db.get_value(
-        "File",
-        file_name,
-        ["name", "file_url", "is_private", "attached_to_doctype", "attached_to_name"],
-        as_dict=True,
-    )
-    if not f:
-        return
-    if not f.is_private and f.file_url:
-        from seminary.seminary import file_policy
+	A File already attached elsewhere is left where it is: a template import
+	shares one package between sections, and the read check above is the gate.
+	"""
+	f = frappe.db.get_value(
+		"File",
+		file_name,
+		["name", "file_url", "is_private", "attached_to_doctype", "attached_to_name"],
+		as_dict=True,
+	)
+	if not f:
+		return
+	if not f.is_private and f.file_url:
+		from seminary.seminary import file_policy
 
-        file_policy.set_privacy(f.file_url, public=False)
-    if not f.attached_to_name:
-        frappe.db.set_value(
-            "File",
-            f.name,
-            {
-                "attached_to_doctype": "Course Schedule Chapter",
-                "attached_to_name": chapter_name,
-                "attached_to_field": "scorm_package",
-            },
-        )
+		file_policy.set_privacy(f.file_url, public=False)
+	if not f.attached_to_name:
+		frappe.db.set_value(
+			"File",
+			f.name,
+			{
+				"attached_to_doctype": "Course Schedule Chapter",
+				"attached_to_name": chapter_name,
+				"attached_to_field": "scorm_package",
+			},
+		)
 
 
 def queue_scorm_unpack(chapter_name, file_name):
-    """Record a SCORM Package for this chapter and queue the unpack (p009 §2.4).
+	"""Record a SCORM Package for this chapter and queue the unpack (p009 §2.4).
 
-    The row is created here, synchronously, so the chapter has something whose
-    status the player can read -- `Pending` until a worker picks it up, then
-    `Exploding`, then `Ready` or `Failed`. Nothing is unpacked in the request:
-    a package is measured in gigabytes and the zip has to be streamed twice.
+	The row is created here, synchronously, so the chapter has something whose
+	status the player can read -- `Pending` until a worker picks it up, then
+	`Exploding`, then `Ready` or `Failed`. Nothing is unpacked in the request:
+	a package is measured in gigabytes and the zip has to be streamed twice.
 
-    Dedup happens in the job rather than here, because it keys on a SHA-256 that
-    is only known once the zip has been read -- and reading it synchronously is
-    exactly what the job exists to avoid.
-    """
-    from seminary.scorm import explode
+	Dedup happens in the job rather than here, because it keys on a SHA-256 that
+	is only known once the zip has been read -- and reading it synchronously is
+	exactly what the job exists to avoid.
+	"""
+	from seminary.scorm import explode
 
-    existing = frappe.db.get_value(
-        "Course Schedule Chapter", chapter_name, "scorm_package_ref"
-    )
-    if existing and frappe.db.get_value("SCORM Package", existing, "source_file") == (
-        file_name
-    ):
-        return existing
+	existing = frappe.db.get_value("Course Schedule Chapter", chapter_name, "scorm_package_ref")
+	if existing and frappe.db.get_value("SCORM Package", existing, "source_file") == (file_name):
+		return existing
 
-    package = frappe.get_doc(
-        {
-            "doctype": "SCORM Package",
-            "source_file": file_name,
-            "status": "Pending",
-        }
-    )
-    package.insert(ignore_permissions=True)
-    frappe.db.set_value(
-        "Course Schedule Chapter", chapter_name, "scorm_package_ref", package.name
-    )
-    explode.enqueue(chapter_name, package.name)
-    return package.name
+	package = frappe.get_doc(
+		{
+			"doctype": "SCORM Package",
+			"source_file": file_name,
+			"status": "Pending",
+		}
+	)
+	package.insert(ignore_permissions=True)
+	frappe.db.set_value("Course Schedule Chapter", chapter_name, "scorm_package_ref", package.name)
+	explode.enqueue(chapter_name, package.name)
+	return package.name
 
 
 # `add_lesson` lived here. It existed to give a SCORM chapter one placeholder
@@ -5241,36 +5033,36 @@ def queue_scorm_unpack(chapter_name, file_name):
 
 @frappe.whitelist()
 def delete_chapter(chapter):
-    require_outline_editor()
-    chapterInfo = frappe.db.get_value(
-        "Course Schedule Chapter",
-        chapter,
-        ["name", "coursesc", "chapter_title", "is_scorm_package", "scorm_package_ref"],
-        as_dict=True,
-    )
-    if not chapterInfo:
-        frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
-    require_course_staff(chapterInfo.coursesc)
+	require_outline_editor()
+	chapterInfo = frappe.db.get_value(
+		"Course Schedule Chapter",
+		chapter,
+		["name", "coursesc", "chapter_title", "is_scorm_package", "scorm_package_ref"],
+		as_dict=True,
+	)
+	if not chapterInfo:
+		frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
+	require_course_staff(chapterInfo.coursesc)
 
-    from seminary.seminary import cbe_reflection
+	from seminary.seminary import cbe_reflection
 
-    cbe_reflection.assert_chapter_deletable(chapter)
+	cbe_reflection.assert_chapter_deletable(chapter)
 
-    frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
-    frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
-    frappe.db.delete("Course Lesson", {"chapter": chapter})
-    frappe.db.delete("Course Schedule Chapter", chapter)
+	frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
+	frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
+	frappe.db.delete("Course Lesson", {"chapter": chapter})
+	frappe.db.delete("Course Schedule Chapter", chapter)
 
-    # The package's objects go when the LAST chapter pointing at it does
-    # (p009 §2.13) -- a template import and a Course Pack both share one package
-    # between sections. Nothing is left on local disk to remove: p008 F8 stopped
-    # extracting and its teardown patch deleted the trees `delete_scorm_package`
-    # used to walk. Called after the row is gone, so the refcount sees the truth;
-    # these are raw `db.delete` calls, so no controller hook fires for us.
-    if chapterInfo.scorm_package_ref:
-        from seminary.scorm import lifecycle
+	# The package's objects go when the LAST chapter pointing at it does
+	# (p009 §2.13) -- a template import and a Course Pack both share one package
+	# between sections. Nothing is left on local disk to remove: p008 F8 stopped
+	# extracting and its teardown patch deleted the trees `delete_scorm_package`
+	# used to walk. Called after the row is gone, so the refcount sees the truth;
+	# these are raw `db.delete` calls, so no controller hook fires for us.
+	if chapterInfo.scorm_package_ref:
+		from seminary.scorm import lifecycle
 
-        lifecycle.release(chapterInfo.scorm_package_ref)
+		lifecycle.release(chapterInfo.scorm_package_ref)
 
 
 # `delete_scorm_package` lived here until p009 S1. It walked
@@ -5284,60 +5076,60 @@ def delete_chapter(chapter):
 
 @frappe.whitelist()
 def mark_lesson_progress(course, chapter_number, lesson_number):
-    chapter_name = frappe.get_value(
-        "Course Schedule Chapter Reference",
-        {"parent": course, "idx": chapter_number},
-        "chapter",
-    )
-    lesson_name = frappe.get_value(
-        "Course Schedule Lesson Reference",
-        {"parent": chapter_name, "idx": lesson_number},
-        "lesson",
-    )
-    save_progress(lesson_name, chapter_name, course)
+	chapter_name = frappe.get_value(
+		"Course Schedule Chapter Reference",
+		{"parent": course, "idx": chapter_number},
+		"chapter",
+	)
+	lesson_name = frappe.get_value(
+		"Course Schedule Lesson Reference",
+		{"parent": chapter_name, "idx": lesson_number},
+		"lesson",
+	)
+	save_progress(lesson_name, chapter_name, course)
 
 
 @frappe.whitelist()
 def get_student_info():
-    email = frappe.session.user
-    if email == "Administrator":
-        return
-    student_list = frappe.db.get_list(
-        "Student",
-        fields=["*"],
-        filters={"user": email},
-    )
+	email = frappe.session.user
+	if email == "Administrator":
+		return
+	student_list = frappe.db.get_list(
+		"Student",
+		fields=["*"],
+		filters={"user": email},
+	)
 
-    if not student_list:
-        # The Student role without a Student record (staff, an invited
-        # pastor): show the Person, so the profile form opens filled in and a
-        # save cannot blank what is already on file.
-        from seminary.seminary.person import find_person
+	if not student_list:
+		# The Student role without a Student record (staff, an invited
+		# pastor): show the Person, so the profile form opens filled in and a
+		# save cannot blank what is already on file.
+		from seminary.seminary.person import find_person
 
-        person = find_person(user=email)
-        if not person:
-            return None
-        p = frappe.db.get_value(
-            "Person",
-            person,
-            ["full_name", "primary_email", "primary_mobile", "image", "gender"],
-            as_dict=True,
-        )
-        info = {
-            "person": person,
-            "student_name": p.full_name,
-            "student_email_id": p.primary_email,
-            "student_mobile_number": p.primary_mobile,
-            "image": p.image,
-            "gender": p.gender,
-        }
-        info.update(_spine_details(person))
-        return info
+		person = find_person(user=email)
+		if not person:
+			return None
+		p = frappe.db.get_value(
+			"Person",
+			person,
+			["full_name", "primary_email", "primary_mobile", "image", "gender"],
+			as_dict=True,
+		)
+		info = {
+			"person": person,
+			"student_name": p.full_name,
+			"student_email_id": p.primary_email,
+			"student_mobile_number": p.primary_mobile,
+			"image": p.image,
+			"gender": p.gender,
+		}
+		info.update(_spine_details(person))
+		return info
 
-    student_info = student_list[0]
+	student_info = student_list[0]
 
-    program_enrollment_list = frappe.db.sql(
-        """
+	program_enrollment_list = frappe.db.sql(
+		"""
 		select
 			name as program_enrollment, student_name, program,
 			academic_term
@@ -5346,52 +5138,52 @@ def get_student_info():
 		where
 			student = %s and pgmenrol_active = 1 and docstatus != 2
 		order by creation""",
-        (student_info.name),
-        as_dict=1,
-    )
+		(student_info.name),
+		as_dict=1,
+	)
 
-    if program_enrollment_list:
-        current_program = program_enrollment_list[0]
-        student_info["current_program"] = current_program
+	if program_enrollment_list:
+		current_program = program_enrollment_list[0]
+		student_info["current_program"] = current_program
 
-    student_info.update(_spine_details(student_info.get("person")))
-    return student_info
+	student_info.update(_spine_details(student_info.get("person")))
+	return student_info
 
 
 def _spine_details(person):
-    """The personal details the portal shows, read from the Person.
+	"""The personal details the portal shows, read from the Person.
 
-    `Student.*` used to carry them, but ADR 068 phase 4 moved the address, date
-    of birth and nationality onto the spine and dropped the columns — so a
-    `fields=["*"]` read has been returning nothing for them ever since, and the
-    profile modal has been rendering empty boxes that a student then retypes.
-    `country` here is the *postal* country (ADR 068 phase 2), spelled the way
-    the modal already expects, never the messaging-routing one.
-    """
-    if not person:
-        return {}
+	`Student.*` used to carry them, but ADR 068 phase 4 moved the address, date
+	of birth and nationality onto the spine and dropped the columns — so a
+	`fields=["*"]` read has been returning nothing for them ever since, and the
+	profile modal has been rendering empty boxes that a student then retypes.
+	`country` here is the *postal* country (ADR 068 phase 2), spelled the way
+	the modal already expects, never the messaging-routing one.
+	"""
+	if not person:
+		return {}
 
-    row = (
-        frappe.db.get_value(
-            "Person",
-            person,
-            [
-                "nationality",
-                "tax_id",
-                "date_of_birth",
-                "address_line_1",
-                "address_line_2",
-                "city",
-                "state",
-                "pincode",
-                "mailing_country",
-            ],
-            as_dict=True,
-        )
-        or {}
-    )
-    row["country"] = row.pop("mailing_country", None)
-    return row
+	row = (
+		frappe.db.get_value(
+			"Person",
+			person,
+			[
+				"nationality",
+				"tax_id",
+				"date_of_birth",
+				"address_line_1",
+				"address_line_2",
+				"city",
+				"state",
+				"pincode",
+				"mailing_country",
+			],
+			as_dict=True,
+		)
+		or {}
+	)
+	row["country"] = row.pop("mailing_country", None)
+	return row
 
 
 # get_program_fees (Program Fees is an oikonomos pricing doctype) lives in the
@@ -5400,260 +5192,244 @@ def _spine_details(person):
 
 
 def get_fields(doctype, fields=None):
-    if fields is None:
-        fields = []
-    meta = frappe.get_meta(doctype)
-    fields.extend(meta.get_search_fields())
+	if fields is None:
+		fields = []
+	meta = frappe.get_meta(doctype)
+	fields.extend(meta.get_search_fields())
 
-    if meta.title_field and meta.title_field.strip() not in fields:
-        fields.insert(1, meta.title_field.strip())
+	if meta.title_field and meta.title_field.strip() not in fields:
+		fields.insert(1, meta.title_field.strip())
 
-    return unique(fields)
+	return unique(fields)
 
 
 @frappe.whitelist()
 def delete_lesson(lesson, chapter):
-    require_outline_editor()
-    # Delete Reference
-    chapter = frappe.get_doc("Course Schedule Chapter", chapter)
-    require_course_staff(chapter.coursesc)
-    from seminary.seminary import cbe_reflection
+	require_outline_editor()
+	# Delete Reference
+	chapter = frappe.get_doc("Course Schedule Chapter", chapter)
+	require_course_staff(chapter.coursesc)
+	from seminary.seminary import cbe_reflection
 
-    cbe_reflection.assert_lesson_deletable(lesson)
-    chapter.lessons = [row for row in chapter.lessons if row.lesson != lesson]
-    chapter.save()
+	cbe_reflection.assert_lesson_deletable(lesson)
+	chapter.lessons = [row for row in chapter.lessons if row.lesson != lesson]
+	chapter.save()
 
-    # Delete progress
-    frappe.db.delete("Course Schedule Progress", {"lesson": lesson})
+	# Delete progress
+	frappe.db.delete("Course Schedule Progress", {"lesson": lesson})
 
-    # Delete Lesson
-    frappe.db.delete("Course Lesson", lesson)
+	# Delete Lesson
+	frappe.db.delete("Course Lesson", lesson)
 
 
 @frappe.whitelist()
 def delete_documents(doctype, documents):
-    frappe.only_for(["Seminary Manager", "Program Chair", "Instructor"])
-    for doc in documents:
-        frappe.delete_doc(doctype, doc)
+	frappe.only_for(["Seminary Manager", "Program Chair", "Instructor"])
+	for doc in documents:
+		frappe.delete_doc(doctype, doc)
 
 
 @frappe.whitelist()
 def get_announcements(cs):
-    from seminary.seminary.guards import require_content_reader
+	from seminary.seminary.guards import require_content_reader
 
-    require_content_reader(cs)
-    communications = frappe.get_all(
-        "Communication",
-        filters={
-            "reference_doctype": "Course Schedule",
-            "reference_name": cs,
-        },
-        fields=[
-            "subject",
-            "content",
-            "recipients",
-            "cc",
-            "communication_date",
-            "sender",
-            "sender_full_name",
-        ],
-        order_by="communication_date desc",
-    )
+	require_content_reader(cs)
+	communications = frappe.get_all(
+		"Communication",
+		filters={
+			"reference_doctype": "Course Schedule",
+			"reference_name": cs,
+		},
+		fields=[
+			"subject",
+			"content",
+			"recipients",
+			"cc",
+			"communication_date",
+			"sender",
+			"sender_full_name",
+		],
+		order_by="communication_date desc",
+	)
 
-    for communication in communications:
-        communication.image = frappe.get_cached_value(
-            "User", communication.sender, "user_image"
-        )
+	for communication in communications:
+		communication.image = frappe.get_cached_value("User", communication.sender, "user_image")
 
-    return communications
+	return communications
 
 
 @frappe.whitelist()
 def update_lesson_index(lesson, source_chapter, target_chapter, idx):
-    """Update the order of a lesson inside or across chapters."""
-    require_outline_editor()
-    idx = cint(idx) or 1
-    idx = max(idx, 1)
+	"""Update the order of a lesson inside or across chapters."""
+	require_outline_editor()
+	idx = cint(idx) or 1
+	idx = max(idx, 1)
 
-    lesson_doc = frappe.get_doc("Course Lesson", lesson)
-    source_doc = frappe.get_doc("Course Schedule Chapter", source_chapter)
-    target_doc = (
-        source_doc
-        if source_chapter == target_chapter
-        else frappe.get_doc("Course Schedule Chapter", target_chapter)
-    )
-    require_course_staff(source_doc.coursesc)
-    require_course_staff(target_doc.coursesc)
-    from seminary.seminary import cbe_reflection
+	lesson_doc = frappe.get_doc("Course Lesson", lesson)
+	source_doc = frappe.get_doc("Course Schedule Chapter", source_chapter)
+	target_doc = (
+		source_doc
+		if source_chapter == target_chapter
+		else frappe.get_doc("Course Schedule Chapter", target_chapter)
+	)
+	require_course_staff(source_doc.coursesc)
+	require_course_staff(target_doc.coursesc)
+	from seminary.seminary import cbe_reflection
 
-    cbe_reflection.assert_lesson_movable(lesson_doc.name)
+	cbe_reflection.assert_lesson_movable(lesson_doc.name)
 
-    refiled = []
-    if source_chapter == target_chapter:
-        _reorder_lessons_within_chapter(target_doc, lesson_doc.name, idx)
-    else:
-        _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx)
-        if target_doc.course_competency:
-            refiled = _refile_competencies(target_doc.coursesc)
+	refiled = []
+	if source_chapter == target_chapter:
+		_reorder_lessons_within_chapter(target_doc, lesson_doc.name, idx)
+	else:
+		_move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx)
+		if target_doc.course_competency:
+			refiled = _refile_competencies(target_doc.coursesc)
 
-    frappe.db.commit()
-    return {"message": _("Lesson index updated successfully."), "refiled": refiled}
+	frappe.db.commit()
+	return {"message": _("Lesson index updated successfully."), "refiled": refiled}
 
 
 def _refile_competencies(course_schedule):
-    """Re-file a section's assessments on their chapters' competencies and
-    describe what moved, by name, for the caller to show (ADR 079 decision 8)."""
-    changed = frappe.get_doc(
-        "Course Schedule", course_schedule
-    ).refile_assessment_competencies()
+	"""Re-file a section's assessments on their chapters' competencies and
+	describe what moved, by name, for the caller to show (ADR 079 decision 8)."""
+	changed = frappe.get_doc("Course Schedule", course_schedule).refile_assessment_competencies()
 
-    def label(competency):
-        if not competency:
-            return None
-        return (
-            frappe.db.get_value("Course Competency", competency, "competency_name")
-            or competency
-        )
+	def label(competency):
+		if not competency:
+			return None
+		return frappe.db.get_value("Course Competency", competency, "competency_name") or competency
 
-    return [
-        {"title": title, "from": label(old), "to": label(new)}
-        for title, old, new in changed
-    ]
+	return [{"title": title, "from": label(old), "to": label(new)} for title, old, new in changed]
 
 
 def _clone_reference_rows(chapter_doc, exclude_lesson=None):
-    rows = []
-    for row in chapter_doc.lessons:
-        if exclude_lesson and row.lesson == exclude_lesson:
-            continue
-        rows.append({"lesson": row.lesson})
-    return rows
+	rows = []
+	for row in chapter_doc.lessons:
+		if exclude_lesson and row.lesson == exclude_lesson:
+			continue
+		rows.append({"lesson": row.lesson})
+	return rows
 
 
 def _save_chapter_lessons(chapter_doc, lessons):
-    chapter_doc.set("lessons", [])
-    for row in lessons:
-        chapter_doc.append("lessons", {"lesson": row["lesson"]})
-    chapter_doc.save(ignore_permissions=True)
+	chapter_doc.set("lessons", [])
+	for row in lessons:
+		chapter_doc.append("lessons", {"lesson": row["lesson"]})
+	chapter_doc.save(ignore_permissions=True)
 
 
 def _reorder_lessons_within_chapter(chapter_doc, lesson_name, idx):
-    rows = _clone_reference_rows(chapter_doc, exclude_lesson=lesson_name)
-    if len(rows) == len(chapter_doc.lessons):
-        frappe.throw(
-            _("Lesson {0} not found in chapter {1}").format(
-                lesson_name, chapter_doc.name
-            )
-        )
+	rows = _clone_reference_rows(chapter_doc, exclude_lesson=lesson_name)
+	if len(rows) == len(chapter_doc.lessons):
+		frappe.throw(_("Lesson {0} not found in chapter {1}").format(lesson_name, chapter_doc.name))
 
-    idx = min(idx, len(rows) + 1)
-    rows.insert(idx - 1, {"lesson": lesson_name})
-    _save_chapter_lessons(chapter_doc, rows)
+	idx = min(idx, len(rows) + 1)
+	rows.insert(idx - 1, {"lesson": lesson_name})
+	_save_chapter_lessons(chapter_doc, rows)
 
 
 def _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx):
-    source_rows = _clone_reference_rows(source_doc, exclude_lesson=lesson_doc.name)
-    if len(source_rows) == len(source_doc.lessons):
-        frappe.throw(
-            _("Lesson {0} not linked to source chapter {1}").format(
-                lesson_doc.name, source_doc.name
-            )
-        )
-    _save_chapter_lessons(source_doc, source_rows)
+	source_rows = _clone_reference_rows(source_doc, exclude_lesson=lesson_doc.name)
+	if len(source_rows) == len(source_doc.lessons):
+		frappe.throw(
+			_("Lesson {0} not linked to source chapter {1}").format(lesson_doc.name, source_doc.name)
+		)
+	_save_chapter_lessons(source_doc, source_rows)
 
-    target_rows = _clone_reference_rows(target_doc)
-    idx = min(idx, len(target_rows) + 1)
-    target_rows.insert(idx - 1, {"lesson": lesson_doc.name})
-    _save_chapter_lessons(target_doc, target_rows)
+	target_rows = _clone_reference_rows(target_doc)
+	idx = min(idx, len(target_rows) + 1)
+	target_rows.insert(idx - 1, {"lesson": lesson_doc.name})
+	_save_chapter_lessons(target_doc, target_rows)
 
-    lesson_doc.chapter = target_doc.name
-    lesson_doc.save(ignore_permissions=True)
+	lesson_doc.chapter = target_doc.name
+	lesson_doc.save(ignore_permissions=True)
 
 
 @frappe.whitelist()
 def update_chapter_index(course, chapter, idx):
-    """Move a chapter to position `idx` in its course's outline.
+	"""Move a chapter to position `idx` in its course's outline.
 
-    Chapter order is the order of the Course Schedule's `chapters` child rows,
-    so reordering rewrites that table — the same shape as reordering lessons
-    inside a chapter."""
-    require_course_staff(course)
-    idx = max(cint(idx) or 1, 1)
+	Chapter order is the order of the Course Schedule's `chapters` child rows,
+	so reordering rewrites that table — the same shape as reordering lessons
+	inside a chapter."""
+	require_course_staff(course)
+	idx = max(cint(idx) or 1, 1)
 
-    course_doc = frappe.get_doc("Course Schedule", course)
-    rows = [row.chapter for row in course_doc.chapters if row.chapter != chapter]
-    if len(rows) == len(course_doc.chapters):
-        frappe.throw(_("Chapter {0} not found in course {1}").format(chapter, course))
+	course_doc = frappe.get_doc("Course Schedule", course)
+	rows = [row.chapter for row in course_doc.chapters if row.chapter != chapter]
+	if len(rows) == len(course_doc.chapters):
+		frappe.throw(_("Chapter {0} not found in course {1}").format(chapter, course))
 
-    idx = min(idx, len(rows) + 1)
-    rows.insert(idx - 1, chapter)
+	idx = min(idx, len(rows) + 1)
+	rows.insert(idx - 1, chapter)
 
-    course_doc.set("chapters", [])
-    for chapter_name in rows:
-        course_doc.append("chapters", {"chapter": chapter_name})
-    course_doc.save(ignore_permissions=True)
+	course_doc.set("chapters", [])
+	for chapter_name in rows:
+		course_doc.append("chapters", {"chapter": chapter_name})
+	course_doc.save(ignore_permissions=True)
 
-    frappe.db.commit()
-    return {"message": _("Chapter index updated successfully.")}
+	frappe.db.commit()
+	return {"message": _("Chapter index updated successfully.")}
 
 
 @frappe.whitelist()
 def GradeableDiscussion(courseName, discussionID):
-    count = frappe.db.sql(
-        """select count(c.name)
+	count = frappe.db.sql(
+		"""select count(c.name)
 from `tabScheduled Course Assess Criteria` c,
 `tabCourse Schedule` cs
 where cs.name = %s and
 cs.name = c.parent and
 c.discussion = %s""",
-        (courseName, discussionID),
-    )
-    return count[0][0] > 0 if count else False
+		(courseName, discussionID),
+	)
+	return count[0][0] > 0 if count else False
 
 
 @frappe.whitelist()
 def GradeableQuiz(courseName, quizID):
-    """True when the quiz is linked to a grading criteria on the course."""
-    count = frappe.db.sql(
-        """select count(c.name)
+	"""True when the quiz is linked to a grading criteria on the course."""
+	count = frappe.db.sql(
+		"""select count(c.name)
 from `tabScheduled Course Assess Criteria` c,
 `tabCourse Schedule` cs
 where cs.name = %s and
 cs.name = c.parent and
 c.quiz = %s""",
-        (courseName, quizID),
-    )
-    return count[0][0] > 0 if count else False
+		(courseName, quizID),
+	)
+	return count[0][0] > 0 if count else False
 
 
 @frappe.whitelist()
 def GradeableExam(courseName, examID):
-    """True when the exam is linked to a grading criteria on the course."""
-    count = frappe.db.sql(
-        """select count(c.name)
+	"""True when the exam is linked to a grading criteria on the course."""
+	count = frappe.db.sql(
+		"""select count(c.name)
 from `tabScheduled Course Assess Criteria` c,
 `tabCourse Schedule` cs
 where cs.name = %s and
 cs.name = c.parent and
 c.exam = %s""",
-        (courseName, examID),
-    )
-    return count[0][0] > 0 if count else False
+		(courseName, examID),
+	)
+	return count[0][0] > 0 if count else False
 
 
 @frappe.whitelist()
 def GradeableAssignment(courseName, assignmentID):
-    """True when the assignment is linked to a grading criteria on the course."""
-    count = frappe.db.sql(
-        """select count(c.name)
+	"""True when the assignment is linked to a grading criteria on the course."""
+	count = frappe.db.sql(
+		"""select count(c.name)
 from `tabScheduled Course Assess Criteria` c,
 `tabCourse Schedule` cs
 where cs.name = %s and
 cs.name = c.parent and
 c.assignment = %s""",
-        (courseName, assignmentID),
-    )
-    return count[0][0] > 0 if count else False
+		(courseName, assignmentID),
+	)
+	return count[0][0] > 0 if count else False
 
 
 # --- Assignment Submission anchored comments (Phase 2) ------------------------
@@ -5666,240 +5442,238 @@ _GRADER_ROLES = ("Instructor", "Program Chair", "Seminary Manager", "System Mana
 
 
 def _can_grade_submission(submission):
-    """A grader may post / edit / resolve anchored comments on a submission
-    of a section they teach (p007 §2.4); chairs and managers anywhere. With
-    no submission in hand (plagiarism tooling entry points) this is the role
-    check alone. (Authors of a comment can edit their own — checked at the
-    call site.)"""
-    user = frappe.session.user
-    if user == "Administrator":
-        return True
-    user_roles = set(frappe.get_roles(user))
-    if not any(role in user_roles for role in _GRADER_ROLES):
-        return False
-    course = submission.get("course") if submission is not None else None
-    if course:
-        return is_course_staff(course)
-    return True
+	"""A grader may post / edit / resolve anchored comments on a submission
+	of a section they teach (p007 §2.4); chairs and managers anywhere. With
+	no submission in hand (plagiarism tooling entry points) this is the role
+	check alone. (Authors of a comment can edit their own — checked at the
+	call site.)"""
+	user = frappe.session.user
+	if user == "Administrator":
+		return True
+	user_roles = set(frappe.get_roles(user))
+	if not any(role in user_roles for role in _GRADER_ROLES):
+		return False
+	course = submission.get("course") if submission is not None else None
+	if course:
+		return is_course_staff(course)
+	return True
 
 
 @frappe.whitelist()
 def get_submission_comments(submission_name):
-    """Read-only: return every anchored comment on a submission, with author
-    display names resolved. Ordered for stable per-type sidebar rendering."""
-    submission = frappe.get_doc("Assignment Submission", submission_name)
-    submission.check_permission("read")
+	"""Read-only: return every anchored comment on a submission, with author
+	display names resolved. Ordered for stable per-type sidebar rendering."""
+	submission = frappe.get_doc("Assignment Submission", submission_name)
+	submission.check_permission("read")
 
-    rows = frappe.get_all(
-        "Assignment Submission Comment",
-        filters={
-            "parent": submission_name,
-            "parenttype": "Assignment Submission",
-        },
-        fields=[
-            "name",
-            "anchor_type",
-            "page",
-            "x_pct",
-            "y_pct",
-            "range_from",
-            "range_to",
-            "timestamp_s",
-            "comment",
-            "author",
-            "resolved",
-            "creation",
-        ],
-        order_by="page asc, timestamp_s asc, creation asc",
-        ignore_permissions=True,
-    )
+	rows = frappe.get_all(
+		"Assignment Submission Comment",
+		filters={
+			"parent": submission_name,
+			"parenttype": "Assignment Submission",
+		},
+		fields=[
+			"name",
+			"anchor_type",
+			"page",
+			"x_pct",
+			"y_pct",
+			"range_from",
+			"range_to",
+			"timestamp_s",
+			"comment",
+			"author",
+			"resolved",
+			"creation",
+		],
+		order_by="page asc, timestamp_s asc, creation asc",
+		ignore_permissions=True,
+	)
 
-    author_ids = {row["author"] for row in rows if row.get("author")}
-    author_names = {}
-    if author_ids:
-        author_names = {
-            u["name"]: u["full_name"] or u["name"]
-            for u in frappe.get_all(
-                "User",
-                filters={"name": ["in", list(author_ids)]},
-                fields=["name", "full_name"],
-            )
-        }
-    for row in rows:
-        row["author_name"] = author_names.get(row.get("author"), row.get("author"))
-    return rows
+	author_ids = {row["author"] for row in rows if row.get("author")}
+	author_names = {}
+	if author_ids:
+		author_names = {
+			u["name"]: u["full_name"] or u["name"]
+			for u in frappe.get_all(
+				"User",
+				filters={"name": ["in", list(author_ids)]},
+				fields=["name", "full_name"],
+			)
+		}
+	for row in rows:
+		row["author_name"] = author_names.get(row.get("author"), row.get("author"))
+	return rows
 
 
 @frappe.whitelist()
-def add_submission_comment(
-    submission_name, anchor_type, anchor_data=None, comment=None
-):
-    """Create a new anchored comment on a submission.
+def add_submission_comment(submission_name, anchor_type, anchor_data=None, comment=None):
+	"""Create a new anchored comment on a submission.
 
-    `anchor_data` is a JSON object whose keys depend on `anchor_type`:
-      - General:   {}
-      - Page:      {page: int}
-      - Region:    {page: int, x_pct: float, y_pct: float}  (Image pins use page=1)
-      - TextRange: {range_from: int, range_to: int}
-      - Timestamp: {timestamp_s: int}
-    """
-    import json as _json
+	`anchor_data` is a JSON object whose keys depend on `anchor_type`:
+	  - General:   {}
+	  - Page:      {page: int}
+	  - Region:    {page: int, x_pct: float, y_pct: float}  (Image pins use page=1)
+	  - TextRange: {range_from: int, range_to: int}
+	  - Timestamp: {timestamp_s: int}
+	"""
+	import json as _json
 
-    _require_grader()  # role first; the section check follows the load
-    if not comment or not comment.strip():
-        frappe.throw(_("Comment text is required."))
+	_require_grader()  # role first; the section check follows the load
+	if not comment or not comment.strip():
+		frappe.throw(_("Comment text is required."))
 
-    submission = frappe.get_doc("Assignment Submission", submission_name)
-    if not _can_grade_submission(submission):
-        frappe.throw(_("You don't have permission to comment on this submission."))
+	submission = frappe.get_doc("Assignment Submission", submission_name)
+	if not _can_grade_submission(submission):
+		frappe.throw(_("You don't have permission to comment on this submission."))
 
-    if anchor_type not in ("General", "Page", "Region", "TextRange", "Timestamp"):
-        frappe.throw(_("Unknown anchor_type: {0}").format(anchor_type))
+	if anchor_type not in ("General", "Page", "Region", "TextRange", "Timestamp"):
+		frappe.throw(_("Unknown anchor_type: {0}").format(anchor_type))
 
-    data = anchor_data or {}
-    if isinstance(data, str):
-        data = _json.loads(data or "{}")
+	data = anchor_data or {}
+	if isinstance(data, str):
+		data = _json.loads(data or "{}")
 
-    row = frappe.get_doc(
-        {
-            "doctype": "Assignment Submission Comment",
-            "parent": submission_name,
-            "parenttype": "Assignment Submission",
-            "parentfield": "comments_thread",
-            "anchor_type": anchor_type,
-            "page": data.get("page") or 0,
-            "x_pct": data.get("x_pct") or 0,
-            "y_pct": data.get("y_pct") or 0,
-            "range_from": data.get("range_from") or 0,
-            "range_to": data.get("range_to") or 0,
-            "timestamp_s": data.get("timestamp_s") or 0,
-            "comment": comment,
-            "author": frappe.session.user,
-            "resolved": 0,
-        }
-    )
-    row.insert(ignore_permissions=True)
-    return row.name
+	row = frappe.get_doc(
+		{
+			"doctype": "Assignment Submission Comment",
+			"parent": submission_name,
+			"parenttype": "Assignment Submission",
+			"parentfield": "comments_thread",
+			"anchor_type": anchor_type,
+			"page": data.get("page") or 0,
+			"x_pct": data.get("x_pct") or 0,
+			"y_pct": data.get("y_pct") or 0,
+			"range_from": data.get("range_from") or 0,
+			"range_to": data.get("range_to") or 0,
+			"timestamp_s": data.get("timestamp_s") or 0,
+			"comment": comment,
+			"author": frappe.session.user,
+			"resolved": 0,
+		}
+	)
+	row.insert(ignore_permissions=True)
+	return row.name
 
 
 @frappe.whitelist()
 def update_submission_comment(name, comment=None, resolved=None):
-    """Edit a comment (author only) or resolve/unresolve it (graders)."""
-    row = frappe.get_doc("Assignment Submission Comment", name)
-    submission = frappe.get_doc("Assignment Submission", row.parent)
+	"""Edit a comment (author only) or resolve/unresolve it (graders)."""
+	row = frappe.get_doc("Assignment Submission Comment", name)
+	submission = frappe.get_doc("Assignment Submission", row.parent)
 
-    is_author = row.author == frappe.session.user
-    is_grader = _can_grade_submission(submission)
+	is_author = row.author == frappe.session.user
+	is_grader = _can_grade_submission(submission)
 
-    if not is_author and not is_grader:
-        frappe.throw(_("You don't have permission to edit this comment."))
+	if not is_author and not is_grader:
+		frappe.throw(_("You don't have permission to edit this comment."))
 
-    if comment is not None:
-        if not is_author:
-            frappe.throw(_("Only the comment author may edit its text."))
-        row.comment = comment
-    if resolved is not None:
-        row.resolved = 1 if int(resolved) else 0
+	if comment is not None:
+		if not is_author:
+			frappe.throw(_("Only the comment author may edit its text."))
+		row.comment = comment
+	if resolved is not None:
+		row.resolved = 1 if int(resolved) else 0
 
-    row.save(ignore_permissions=True)
-    return row.name
+	row.save(ignore_permissions=True)
+	return row.name
 
 
 @frappe.whitelist()
 def delete_submission_comment(name):
-    """Delete a comment row (author or grader)."""
-    row = frappe.get_doc("Assignment Submission Comment", name)
-    submission = frappe.get_doc("Assignment Submission", row.parent)
+	"""Delete a comment row (author or grader)."""
+	row = frappe.get_doc("Assignment Submission Comment", name)
+	submission = frappe.get_doc("Assignment Submission", row.parent)
 
-    if row.author != frappe.session.user and not _can_grade_submission(submission):
-        frappe.throw(_("You don't have permission to delete this comment."))
+	if row.author != frappe.session.user and not _can_grade_submission(submission):
+		frappe.throw(_("You don't have permission to delete this comment."))
 
-    frappe.delete_doc("Assignment Submission Comment", name, ignore_permissions=True)
+	frappe.delete_doc("Assignment Submission Comment", name, ignore_permissions=True)
 
 
 def _require_own_invoices(names):
-    """Refuse an invoice the caller does not already hold (p010 H15, A01-17).
+	"""Refuse an invoice the caller does not already hold (p010 H15, A01-17).
 
-    Seminary cannot resolve an invoice's owner -- invoices are the financial
-    backend's documents and do not exist at all on a Frappe-only bench. But it
-    does not need to: the backend already exposes *the caller's own* invoices,
-    so membership in that list is an ownership check built from the contract
-    that is already there, with no bridge change and no new abstract method.
+	Seminary cannot resolve an invoice's owner -- invoices are the financial
+	backend's documents and do not exist at all on a Frappe-only bench. But it
+	does not need to: the backend already exposes *the caller's own* invoices,
+	so membership in that list is an ownership check built from the contract
+	that is already there, with no bridge change and no new abstract method.
 
-    It fails closed. With `NullFinancialBackend` the list is empty, so every
-    invoice name is refused -- which is right, because there are no invoices.
-    """
-    from seminary.seminary.financial.backend import get_financial_backend
+	It fails closed. With `NullFinancialBackend` the list is empty, so every
+	invoice name is refused -- which is right, because there are no invoices.
+	"""
+	from seminary.seminary.financial.backend import get_financial_backend
 
-    wanted = [n for n in (names or []) if n]
-    if not wanted:
-        return
-    if guards.is_school_role() or guards.instructor_tier() == "record":
-        return
+	wanted = [n for n in (names or []) if n]
+	if not wanted:
+		return
+	if guards.is_school_role() or guards.instructor_tier() == "record":
+		return
 
-    mine = set()
-    for row in get_financial_backend().student_invoices() or []:
-        if isinstance(row, str):
-            mine.add(row)
-            continue
-        for key in ("name", "invoice", "invoice_name"):
-            if row.get(key):
-                mine.add(row[key])
-                break
+	mine = set()
+	for row in get_financial_backend().student_invoices() or []:
+		if isinstance(row, str):
+			mine.add(row)
+			continue
+		for key in ("name", "invoice", "invoice_name"):
+			if row.get(key):
+				mine.add(row[key])
+				break
 
-    stray = [n for n in wanted if n not in mine]
-    if stray:
-        guards._deny(
-            _("You can only pay your own invoices."),
-            "require_own_invoices",
-            count=len(stray),
-        )
+	stray = [n for n in wanted if n not in mine]
+	if stray:
+		guards._deny(
+			_("You can only pay your own invoices."),
+			"require_own_invoices",
+			count=len(stray),
+		)
 
 
 @frappe.whitelist()
 def get_invoice_payment_url(invoice_name):
-    """Gateway payment URL for one of the student's invoices.
+	"""Gateway payment URL for one of the student's invoices.
 
-    "the student's" was a docstring precondition that nothing enforced: with a
-    bridge installed this minted a gateway payment URL for *another* student's
-    invoice (p010 H15, p005a A01-17).
-    """
-    from seminary.seminary.financial.backend import get_financial_backend
+	"the student's" was a docstring precondition that nothing enforced: with a
+	bridge installed this minted a gateway payment URL for *another* student's
+	invoice (p010 H15, p005a A01-17).
+	"""
+	from seminary.seminary.financial.backend import get_financial_backend
 
-    _require_own_invoices([invoice_name])
-    return get_financial_backend().invoice_payment_url(invoice_name)
+	_require_own_invoices([invoice_name])
+	return get_financial_backend().invoice_payment_url(invoice_name)
 
 
 @frappe.whitelist()
 def get_student_balance_payment_url():
-    """Gateway payment URL for the student's full outstanding balance."""
-    from seminary.seminary.financial.backend import get_financial_backend
+	"""Gateway payment URL for the student's full outstanding balance."""
+	from seminary.seminary.financial.backend import get_financial_backend
 
-    return get_financial_backend().student_balance_payment_url()
+	return get_financial_backend().student_balance_payment_url()
 
 
 @frappe.whitelist()
 def get_student_partial_balance_payment_url(amount=None, invoices=None):
-    """Gateway payment URL for a partial balance payment."""
-    from seminary.seminary.financial.backend import get_financial_backend
+	"""Gateway payment URL for a partial balance payment."""
+	from seminary.seminary.financial.backend import get_financial_backend
 
-    names = invoices
-    if isinstance(names, str):
-        names = frappe.parse_json(names) or []
-    _require_own_invoices(names)
-    return get_financial_backend().student_partial_balance_payment_url(amount, invoices)
+	names = invoices
+	if isinstance(names, str):
+		names = frappe.parse_json(names) or []
+	_require_own_invoices(names)
+	return get_financial_backend().student_partial_balance_payment_url(amount, invoices)
 
 
 def get_my_announcements(limit=100):
-    """Return announcements sent to the current user.
+	"""Return announcements sent to the current user.
 
-    Joined via Seminary Announcement Recipient matched by user or email.
-    """
-    if frappe.session.user == "Guest":
-        frappe.throw(_("Please log in."), frappe.AuthenticationError)
+	Joined via Seminary Announcement Recipient matched by user or email.
+	"""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Please log in."), frappe.AuthenticationError)
 
-    return frappe.db.sql(
-        """
+	return frappe.db.sql(
+		"""
         SELECT
             sa.name,
             sa.subject,
@@ -5915,360 +5689,336 @@ def get_my_announcements(limit=100):
         ORDER BY sa.sent_datetime DESC
         LIMIT %(limit)s
         """,
-        {"user": frappe.session.user, "limit": cint(limit)},
-        as_dict=True,
-    )
+		{"user": frappe.session.user, "limit": cint(limit)},
+		as_dict=True,
+	)
 
 
 @frappe.whitelist()
 def preview_announcement_recipients(name):
-    """Resolve the recipient list for a draft Seminary Announcement without
-    sending, and compute per-channel reachability against the selected channels.
+	"""Resolve the recipient list for a draft Seminary Announcement without
+	sending, and compute per-channel reachability against the selected channels.
 
-    Returns a tally (total / reachable / unreachable, per-channel reachable
-    counts, how many rely on the Email+In-App fallback) plus the first 50 rows
-    annotated with their reachability.
-    """
-    from seminary.seminary import comms
-    from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
-        resolve_recipients,
-    )
-    from seminary.seminary.person import find_person
+	Returns a tally (total / reachable / unreachable, per-channel reachable
+	counts, how many rely on the Email+In-App fallback) plus the first 50 rows
+	annotated with their reachability.
+	"""
+	from seminary.seminary import comms
+	from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
+		resolve_recipients,
+	)
+	from seminary.seminary.person import find_person
 
-    frappe.has_permission("Seminary Announcement", "read", throw=True)
-    doc = frappe.get_doc("Seminary Announcement", name)
-    doc.check_permission("read")
-    if doc.docstatus != 0:
-        frappe.throw(_("Preview is only available on draft announcements."))
+	frappe.has_permission("Seminary Announcement", "read", throw=True)
+	doc = frappe.get_doc("Seminary Announcement", name)
+	doc.check_permission("read")
+	if doc.docstatus != 0:
+		frappe.throw(_("Preview is only available on draft announcements."))
 
-    resolved = resolve_recipients(doc)
-    channels = doc._selected_channels()
-    category = doc.category or "Academic"
-    fallback_channels = (
-        [c for c in ("Email", "In-App") if c not in channels]
-        if doc.fallback_email_portal
-        else []
-    )
+	resolved = resolve_recipients(doc)
+	channels = doc._selected_channels()
+	category = doc.category or "Academic"
+	fallback_channels = (
+		[c for c in ("Email", "In-App") if c not in channels] if doc.fallback_email_portal else []
+	)
 
-    channel_counts = {c: 0 for c in channels}
-    # A hold may let one announcement through (p019).
-    reference = {"reference_doctype": doc.doctype, "reference_name": doc.name}
-    reachable_count = 0
-    fallback_count = 0
-    sample = []
+	channel_counts = {c: 0 for c in channels}
+	# A hold may let one announcement through (p019).
+	reference = {"reference_doctype": doc.doctype, "reference_name": doc.name}
+	reachable_count = 0
+	fallback_count = 0
+	sample = []
 
-    for i, r in enumerate(resolved):
-        person_name = find_person(email=r.get("email"), user=r.get("user"))
-        person = frappe.get_doc("Person", person_name) if person_name else None
+	for i, r in enumerate(resolved):
+		person_name = find_person(email=r.get("email"), user=r.get("user"))
+		person = frappe.get_doc("Person", person_name) if person_name else None
 
-        ok_selected = False
-        for c in channels:
-            if (
-                comms.reachability(
-                    person, c, category, email=r.get("email"), **reference
-                )
-                == "ok"
-            ):
-                channel_counts[c] += 1
-                ok_selected = True
+		ok_selected = False
+		for c in channels:
+			if comms.reachability(person, c, category, email=r.get("email"), **reference) == "ok":
+				channel_counts[c] += 1
+				ok_selected = True
 
-        via_fallback = False
-        if not ok_selected and fallback_channels:
-            via_fallback = any(
-                comms.reachability(
-                    person, c, category, email=r.get("email"), **reference
-                )
-                == "ok"
-                for c in fallback_channels
-            )
+		via_fallback = False
+		if not ok_selected and fallback_channels:
+			via_fallback = any(
+				comms.reachability(person, c, category, email=r.get("email"), **reference) == "ok"
+				for c in fallback_channels
+			)
 
-        reachable = ok_selected or via_fallback
-        if reachable:
-            reachable_count += 1
-        if via_fallback:
-            fallback_count += 1
+		reachable = ok_selected or via_fallback
+		if reachable:
+			reachable_count += 1
+		if via_fallback:
+			fallback_count += 1
 
-        if i < 50:
-            reason = ""
-            if not reachable:
-                # email is the universal fallback address, so its block reason
-                # is the most useful explanation of an unreachable recipient
-                reason = comms.reachability(
-                    person, "Email", category, email=r.get("email"), **reference
-                )
-            sample.append(
-                {
-                    "party_type": r["party_type"],
-                    "party_name": r.get("party_name"),
-                    "email": r["email"],
-                    "reachable": reachable,
-                    "via_fallback": via_fallback,
-                    "reason": reason,
-                }
-            )
+		if i < 50:
+			reason = ""
+			if not reachable:
+				# email is the universal fallback address, so its block reason
+				# is the most useful explanation of an unreachable recipient
+				reason = comms.reachability(person, "Email", category, email=r.get("email"), **reference)
+			sample.append(
+				{
+					"party_type": r["party_type"],
+					"party_name": r.get("party_name"),
+					"email": r["email"],
+					"reachable": reachable,
+					"via_fallback": via_fallback,
+					"reason": reason,
+				}
+			)
 
-    return {
-        "total": len(resolved),
-        "reachable": reachable_count,
-        "unreachable": len(resolved) - reachable_count,
-        "channels": channels,
-        "channel_counts": channel_counts,
-        "fallback": bool(doc.fallback_email_portal),
-        "fallback_channels": fallback_channels,
-        "fallback_count": fallback_count,
-        "sample": sample,
-    }
+	return {
+		"total": len(resolved),
+		"reachable": reachable_count,
+		"unreachable": len(resolved) - reachable_count,
+		"channels": channels,
+		"channel_counts": channel_counts,
+		"fallback": bool(doc.fallback_email_portal),
+		"fallback_channels": fallback_channels,
+		"fallback_count": fallback_count,
+		"sample": sample,
+	}
 
 
 @frappe.whitelist()
 def generate_announcement_labels(name):
-    """Render the mailing-label PDF for a Seminary Announcement and attach it.
-    Works on a draft (recipients resolved live) or a submitted one (its frozen
-    recipient list). Returns {file_url, placed, omitted}."""
-    from seminary.seminary import mailing_labels
-    from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
-        resolve_recipients,
-    )
+	"""Render the mailing-label PDF for a Seminary Announcement and attach it.
+	Works on a draft (recipients resolved live) or a submitted one (its frozen
+	recipient list). Returns {file_url, placed, omitted}."""
+	from seminary.seminary import mailing_labels
+	from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
+		resolve_recipients,
+	)
 
-    frappe.has_permission("Seminary Announcement", "write", throw=True)
-    doc = frappe.get_doc("Seminary Announcement", name)
-    doc.check_permission("write")
+	frappe.has_permission("Seminary Announcement", "write", throw=True)
+	doc = frappe.get_doc("Seminary Announcement", name)
+	doc.check_permission("write")
 
-    if doc.docstatus == 0:
-        recipients = resolve_recipients(doc)
-    else:
-        recipients = [
-            {
-                "party_type": r.party_type,
-                "party": r.party,
-                "party_name": r.party_name,
-                "email": r.email,
-                "user": r.user,
-            }
-            for r in doc.recipients
-        ]
-    if not recipients:
-        frappe.throw(_("No recipients to build labels for."))
+	if doc.docstatus == 0:
+		recipients = resolve_recipients(doc)
+	else:
+		recipients = [
+			{
+				"party_type": r.party_type,
+				"party": r.party,
+				"party_name": r.party_name,
+				"email": r.email,
+				"user": r.user,
+			}
+			for r in doc.recipients
+		]
+	if not recipients:
+		frappe.throw(_("No recipients to build labels for."))
 
-    result = mailing_labels._render_and_attach(doc.name, recipients, doc.label_format)
-    if not result["placed"]:
-        frappe.throw(
-            _("None of the {0} recipient(s) have a postal address on file.").format(
-                len(recipients)
-            )
-        )
-    return result
+	result = mailing_labels._render_and_attach(doc.name, recipients, doc.label_format)
+	if not result["placed"]:
+		frappe.throw(_("None of the {0} recipient(s) have a postal address on file.").format(len(recipients)))
+	return result
 
 
 @frappe.whitelist()
 def announcement_letters_pdf(name):
-    """Build/attach the consolidated, official Print letters PDF (one
-    personalized letter per recipient, per page) and return its URL. After
-    submit it uses the sent Print logs; on a draft it renders all recipients."""
-    from seminary.seminary.doctype.seminary_announcement import (
-        seminary_announcement as sa,
-    )
+	"""Build/attach the consolidated, official Print letters PDF (one
+	personalized letter per recipient, per page) and return its URL. After
+	submit it uses the sent Print logs; on a draft it renders all recipients."""
+	from seminary.seminary.doctype.seminary_announcement import (
+		seminary_announcement as sa,
+	)
 
-    frappe.has_permission("Seminary Announcement", "read", throw=True)
-    doc = frappe.get_doc("Seminary Announcement", name)
-    doc.check_permission("read")
-    url = sa._attach_letters_pdf(doc)
-    if not url:
-        frappe.throw(_("No recipients to print letters for."))
-    return {"file_url": url}
+	frappe.has_permission("Seminary Announcement", "read", throw=True)
+	doc = frappe.get_doc("Seminary Announcement", name)
+	doc.check_permission("read")
+	url = sa._attach_letters_pdf(doc)
+	if not url:
+		frappe.throw(_("No recipients to print letters for."))
+	return {"file_url": url}
 
 
 @frappe.whitelist()
 def preview_announcement_letter(name):
-    """Render the printed letter (subject + message wrapped in the letter head)
-    to a PDF so staff can preview/print the 'newsletter'. Personalization tokens
-    are resolved against the first real recipient (or a sample). Returns
-    {file_url}."""
-    from seminary.pdf import render as get_pdf
-    from seminary.seminary import comms
-    from seminary.seminary.doctype.seminary_announcement import (
-        seminary_announcement as sa,
-    )
-    from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
-        resolve_recipients,
-    )
-    from seminary.seminary.person import find_person
+	"""Render the printed letter (subject + message wrapped in the letter head)
+	to a PDF so staff can preview/print the 'newsletter'. Personalization tokens
+	are resolved against the first real recipient (or a sample). Returns
+	{file_url}."""
+	from seminary.pdf import render as get_pdf
+	from seminary.seminary import comms
+	from seminary.seminary.doctype.seminary_announcement import (
+		seminary_announcement as sa,
+	)
+	from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
+		resolve_recipients,
+	)
+	from seminary.seminary.person import find_person
 
-    frappe.has_permission("Seminary Announcement", "write", throw=True)
-    doc = frappe.get_doc("Seminary Announcement", name)
-    doc.check_permission("write")  # it writes a File (p007 §2.6)
+	frappe.has_permission("Seminary Announcement", "write", throw=True)
+	doc = frappe.get_doc("Seminary Announcement", name)
+	doc.check_permission("write")  # it writes a File (p007 §2.6)
 
-    resolved = (
-        resolve_recipients(doc)
-        if doc.docstatus == 0
-        else [
-            frappe._dict(
-                party_type=r.party_type,
-                party=r.party,
-                party_name=r.party_name,
-                email=r.email,
-                user=r.user,
-            )
-            for r in doc.recipients
-        ]
-    )
-    if resolved:
-        first = frappe._dict(resolved[0])
-        person_name = find_person(email=first.email, user=first.get("user"))
-        person = frappe.get_doc("Person", person_name) if person_name else None
-        ctx = sa._render_context(first, person)
-        shown_for = first.party_name or first.email
-    else:
-        ctx = sa._sample_context()
-        shown_for = _("sample recipient")
+	resolved = (
+		resolve_recipients(doc)
+		if doc.docstatus == 0
+		else [
+			frappe._dict(
+				party_type=r.party_type,
+				party=r.party,
+				party_name=r.party_name,
+				email=r.email,
+				user=r.user,
+			)
+			for r in doc.recipients
+		]
+	)
+	if resolved:
+		first = frappe._dict(resolved[0])
+		person_name = find_person(email=first.email, user=first.get("user"))
+		person = frappe.get_doc("Person", person_name) if person_name else None
+		ctx = sa._render_context(first, person)
+		shown_for = first.party_name or first.email
+	else:
+		ctx = sa._sample_context()
+		shown_for = _("sample recipient")
 
-    subject = frappe.utils.escape_html(sa._render(doc.subject or "", ctx))
-    message = sa._render(doc.message or "", ctx)
-    caption = (
-        '<p style="color:#888;font-size:11px;margin-bottom:12px;">'
-        + frappe.utils.escape_html(
-            _("Preview — personalized for {0}").format(shown_for)
-        )
-        + "</p>"
-    )
-    heading = f"<h1>{subject}</h1>" if subject and doc.print_subject_heading else ""
-    body = caption + heading + message
-    html = comms.pdf_html(sa._wrap_letterhead(sa._resolve_letter_head(doc), body))
-    pdf = get_pdf(html)
+	subject = frappe.utils.escape_html(sa._render(doc.subject or "", ctx))
+	message = sa._render(doc.message or "", ctx)
+	caption = (
+		'<p style="color:#888;font-size:11px;margin-bottom:12px;">'
+		+ frappe.utils.escape_html(_("Preview — personalized for {0}").format(shown_for))
+		+ "</p>"
+	)
+	heading = f"<h1>{subject}</h1>" if subject and doc.print_subject_heading else ""
+	body = caption + heading + message
+	html = comms.pdf_html(sa._wrap_letterhead(sa._resolve_letter_head(doc), body))
+	pdf = get_pdf(html)
 
-    for old in frappe.get_all(
-        "File",
-        filters={
-            "attached_to_doctype": "Seminary Announcement",
-            "attached_to_name": name,
-            "file_name": ("like", "letter-%"),
-        },
-        pluck="name",
-    ):
-        frappe.delete_doc("File", old, ignore_permissions=True, force=True)
-    f = frappe.get_doc(
-        {
-            "doctype": "File",
-            "file_name": f"letter-{name}.pdf",
-            "attached_to_doctype": "Seminary Announcement",
-            "attached_to_name": name,
-            "is_private": 1,
-            "content": pdf,
-        }
-    ).insert(ignore_permissions=True)
-    return {"file_url": f.file_url}
+	for old in frappe.get_all(
+		"File",
+		filters={
+			"attached_to_doctype": "Seminary Announcement",
+			"attached_to_name": name,
+			"file_name": ("like", "letter-%"),
+		},
+		pluck="name",
+	):
+		frappe.delete_doc("File", old, ignore_permissions=True, force=True)
+	f = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": f"letter-{name}.pdf",
+			"attached_to_doctype": "Seminary Announcement",
+			"attached_to_name": name,
+			"is_private": 1,
+			"content": pdf,
+		}
+	).insert(ignore_permissions=True)
+	return {"file_url": f.file_url}
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def room_search(doctype, txt, searchfield, start, page_len, filters):
-    """Link-field search for the Course Schedule `room` picker.
+	"""Link-field search for the Course Schedule `room` picker.
 
-    Frappe Link `get_query` can only filter, not reorder — so this custom
-    search orders rooms best-fit first and attaches a muted description line
-    (capacity · feature fit · free/busy) the dropdown renders. It only ranks;
-    it never hides rooms, since room fit is a warning, not a hard block.
+	Frappe Link `get_query` can only filter, not reorder — so this custom
+	search orders rooms best-fit first and attaches a muted description line
+	(capacity · feature fit · free/busy) the dropdown renders. It only ranks;
+	it never hides rooms, since room fit is a warning, not a hard block.
 
-    `filters` (passed from course_schedule.js): course, modality,
-    course_schedule (optional, for the busy/free flag). All optional — with
-    none of them this degrades to a plain capacity-sorted list.
-    """
-    frappe.only_for(list(SCHOOL_ROLES | {"Instructor"}))
-    filters = (
-        frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
-    )
-    course = filters.get("course")
-    modality = filters.get("modality")
-    course_schedule = filters.get("course_schedule")
+	`filters` (passed from course_schedule.js): course, modality,
+	course_schedule (optional, for the busy/free flag). All optional — with
+	none of them this degrades to a plain capacity-sorted list.
+	"""
+	frappe.only_for(list(SCHOOL_ROLES | {"Instructor"}))
+	filters = frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
+	course = filters.get("course")
+	modality = filters.get("modality")
+	course_schedule = filters.get("course_schedule")
 
-    # Required features for this course type + modality (All ∪ specific).
-    required = set()
-    if course:
-        course_type = frappe.db.get_value("Course", course, "course_type")
-        if course_type:
-            required = set(
-                f
-                for f in frappe.get_all(
-                    "Course Type Requirements",
-                    filters={
-                        "parent": course_type,
-                        "parenttype": "Course Type",
-                        "modality": ["in", ["All", modality or ""]],
-                    },
-                    pluck="room_feature",
-                )
-                if f
-            )
+	# Required features for this course type + modality (All ∪ specific).
+	required = set()
+	if course:
+		course_type = frappe.db.get_value("Course", course, "course_type")
+		if course_type:
+			required = set(
+				f
+				for f in frappe.get_all(
+					"Course Type Requirements",
+					filters={
+						"parent": course_type,
+						"parenttype": "Course Type",
+						"modality": ["in", ["All", modality or ""]],
+					},
+					pluck="room_feature",
+				)
+				if f
+			)
 
-    # Room → set(features), in one query.
-    have_by_room = {}
-    for fr in frappe.get_all(
-        "Room Existing Feature",
-        filters={"parenttype": "Room"},
-        fields=["parent", "feature"],
-    ):
-        have_by_room.setdefault(fr.parent, set()).add(fr.feature)
+	# Room → set(features), in one query.
+	have_by_room = {}
+	for fr in frappe.get_all(
+		"Room Existing Feature",
+		filters={"parenttype": "Room"},
+		fields=["parent", "feature"],
+	):
+		have_by_room.setdefault(fr.parent, set()).add(fr.feature)
 
-    busy_rooms = _rooms_busy_for_cs(course_schedule) if course_schedule else set()
+	busy_rooms = _rooms_busy_for_cs(course_schedule) if course_schedule else set()
 
-    # Match the docname, room name, AND room number. The docname match is
-    # essential: when the Link control re-resolves a selected value it searches
-    # by the docname (e.g. ROOM-00001) — if that returns nothing the control
-    # treats the value as invalid and silently clears it.
-    or_filters = None
-    if txt:
-        like = f"%{txt}%"
-        or_filters = [
-            ["name", "like", like],
-            ["room_name", "like", like],
-            ["room_number", "like", like],
-        ]
-    rooms = frappe.get_all(
-        "Room",
-        or_filters=or_filters,
-        fields=["name", "room_name", "seating_capacity"],
-        limit_page_length=0,
-    )
+	# Match the docname, room name, AND room number. The docname match is
+	# essential: when the Link control re-resolves a selected value it searches
+	# by the docname (e.g. ROOM-00001) — if that returns nothing the control
+	# treats the value as invalid and silently clears it.
+	or_filters = None
+	if txt:
+		like = f"%{txt}%"
+		or_filters = [
+			["name", "like", like],
+			["room_name", "like", like],
+			["room_number", "like", like],
+		]
+	rooms = frappe.get_all(
+		"Room",
+		or_filters=or_filters,
+		fields=["name", "room_name", "seating_capacity"],
+		limit_page_length=0,
+	)
 
-    scored = []
-    for r in rooms:
-        have = have_by_room.get(r.name, set())
-        missing = required - have
-        fits_features = 1 if not missing else 0
-        is_free = 0 if r.name in busy_rooms else 1
-        parts = [_("cap {0}").format(r.seating_capacity or "?")]
-        if required:
-            parts.append(
-                _("✓ fits")
-                if fits_features
-                else _("✗ missing {0}").format(len(missing))
-            )
-        if course_schedule:
-            parts.append(_("free") if is_free else _("busy"))
-        # Sort key: free first, feature-fit next, larger rooms next.
-        scored.append(
-            (
-                is_free,
-                fits_features,
-                r.seating_capacity or 0,
-                r.name,
-                r.room_name,
-                " · ".join(parts),
-            )
-        )
+	scored = []
+	for r in rooms:
+		have = have_by_room.get(r.name, set())
+		missing = required - have
+		fits_features = 1 if not missing else 0
+		is_free = 0 if r.name in busy_rooms else 1
+		parts = [_("cap {0}").format(r.seating_capacity or "?")]
+		if required:
+			parts.append(_("✓ fits") if fits_features else _("✗ missing {0}").format(len(missing)))
+		if course_schedule:
+			parts.append(_("free") if is_free else _("busy"))
+		# Sort key: free first, feature-fit next, larger rooms next.
+		scored.append(
+			(
+				is_free,
+				fits_features,
+				r.seating_capacity or 0,
+				r.name,
+				r.room_name,
+				" · ".join(parts),
+			)
+		)
 
-    scored.sort(key=lambda x: (-x[0], -x[1], -x[2], x[3]))
-    page = scored[start : start + page_len]
-    # Return (name, title, description): Frappe's build_for_autosuggest uses
-    # column 1 as the link label when Room has "Show Title Field in Link"
-    # enabled, so the picker shows the room name instead of the ROOM-##### id.
-    return [(name, room_name, desc) for (_f, _fit, _cap, name, room_name, desc) in page]
+	scored.sort(key=lambda x: (-x[0], -x[1], -x[2], x[3]))
+	page = scored[start : start + page_len]
+	# Return (name, title, description): Frappe's build_for_autosuggest uses
+	# column 1 as the link label when Room has "Show Title Field in Link"
+	# enabled, so the picker shows the room name instead of the ROOM-##### id.
+	return [(name, room_name, desc) for (_f, _fit, _cap, name, room_name, desc) in page]
 
 
 def _rooms_busy_for_cs(course_schedule):
-    """Set of room names already booked during any of this CS's meeting windows."""
-    rows = frappe.db.sql(
-        """
+	"""Set of room names already booked during any of this CS's meeting windows."""
+	rows = frappe.db.sql(
+		"""
         SELECT DISTINCT COALESCE(theirs.cs_room, other_cs.room) AS room
         FROM `tabCourse Schedule Meeting Dates` mine
         JOIN `tabCourse Schedule` my_cs ON mine.parent = my_cs.name
@@ -6285,9 +6035,9 @@ def _rooms_busy_for_cs(course_schedule):
         WHERE mine.parent = %s
           AND COALESCE(mine.cs_online, 0) = 0
         """,
-        (course_schedule,),
-    )
-    return {r[0] for r in rows if r[0]}
+		(course_schedule,),
+	)
+	return {r[0] for r in rows if r[0]}
 
 
 # --- Plagiarism checking ------------------------------------------------------
@@ -6298,119 +6048,112 @@ def _rooms_busy_for_cs(course_schedule):
 
 
 def _require_grader():
-    if not _can_grade_submission(None):
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
+	if not _can_grade_submission(None):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 def _require_submission_staff(submission_name):
-    """The submission's section must be one the caller teaches (p007 §2.4)."""
-    course = frappe.db.get_value("Assignment Submission", submission_name, "course")
-    if course:
-        require_course_staff(course)
+	"""The submission's section must be one the caller teaches (p007 §2.4)."""
+	course = frappe.db.get_value("Assignment Submission", submission_name, "course")
+	if course:
+		require_course_staff(course)
 
 
 def _latest_plagiarism_result(submission_name):
-    rows = frappe.get_all(
-        "Plagiarism Check Result",
-        filters={
-            "reference_doctype": "Assignment Submission",
-            "reference_name": submission_name,
-        },
-        fields=["name"],
-        order_by="creation desc",
-        limit_page_length=1,
-    )
-    return rows[0].name if rows else None
+	rows = frappe.get_all(
+		"Plagiarism Check Result",
+		filters={
+			"reference_doctype": "Assignment Submission",
+			"reference_name": submission_name,
+		},
+		fields=["name"],
+		order_by="creation desc",
+		limit_page_length=1,
+	)
+	return rows[0].name if rows else None
 
 
 @frappe.whitelist()
 def run_plagiarism_check(submission_name, provider=None):
-    """Queue a plagiarism check for a submission. Returns the result doc name and
-    its (Queued) status so the panel can start polling."""
-    _require_grader()
-    if not frappe.db.get_single_value("Seminary Settings", "plagiarism_enabled"):
-        frappe.throw(_("Plagiarism checking is disabled."))
-    if not frappe.db.exists("Assignment Submission", submission_name):
-        frappe.throw(_("Submission not found."))
-    _require_submission_staff(submission_name)
+	"""Queue a plagiarism check for a submission. Returns the result doc name and
+	its (Queued) status so the panel can start polling."""
+	_require_grader()
+	if not frappe.db.get_single_value("Seminary Settings", "plagiarism_enabled"):
+		frappe.throw(_("Plagiarism checking is disabled."))
+	if not frappe.db.exists("Assignment Submission", submission_name):
+		frappe.throw(_("Submission not found."))
+	_require_submission_staff(submission_name)
 
-    from seminary.seminary.plagiarism.service import enqueue_check
+	from seminary.seminary.plagiarism.service import enqueue_check
 
-    result_name = enqueue_check(submission_name, provider=provider)
-    return {"status": "Queued", "result": result_name}
+	result_name = enqueue_check(submission_name, provider=provider)
+	return {"status": "Queued", "result": result_name}
 
 
 @frappe.whitelist()
 def get_plagiarism_result(submission_name):
-    """Latest plagiarism result for a submission (header + matched-source rows,
-    without the heavy passage JSON). Returns None when none has been run."""
-    _require_grader()
-    _require_submission_staff(submission_name)
-    result_name = _latest_plagiarism_result(submission_name)
-    if not result_name:
-        return None
-    result = frappe.get_doc("Plagiarism Check Result", result_name)
-    sources = [
-        {
-            "name": row.name,
-            "source_submission": row.source_submission,
-            "source_student_name": row.source_student_name,
-            "source_course": row.source_course,
-            "source_term": row.source_term,
-            "similarity": row.similarity,
-            "same_student": row.same_student,
-            "has_passages": bool(row.matched_passages and row.matched_passages != "[]"),
-        }
-        for row in result.matched_sources
-    ]
-    submission_modified = frappe.db.get_value(
-        "Assignment Submission", submission_name, "modified"
-    )
-    return {
-        "name": result.name,
-        "status": result.status,
-        "provider": result.provider,
-        "overall_score": result.overall_score,
-        "checked_chars": result.checked_chars,
-        "source_count": result.source_count,
-        "error": result.error,
-        "checked_on": result.checked_on,
-        "threshold": frappe.db.get_single_value(
-            "Seminary Settings", "plagiarism_similarity_threshold"
-        )
-        or 30,
-        "is_stale": bool(
-            result.checked_on
-            and submission_modified
-            and get_datetime(submission_modified) > get_datetime(result.checked_on)
-        ),
-        "sources": sources,
-    }
+	"""Latest plagiarism result for a submission (header + matched-source rows,
+	without the heavy passage JSON). Returns None when none has been run."""
+	_require_grader()
+	_require_submission_staff(submission_name)
+	result_name = _latest_plagiarism_result(submission_name)
+	if not result_name:
+		return None
+	result = frappe.get_doc("Plagiarism Check Result", result_name)
+	sources = [
+		{
+			"name": row.name,
+			"source_submission": row.source_submission,
+			"source_student_name": row.source_student_name,
+			"source_course": row.source_course,
+			"source_term": row.source_term,
+			"similarity": row.similarity,
+			"same_student": row.same_student,
+			"has_passages": bool(row.matched_passages and row.matched_passages != "[]"),
+		}
+		for row in result.matched_sources
+	]
+	submission_modified = frappe.db.get_value("Assignment Submission", submission_name, "modified")
+	return {
+		"name": result.name,
+		"status": result.status,
+		"provider": result.provider,
+		"overall_score": result.overall_score,
+		"checked_chars": result.checked_chars,
+		"source_count": result.source_count,
+		"error": result.error,
+		"checked_on": result.checked_on,
+		"threshold": frappe.db.get_single_value("Seminary Settings", "plagiarism_similarity_threshold") or 30,
+		"is_stale": bool(
+			result.checked_on
+			and submission_modified
+			and get_datetime(submission_modified) > get_datetime(result.checked_on)
+		),
+		"sources": sources,
+	}
 
 
 @frappe.whitelist()
 def get_plagiarism_match_detail(result_name, source_row):
-    """The verbatim overlapping passages for one matched-source row (the detail
-    modal). Kept off the list call so it stays light."""
-    _require_grader()
-    _require_submission_staff(
-        frappe.db.get_value("Plagiarism Check Result", result_name, "submission")
-    )
-    row = frappe.db.get_value(
-        "Plagiarism Matched Source",
-        {"name": source_row, "parent": result_name},
-        ["source_student_name", "source_term", "similarity", "matched_passages"],
-        as_dict=True,
-    )
-    if not row:
-        frappe.throw(_("Match not found."))
-    try:
-        passages = json.loads(row.matched_passages or "[]")
-    except ValueError:
-        passages = []
-    return {
-        "source_student_name": row.source_student_name,
-        "source_term": row.source_term,
-        "similarity": row.similarity,
-        "passages": passages,
-    }
+	"""The verbatim overlapping passages for one matched-source row (the detail
+	modal). Kept off the list call so it stays light."""
+	_require_grader()
+	_require_submission_staff(frappe.db.get_value("Plagiarism Check Result", result_name, "submission"))
+	row = frappe.db.get_value(
+		"Plagiarism Matched Source",
+		{"name": source_row, "parent": result_name},
+		["source_student_name", "source_term", "similarity", "matched_passages"],
+		as_dict=True,
+	)
+	if not row:
+		frappe.throw(_("Match not found."))
+	try:
+		passages = json.loads(row.matched_passages or "[]")
+	except ValueError:
+		passages = []
+	return {
+		"source_student_name": row.source_student_name,
+		"source_term": row.source_term,
+		"similarity": row.similarity,
+		"passages": passages,
+	}

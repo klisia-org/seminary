@@ -6,8 +6,8 @@ from frappe.model.document import Document
 
 
 class CommunicationLog(Document):
-    def validate(self):
-        if not self.idempotency_key:
-            # Unique column: blank rows would collide. No caller-supplied key
-            # means "always send" — give it a random one.
-            self.idempotency_key = frappe.generate_hash(length=24)
+	def validate(self):
+		if not self.idempotency_key:
+			# Unique column: blank rows would collide. No caller-supplied key
+			# means "always send" — give it a random one.
+			self.idempotency_key = frappe.generate_hash(length=24)

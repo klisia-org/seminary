@@ -5,6 +5,6 @@ from frappe.model.document import Document
 
 
 class AlumniGraduation(Document):
-    """One completed program. A person may finish several (ADR 069)."""
+	"""One completed program. A person may finish several (ADR 069)."""
 
-    pass
+	pass

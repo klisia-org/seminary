@@ -12,22 +12,22 @@ import frappe
 
 
 def execute():
-    rows = frappe.db.sql(
-        "SELECT name FROM `tabProgram Level` WHERE docstatus = 0",
-        as_dict=True,
-    )
-    if not rows:
-        print("No draft Program Level rows to submit.")
-        return
+	rows = frappe.db.sql(
+		"SELECT name FROM `tabProgram Level` WHERE docstatus = 0",
+		as_dict=True,
+	)
+	if not rows:
+		print("No draft Program Level rows to submit.")
+		return
 
-    for row in rows:
-        frappe.db.set_value(
-            "Program Level",
-            row.name,
-            "docstatus",
-            1,
-            update_modified=False,
-        )
+	for row in rows:
+		frappe.db.set_value(
+			"Program Level",
+			row.name,
+			"docstatus",
+			1,
+			update_modified=False,
+		)
 
-    frappe.db.commit()
-    print(f"Submitted {len(rows)} Program Level row(s).")
+	frappe.db.commit()
+	print(f"Submitted {len(rows)} Program Level row(s).")

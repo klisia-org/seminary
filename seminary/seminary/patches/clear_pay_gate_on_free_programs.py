@@ -16,23 +16,23 @@ import frappe
 
 
 def execute():
-    rows = frappe.db.sql(
-        """SELECT name FROM `tabProgram`
+	rows = frappe.db.sql(
+		"""SELECT name FROM `tabProgram`
            WHERE is_free = 1
              AND (require_pay_submit = 1 OR percent_to_pay > 0)""",
-        as_dict=True,
-    )
-    if not rows:
-        print("No free programs need payment-gate cleanup.")
-        return
+		as_dict=True,
+	)
+	if not rows:
+		print("No free programs need payment-gate cleanup.")
+		return
 
-    for row in rows:
-        frappe.db.set_value(
-            "Program",
-            row.name,
-            {"require_pay_submit": 0, "percent_to_pay": 0},
-            update_modified=False,
-        )
+	for row in rows:
+		frappe.db.set_value(
+			"Program",
+			row.name,
+			{"require_pay_submit": 0, "percent_to_pay": 0},
+			update_modified=False,
+		)
 
-    frappe.db.commit()
-    print(f"Cleared payment-gate fields on {len(rows)} free Program(s).")
+	frappe.db.commit()
+	print(f"Cleared payment-gate fields on {len(rows)} free Program(s).")

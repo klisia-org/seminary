@@ -1,2 +1,1 @@
-frappe.ui.form.on("Room", {
-});
+frappe.ui.form.on("Room", {});

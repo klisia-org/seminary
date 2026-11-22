@@ -54,27 +54,40 @@ frappe.query_reports["Student Schedule Conflicts"] = {
 				return;
 			}
 			frappe.confirm(
-				__("Resolve {0} selected enrollment(s)? Drafts are deleted and unpaid seats released; rostered or paid enrollments are routed to a Withdrawal Request.", [ceis.length]),
+				__(
+					"Resolve {0} selected enrollment(s)? Drafts are deleted and unpaid seats released; rostered or paid enrollments are routed to a Withdrawal Request.",
+					[ceis.length]
+				),
 				() => {
 					frappe.dom.freeze(__("Resolving..."));
 					Promise.all(
 						ceis.map((cei) =>
 							frappe
-								.call("seminary.seminary.api.resolve_schedule_conflict", { cei_name: cei })
+								.call("seminary.seminary.api.resolve_schedule_conflict", {
+									cei_name: cei,
+								})
 								.then((r) => ({ cei, res: (r && r.message) || {} }))
 								.catch(() => ({ cei, res: { success: false } }))
 						)
 					).then((results) => {
 						frappe.dom.unfreeze();
-						const needWithdrawal = results.filter((x) => x.res && x.res.action === "withdrawal");
+						const needWithdrawal = results.filter(
+							(x) => x.res && x.res.action === "withdrawal"
+						);
 						if (needWithdrawal.length === 1) {
-							frappe.show_alert({ message: __("Routing to Withdrawal Request"), indicator: "blue" });
+							frappe.show_alert({
+								message: __("Routing to Withdrawal Request"),
+								indicator: "blue",
+							});
 							routeToWithdrawal(needWithdrawal[0].cei);
 							return;
 						}
 						if (needWithdrawal.length > 1) {
 							frappe.msgprint(
-								__("{0} rostered/paid enrollment(s) need a Withdrawal Request — open each and file one.", [needWithdrawal.length])
+								__(
+									"{0} rostered/paid enrollment(s) need a Withdrawal Request — open each and file one.",
+									[needWithdrawal.length]
+								)
 							);
 						}
 						frappe.show_alert({ message: __("Done"), indicator: "green" });

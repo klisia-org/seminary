@@ -15,22 +15,22 @@ import frappe
 
 
 def execute():
-    rows = frappe.db.sql(
-        "SELECT name FROM `tabProgram Graduation Requirement` WHERE docstatus = 0",
-        as_dict=True,
-    )
-    if not rows:
-        print("No draft Program Graduation Requirement rows to submit.")
-        return
+	rows = frappe.db.sql(
+		"SELECT name FROM `tabProgram Graduation Requirement` WHERE docstatus = 0",
+		as_dict=True,
+	)
+	if not rows:
+		print("No draft Program Graduation Requirement rows to submit.")
+		return
 
-    for row in rows:
-        frappe.db.set_value(
-            "Program Graduation Requirement",
-            row.name,
-            "docstatus",
-            1,
-            update_modified=False,
-        )
+	for row in rows:
+		frappe.db.set_value(
+			"Program Graduation Requirement",
+			row.name,
+			"docstatus",
+			1,
+			update_modified=False,
+		)
 
-    frappe.db.commit()
-    print(f"Submitted {len(rows)} Program Graduation Requirement row(s).")
+	frappe.db.commit()
+	print(f"Submitted {len(rows)} Program Graduation Requirement row(s).")

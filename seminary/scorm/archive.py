@@ -57,156 +57,130 @@ MAX_SEGMENT_BYTES = 255
 
 
 class PackageError(ValueError):
-    """The archive is not a package we will accept. Safe to show to staff."""
+	"""The archive is not a package we will accept. Safe to show to staff."""
 
 
 def cap(key: str, default: int) -> int:
-    return int(frappe.conf.get(key) or default)
+	return int(frappe.conf.get(key) or default)
 
 
 # ------------------------------------------------------------------- bounds
 
 
 def check_bounds(zf, compressed_size: int) -> None:
-    """Refuse a bomb, an over-large package or a non-package, before any read."""
-    infos = zf.infolist()
+	"""Refuse a bomb, an over-large package or a non-package, before any read."""
+	infos = zf.infolist()
 
-    if len(infos) > cap("scorm_max_entries", MAX_ENTRIES):
-        raise PackageError(frappe._("This SCORM package has too many files."))
+	if len(infos) > cap("scorm_max_entries", MAX_ENTRIES):
+		raise PackageError(frappe._("This SCORM package has too many files."))
 
-    total = sum(i.file_size for i in infos)
-    if total > cap("scorm_max_uncompressed_bytes", MAX_UNCOMPRESSED_BYTES):
-        raise PackageError(frappe._("This SCORM package is too large once unpacked."))
+	total = sum(i.file_size for i in infos)
+	if total > cap("scorm_max_uncompressed_bytes", MAX_UNCOMPRESSED_BYTES):
+		raise PackageError(frappe._("This SCORM package is too large once unpacked."))
 
-    member_cap = cap("scorm_max_member_bytes", MAX_MEMBER_BYTES)
-    if any(i.file_size > member_cap for i in infos):
-        raise PackageError(
-            frappe._("This SCORM package contains a file that is too large.")
-        )
+	member_cap = cap("scorm_max_member_bytes", MAX_MEMBER_BYTES)
+	if any(i.file_size > member_cap for i in infos):
+		raise PackageError(frappe._("This SCORM package contains a file that is too large."))
 
-    if total > RATIO_FLOOR_BYTES and compressed_size:
-        if total / compressed_size > MAX_RATIO:
-            raise PackageError(
-                frappe._("This file does not look like a SCORM package.")
-            )
+	if total > RATIO_FLOOR_BYTES and compressed_size:
+		if total / compressed_size > MAX_RATIO:
+			raise PackageError(frappe._("This file does not look like a SCORM package."))
 
-    manifest = find_manifest(zf.namelist())
-    if manifest is None:
-        raise PackageError(frappe._("This SCORM package has no imsmanifest.xml."))
+	manifest = find_manifest(zf.namelist())
+	if manifest is None:
+		raise PackageError(frappe._("This SCORM package has no imsmanifest.xml."))
 
-    if zf.getinfo(manifest).file_size > cap(
-        "scorm_max_manifest_bytes", MAX_MANIFEST_BYTES
-    ):
-        raise PackageError(frappe._("This SCORM package's manifest is too large."))
+	if zf.getinfo(manifest).file_size > cap("scorm_max_manifest_bytes", MAX_MANIFEST_BYTES):
+		raise PackageError(frappe._("This SCORM package's manifest is too large."))
 
 
 def find_manifest(names) -> str | None:
-    """The shallowest `imsmanifest.xml`, which defines the package root.
+	"""The shallowest `imsmanifest.xml`, which defines the package root.
 
-    The spec puts it at the archive root; zipping the containing folder is a
-    common enough mistake that a nested one is accepted, and then everything the
-    manifest says is relative to *its* directory -- which is why the root has to
-    be established before any member path is recorded.
-    """
-    candidates = [
-        n
-        for n in names
-        if n.replace("\\", "/").rsplit("/", 1)[-1].lower() == MANIFEST_NAME
-    ]
-    if not candidates:
-        return None
-    return min(candidates, key=lambda n: (n.count("/"), len(n)))
+	The spec puts it at the archive root; zipping the containing folder is a
+	common enough mistake that a nested one is accepted, and then everything the
+	manifest says is relative to *its* directory -- which is why the root has to
+	be established before any member path is recorded.
+	"""
+	candidates = [n for n in names if n.replace("\\", "/").rsplit("/", 1)[-1].lower() == MANIFEST_NAME]
+	if not candidates:
+		return None
+	return min(candidates, key=lambda n: (n.count("/"), len(n)))
 
 
 def package_root(manifest_name: str) -> str:
-    root = posixpath.dirname(manifest_name.replace("\\", "/"))
-    return f"{root}/" if root else ""
+	root = posixpath.dirname(manifest_name.replace("\\", "/"))
+	return f"{root}/" if root else ""
 
 
 # -------------------------------------------------------------- member paths
 
 
 def is_symlink(info) -> bool:
-    """`zipfile` stores symlinks happily; nothing downstream should see one."""
-    return stat.S_ISLNK(info.external_attr >> 16)
+	"""`zipfile` stores symlinks happily; nothing downstream should see one."""
+	return stat.S_ISLNK(info.external_attr >> 16)
 
 
 def normalise_member_path(raw: str) -> str:
-    """Normalise a zip member name, then validate it. Never repair it.
+	"""Normalise a zip member name, then validate it. Never repair it.
 
-    Normalisation is the part that is safe to do: backslashes become slashes,
-    repeated slashes collapse, and `.` segments drop. None of those turns a
-    dangerous path into a safe one -- they only spell the same path one way.
+	Normalisation is the part that is safe to do: backslashes become slashes,
+	repeated slashes collapse, and `.` segments drop. None of those turns a
+	dangerous path into a safe one -- they only spell the same path one way.
 
-    Validation refuses; it does not fix. A `..` segment is **rejected**, not
-    resolved away, because a package that needs its paths repaired is a package
-    we do not understand.
+	Validation refuses; it does not fix. A `..` segment is **rejected**, not
+	resolved away, because a package that needs its paths repaired is a package
+	we do not understand.
 
-    Note what this is *not* load-bearing for. Delivery never resolves a client
-    path against anything: it looks the path up in the inventory these rules
-    produced, and a miss is a 404. Traversal is closed by that lookup, which is
-    exactly why it is safe to be strict here and fail an odd-but-harmless
-    package rather than accommodate it.
-    """
-    path = (raw or "").replace("\\", "/")
+	Note what this is *not* load-bearing for. Delivery never resolves a client
+	path against anything: it looks the path up in the inventory these rules
+	produced, and a miss is a 404. Traversal is closed by that lookup, which is
+	exactly why it is safe to be strict here and fail an odd-but-harmless
+	package rather than accommodate it.
+	"""
+	path = (raw or "").replace("\\", "/")
 
-    if not path or path.endswith("/"):
-        raise PackageError(frappe._("Directory entry"))  # caller skips these
+	if not path or path.endswith("/"):
+		raise PackageError(frappe._("Directory entry"))  # caller skips these
 
-    if "\x00" in path or any(ord(c) < 32 or ord(c) == 127 for c in path):
-        raise PackageError(
-            frappe._("This SCORM package contains a file name with control characters.")
-        )
+	if "\x00" in path or any(ord(c) < 32 or ord(c) == 127 for c in path):
+		raise PackageError(frappe._("This SCORM package contains a file name with control characters."))
 
-    if path.startswith("/") or (len(path) > 1 and path[1] == ":" and path[0].isalpha()):
-        raise PackageError(
-            frappe._("This SCORM package contains an absolute file path.")
-        )
+	if path.startswith("/") or (len(path) > 1 and path[1] == ":" and path[0].isalpha()):
+		raise PackageError(frappe._("This SCORM package contains an absolute file path."))
 
-    segments = [s for s in path.split("/") if s not in ("", ".")]
-    if not segments:
-        raise PackageError(frappe._("This SCORM package contains an empty file name."))
+	segments = [s for s in path.split("/") if s not in ("", ".")]
+	if not segments:
+		raise PackageError(frappe._("This SCORM package contains an empty file name."))
 
-    for segment in segments:
-        if segment == "..":
-            raise PackageError(
-                frappe._(
-                    "This SCORM package contains a file path that climbs out of it."
-                )
-            )
-        if segment != segment.rstrip(". "):
-            # Windows silently trims these, so `a.` and `a` become the same file
-            # on extraction -- a collision the archive does not admit to.
-            raise PackageError(
-                frappe._(
-                    "This SCORM package contains a file name ending in a dot or space."
-                )
-            )
-        if len(segment.encode("utf-8")) > MAX_SEGMENT_BYTES:
-            raise PackageError(
-                frappe._("This SCORM package contains a file name that is too long.")
-            )
+	for segment in segments:
+		if segment == "..":
+			raise PackageError(frappe._("This SCORM package contains a file path that climbs out of it."))
+		if segment != segment.rstrip(". "):
+			# Windows silently trims these, so `a.` and `a` become the same file
+			# on extraction -- a collision the archive does not admit to.
+			raise PackageError(frappe._("This SCORM package contains a file name ending in a dot or space."))
+		if len(segment.encode("utf-8")) > MAX_SEGMENT_BYTES:
+			raise PackageError(frappe._("This SCORM package contains a file name that is too long."))
 
-    normalised = "/".join(segments)
-    if len(normalised.encode("utf-8")) > MAX_PATH_BYTES:
-        raise PackageError(
-            frappe._("This SCORM package contains a file path that is too long.")
-        )
-    return normalised
+	normalised = "/".join(segments)
+	if len(normalised.encode("utf-8")) > MAX_PATH_BYTES:
+		raise PackageError(frappe._("This SCORM package contains a file path that is too long."))
+	return normalised
 
 
 def collision_keys(path: str) -> tuple[str, str]:
-    """The two forms a second member must not already have claimed.
+	"""The two forms a second member must not already have claimed.
 
-    Two members differing only in case, or only in Unicode normal form, mean one
-    of them is unreachable -- and *which* one depends on the filesystem, the
-    object store and the browser. Refuse the package rather than pick.
-    """
-    return path.lower(), unicodedata.normalize("NFC", path)
+	Two members differing only in case, or only in Unicode normal form, mean one
+	of them is unreachable -- and *which* one depends on the filesystem, the
+	object store and the browser. Refuse the package rather than pick.
+	"""
+	return path.lower(), unicodedata.normalize("NFC", path)
 
 
 def is_junk(path: str) -> bool:
-    return any(segment in JUNK_SEGMENTS for segment in path.split("/"))
+	return any(segment in JUNK_SEGMENTS for segment in path.split("/"))
 
 
 # ------------------------------------------------------------ content types
@@ -223,48 +197,48 @@ def is_junk(path: str) -> bool:
 #: served as `application/octet-stream` with `nosniff`, which on an isolated
 #: origin is inert.
 CONTENT_TYPES = {
-    # documents and code -- these can carry relative references, so they are the
-    # ones delivery must serve from its own origin
-    "html": "text/html; charset=utf-8",
-    "htm": "text/html; charset=utf-8",
-    "xhtml": "application/xhtml+xml; charset=utf-8",
-    "xml": "text/xml; charset=utf-8",
-    "css": "text/css; charset=utf-8",
-    "js": "text/javascript; charset=utf-8",
-    "mjs": "text/javascript; charset=utf-8",
-    "json": "application/json; charset=utf-8",
-    "svg": "image/svg+xml",
-    "txt": "text/plain; charset=utf-8",
-    "vtt": "text/vtt; charset=utf-8",
-    "srt": "application/x-subrip",
-    # images
-    "png": "image/png",
-    "jpg": "image/jpeg",
-    "jpeg": "image/jpeg",
-    "gif": "image/gif",
-    "webp": "image/webp",
-    "avif": "image/avif",
-    "bmp": "image/bmp",
-    "ico": "image/x-icon",
-    # audio and video
-    "mp3": "audio/mpeg",
-    "m4a": "audio/mp4",
-    "ogg": "audio/ogg",
-    "oga": "audio/ogg",
-    "wav": "audio/wav",
-    "mp4": "video/mp4",
-    "m4v": "video/mp4",
-    "webm": "video/webm",
-    "mov": "video/quicktime",
-    # fonts
-    "woff": "font/woff",
-    "woff2": "font/woff2",
-    "ttf": "font/ttf",
-    "otf": "font/otf",
-    "eot": "application/vnd.ms-fontobject",
-    # documents a package may link to
-    "pdf": "application/pdf",
-    "zip": "application/zip",
+	# documents and code -- these can carry relative references, so they are the
+	# ones delivery must serve from its own origin
+	"html": "text/html; charset=utf-8",
+	"htm": "text/html; charset=utf-8",
+	"xhtml": "application/xhtml+xml; charset=utf-8",
+	"xml": "text/xml; charset=utf-8",
+	"css": "text/css; charset=utf-8",
+	"js": "text/javascript; charset=utf-8",
+	"mjs": "text/javascript; charset=utf-8",
+	"json": "application/json; charset=utf-8",
+	"svg": "image/svg+xml",
+	"txt": "text/plain; charset=utf-8",
+	"vtt": "text/vtt; charset=utf-8",
+	"srt": "application/x-subrip",
+	# images
+	"png": "image/png",
+	"jpg": "image/jpeg",
+	"jpeg": "image/jpeg",
+	"gif": "image/gif",
+	"webp": "image/webp",
+	"avif": "image/avif",
+	"bmp": "image/bmp",
+	"ico": "image/x-icon",
+	# audio and video
+	"mp3": "audio/mpeg",
+	"m4a": "audio/mp4",
+	"ogg": "audio/ogg",
+	"oga": "audio/ogg",
+	"wav": "audio/wav",
+	"mp4": "video/mp4",
+	"m4v": "video/mp4",
+	"webm": "video/webm",
+	"mov": "video/quicktime",
+	# fonts
+	"woff": "font/woff",
+	"woff2": "font/woff2",
+	"ttf": "font/ttf",
+	"otf": "font/otf",
+	"eot": "application/vnd.ms-fontobject",
+	# documents a package may link to
+	"pdf": "application/pdf",
+	"zip": "application/zip",
 }
 
 DEFAULT_CONTENT_TYPE = "application/octet-stream"
@@ -289,40 +263,36 @@ DEFAULT_CONTENT_TYPE = "application/octet-stream"
 #:    handful per package, so proxying them costs nothing the redirect was
 #:    protecting: §2.6 redirects to keep *lecture video* off the worker pool.
 PROXIED_EXTENSIONS = frozenset(
-    {
-        "html",
-        "htm",
-        "xhtml",
-        "xml",
-        "css",
-        "js",
-        "mjs",
-        "json",
-        "svg",
-        "txt",
-        "vtt",
-        "srt",
-        # Fonts: see (2) above. Not because they can reference anything.
-        "woff",
-        "woff2",
-        "ttf",
-        "otf",
-        "eot",
-    }
+	{
+		"html",
+		"htm",
+		"xhtml",
+		"xml",
+		"css",
+		"js",
+		"mjs",
+		"json",
+		"svg",
+		"txt",
+		"vtt",
+		"srt",
+		# Fonts: see (2) above. Not because they can reference anything.
+		"woff",
+		"woff2",
+		"ttf",
+		"otf",
+		"eot",
+	}
 )
 
 
 def extension_of(path: str) -> str:
-    return (
-        path.rsplit("/", 1)[-1].rsplit(".", 1)[-1].lower()
-        if "." in path.rsplit("/", 1)[-1]
-        else ""
-    )
+	return path.rsplit("/", 1)[-1].rsplit(".", 1)[-1].lower() if "." in path.rsplit("/", 1)[-1] else ""
 
 
 def content_type_for(path: str) -> str:
-    return CONTENT_TYPES.get(extension_of(path), DEFAULT_CONTENT_TYPE)
+	return CONTENT_TYPES.get(extension_of(path), DEFAULT_CONTENT_TYPE)
 
 
 def is_proxied(path: str) -> bool:
-    return extension_of(path) in PROXIED_EXTENSIONS
+	return extension_of(path) in PROXIED_EXTENSIONS

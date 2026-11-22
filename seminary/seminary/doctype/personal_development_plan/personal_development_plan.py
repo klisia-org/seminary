@@ -19,147 +19,133 @@ RICH_TEXT_FIELDS = ("reflection",)
 GOAL_RICH_TEXT_FIELDS = ("goal", "action_steps")
 
 STAFF_ROLES = {
-    "Seminary Manager",
-    "System Manager",
-    "Program Chair",
-    "Registrar",
-    "Instructor",
+	"Seminary Manager",
+	"System Manager",
+	"Program Chair",
+	"Registrar",
+	"Instructor",
 }
 
 
 class PersonalDevelopmentPlan(Document):
-    def validate(self):
-        self.set_context()
-        self.validate_unique()
-        self.sanitize_rich_text()
-        self.validate_goals()
-        self.stamp_submission()
+	def validate(self):
+		self.set_context()
+		self.validate_unique()
+		self.sanitize_rich_text()
+		self.validate_goals()
+		self.stamp_submission()
 
-    def sanitize_rich_text(self):
-        """nh3 allow-list with always_sanitize, so a comment-wrapped payload is
-        not waved through by the no-tags short-circuit (p006 F13)."""
-        for field in RICH_TEXT_FIELDS:
-            if self.get(field):
-                self.set(
-                    field,
-                    frappe.utils.sanitize_html(self.get(field), always_sanitize=True),
-                )
-        for row in self.goals:
-            for field in GOAL_RICH_TEXT_FIELDS:
-                if row.get(field):
-                    row.set(
-                        field,
-                        frappe.utils.sanitize_html(
-                            row.get(field), always_sanitize=True
-                        ),
-                    )
+	def sanitize_rich_text(self):
+		"""nh3 allow-list with always_sanitize, so a comment-wrapped payload is
+		not waved through by the no-tags short-circuit (p006 F13)."""
+		for field in RICH_TEXT_FIELDS:
+			if self.get(field):
+				self.set(
+					field,
+					frappe.utils.sanitize_html(self.get(field), always_sanitize=True),
+				)
+		for row in self.goals:
+			for field in GOAL_RICH_TEXT_FIELDS:
+				if row.get(field):
+					row.set(
+						field,
+						frappe.utils.sanitize_html(row.get(field), always_sanitize=True),
+					)
 
-    def set_context(self):
-        """Derive the enrollment and student from the roster.
+	def set_context(self):
+		"""Derive the enrollment and student from the roster.
 
-        The plan is anchored to a roster row, and everything else about who and
-        where follows from it; deriving rather than trusting keeps a hand-built
-        record from claiming to belong to a section the student is not in.
-        """
-        if not self.roster:
-            return
-        roster = frappe.db.get_value(
-            "Scheduled Course Roster",
-            self.roster,
-            ["student", "course_sc"],
-            as_dict=True,
-        )
-        if not roster:
-            frappe.throw(_("Roster {0} does not exist.").format(self.roster))
-        self.student = roster.student
-        self.course_schedule = roster.course_sc
-        if not self.program_enrollment:
-            self.program_enrollment = frappe.db.get_value(
-                "Program Enrollment",
-                {"student": self.student, "docstatus": 1},
-                "name",
-                order_by="pgmenrol_active desc, creation desc",
-            )
+		The plan is anchored to a roster row, and everything else about who and
+		where follows from it; deriving rather than trusting keeps a hand-built
+		record from claiming to belong to a section the student is not in.
+		"""
+		if not self.roster:
+			return
+		roster = frappe.db.get_value(
+			"Scheduled Course Roster",
+			self.roster,
+			["student", "course_sc"],
+			as_dict=True,
+		)
+		if not roster:
+			frappe.throw(_("Roster {0} does not exist.").format(self.roster))
+		self.student = roster.student
+		self.course_schedule = roster.course_sc
+		if not self.program_enrollment:
+			self.program_enrollment = frappe.db.get_value(
+				"Program Enrollment",
+				{"student": self.student, "docstatus": 1},
+				"name",
+				order_by="pgmenrol_active desc, creation desc",
+			)
 
-    def validate_unique(self):
-        """One plan per roster row.
+	def validate_unique(self):
+		"""One plan per roster row.
 
-        Compared after the fact rather than filtered on `name != self.name`:
-        autoname has already stamped a new doc, so that filter would exclude the
-        very record being looked for and let the duplicate through.
-        """
-        duplicate = frappe.db.get_value(
-            "Personal Development Plan", {"roster": self.roster}, "name"
-        )
-        if duplicate and (self.is_new() or duplicate != self.name):
-            frappe.throw(
-                _(
-                    "This student already has a development plan for this course ({0})."
-                ).format(duplicate)
-            )
+		Compared after the fact rather than filtered on `name != self.name`:
+		autoname has already stamped a new doc, so that filter would exclude the
+		very record being looked for and let the duplicate through.
+		"""
+		duplicate = frappe.db.get_value("Personal Development Plan", {"roster": self.roster}, "name")
+		if duplicate and (self.is_new() or duplicate != self.name):
+			frappe.throw(
+				_("This student already has a development plan for this course ({0}).").format(duplicate)
+			)
 
-    def validate_goals(self):
-        """Denormalise the prompt, and keep a competency's dimension honest."""
-        questions = self._questions()
-        for row in self.goals:
-            if row.standard_question:
-                if row.standard_question not in questions:
-                    frappe.throw(
-                        _("Row {0}: {1} is not a question in this framework.").format(
-                            row.idx, row.standard_question
-                        )
-                    )
-                # Denormalised on every save so a reworded prompt does not leave
-                # stale text sitting above the answer it produced.
-                row.question_text = frappe.utils.strip_html(
-                    questions[row.standard_question] or ""
-                ).strip()
-            if row.dimension_code and not row.course_competency:
-                frappe.throw(
-                    _("Row {0}: choose a competency before naming a dimension.").format(
-                        row.idx
-                    )
-                )
+	def validate_goals(self):
+		"""Denormalise the prompt, and keep a competency's dimension honest."""
+		questions = self._questions()
+		for row in self.goals:
+			if row.standard_question:
+				if row.standard_question not in questions:
+					frappe.throw(
+						_("Row {0}: {1} is not a question in this framework.").format(
+							row.idx, row.standard_question
+						)
+					)
+				# Denormalised on every save so a reworded prompt does not leave
+				# stale text sitting above the answer it produced.
+				row.question_text = frappe.utils.strip_html(questions[row.standard_question] or "").strip()
+			if row.dimension_code and not row.course_competency:
+				frappe.throw(_("Row {0}: choose a competency before naming a dimension.").format(row.idx))
 
-    def _questions(self):
-        from seminary.seminary import cbe
+	def _questions(self):
+		from seminary.seminary import cbe
 
-        framework = cbe.framework_doc(self.course_schedule)
-        if not framework:
-            return {}
-        return {
-            q.question_key: q.question_text for q in framework.development_questions
-        }
+		framework = cbe.framework_doc(self.course_schedule)
+		if not framework:
+			return {}
+		return {q.question_key: q.question_text for q in framework.development_questions}
 
-    def stamp_submission(self):
-        if self.status != "Draft" and not self.submitted_on:
-            self.submitted_on = now_datetime()
+	def stamp_submission(self):
+		if self.status != "Draft" and not self.submitted_on:
+			self.submitted_on = now_datetime()
 
 
 def get_permission_query_conditions(user=None):
-    """Students see only their own plans.
+	"""Students see only their own plans.
 
-    A plan is a student's account of where they most need to grow; the list view
-    must not become a way to read a classmate's.
-    """
-    from seminary.seminary import cbe
+	A plan is a student's account of where they most need to grow; the list view
+	must not become a way to read a classmate's.
+	"""
+	from seminary.seminary import cbe
 
-    user = user or frappe.session.user
-    staff = cbe.staff_row_condition("Personal Development Plan", user)
-    if staff == "":
-        return ""
-    student = frappe.db.get_value("Student", {"user": user}, "name")
-    if not student:
-        return staff or "1=0"
-    own = "`tabPersonal Development Plan`.student = " f"{frappe.db.escape(student)}"
-    return f"({staff} or {own})" if staff else own
+	user = user or frappe.session.user
+	staff = cbe.staff_row_condition("Personal Development Plan", user)
+	if staff == "":
+		return ""
+	student = frappe.db.get_value("Student", {"user": user}, "name")
+	if not student:
+		return staff or "1=0"
+	own = f"`tabPersonal Development Plan`.student = {frappe.db.escape(student)}"
+	return f"({staff} or {own})" if staff else own
 
 
 def has_permission(doc, user=None, permission_type=None):
-    from seminary.seminary import cbe
+	from seminary.seminary import cbe
 
-    user = user or frappe.session.user
-    if cbe.staff_may_access(doc, user, permission_type):
-        return True
-    student = frappe.db.get_value("Student", {"user": user}, "name")
-    return bool(student) and doc.student == student
+	user = user or frappe.session.user
+	if cbe.staff_may_access(doc, user, permission_type):
+		return True
+	student = frappe.db.get_value("Student", {"user": user}, "name")
+	return bool(student) and doc.student == student

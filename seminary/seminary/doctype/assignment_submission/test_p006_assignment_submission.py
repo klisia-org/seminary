@@ -10,8 +10,8 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from seminary.seminary.doctype.assignment_submission.assignment_submission import (
-    grade_assignment,
-    upload_assignment,
+	grade_assignment,
+	upload_assignment,
 )
 
 STUDENT_A = "p006-asg-stu-a@example.com"
@@ -20,117 +20,115 @@ BYPASS = "<!--><img src=x onerror=alert(1)>-->"
 
 
 def _ensure_user(email, roles):
-    if not frappe.db.exists("User", email):
-        user = frappe.get_doc(
-            {
-                "doctype": "User",
-                "email": email,
-                "first_name": email.split("@")[0],
-                "send_welcome_email": 0,
-            }
-        )
-        user.flags.no_welcome_mail = True
-        user.insert(ignore_permissions=True)
-    frappe.get_doc("User", email).add_roles(*roles)
-    return email
+	if not frappe.db.exists("User", email):
+		user = frappe.get_doc(
+			{
+				"doctype": "User",
+				"email": email,
+				"first_name": email.split("@")[0],
+				"send_welcome_email": 0,
+			}
+		)
+		user.flags.no_welcome_mail = True
+		user.insert(ignore_permissions=True)
+	frappe.get_doc("User", email).add_roles(*roles)
+	return email
 
 
 def _make_assignment():
-    """A Text assignment; the Course link is skipped so no catalogue fixture
-    is needed. One per submission: validate_duplicates allows a single
-    submission per (assignment, member) and tests are not rolled back
-    individually."""
-    doc = frappe.get_doc(
-        {
-            "doctype": "Assignment Activity",
-            "title": f"P006-{frappe.generate_hash(length=8)}",
-            "type": "Text",
-            "grade_assignment": 1,
-        }
-    )
-    doc.flags.ignore_links = True
-    doc.flags.ignore_mandatory = True
-    doc.insert(ignore_permissions=True)
-    return doc.name
+	"""A Text assignment; the Course link is skipped so no catalogue fixture
+	is needed. One per submission: validate_duplicates allows a single
+	submission per (assignment, member) and tests are not rolled back
+	individually."""
+	doc = frappe.get_doc(
+		{
+			"doctype": "Assignment Activity",
+			"title": f"P006-{frappe.generate_hash(length=8)}",
+			"type": "Text",
+			"grade_assignment": 1,
+		}
+	)
+	doc.flags.ignore_links = True
+	doc.flags.ignore_mandatory = True
+	doc.insert(ignore_permissions=True)
+	return doc.name
 
 
 def _make_submission(member, answer="original"):
-    doc = frappe.get_doc(
-        {
-            "doctype": "Assignment Submission",
-            "assignment": _make_assignment(),
-            "member": member,
-            "type": "Text",
-            "answer": answer,
-            "status": "Not Graded",
-        }
-    )
-    doc.flags.ignore_links = True
-    doc.insert(ignore_permissions=True)
-    # The student creates their own submission in the app; Student write is if_owner.
-    doc.db_set("owner", member, update_modified=False)
-    return doc
+	doc = frappe.get_doc(
+		{
+			"doctype": "Assignment Submission",
+			"assignment": _make_assignment(),
+			"member": member,
+			"type": "Text",
+			"answer": answer,
+			"status": "Not Graded",
+		}
+	)
+	doc.flags.ignore_links = True
+	doc.insert(ignore_permissions=True)
+	# The student creates their own submission in the app; Student write is if_owner.
+	doc.db_set("owner", member, update_modified=False)
+	return doc
 
 
 class TestP006AssignmentSubmissionGates(IntegrationTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.student_a = _ensure_user(STUDENT_A, ["Student"])
-        cls.student_b = _ensure_user(STUDENT_B, ["Student"])
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.student_a = _ensure_user(STUDENT_A, ["Student"])
+		cls.student_b = _ensure_user(STUDENT_B, ["Student"])
 
-    def tearDown(self):
-        frappe.set_user("Administrator")
-        super().tearDown()
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		super().tearDown()
 
-    # --- F7 ----------------------------------------------------------------
-    def test_student_cannot_grade(self):
-        sub = _make_submission(self.student_a)
-        frappe.set_user(self.student_a)
-        self.assertRaises(
-            frappe.PermissionError, grade_assignment, sub.name, "Graded", "x"
-        )
+	# --- F7 ----------------------------------------------------------------
+	def test_student_cannot_grade(self):
+		sub = _make_submission(self.student_a)
+		frappe.set_user(self.student_a)
+		self.assertRaises(frappe.PermissionError, grade_assignment, sub.name, "Graded", "x")
 
-    def test_student_cannot_rewrite_another_members_submission(self):
-        sub = _make_submission(self.student_b)
-        frappe.set_user(self.student_a)
-        self.assertRaises(
-            frappe.PermissionError,
-            upload_assignment,
-            answer="hijacked",
-            assignment=sub.assignment,
-            submission=sub.name,
-        )
-        self.assertEqual(
-            frappe.db.get_value("Assignment Submission", sub.name, "answer"),
-            "original",
-        )
+	def test_student_cannot_rewrite_another_members_submission(self):
+		sub = _make_submission(self.student_b)
+		frappe.set_user(self.student_a)
+		self.assertRaises(
+			frappe.PermissionError,
+			upload_assignment,
+			answer="hijacked",
+			assignment=sub.assignment,
+			submission=sub.name,
+		)
+		self.assertEqual(
+			frappe.db.get_value("Assignment Submission", sub.name, "answer"),
+			"original",
+		)
 
-    def test_student_status_is_always_not_graded(self):
-        sub = _make_submission(self.student_a)
-        frappe.set_user(self.student_a)
-        upload_assignment(
-            answer="updated",
-            assignment=sub.assignment,
-            status="Graded",
-            submission=sub.name,
-        )
-        self.assertEqual(
-            frappe.db.get_value("Assignment Submission", sub.name, "status"),
-            "Not Graded",
-        )
+	def test_student_status_is_always_not_graded(self):
+		sub = _make_submission(self.student_a)
+		frappe.set_user(self.student_a)
+		upload_assignment(
+			answer="updated",
+			assignment=sub.assignment,
+			status="Graded",
+			submission=sub.name,
+		)
+		self.assertEqual(
+			frappe.db.get_value("Assignment Submission", sub.name, "status"),
+			"Not Graded",
+		)
 
-    # --- F13 ---------------------------------------------------------------
-    def test_validate_sanitises_answer_and_comments(self):
-        sub = _make_submission(self.student_a, answer=BYPASS)
-        self.assertNotIn("onerror", sub.answer)
-        sub.comments = BYPASS
-        sub.save(ignore_permissions=True)
-        self.assertNotIn("onerror", sub.comments)
+	# --- F13 ---------------------------------------------------------------
+	def test_validate_sanitises_answer_and_comments(self):
+		sub = _make_submission(self.student_a, answer=BYPASS)
+		self.assertNotIn("onerror", sub.answer)
+		sub.comments = BYPASS
+		sub.save(ignore_permissions=True)
+		self.assertNotIn("onerror", sub.comments)
 
-    def test_grade_assignment_sanitises_comments(self):
-        sub = _make_submission(self.student_a)
-        # Administrator holds System Manager, a grader role.
-        grade_assignment(sub.name, "Graded", BYPASS)
-        stored = frappe.db.get_value("Assignment Submission", sub.name, "comments")
-        self.assertNotIn("onerror", stored)
+	def test_grade_assignment_sanitises_comments(self):
+		sub = _make_submission(self.student_a)
+		# Administrator holds System Manager, a grader role.
+		grade_assignment(sub.name, "Graded", BYPASS)
+		stored = frappe.db.get_value("Assignment Submission", sub.name, "comments")
+		self.assertNotIn("onerror", stored)

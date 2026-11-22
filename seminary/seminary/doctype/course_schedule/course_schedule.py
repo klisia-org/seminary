@@ -1,30 +1,26 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies and contributors
 # For license information, please see license.txt
 
 
-from datetime import datetime
+import calendar
+import json
+import secrets
+from datetime import datetime, timedelta
 
 import frappe
+from dateutil import relativedelta
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.workflow import apply_workflow
 from frappe.utils import (
-    add_days,
-    cint,
-    formatdate,
-    get_datetime,
-    get_time,
-    getdate,
-    now,
+	add_days,
+	cint,
+	formatdate,
+	get_datetime,
+	get_time,
+	getdate,
+	now,
 )
-import calendar
-from datetime import timedelta
-from dateutil import relativedelta
-
-import json
-import secrets
-
 
 CANCELLABLE_STATES = ("Open for Enrollment", "Enrollment Closed")
 CANCEL_ROLES = ("Registrar", "Seminary Manager")
@@ -38,248 +34,235 @@ TEMPLATE_IMPORT_ROLES = ("Program Chair", "Seminary Manager", "Registrar")
 
 
 class CourseSchedule(Document):
-    @frappe.whitelist()
-    def validate(self):
-        self.generate_token()
-        self.set_title()
-        if frappe.flags.in_demo_install:
-            return
-        self.validate_open_ended()
-        self.validate_content_release_override()
-        self.validate_date()
-        self.validate_time()
-        self.validate_assessment_criteria()
-        self.validate_late_policy()
-        self.validate_instructor_categories()
-        self.validate_instructor_of_record_rows()
-        self.clean_name()
-        self._resolve_dates_if_needed()
-        self._guard_attendance_policy()
-        self._default_max_enrollment_from_room()
-        self._validate_room_fit()
-        self._log_room_change()
-        # School meeting accounts (decisions/051a): an account is a room.
-        from seminary.seminary import school_meetings
+	@frappe.whitelist()
+	def validate(self):
+		self.generate_token()
+		self.set_title()
+		if frappe.flags.in_demo_install:
+			return
+		self.validate_open_ended()
+		self.validate_content_release_override()
+		self.validate_date()
+		self.validate_time()
+		self.validate_assessment_criteria()
+		self.validate_late_policy()
+		self.validate_instructor_categories()
+		self.validate_instructor_of_record_rows()
+		self.clean_name()
+		self._resolve_dates_if_needed()
+		self._guard_attendance_policy()
+		self._default_max_enrollment_from_room()
+		self._validate_room_fit()
+		self._log_room_change()
+		# School meeting accounts (decisions/051a): an account is a room.
+		from seminary.seminary import school_meetings
 
-        school_meetings.validate(self)
+		school_meetings.validate(self)
 
-    def on_update(self):
-        # Re-level attendance standings: the per-student Auto limit moves when
-        # meeting dates are added (which happens after the initial save), and
-        # the policy itself may change. Roster counts are class-sized; the
-        # daily task is the backstop. Standings write via db.set_value, so this
-        # does not recurse through the roster on_update hook.
-        if (
-            frappe.flags.in_install
-            or frappe.flags.in_migrate
-            or frappe.flags.in_demo_install
-        ):
-            return
-        from seminary.seminary.attendance import recompute_for_course_schedule
+	def on_update(self):
+		# Re-level attendance standings: the per-student Auto limit moves when
+		# meeting dates are added (which happens after the initial save), and
+		# the policy itself may change. Roster counts are class-sized; the
+		# daily task is the backstop. Standings write via db.set_value, so this
+		# does not recurse through the roster on_update hook.
+		if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_demo_install:
+			return
+		from seminary.seminary.attendance import recompute_for_course_schedule
 
-        try:
-            recompute_for_course_schedule(self.name)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(), f"attendance re-level on CS save: {self.name}"
-            )
+		try:
+			recompute_for_course_schedule(self.name)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"attendance re-level on CS save: {self.name}")
 
-        self._handle_capacity_and_waitlist()
-        self._scaffold_if_became_cbe()
+		self._handle_capacity_and_waitlist()
+		self._scaffold_if_became_cbe()
 
-        # A changed late policy re-prices the grades not yet sent (decisions/082).
-        from seminary.seminary import deadlines
+		# A changed late policy re-prices the grades not yet sent (decisions/082).
+		from seminary.seminary import deadlines
 
-        deadlines.on_section_update(self)
-        # Categories added, changed or removed re-weigh the grades not yet
-        # sent (decisions/096).
-        from seminary.seminary import gradebook_weights
+		deadlines.on_section_update(self)
+		# Categories added, changed or removed re-weigh the grades not yet
+		# sent (decisions/096).
+		from seminary.seminary import gradebook_weights
 
-        gradebook_weights.on_section_update(self)
-        # Create, move or delete the provider meetings after commit (decisions/051a §5).
-        from seminary.seminary import school_meetings
+		gradebook_weights.on_section_update(self)
+		# Create, move or delete the provider meetings after commit (decisions/051a §5).
+		from seminary.seminary import school_meetings
 
-        school_meetings.on_update(self)
-        # A captured meeting that moved is armed again (decisions/100d).
-        from seminary.seminary import oral_meetings
+		school_meetings.on_update(self)
+		# A captured meeting that moved is armed again (decisions/100d).
+		from seminary.seminary import oral_meetings
 
-        oral_meetings.on_section_update(self)
+		oral_meetings.on_section_update(self)
 
-    def _scaffold_if_became_cbe(self):
-        """A section whose course or scale changes so that it now resolves to a
-        Competency Framework gets its reflection lessons (ADR 079 decision 2).
-        Creation is handled by after_insert; an importer that brings its own
-        outline sets the flag and scaffolds afterwards."""
-        before = self.get_doc_before_save()
-        if not before or self.flags.skip_reflection_scaffold:
-            return
-        if (before.course, before.gradesc_cs) == (self.course, self.gradesc_cs):
-            return
-        from seminary.seminary import cbe, cbe_reflection
+	def _scaffold_if_became_cbe(self):
+		"""A section whose course or scale changes so that it now resolves to a
+		Competency Framework gets its reflection lessons (ADR 079 decision 2).
+		Creation is handled by after_insert; an importer that brings its own
+		outline sets the flag and scaffolds afterwards."""
+		before = self.get_doc_before_save()
+		if not before or self.flags.skip_reflection_scaffold:
+			return
+		if (before.course, before.gradesc_cs) == (self.course, self.gradesc_cs):
+			return
+		from seminary.seminary import cbe, cbe_reflection
 
-        if cbe.framework_for_course_and_scale(before.course, before.gradesc_cs):
-            return
-        cbe_reflection.scaffold_if_became_cbe(self.name)
+		if cbe.framework_for_course_and_scale(before.course, before.gradesc_cs):
+			return
+		cbe_reflection.scaffold_if_became_cbe(self.name)
 
-    def _handle_capacity_and_waitlist(self):
-        """React to capacity and lifecycle changes for the waitlist engine.
+	def _handle_capacity_and_waitlist(self):
+		"""React to capacity and lifecycle changes for the waitlist engine.
 
-        - A larger cap or a bigger room frees seats → promote from the waitlist.
-        - Leaving Open for Enrollment closes the queue → any still-waitlisted
-          students become Unseated (the room-scarcity record).
-        """
-        from seminary.seminary.waitlist import (
-            mark_waitlist_unseated,
-            recount_and_promote,
-        )
+		- A larger cap or a bigger room frees seats → promote from the waitlist.
+		- Leaving Open for Enrollment closes the queue → any still-waitlisted
+		  students become Unseated (the room-scarcity record).
+		"""
+		from seminary.seminary.waitlist import (
+			mark_waitlist_unseated,
+			recount_and_promote,
+		)
 
-        if self.has_value_changed("workflow_state") and self.workflow_state not in (
-            "Draft",
-            "Open for Enrollment",
-        ):
-            mark_waitlist_unseated(self.name)
+		if self.has_value_changed("workflow_state") and self.workflow_state not in (
+			"Draft",
+			"Open for Enrollment",
+		):
+			mark_waitlist_unseated(self.name)
 
-        if (
-            self.has_value_changed("max_enrollment")
-            or self.has_value_changed("room")
-            or self.has_value_changed("workflow_state")
-        ):
-            recount_and_promote(self.name)
+		if (
+			self.has_value_changed("max_enrollment")
+			or self.has_value_changed("room")
+			or self.has_value_changed("workflow_state")
+		):
+			recount_and_promote(self.name)
 
-    def _guard_attendance_policy(self):
-        """The attendance policy is registrar/Program-Chair governed (instructors
-        see it read-only via course_schedule.js; this is the server-side gate)."""
-        if self.is_new():
-            return
-        if self.has_value_changed("attendance_policy") or self.has_value_changed(
-            "max_absences_custom"
-        ):
-            from seminary.seminary.attendance import assert_can_edit_policy
+	def _guard_attendance_policy(self):
+		"""The attendance policy is registrar/Program-Chair governed (instructors
+		see it read-only via course_schedule.js; this is the server-side gate)."""
+		if self.is_new():
+			return
+		if self.has_value_changed("attendance_policy") or self.has_value_changed("max_absences_custom"):
+			from seminary.seminary.attendance import assert_can_edit_policy
 
-            assert_can_edit_policy()
+			assert_can_edit_policy()
 
-    # ── Room capacity & fit ──────────────────────────────────────────────
-    # Every check below no-ops when its inputs are absent (progressive,
-    # opt-in by data presence — see ADR 035): no room, no course type, no
-    # requirement rows, or no cap all degrade to today's behaviour.
+	# ── Room capacity & fit ──────────────────────────────────────────────
+	# Every check below no-ops when its inputs are absent (progressive,
+	# opt-in by data presence — see ADR 035): no room, no course type, no
+	# requirement rows, or no cap all degrade to today's behaviour.
 
-    def _default_max_enrollment_from_room(self):
-        """Seed max_enrollment from the room's seating capacity when a room is
-        first set or changed and no explicit cap is present. The cap stays
-        overridable; clearing it on an unchanged room keeps it uncapped."""
-        if not self.room or self.max_enrollment:
-            return
-        if not (self.is_new() or self.has_value_changed("room")):
-            return
-        cap = frappe.db.get_value("Room", self.room, "seating_capacity")
-        if cap:
-            self.max_enrollment = cap
+	def _default_max_enrollment_from_room(self):
+		"""Seed max_enrollment from the room's seating capacity when a room is
+		first set or changed and no explicit cap is present. The cap stays
+		overridable; clearing it on an unchanged room keeps it uncapped."""
+		if not self.room or self.max_enrollment:
+			return
+		if not (self.is_new() or self.has_value_changed("room")):
+			return
+		cap = frappe.db.get_value("Room", self.room, "seating_capacity")
+		if cap:
+			self.max_enrollment = cap
 
-    def _effective_room(self, row):
-        """The room a meeting actually uses: its own override, else the section
-        room — and nothing when the meeting is online (ADR 051)."""
-        if row.cs_online:
-            return None
-        return row.cs_room or self.room
+	def _effective_room(self, row):
+		"""The room a meeting actually uses: its own override, else the section
+		room — and nothing when the meeting is online (ADR 051)."""
+		if row.cs_online:
+			return None
+		return row.cs_room or self.room
 
-    def _effective_rooms(self):
-        """Distinct physical rooms this section touches (section room ∪ per-meeting
-        overrides), excluding online meetings."""
-        rooms = set()
-        if self.room:
-            rooms.add(self.room)
-        for row in self.cs_meetinfo or []:
-            if row.cs_room and not row.cs_online:
-                rooms.add(row.cs_room)
-        return rooms
+	def _effective_rooms(self):
+		"""Distinct physical rooms this section touches (section room ∪ per-meeting
+		overrides), excluding online meetings."""
+		rooms = set()
+		if self.room:
+			rooms.add(self.room)
+		for row in self.cs_meetinfo or []:
+			if row.cs_room and not row.cs_online:
+				rooms.add(row.cs_room)
+		return rooms
 
-    def _validate_room_fit(self):
-        # A room is "in play" when the section has one OR any meeting overrides one.
-        if not self._effective_rooms():
-            return
-        self._validate_room_times()
-        self._validate_room_not_undersized()
-        self._validate_room_double_booking()
-        self._warn_missing_room_features()
+	def _validate_room_fit(self):
+		# A room is "in play" when the section has one OR any meeting overrides one.
+		if not self._effective_rooms():
+			return
+		self._validate_room_times()
+		self._validate_room_not_undersized()
+		self._validate_room_double_booking()
+		self._warn_missing_room_features()
 
-    def _validate_room_times(self):
-        """A meeting that uses a physical room must declare its window — otherwise
-        it silently opts out of room AND student conflict detection (ADR 051, #3)."""
-        if self.room and not (self.from_time and self.to_time):
-            frappe.throw(
-                _(
-                    "Set a From/To time: a room is assigned but the section has no meeting time."
-                )
-            )
-        for row in self.cs_meetinfo or []:
-            if self._effective_room(row) and not (row.cs_fromtime and row.cs_totime):
-                frappe.throw(
-                    _(
-                        "Meeting on {0} uses a room but has no time. Set From/To or mark it Online."
-                    ).format(row.cs_meetdate)
-                )
+	def _validate_room_times(self):
+		"""A meeting that uses a physical room must declare its window — otherwise
+		it silently opts out of room AND student conflict detection (ADR 051, #3)."""
+		if self.room and not (self.from_time and self.to_time):
+			frappe.throw(_("Set a From/To time: a room is assigned but the section has no meeting time."))
+		for row in self.cs_meetinfo or []:
+			if self._effective_room(row) and not (row.cs_fromtime and row.cs_totime):
+				frappe.throw(
+					_("Meeting on {0} uses a room but has no time. Set From/To or mark it Online.").format(
+						row.cs_meetdate
+					)
+				)
 
-    def _validate_room_not_undersized(self):
-        """Block assigning a SECTION room that can't seat the enrolled students.
-        Per-meeting override rooms only warn (informational — never blocks or
-        unseats anyone), per ADR 051."""
-        from seminary.seminary.waitlist import seats_used
+	def _validate_room_not_undersized(self):
+		"""Block assigning a SECTION room that can't seat the enrolled students.
+		Per-meeting override rooms only warn (informational — never blocks or
+		unseats anyone), per ADR 051."""
+		from seminary.seminary.waitlist import seats_used
 
-        used = seats_used(self.name)
-        if not used:
-            return
+		used = seats_used(self.name)
+		if not used:
+			return
 
-        if self.room:
-            cap = frappe.db.get_value("Room", self.room, "seating_capacity")
-            if cap and used > cap:
-                frappe.throw(
-                    _(
-                        "Room {0} seats {1}, but this section already has {2} "
-                        "enrolled. Choose a larger room."
-                    ).format(self.room, cap, used)
-                )
+		if self.room:
+			cap = frappe.db.get_value("Room", self.room, "seating_capacity")
+			if cap and used > cap:
+				frappe.throw(
+					_(
+						"Room {0} seats {1}, but this section already has {2} enrolled. Choose a larger room."
+					).format(self.room, cap, used)
+				)
 
-        small = []
-        for room in self._effective_rooms() - {self.room}:
-            cap = frappe.db.get_value("Room", room, "seating_capacity")
-            if cap and used > cap:
-                small.append("{0} ({1})".format(room, cap))
-        if small:
-            frappe.msgprint(
-                _(
-                    "Some meeting rooms seat fewer than the {0} students enrolled: {1}. "
-                    "No one is unseated — adjust the room if needed."
-                ).format(used, ", ".join(small)),
-                title=_("Meeting room capacity"),
-                indicator="orange",
-            )
+		small = []
+		for room in self._effective_rooms() - {self.room}:
+			cap = frappe.db.get_value("Room", room, "seating_capacity")
+			if cap and used > cap:
+				small.append("{0} ({1})".format(room, cap))
+		if small:
+			frappe.msgprint(
+				_(
+					"Some meeting rooms seat fewer than the {0} students enrolled: {1}. "
+					"No one is unseated — adjust the room if needed."
+				).format(used, ", ".join(small)),
+				title=_("Meeting room capacity"),
+				indicator="orange",
+			)
 
-    def _validate_room_double_booking(self):
-        """Block a room that's already booked for an overlapping meeting time.
+	def _validate_room_double_booking(self):
+		"""Block a room that's already booked for an overlapping meeting time.
 
-        Operates over the meeting-date child table (cs_meetinfo) on the
-        EFFECTIVE room of each meeting (per-meeting override else section room;
-        online meetings excluded — ADR 051). Two sections clash only if a
-        meeting shares the effective room AND a date AND an overlapping window.
-        Back-to-back classes (touching endpoints) do not clash.
-        """
-        from seminary.seminary.utils import times_overlap
+		Operates over the meeting-date child table (cs_meetinfo) on the
+		EFFECTIVE room of each meeting (per-meeting override else section room;
+		online meetings excluded — ADR 051). Two sections clash only if a
+		meeting shares the effective room AND a date AND an overlapping window.
+		Back-to-back classes (touching endpoints) do not clash.
+		"""
+		from seminary.seminary.utils import times_overlap
 
-        # This section's bookable meetings as (row, effective_room).
-        mine = []
-        for r in self.cs_meetinfo or []:
-            if not r.cs_meetdate:
-                continue
-            eff = self._effective_room(r)
-            if eff:
-                mine.append((r, eff))
-        if not mine:
-            return
+		# This section's bookable meetings as (row, effective_room).
+		mine = []
+		for r in self.cs_meetinfo or []:
+			if not r.cs_meetdate:
+				continue
+			eff = self._effective_room(r)
+			if eff:
+				mine.append((r, eff))
+		if not mine:
+			return
 
-        rooms = list({eff for _r, eff in mine})
-        dates = list({str(r.cs_meetdate) for r, _eff in mine})
-        others = frappe.db.sql(
-            """
+		rooms = list({eff for _r, eff in mine})
+		dates = list({str(r.cs_meetdate) for r, _eff in mine})
+		others = frappe.db.sql(
+			"""
             SELECT cs.name, cs.title, m.cs_meetdate, m.cs_fromtime, m.cs_totime,
                    COALESCE(m.cs_room, cs.room) AS eff_room
             FROM `tabCourse Schedule Meeting Dates` m
@@ -290,1278 +273,1225 @@ class CourseSchedule(Document):
               AND COALESCE(m.cs_room, cs.room) IN %(rooms)s
               AND m.cs_meetdate IN %(dates)s
             """,
-            {
-                "self_name": self.name or "",
-                "rooms": tuple(rooms),
-                "dates": tuple(dates),
-            },
-            as_dict=True,
-        )
-        if not others:
-            return
-
-        by_key = {}
-        for o in others:
-            by_key.setdefault((str(o.cs_meetdate), o.eff_room), []).append(o)
-
-        for r, eff in mine:
-            for o in by_key.get((str(r.cs_meetdate), eff), []):
-                if times_overlap(
-                    r.cs_fromtime, r.cs_totime, o.cs_fromtime, o.cs_totime
-                ):
-                    frappe.throw(
-                        _(
-                            "Room {0} is already booked by {1} on {2} "
-                            "({3}–{4}). Pick another room or time."
-                        ).format(
-                            eff,
-                            o.title or o.name,
-                            r.cs_meetdate,
-                            o.cs_fromtime,
-                            o.cs_totime,
-                        )
-                    )
-
-    def _warn_missing_room_features(self):
-        """Dismissible warning when a room lacks features the course's Course
-        Type requires for this modality. Unions the 'All' modality rows with the
-        section's specific modality, and checks every effective room (section ∪
-        per-meeting overrides). Never blocks the save."""
-        if not self.course:
-            return
-        course_type = frappe.db.get_value("Course", self.course, "course_type")
-        if not course_type:
-            return
-        required = set(
-            filter(
-                None,
-                frappe.get_all(
-                    "Course Type Requirements",
-                    filters={
-                        "parent": course_type,
-                        "parenttype": "Course Type",
-                        "modality": ["in", ["All", self.modality or ""]],
-                    },
-                    pluck="room_feature",
-                ),
-            )
-        )
-        if not required:
-            return
-        for room in self._effective_rooms():
-            have = set(
-                frappe.get_all(
-                    "Room Existing Feature",
-                    filters={"parent": room, "parenttype": "Room"},
-                    pluck="feature",
-                )
-            )
-            missing = required - have
-            if not missing:
-                continue
-            labels = [
-                frappe.db.get_value("Room Feature", m, "feature") or m for m in missing
-            ]
-            frappe.msgprint(
-                _(
-                    "Room {0} is missing required feature(s) for this course: {1}."
-                ).format(room, ", ".join(labels)),
-                title=_("Room feature mismatch"),
-                indicator="orange",
-            )
-
-    def _log_room_change(self):
-        """Append an audit row whenever the room changes on an existing section.
-        The reason comes from the Change Room dialog (self.flags.room_change_reason);
-        a direct field edit logs the move with a blank reason."""
-        if self.is_new() or not self.has_value_changed("room"):
-            return
-        before = self.get_doc_before_save()
-        old_room = before.room if before else None
-        self.append(
-            "room_change_log",
-            {
-                "from_room": old_room,
-                "to_room": self.room,
-                "reason": self.flags.get("room_change_reason") or "",
-                "changed_by": frappe.session.user,
-                "changed_on": now(),
-            },
-        )
-
-    @frappe.whitelist()
-    def change_room(self, room, reason):
-        """Registrar-facing room reassignment that records a reason in the log."""
-        self.flags.room_change_reason = reason
-        self.room = room
-        self.save()
-        return self.room
-
-    def before_insert(self):
-        self._seed_assessment_criteria_from_course()
-
-    def after_insert(self):
-        # Frappe forbids *inserting* a document directly into a non-initial
-        # workflow state, so a Course Schedule is always born in Draft. Promote
-        # it to Open for Enrollment here (system-driven, db.set_value) when
-        # enrollment is already open — see cs_lifecycle.open_new_schedule_if_due.
-        from seminary.seminary.cs_lifecycle import open_new_schedule_if_due
-
-        open_new_schedule_if_due(self)
-
-        # A competency section is born with a chapter per competency and the
-        # reflection lessons its framework asks for (ADR 079 decision 2). An
-        # importer that brings its own outline scaffolds after it instead.
-        if not self.flags.skip_reflection_scaffold:
-            from seminary.seminary import cbe_reflection
-
-            cbe_reflection.scaffold(self.name)
-            # The scaffold writes its chapters as direct inserts, which moves
-            # `modified`. Reload, or the form gets a copy with no chapters and
-            # a stale timestamp: its next action (Import Course Template among
-            # them) is refused as "modified after you have opened it".
-            if (
-                frappe.db.get_value(self.doctype, self.name, "modified")
-                != self.modified
-            ):
-                self.reload()
-
-    def onload(self):
-        # A competency section is born with its scaffold, which a template
-        # may still replace (`_validate_target_for_import`); the form offers
-        # Import Course Template on that, not only on an empty outline.
-        if self.chapters:
-            from seminary.seminary import cbe_reflection
-
-            self.set_onload(
-                "untouched_scaffold", cbe_reflection.untouched_scaffold(self.name)
-            )
-
-    def _seed_assessment_criteria_from_course(self):
-        """Auto-populate courseassescrit_sc from Course.assessment_criteria.
-
-        Runs only on a fresh CS (SCAC empty, course set). Maps Course
-        Assessment Criteria → Scheduled Course Assess Criteria field by
-        field. Includes ``title`` (mandatory on SCAC). ``type`` is
-        intentionally omitted — SCAC.type is fetch_from
-        assesscriteria_scac.type and resolves on save.
-        """
-        if self.courseassescrit_sc or not self.course:
-            return
-
-        for cc in frappe.get_all(
-            "Course Assessment Criteria",
-            filters={"parent": self.course, "parenttype": "Course"},
-            fields=["title", "assessment_criteria", "weightage"],
-            order_by="idx asc",
-        ):
-            self.append(
-                "courseassescrit_sc",
-                {
-                    "title": cc.title,
-                    "assesscriteria_scac": cc.assessment_criteria,
-                    "weight_scac": cc.weightage,
-                    # Explicit 0 — validate_assessment_criteria's if/elif on
-                    # extracredit_scac silently skips rows where the value
-                    # is None, causing the weight sum to drop and fail the
-                    # 100% check. Course Assessment Criteria has no extra-
-                    # credit field; everything copied here is non-extra-credit.
-                    "extracredit_scac": 0,
-                },
-            )
-
-    def on_trash(self):
-        if self.workflow_state and self.workflow_state != "Draft":
-            frappe.throw(
-                _(
-                    "Only Course Schedules in the Draft state can be deleted. "
-                    "Use Cancel Course to retire a course that has opened for enrollment."
-                )
-            )
-        from seminary.seminary import school_meetings
-
-        school_meetings.on_section_gone(self)
-        from seminary.seminary import oral_meetings
-
-        oral_meetings.on_section_gone(self.name)
-
-    def _resolve_dates_if_needed(self):
-        from seminary.seminary.cs_lifecycle import resolve_window_dates
-
-        dates = resolve_window_dates(self)
-        self.enrollment_open_date = dates.get("enrollment_open")
-        self.enrollment_close_date = dates.get("enrollment_close")
-        self.grade_close_date = dates.get("grade_close")
-
-    def validate_instructor_categories(self):
-        """When HRMS payroll is enabled, every instructor row needs a category."""
-        if not frappe.db.get_single_value("Seminary Settings", "hrms_enable"):
-            return
-        for row in self.get("instructor1", []):
-            if not row.instructor_category:
-                frappe.throw(
-                    _(
-                        "Instructor {0} (row {1}) is missing an Instructor Category. "
-                        "Category is required while HRMS Payroll is enabled."
-                    ).format(row.instructor or "?", row.idx)
-                )
-
-    def validate_instructor_of_record_rows(self):
-        """p007 §2.8 (decision 8): a section row may carry an of-record
-        category only if the Instructor's default category is of record, or the
-        saving user is Program Chair / Seminary Manager. The registrar assigns
-        professors and graders freely; promoting a grader to instructor of
-        record is the chair's call, made on the Instructor.
-
-        p005a A01-13: this used to read "of record **or empty**", and
-        ``default_inst_category`` is not a required field. An Instructor with a
-        blank default could therefore be listed as of record by anyone who could
-        save the section — including, because the p007 row hook grants write to
-        whoever ``is_course_staff`` says is on it, *themselves*. Reproduced:
-        a section-tier grader promoted their own row and went from one readable
-        section to every section in the school (``instructor_tier`` "section" ->
-        "record"). The default must now be **explicitly** of record.
-
-        Not solved with a permlevel: Course Schedule's permlevel 1 already grants
-        Instructor write, so moving the field there would change nothing, and
-        permlevel 2 is Program Chair only, which would stop the registrar
-        assigning graders at all — the workflow this docstring exists to protect.
-        """
-        # in_install / in_migrate stay: they are bootstrap, not a caller.
-        # self.flags.ignore_permissions deliberately does NOT: a permission
-        # bypass and an integrity rule are different things, and course_pack
-        # import sets that flag on section creation (p005a A08-2).
-        if frappe.flags.in_install or frappe.flags.in_migrate:
-            return
-        roles = set(frappe.get_roles())
-        if roles & {"Program Chair", "Seminary Manager", "System Manager"}:
-            return
-        of_record = set(
-            frappe.get_all(
-                "Instructor Category", {"is_instructor_of_record": 1}, pluck="name"
-            )
-        )
-        before = self.get_doc_before_save()
-        unchanged = {
-            (r.instructor, r.instructor_category)
-            for r in (before.get("instructor1") if before else []) or []
-        }
-        for row in self.get("instructor1", []):
-            if row.instructor_category not in of_record:
-                continue
-            if (row.instructor, row.instructor_category) in unchanged:
-                continue
-            default = frappe.db.get_value(
-                "Instructor", row.instructor, "default_inst_category"
-            )
-            if default not in of_record:
-                frappe.throw(
-                    _(
-                        "Instructor {0} (row {1}) is {2} by default. Only a "
-                        "Program Chair or Seminary Manager can list them as "
-                        "{3} on a section; ask them to set the default "
-                        "category on the Instructor record first."
-                    ).format(
-                        row.instructor,
-                        row.idx,
-                        default or _("not an instructor of record"),
-                        row.instructor_category,
-                    ),
-                    title=_("Instructor of record"),
-                )
-
-    def set_title(self):
-        section = self.section if hasattr(self, "section") and self.section else ""
-        parts = [self.course or "", self.academic_term or ""]
-        if section:
-            parts.append(section)
-        self.title = " - ".join(p for p in parts if p)
-
-    def clean_name(self):
-        if self.name and ("/" in self.name or "\\" in self.name):
-            # Just remove forward slashes and let Frappe handle the rest
-            self.name = self.name.replace("/", "-").replace("\\", "-")
-
-    def validate_assessment_criteria(self):
-        """Total weightage must be 100% -- except where weights mean nothing.
-
-        `weight_scac` is a percentage contribution to a numeric final grade. A
-        competency section has no such number: activity levels roll into a
-        Competency Result, not a weighted sum (ADR 065 section 11a). Demanding
-        100% there forces an instructor to invent weights nothing reads, and
-        refuses the save until they do.
-        """
-        from seminary.seminary import cbe
-
-        if not self.courseassescrit_sc:
-            return
-
-        if cbe.framework_for_course_and_scale(self.course, self.gradesc_cs):
-            self.validate_assessment_competencies()
-            return
-
-        # With categories, they total 100 and each row is a share of its own
-        # (decisions/096).
-        if self.assess_categories:
-            from seminary.seminary import gradebook_weights
-
-            gradebook_weights.fill_codes(self.assess_categories)
-            gradebook_weights.validate(self.assess_categories, self.courseassescrit_sc)
-            return
-
-        total_weight_scac = 0
-        for criteria in self.courseassescrit_sc:
-            if criteria.extracredit_scac == 0:
-                total_weight_scac += criteria.weight_scac or 0
-            elif criteria.extracredit_scac == 1:
-                continue
-        if total_weight_scac != 100:
-            frappe.throw(_("Total Weight of all Assessment Criteria must total 100%"))
-
-    def validate_late_policy(self):
-        """Late deductions are percentage points of a points score, so they
-        exist only on a points scale outside competency-based education
-        (decisions/082 section 4). Refused, not ignored, so the instructor
-        is not left believing a deduction applies."""
-        for row in self.courseassescrit_sc or []:
-            if (
-                row.cutoff_date
-                and row.due_date
-                and get_datetime(row.cutoff_date) < get_datetime(row.due_date)
-            ):
-                frappe.throw(
-                    _(
-                        "Row {0}: {1} closes before it is due. Move the cut-off after the due date."
-                    ).format(row.idx, row.title)
-                )
-        if not self.late_policy_enabled:
-            return
-        from seminary.seminary import cbe, deadlines
-
-        if not deadlines.is_points_scale(self.gradesc_cs) or (
-            cbe.framework_for_course_and_scale(self.course, self.gradesc_cs)
-        ):
-            frappe.throw(
-                _(
-                    "Late deductions need a points grading scale, and {0} is not "
-                    "one. Untick Deduct Points for Late Work, or change the "
-                    "grading scale."
-                ).format(self.gradesc_cs),
-                title=_("Late deductions"),
-            )
-        if self.late_floor and not 0 <= self.late_floor <= 100:
-            frappe.throw(_("Lowest Possible Score must be between 0 and 100."))
-
-    def validate_assessment_competencies(self):
-        """Chapter -> lesson -> assessment must agree on the competency.
-
-        The outline has already told the student which competency they are
-        working on in a chapter; an activity inside it cannot be filed under a
-        different one. Where the chain resolves the competency is defaulted from
-        it, so the instructor only has to choose for assessments that sit
-        outside the outline -- a course-wide capstone, say.
-        """
-        if self.is_new():
-            # The lesson index is built from saved activity links; on a brand
-            # new section there is nothing to resolve against yet.
-            return
-
-        for row, competency in self._chapter_competencies():
-            if not row.course_competency:
-                row.course_competency = competency
-            elif row.course_competency != competency:
-                frappe.throw(
-                    _(
-                        "Row {0}: {1} is in a chapter that delivers {2}, so it "
-                        "cannot be filed under {3}."
-                    ).format(
-                        row.idx,
-                        row.title or row.assesscriteria_scac,
-                        competency,
-                        row.course_competency,
-                    )
-                )
-
-    def refile_assessment_competencies(self):
-        """Re-file every assessment on the competency its chapter now delivers.
-
-        Called after a write that moves the chapter under an assessment -- a
-        lesson moved between chapters, or a chapter re-mapped -- which the
-        validator above would otherwise report as the instructor's error on
-        their next save (ADR 079 decision 8). Saves only when something moved,
-        and returns ``[(title, old, new)]`` so the caller can say what changed.
-        A row whose chapter has no competency keeps the one it has.
-        """
-        changed = []
-        for row, competency in self._chapter_competencies():
-            if row.course_competency != competency:
-                changed.append(
-                    (
-                        row.title or row.assesscriteria_scac,
-                        row.course_competency,
-                        competency,
-                    )
-                )
-                row.course_competency = competency
-        if changed:
-            # Only competency links on child rows changed; a draft section with
-            # its schedule still unfilled must not fail the move on that.
-            self.flags.ignore_mandatory = True
-            self.save(ignore_permissions=True)
-        return changed
-
-    def _chapter_competencies(self):
-        """Yield ``(row, competency)`` for each assessment whose activity sits
-        in a lesson whose chapter names a competency."""
-        from seminary.seminary.utils import (
-            _build_lesson_index_for_course,
-            _scac_activity_key,
-        )
-
-        index = _build_lesson_index_for_course(self.name)
-        chapter_competency = {}
-
-        for row in self.courseassescrit_sc:
-            lesson = index.get(_scac_activity_key(row))
-            if not lesson:
-                continue
-            chapter = frappe.db.get_value("Course Lesson", lesson, "chapter")
-            if not chapter:
-                continue
-            if chapter not in chapter_competency:
-                chapter_competency[chapter] = frappe.db.get_value(
-                    "Course Schedule Chapter", chapter, "course_competency"
-                )
-            if chapter_competency[chapter]:
-                yield row, chapter_competency[chapter]
-
-    def convert_to_date(self, date):
-        if isinstance(date, str):
-            return datetime.strptime(date, "%Y-%m-%d").date()
-        if isinstance(date, datetime):
-            return date.date()
-        return date
-
-    def validate_date(self):
-        academic_term = self.academic_term
-        start_date, end_date = frappe.db.get_value(
-            "Academic Term", academic_term, ["term_start_date", "term_end_date"]
-        )
-        start_date = self.convert_to_date(start_date)
-        end_date = self.convert_to_date(end_date)
-        course_datestart = self.convert_to_date(self.c_datestart)
-        course_dateend = self.convert_to_date(self.c_dateend)
-
-        # Each comparison is guarded on its own operands. An open-ended section
-        # (ADR 065) legitimately has no end date, and a missing start date is
-        # caught by the mandatory check — neither should surface as a TypeError.
-        outside = (
-            start_date and course_datestart and course_datestart < start_date
-        ) or (end_date and course_dateend and course_dateend > end_date)
-        if outside:
-            frappe.throw(
-                _(
-                    "Schedule date selected does not lie within the Academic Term: {}"
-                ).format(self.academic_term)
-            )
-
-    def validate_content_release_override(self):
-        """A section may only set its own release mode where the framework allows.
-
-        Refused rather than quietly dropped so the instructor learns the school
-        has not opened this up, instead of saving a setting that does nothing.
-        `cbe.content_release_mode` independently ignores a stale override, which
-        covers the case where the permission is withdrawn afterwards.
-        """
-        if not self.content_release_override:
-            return
-
-        from seminary.seminary import cbe
-
-        # Resolved from this document's own course and scale, not from the saved
-        # row: validation runs before a new section exists.
-        name = cbe.framework_for_course_and_scale(self.course, self.gradesc_cs)
-        if name:
-            framework = frappe.get_cached_doc("Competency Framework", name)
-            if cint(framework.override_contentrelease):
-                if self.content_release_override in cbe.GATED_MODES and not (
-                    cbe.end_of_competency_self_eval(framework)
-                ):
-                    frappe.throw(
-                        cbe.release_mode_refusal(
-                            self.content_release_override, on_section=True
-                        ),
-                        title=_("Content release needs a self-assessment"),
-                    )
-                return
-            frappe.throw(
-                _(
-                    "Competency Framework {0} does not let sections choose their own "
-                    "content release mode."
-                ).format(name)
-            )
-        frappe.throw(
-            _(
-                "Content Release Override applies only to competency-based sections. "
-                "Leave it blank."
-            )
-        )
-
-    def validate_open_ended(self):
-        """An open-ended section is only meaningful under self-paced pacing.
-
-        Cohort-paced programs move students together, so a section with no end
-        would have nothing to move them past; and a conventional numeric course
-        needs an end date for grading windows and attendance. Restricting the
-        flag here keeps it from becoming a way to sidestep the end date
-        generally (ADR 065).
-        """
-        if not self.open_ended:
-            # mandatory_depends_on is evaluated client-side only, so dropping
-            # reqd from c_dateend would leave every API, import and script path
-            # able to create an undated section. Enforce it here instead.
-            if not self.c_dateend:
-                frappe.throw(
-                    _(
-                        "End Date is required. Tick Open Ended only if this section "
-                        "belongs to a self-paced competency-based program and has no "
-                        "fixed end."
-                    )
-                )
-            return
-
-        self.c_dateend = None
-
-        self_paced = frappe.get_all(
-            "Program Course",
-            filters={"course": self.course, "disabled": 0},
-            fields=["parent"],
-        )
-        if not any(
-            frappe.db.get_value("Program", p.parent, "pacing_mode") == "Self-paced"
-            and frappe.db.get_value("Program", p.parent, "competency_framework")
-            for p in self_paced
-        ):
-            frappe.throw(
-                _(
-                    "Course {0} is not in any self-paced competency-based program, so "
-                    "this section cannot be open ended. Give it an end date, or set "
-                    "the program's pacing to Self-paced."
-                ).format(self.course)
-            )
-
-        # No meetings means no absences to count; leaving a policy configured
-        # would produce an absence limit derived from an empty meeting list.
-        if self.attendance_policy != "Disabled":
-            self.attendance_policy = "Disabled"
-            frappe.msgprint(
-                _(
-                    "Attendance tracking has been disabled: an open-ended section "
-                    "has no scheduled class meetings."
-                ),
-                alert=True,
-            )
-
-    def validate_time(self):
-        """Validates if from_time is greater than to_time (section and per-meeting).
-
-        Compares with get_time() — Time values can arrive as strings, and a raw
-        string compare is wrong for single-digit hours ("9:00:00" > "13:00:00").
-        """
-        if (
-            self.is_new()
-            or self.has_value_changed("from_time")
-            or self.has_value_changed("to_time")
-        ):
-            if self.from_time and self.to_time:
-                if get_time(self.from_time) > get_time(self.to_time):
-                    frappe.throw(_("From Time cannot be greater than To Time."))
-
-        for row in self.cs_meetinfo or []:
-            if (
-                row.cs_fromtime
-                and row.cs_totime
-                and get_time(row.cs_fromtime) > get_time(row.cs_totime)
-            ):
-                frappe.throw(
-                    _("Meeting on {0}: From Time cannot be after To Time.").format(
-                        row.cs_meetdate
-                    )
-                )
-
-    def generate_token(self):
-        if not self.calendar_token:
-            self.calendar_token = secrets.token_hex(32)
-
-    @frappe.whitelist()
-    def regenerate_token(self):
-        """Mint a new calendar token, invalidating existing subscriptions.
-
-        Explicitly write-gated and returns nothing. It previously relied on
-        ``run_doc_method`` checking *read* and ``save()`` later checking write —
-        an accidental gate — and handed the new token straight back to the
-        caller, the pattern p006 F12 removed from
-        ``recommendation_letter.regenerate_token`` (p005a A04-3). Subscribers
-        pick the new token up from ``get_course_details``, which is gated.
-        """
-        frappe.has_permission("Course Schedule", "write", doc=self, throw=True)
-        self.calendar_token = secrets.token_hex(32)
-        self.save()
-
-    def _merge_meeting_rows(self, wanted):
-        """Bring cs_meetinfo to the ``wanted`` dates without recreating rows.
-
-        The rows used to be wiped and re-appended, which gave every meeting a
-        new name and orphaned whatever pointed at the old one: Student
-        Attendance ``meeting`` (051 #4), and later provider meetings (051a) and
-        captured activities (100d). Now:
-
-        - a row whose date is still wanted is kept, with its name, room, online
-          flag and link. Its times follow the section only when they still
-          equal the section's previous times, so a meeting given its own hours
-          keeps them;
-        - a wanted date with no row gets a new one at the section's times;
-        - a row whose date is no longer wanted is removed, unless it is in use,
-          in which case nothing is changed and the dates are named.
-        """
-        old_from, old_to = (
-            frappe.db.get_value("Course Schedule", self.name, ["from_time", "to_time"])
-            if not self.is_new()
-            else (None, None)
-        )
-        wanted_set = set(wanted)
-
-        in_use = [
-            row
-            for row in self.cs_meetinfo
-            if getdate(row.cs_meetdate) not in wanted_set and _meeting_row_in_use(row)
-        ]
-        if in_use:
-            frappe.throw(
-                _(
-                    "These meetings cannot be removed because they are already in "
-                    "use (attendance has been taken): {0}. Keep their weekdays and "
-                    "dates in the schedule, or remove them one by one after "
-                    "clearing what uses them."
-                ).format(", ".join(sorted(formatdate(r.cs_meetdate) for r in in_use)))
-            )
-
-        have = set()
-        for row in list(self.cs_meetinfo):
-            meeting_day = getdate(row.cs_meetdate)
-            if meeting_day not in wanted_set:
-                self.remove(row)
-                continue
-            have.add(meeting_day)
-            if _same_time(row.cs_fromtime, old_from) and _same_time(
-                row.cs_totime, old_to
-            ):
-                row.cs_fromtime = self.from_time
-                row.cs_totime = self.to_time
-
-        for meeting_day in wanted:
-            if meeting_day not in have:
-                self.append(
-                    "cs_meetinfo",
-                    {
-                        "cs_meetdate": meeting_day,
-                        "cs_fromtime": self.from_time,
-                        "cs_totime": self.to_time,
-                    },
-                )
-
-        self.cs_meetinfo.sort(
-            key=lambda r: (getdate(r.cs_meetdate), str(r.cs_fromtime or ""))
-        )
-        for i, row in enumerate(self.cs_meetinfo, start=1):
-            row.idx = i
-        return list(self.cs_meetinfo)
-
-    @frappe.whitelist()
-    def schedule_dates(self, days):
-        """Returns a list of meeting dates and also creates child documents for each meeting date"""
-        # A whitelisted document method is reached through run_doc_method, which
-        # checks only READ on the document. Everything past that is this
-        # method's own job (p008a G10 inventory).
-        # A student reads the sections they are enrolled in, and this method
-        # rewrites cs_meetinfo and saves with ignore_permissions -- so without the
-        # check below any enrolled student could rewrite the section's schedule.
-        self.check_permission("write")
-
-        if not self.c_dateend:
-            frappe.throw(
-                _(
-                    "This section has no end date, so class meetings cannot be "
-                    "generated. Open-ended sections are worked through at the "
-                    "student's own pace and have no fixed meeting schedule."
-                )
-            )
-
-        wanted = []
-        current_date = self.c_datestart
-        while current_date <= self.c_dateend:
-            if calendar.day_name[getdate(current_date).weekday()] in days:
-                wanted.append(getdate(current_date))
-            current_date = add_days(current_date, 1)
-
-        meeting_dates = self._merge_meeting_rows(wanted)
-
-        # Save the parent once — this persists all children and updates the timestamp
-        self.hasmtgdate = 1 if meeting_dates else 0
-        self.flags.ignore_permissions = True
-        self.save()
-
-        # meeting_dates_errors is always empty now; kept for the Desk caller.
-        return dict(meeting_dates=meeting_dates, meeting_dates_errors=[])
-
-    @frappe.whitelist()
-    def cancel_course(self, reason):
-        """Transition a Course Schedule to Cancelled and run the cascade.
-
-        Permitted only from Open for Enrollment or Enrollment Closed (the
-        state machine forbids cancellation once grading has started). Marks
-        each non-withdrawn Course Enrollment Individual as course_cancelled,
-        deletes the auto-populated Program Enrollment Course rows (preserving
-        partner-seminary rows per ADR 005), and submits a Seminary
-        Announcement to enrolled students.
-        """
-        roles = set(frappe.get_roles(frappe.session.user))
-        if not roles.intersection(CANCEL_ROLES):
-            frappe.throw(
-                _("Only Registrar or Seminary Manager can cancel a course."),
-                frappe.PermissionError,
-            )
-
-        if self.workflow_state not in CANCELLABLE_STATES:
-            frappe.throw(
-                _(
-                    "Cannot cancel a course in state {0}. Cancellation is "
-                    "only allowed before grading starts."
-                ).format(self.workflow_state or _("(none)"))
-            )
-
-        if not frappe.db.exists("Course Cancellation Reason", reason):
-            frappe.throw(_("Cancellation reason {0} does not exist.").format(reason))
-
-        # Cancellation isn't a regular workflow transition (intentionally
-        # absent from the workflow fixture so the Desk Action menu cannot
-        # bypass this method). Use db.set_value to skip Frappe's
-        # transition validator — the role/state gates above are the
-        # authoritative checks.
-        cancelled_at = now()
-        user = frappe.session.user
-        frappe.db.set_value(
-            "Course Schedule",
-            self.name,
-            {
-                "cancellation_reason": reason,
-                "cancelled_on": cancelled_at,
-                "cancelled_by": user,
-                "workflow_state": "Cancelled",
-                "published": 0,
-            },
-        )
-        self.cancellation_reason = reason
-        self.cancelled_on = cancelled_at
-        self.cancelled_by = user
-        self.workflow_state = "Cancelled"
-        self.published = 0
-
-        _cascade_cancel_pec_and_cei(self.name, reason)
-        _create_cancellation_announcement(self, reason)
-
-        # Close out any waitlist (the section is gone) and refresh the seat
-        # caches, which now read zero seat-holders.
-        from seminary.seminary.waitlist import mark_waitlist_unseated, recount
-
-        mark_waitlist_unseated(self.name)
-        recount(self.name)
-        # A cancelled section's school meetings are deleted (decisions/051a §5).
-        from seminary.seminary import school_meetings
-
-        school_meetings.on_section_gone(self)
-        from seminary.seminary import oral_meetings
-
-        oral_meetings.on_section_gone(self.name)
-
-    @frappe.whitelist()
-    def import_template(self, source_cs):
-        """Copy LMS structure (chapters, lessons, assessment criteria) from
-        another Course Schedule of the same course into this one.
-
-        All validations (target + source) run as cheap reads up-front. Only
-        when every check passes does the write phase begin — there are no
-        expected rollbacks. Frappe's request-level transaction still rolls
-        back on genuine exceptions.
-
-        Replaces the target's SCAC rows (so the placeholder satisfying
-        ``courseassescrit_sc.reqd:1`` is overwritten). Refuses if the target
-        already has chapters or any graded data. Roster, grades, SCAC
-        due_dates and cut-offs, and student due date overrides are NOT
-        copied; the late policy and the assessment categories are.
-        """
-        self._validate_target_for_import(source_cs)
-        _validate_source_for_import(source_cs, self)
-
-        # All persistence is via direct child-doc inserts. self.save() is
-        # avoided on purpose: Course Lesson.updates_lessons (and any other
-        # denorm hook chain) bumps target fields via db.set_value during
-        # the inserts below, and a parent save would race that — both on
-        # the modified timestamp (TimestampMismatchError) and on stale
-        # denorm field values (lessons count getting overwritten with the
-        # in-memory 0). Source weights are validated up-front, so we don't
-        # lose any meaningful save-time check.
-        from seminary.seminary import cbe_reflection
-
-        if self.chapters:
-            cbe_reflection.clear_scaffold(self.name)
-        scac_name_map = _replace_scac_rows(source_cs, self.name)
-        folder_report = _new_folder_report()
-        # Lesson content is copied verbatim, URLs included. Files attached to
-        # the source section get a twin on this one, or the new section's
-        # students could not open them (p007 §8.2, `file_policy.adopt`).
-        frappe.flags.seminary_adopt_from = ("Course Schedule", source_cs)
-        try:
-            n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
-                source_cs, self.name, folder_report=folder_report
-            )
-        finally:
-            frappe.flags.seminary_adopt_from = None
-        _remap_lesson_scac_links(lesson_name_map, scac_name_map)
-        # Fill what the template lacked, stamp the reflections it brought, and
-        # file its assessments on the chapters they now sit in.
-        cbe_reflection.scaffold(self.name)
-        frappe.get_doc("Course Schedule", self.name).refile_assessment_competencies()
-
-        _copy_late_policy(source_cs, self.name)
-        _copy_categories(source_cs, self.name)
-        # Other apps copy what they keep per assessment row (aretenic's
-        # outcome maps, p023); a failure rolls the import back with it.
-        for fn in frappe.get_hooks("course_template_imported"):
-            frappe.get_attr(fn)(source_cs, self.name, scac_name_map)
-        n_scac = len(scac_name_map)
-        lines = [
-            _(
-                "Imported template from {0} on {1} by {2}. "
-                "Copied: {3} chapters, {4} lessons, {5} assessment criteria."
-            ).format(
-                source_cs,
-                formatdate(now()),
-                frappe.session.user,
-                n_chapters,
-                n_lessons,
-                n_scac,
-            )
-        ]
-        for r in folder_report["rescoped"]:
-            lines.append(
-                _("Folder '{0}' re-scoped from {1} to {2}.").format(
-                    r["foldername"], r["from_scope"], r["to_scope"]
-                )
-            )
-        for c in folder_report["copied"]:
-            lines.append(
-                _("Folder '{0}' copied into a new Instructor folder for {1}.").format(
-                    c["foldername"], c["instructor"]
-                )
-            )
-        lines.extend(folder_report["warnings"])
-        self.add_comment("Info", "<br>".join(lines))
-
-        return {
-            "chapters": n_chapters,
-            "lessons": n_lessons,
-            "scac": n_scac,
-            "folder_rescoped": folder_report["rescoped"],
-            "folder_copied": folder_report["copied"],
-            "folder_warnings": folder_report["warnings"],
-        }
-
-    def _validate_target_for_import(self, source_cs):
-        """Read-only checks on the target side. Throws on any violation."""
-        roles = set(frappe.get_roles(frappe.session.user))
-        if not roles.intersection(TEMPLATE_IMPORT_ROLES):
-            frappe.throw(
-                _(
-                    "Only Program Chair, Seminary Manager, or Registrar can "
-                    "import a course template."
-                ),
-                frappe.PermissionError,
-            )
-
-        if self.workflow_state not in TEMPLATE_IMPORT_STATES:
-            frappe.throw(
-                _(
-                    "Cannot import a template while the course is in state {0}. "
-                    "Allowed states: Draft, Open for Enrollment."
-                ).format(self.workflow_state or _("(none)"))
-            )
-
-        if source_cs == self.name:
-            frappe.throw(_("A schedule cannot be imported into itself."))
-
-        if not frappe.db.exists("Course Schedule", source_cs):
-            frappe.throw(
-                _("Source Course Schedule {0} does not exist.").format(source_cs)
-            )
-        # The three roles read every Course Schedule today; the check is here
-        # so Phase 1's course scoping does not reopen the source (p006 §2.2b).
-        frappe.has_permission("Course Schedule", "read", doc=source_cs, throw=True)
-
-        source_course = frappe.db.get_value("Course Schedule", source_cs, "course")
-        if source_course != self.course:
-            frappe.throw(
-                _(
-                    "Source schedule belongs to course {0}; this schedule "
-                    "belongs to {1}. Templates can only be imported between "
-                    "schedules of the same course."
-                ).format(source_course, self.course)
-            )
-
-        from seminary.seminary import cbe_reflection
-
-        # An outline that is only the scaffold gives way to the template and
-        # is rebuilt around it afterwards (ADR 079 decision 8).
-        n_chapters = len(self.chapters or [])
-        if n_chapters > 0 and not cbe_reflection.untouched_scaffold(self.name):
-            frappe.throw(
-                _(
-                    "Target schedule already has {0} chapter(s). Clear them "
-                    "first or import into a fresh schedule."
-                ).format(n_chapters)
-            )
-
-        graded_count = frappe.db.sql(
-            """
+			{
+				"self_name": self.name or "",
+				"rooms": tuple(rooms),
+				"dates": tuple(dates),
+			},
+			as_dict=True,
+		)
+		if not others:
+			return
+
+		by_key = {}
+		for o in others:
+			by_key.setdefault((str(o.cs_meetdate), o.eff_room), []).append(o)
+
+		for r, eff in mine:
+			for o in by_key.get((str(r.cs_meetdate), eff), []):
+				if times_overlap(r.cs_fromtime, r.cs_totime, o.cs_fromtime, o.cs_totime):
+					frappe.throw(
+						_(
+							"Room {0} is already booked by {1} on {2} ({3}–{4}). Pick another room or time."
+						).format(
+							eff,
+							o.title or o.name,
+							r.cs_meetdate,
+							o.cs_fromtime,
+							o.cs_totime,
+						)
+					)
+
+	def _warn_missing_room_features(self):
+		"""Dismissible warning when a room lacks features the course's Course
+		Type requires for this modality. Unions the 'All' modality rows with the
+		section's specific modality, and checks every effective room (section ∪
+		per-meeting overrides). Never blocks the save."""
+		if not self.course:
+			return
+		course_type = frappe.db.get_value("Course", self.course, "course_type")
+		if not course_type:
+			return
+		required = set(
+			filter(
+				None,
+				frappe.get_all(
+					"Course Type Requirements",
+					filters={
+						"parent": course_type,
+						"parenttype": "Course Type",
+						"modality": ["in", ["All", self.modality or ""]],
+					},
+					pluck="room_feature",
+				),
+			)
+		)
+		if not required:
+			return
+		for room in self._effective_rooms():
+			have = set(
+				frappe.get_all(
+					"Room Existing Feature",
+					filters={"parent": room, "parenttype": "Room"},
+					pluck="feature",
+				)
+			)
+			missing = required - have
+			if not missing:
+				continue
+			labels = [frappe.db.get_value("Room Feature", m, "feature") or m for m in missing]
+			frappe.msgprint(
+				_("Room {0} is missing required feature(s) for this course: {1}.").format(
+					room, ", ".join(labels)
+				),
+				title=_("Room feature mismatch"),
+				indicator="orange",
+			)
+
+	def _log_room_change(self):
+		"""Append an audit row whenever the room changes on an existing section.
+		The reason comes from the Change Room dialog (self.flags.room_change_reason);
+		a direct field edit logs the move with a blank reason."""
+		if self.is_new() or not self.has_value_changed("room"):
+			return
+		before = self.get_doc_before_save()
+		old_room = before.room if before else None
+		self.append(
+			"room_change_log",
+			{
+				"from_room": old_room,
+				"to_room": self.room,
+				"reason": self.flags.get("room_change_reason") or "",
+				"changed_by": frappe.session.user,
+				"changed_on": now(),
+			},
+		)
+
+	@frappe.whitelist()
+	def change_room(self, room, reason):
+		"""Registrar-facing room reassignment that records a reason in the log."""
+		self.flags.room_change_reason = reason
+		self.room = room
+		self.save()
+		return self.room
+
+	def before_insert(self):
+		self._seed_assessment_criteria_from_course()
+
+	def after_insert(self):
+		# Frappe forbids *inserting* a document directly into a non-initial
+		# workflow state, so a Course Schedule is always born in Draft. Promote
+		# it to Open for Enrollment here (system-driven, db.set_value) when
+		# enrollment is already open — see cs_lifecycle.open_new_schedule_if_due.
+		from seminary.seminary.cs_lifecycle import open_new_schedule_if_due
+
+		open_new_schedule_if_due(self)
+
+		# A competency section is born with a chapter per competency and the
+		# reflection lessons its framework asks for (ADR 079 decision 2). An
+		# importer that brings its own outline scaffolds after it instead.
+		if not self.flags.skip_reflection_scaffold:
+			from seminary.seminary import cbe_reflection
+
+			cbe_reflection.scaffold(self.name)
+			# The scaffold writes its chapters as direct inserts, which moves
+			# `modified`. Reload, or the form gets a copy with no chapters and
+			# a stale timestamp: its next action (Import Course Template among
+			# them) is refused as "modified after you have opened it".
+			if frappe.db.get_value(self.doctype, self.name, "modified") != self.modified:
+				self.reload()
+
+	def onload(self):
+		# A competency section is born with its scaffold, which a template
+		# may still replace (`_validate_target_for_import`); the form offers
+		# Import Course Template on that, not only on an empty outline.
+		if self.chapters:
+			from seminary.seminary import cbe_reflection
+
+			self.set_onload("untouched_scaffold", cbe_reflection.untouched_scaffold(self.name))
+
+	def _seed_assessment_criteria_from_course(self):
+		"""Auto-populate courseassescrit_sc from Course.assessment_criteria.
+
+		Runs only on a fresh CS (SCAC empty, course set). Maps Course
+		Assessment Criteria → Scheduled Course Assess Criteria field by
+		field. Includes ``title`` (mandatory on SCAC). ``type`` is
+		intentionally omitted — SCAC.type is fetch_from
+		assesscriteria_scac.type and resolves on save.
+		"""
+		if self.courseassescrit_sc or not self.course:
+			return
+
+		for cc in frappe.get_all(
+			"Course Assessment Criteria",
+			filters={"parent": self.course, "parenttype": "Course"},
+			fields=["title", "assessment_criteria", "weightage"],
+			order_by="idx asc",
+		):
+			self.append(
+				"courseassescrit_sc",
+				{
+					"title": cc.title,
+					"assesscriteria_scac": cc.assessment_criteria,
+					"weight_scac": cc.weightage,
+					# Explicit 0 — validate_assessment_criteria's if/elif on
+					# extracredit_scac silently skips rows where the value
+					# is None, causing the weight sum to drop and fail the
+					# 100% check. Course Assessment Criteria has no extra-
+					# credit field; everything copied here is non-extra-credit.
+					"extracredit_scac": 0,
+				},
+			)
+
+	def on_trash(self):
+		if self.workflow_state and self.workflow_state != "Draft":
+			frappe.throw(
+				_(
+					"Only Course Schedules in the Draft state can be deleted. "
+					"Use Cancel Course to retire a course that has opened for enrollment."
+				)
+			)
+		from seminary.seminary import school_meetings
+
+		school_meetings.on_section_gone(self)
+		from seminary.seminary import oral_meetings
+
+		oral_meetings.on_section_gone(self.name)
+
+	def _resolve_dates_if_needed(self):
+		from seminary.seminary.cs_lifecycle import resolve_window_dates
+
+		dates = resolve_window_dates(self)
+		self.enrollment_open_date = dates.get("enrollment_open")
+		self.enrollment_close_date = dates.get("enrollment_close")
+		self.grade_close_date = dates.get("grade_close")
+
+	def validate_instructor_categories(self):
+		"""When HRMS payroll is enabled, every instructor row needs a category."""
+		if not frappe.db.get_single_value("Seminary Settings", "hrms_enable"):
+			return
+		for row in self.get("instructor1", []):
+			if not row.instructor_category:
+				frappe.throw(
+					_(
+						"Instructor {0} (row {1}) is missing an Instructor Category. "
+						"Category is required while HRMS Payroll is enabled."
+					).format(row.instructor or "?", row.idx)
+				)
+
+	def validate_instructor_of_record_rows(self):
+		"""p007 §2.8 (decision 8): a section row may carry an of-record
+		category only if the Instructor's default category is of record, or the
+		saving user is Program Chair / Seminary Manager. The registrar assigns
+		professors and graders freely; promoting a grader to instructor of
+		record is the chair's call, made on the Instructor.
+
+		p005a A01-13: this used to read "of record **or empty**", and
+		``default_inst_category`` is not a required field. An Instructor with a
+		blank default could therefore be listed as of record by anyone who could
+		save the section — including, because the p007 row hook grants write to
+		whoever ``is_course_staff`` says is on it, *themselves*. Reproduced:
+		a section-tier grader promoted their own row and went from one readable
+		section to every section in the school (``instructor_tier`` "section" ->
+		"record"). The default must now be **explicitly** of record.
+
+		Not solved with a permlevel: Course Schedule's permlevel 1 already grants
+		Instructor write, so moving the field there would change nothing, and
+		permlevel 2 is Program Chair only, which would stop the registrar
+		assigning graders at all — the workflow this docstring exists to protect.
+		"""
+		# in_install / in_migrate stay: they are bootstrap, not a caller.
+		# self.flags.ignore_permissions deliberately does NOT: a permission
+		# bypass and an integrity rule are different things, and course_pack
+		# import sets that flag on section creation (p005a A08-2).
+		if frappe.flags.in_install or frappe.flags.in_migrate:
+			return
+		roles = set(frappe.get_roles())
+		if roles & {"Program Chair", "Seminary Manager", "System Manager"}:
+			return
+		of_record = set(frappe.get_all("Instructor Category", {"is_instructor_of_record": 1}, pluck="name"))
+		before = self.get_doc_before_save()
+		unchanged = {
+			(r.instructor, r.instructor_category) for r in (before.get("instructor1") if before else []) or []
+		}
+		for row in self.get("instructor1", []):
+			if row.instructor_category not in of_record:
+				continue
+			if (row.instructor, row.instructor_category) in unchanged:
+				continue
+			default = frappe.db.get_value("Instructor", row.instructor, "default_inst_category")
+			if default not in of_record:
+				frappe.throw(
+					_(
+						"Instructor {0} (row {1}) is {2} by default. Only a "
+						"Program Chair or Seminary Manager can list them as "
+						"{3} on a section; ask them to set the default "
+						"category on the Instructor record first."
+					).format(
+						row.instructor,
+						row.idx,
+						default or _("not an instructor of record"),
+						row.instructor_category,
+					),
+					title=_("Instructor of record"),
+				)
+
+	def set_title(self):
+		section = self.section if hasattr(self, "section") and self.section else ""
+		parts = [self.course or "", self.academic_term or ""]
+		if section:
+			parts.append(section)
+		self.title = " - ".join(p for p in parts if p)
+
+	def clean_name(self):
+		if self.name and ("/" in self.name or "\\" in self.name):
+			# Just remove forward slashes and let Frappe handle the rest
+			self.name = self.name.replace("/", "-").replace("\\", "-")
+
+	def validate_assessment_criteria(self):
+		"""Total weightage must be 100% -- except where weights mean nothing.
+
+		`weight_scac` is a percentage contribution to a numeric final grade. A
+		competency section has no such number: activity levels roll into a
+		Competency Result, not a weighted sum (ADR 065 section 11a). Demanding
+		100% there forces an instructor to invent weights nothing reads, and
+		refuses the save until they do.
+		"""
+		from seminary.seminary import cbe
+
+		if not self.courseassescrit_sc:
+			return
+
+		if cbe.framework_for_course_and_scale(self.course, self.gradesc_cs):
+			self.validate_assessment_competencies()
+			return
+
+		# With categories, they total 100 and each row is a share of its own
+		# (decisions/096).
+		if self.assess_categories:
+			from seminary.seminary import gradebook_weights
+
+			gradebook_weights.fill_codes(self.assess_categories)
+			gradebook_weights.validate(self.assess_categories, self.courseassescrit_sc)
+			return
+
+		total_weight_scac = 0
+		for criteria in self.courseassescrit_sc:
+			if criteria.extracredit_scac == 0:
+				total_weight_scac += criteria.weight_scac or 0
+			elif criteria.extracredit_scac == 1:
+				continue
+		if total_weight_scac != 100:
+			frappe.throw(_("Total Weight of all Assessment Criteria must total 100%"))
+
+	def validate_late_policy(self):
+		"""Late deductions are percentage points of a points score, so they
+		exist only on a points scale outside competency-based education
+		(decisions/082 section 4). Refused, not ignored, so the instructor
+		is not left believing a deduction applies."""
+		for row in self.courseassescrit_sc or []:
+			if (
+				row.cutoff_date
+				and row.due_date
+				and get_datetime(row.cutoff_date) < get_datetime(row.due_date)
+			):
+				frappe.throw(
+					_("Row {0}: {1} closes before it is due. Move the cut-off after the due date.").format(
+						row.idx, row.title
+					)
+				)
+		if not self.late_policy_enabled:
+			return
+		from seminary.seminary import cbe, deadlines
+
+		if not deadlines.is_points_scale(self.gradesc_cs) or (
+			cbe.framework_for_course_and_scale(self.course, self.gradesc_cs)
+		):
+			frappe.throw(
+				_(
+					"Late deductions need a points grading scale, and {0} is not "
+					"one. Untick Deduct Points for Late Work, or change the "
+					"grading scale."
+				).format(self.gradesc_cs),
+				title=_("Late deductions"),
+			)
+		if self.late_floor and not 0 <= self.late_floor <= 100:
+			frappe.throw(_("Lowest Possible Score must be between 0 and 100."))
+
+	def validate_assessment_competencies(self):
+		"""Chapter -> lesson -> assessment must agree on the competency.
+
+		The outline has already told the student which competency they are
+		working on in a chapter; an activity inside it cannot be filed under a
+		different one. Where the chain resolves the competency is defaulted from
+		it, so the instructor only has to choose for assessments that sit
+		outside the outline -- a course-wide capstone, say.
+		"""
+		if self.is_new():
+			# The lesson index is built from saved activity links; on a brand
+			# new section there is nothing to resolve against yet.
+			return
+
+		for row, competency in self._chapter_competencies():
+			if not row.course_competency:
+				row.course_competency = competency
+			elif row.course_competency != competency:
+				frappe.throw(
+					_(
+						"Row {0}: {1} is in a chapter that delivers {2}, so it cannot be filed under {3}."
+					).format(
+						row.idx,
+						row.title or row.assesscriteria_scac,
+						competency,
+						row.course_competency,
+					)
+				)
+
+	def refile_assessment_competencies(self):
+		"""Re-file every assessment on the competency its chapter now delivers.
+
+		Called after a write that moves the chapter under an assessment -- a
+		lesson moved between chapters, or a chapter re-mapped -- which the
+		validator above would otherwise report as the instructor's error on
+		their next save (ADR 079 decision 8). Saves only when something moved,
+		and returns ``[(title, old, new)]`` so the caller can say what changed.
+		A row whose chapter has no competency keeps the one it has.
+		"""
+		changed = []
+		for row, competency in self._chapter_competencies():
+			if row.course_competency != competency:
+				changed.append(
+					(
+						row.title or row.assesscriteria_scac,
+						row.course_competency,
+						competency,
+					)
+				)
+				row.course_competency = competency
+		if changed:
+			# Only competency links on child rows changed; a draft section with
+			# its schedule still unfilled must not fail the move on that.
+			self.flags.ignore_mandatory = True
+			self.save(ignore_permissions=True)
+		return changed
+
+	def _chapter_competencies(self):
+		"""Yield ``(row, competency)`` for each assessment whose activity sits
+		in a lesson whose chapter names a competency."""
+		from seminary.seminary.utils import (
+			_build_lesson_index_for_course,
+			_scac_activity_key,
+		)
+
+		index = _build_lesson_index_for_course(self.name)
+		chapter_competency = {}
+
+		for row in self.courseassescrit_sc:
+			lesson = index.get(_scac_activity_key(row))
+			if not lesson:
+				continue
+			chapter = frappe.db.get_value("Course Lesson", lesson, "chapter")
+			if not chapter:
+				continue
+			if chapter not in chapter_competency:
+				chapter_competency[chapter] = frappe.db.get_value(
+					"Course Schedule Chapter", chapter, "course_competency"
+				)
+			if chapter_competency[chapter]:
+				yield row, chapter_competency[chapter]
+
+	def convert_to_date(self, date):
+		if isinstance(date, str):
+			return datetime.strptime(date, "%Y-%m-%d").date()
+		if isinstance(date, datetime):
+			return date.date()
+		return date
+
+	def validate_date(self):
+		academic_term = self.academic_term
+		start_date, end_date = frappe.db.get_value(
+			"Academic Term", academic_term, ["term_start_date", "term_end_date"]
+		)
+		start_date = self.convert_to_date(start_date)
+		end_date = self.convert_to_date(end_date)
+		course_datestart = self.convert_to_date(self.c_datestart)
+		course_dateend = self.convert_to_date(self.c_dateend)
+
+		# Each comparison is guarded on its own operands. An open-ended section
+		# (ADR 065) legitimately has no end date, and a missing start date is
+		# caught by the mandatory check — neither should surface as a TypeError.
+		outside = (start_date and course_datestart and course_datestart < start_date) or (
+			end_date and course_dateend and course_dateend > end_date
+		)
+		if outside:
+			frappe.throw(
+				_("Schedule date selected does not lie within the Academic Term: {}").format(
+					self.academic_term
+				)
+			)
+
+	def validate_content_release_override(self):
+		"""A section may only set its own release mode where the framework allows.
+
+		Refused rather than quietly dropped so the instructor learns the school
+		has not opened this up, instead of saving a setting that does nothing.
+		`cbe.content_release_mode` independently ignores a stale override, which
+		covers the case where the permission is withdrawn afterwards.
+		"""
+		if not self.content_release_override:
+			return
+
+		from seminary.seminary import cbe
+
+		# Resolved from this document's own course and scale, not from the saved
+		# row: validation runs before a new section exists.
+		name = cbe.framework_for_course_and_scale(self.course, self.gradesc_cs)
+		if name:
+			framework = frappe.get_cached_doc("Competency Framework", name)
+			if cint(framework.override_contentrelease):
+				if self.content_release_override in cbe.GATED_MODES and not (
+					cbe.end_of_competency_self_eval(framework)
+				):
+					frappe.throw(
+						cbe.release_mode_refusal(self.content_release_override, on_section=True),
+						title=_("Content release needs a self-assessment"),
+					)
+				return
+			frappe.throw(
+				_(
+					"Competency Framework {0} does not let sections choose their own content release mode."
+				).format(name)
+			)
+		frappe.throw(_("Content Release Override applies only to competency-based sections. Leave it blank."))
+
+	def validate_open_ended(self):
+		"""An open-ended section is only meaningful under self-paced pacing.
+
+		Cohort-paced programs move students together, so a section with no end
+		would have nothing to move them past; and a conventional numeric course
+		needs an end date for grading windows and attendance. Restricting the
+		flag here keeps it from becoming a way to sidestep the end date
+		generally (ADR 065).
+		"""
+		if not self.open_ended:
+			# mandatory_depends_on is evaluated client-side only, so dropping
+			# reqd from c_dateend would leave every API, import and script path
+			# able to create an undated section. Enforce it here instead.
+			if not self.c_dateend:
+				frappe.throw(
+					_(
+						"End Date is required. Tick Open Ended only if this section "
+						"belongs to a self-paced competency-based program and has no "
+						"fixed end."
+					)
+				)
+			return
+
+		self.c_dateend = None
+
+		self_paced = frappe.get_all(
+			"Program Course",
+			filters={"course": self.course, "disabled": 0},
+			fields=["parent"],
+		)
+		if not any(
+			frappe.db.get_value("Program", p.parent, "pacing_mode") == "Self-paced"
+			and frappe.db.get_value("Program", p.parent, "competency_framework")
+			for p in self_paced
+		):
+			frappe.throw(
+				_(
+					"Course {0} is not in any self-paced competency-based program, so "
+					"this section cannot be open ended. Give it an end date, or set "
+					"the program's pacing to Self-paced."
+				).format(self.course)
+			)
+
+		# No meetings means no absences to count; leaving a policy configured
+		# would produce an absence limit derived from an empty meeting list.
+		if self.attendance_policy != "Disabled":
+			self.attendance_policy = "Disabled"
+			frappe.msgprint(
+				_(
+					"Attendance tracking has been disabled: an open-ended section "
+					"has no scheduled class meetings."
+				),
+				alert=True,
+			)
+
+	def validate_time(self):
+		"""Validates if from_time is greater than to_time (section and per-meeting).
+
+		Compares with get_time() — Time values can arrive as strings, and a raw
+		string compare is wrong for single-digit hours ("9:00:00" > "13:00:00").
+		"""
+		if self.is_new() or self.has_value_changed("from_time") or self.has_value_changed("to_time"):
+			if self.from_time and self.to_time:
+				if get_time(self.from_time) > get_time(self.to_time):
+					frappe.throw(_("From Time cannot be greater than To Time."))
+
+		for row in self.cs_meetinfo or []:
+			if row.cs_fromtime and row.cs_totime and get_time(row.cs_fromtime) > get_time(row.cs_totime):
+				frappe.throw(_("Meeting on {0}: From Time cannot be after To Time.").format(row.cs_meetdate))
+
+	def generate_token(self):
+		if not self.calendar_token:
+			self.calendar_token = secrets.token_hex(32)
+
+	@frappe.whitelist()
+	def regenerate_token(self):
+		"""Mint a new calendar token, invalidating existing subscriptions.
+
+		Explicitly write-gated and returns nothing. It previously relied on
+		``run_doc_method`` checking *read* and ``save()`` later checking write —
+		an accidental gate — and handed the new token straight back to the
+		caller, the pattern p006 F12 removed from
+		``recommendation_letter.regenerate_token`` (p005a A04-3). Subscribers
+		pick the new token up from ``get_course_details``, which is gated.
+		"""
+		frappe.has_permission("Course Schedule", "write", doc=self, throw=True)
+		self.calendar_token = secrets.token_hex(32)
+		self.save()
+
+	def _merge_meeting_rows(self, wanted):
+		"""Bring cs_meetinfo to the ``wanted`` dates without recreating rows.
+
+		The rows used to be wiped and re-appended, which gave every meeting a
+		new name and orphaned whatever pointed at the old one: Student
+		Attendance ``meeting`` (051 #4), and later provider meetings (051a) and
+		captured activities (100d). Now:
+
+		- a row whose date is still wanted is kept, with its name, room, online
+		  flag and link. Its times follow the section only when they still
+		  equal the section's previous times, so a meeting given its own hours
+		  keeps them;
+		- a wanted date with no row gets a new one at the section's times;
+		- a row whose date is no longer wanted is removed, unless it is in use,
+		  in which case nothing is changed and the dates are named.
+		"""
+		old_from, old_to = (
+			frappe.db.get_value("Course Schedule", self.name, ["from_time", "to_time"])
+			if not self.is_new()
+			else (None, None)
+		)
+		wanted_set = set(wanted)
+
+		in_use = [
+			row
+			for row in self.cs_meetinfo
+			if getdate(row.cs_meetdate) not in wanted_set and _meeting_row_in_use(row)
+		]
+		if in_use:
+			frappe.throw(
+				_(
+					"These meetings cannot be removed because they are already in "
+					"use (attendance has been taken): {0}. Keep their weekdays and "
+					"dates in the schedule, or remove them one by one after "
+					"clearing what uses them."
+				).format(", ".join(sorted(formatdate(r.cs_meetdate) for r in in_use)))
+			)
+
+		have = set()
+		for row in list(self.cs_meetinfo):
+			meeting_day = getdate(row.cs_meetdate)
+			if meeting_day not in wanted_set:
+				self.remove(row)
+				continue
+			have.add(meeting_day)
+			if _same_time(row.cs_fromtime, old_from) and _same_time(row.cs_totime, old_to):
+				row.cs_fromtime = self.from_time
+				row.cs_totime = self.to_time
+
+		for meeting_day in wanted:
+			if meeting_day not in have:
+				self.append(
+					"cs_meetinfo",
+					{
+						"cs_meetdate": meeting_day,
+						"cs_fromtime": self.from_time,
+						"cs_totime": self.to_time,
+					},
+				)
+
+		self.cs_meetinfo.sort(key=lambda r: (getdate(r.cs_meetdate), str(r.cs_fromtime or "")))
+		for i, row in enumerate(self.cs_meetinfo, start=1):
+			row.idx = i
+		return list(self.cs_meetinfo)
+
+	@frappe.whitelist()
+	def schedule_dates(self, days):
+		"""Returns a list of meeting dates and also creates child documents for each meeting date"""
+		# A whitelisted document method is reached through run_doc_method, which
+		# checks only READ on the document. Everything past that is this
+		# method's own job (p008a G10 inventory).
+		# A student reads the sections they are enrolled in, and this method
+		# rewrites cs_meetinfo and saves with ignore_permissions -- so without the
+		# check below any enrolled student could rewrite the section's schedule.
+		self.check_permission("write")
+
+		if not self.c_dateend:
+			frappe.throw(
+				_(
+					"This section has no end date, so class meetings cannot be "
+					"generated. Open-ended sections are worked through at the "
+					"student's own pace and have no fixed meeting schedule."
+				)
+			)
+
+		wanted = []
+		current_date = self.c_datestart
+		while current_date <= self.c_dateend:
+			if calendar.day_name[getdate(current_date).weekday()] in days:
+				wanted.append(getdate(current_date))
+			current_date = add_days(current_date, 1)
+
+		meeting_dates = self._merge_meeting_rows(wanted)
+
+		# Save the parent once — this persists all children and updates the timestamp
+		self.hasmtgdate = 1 if meeting_dates else 0
+		self.flags.ignore_permissions = True
+		self.save()
+
+		# meeting_dates_errors is always empty now; kept for the Desk caller.
+		return dict(meeting_dates=meeting_dates, meeting_dates_errors=[])
+
+	@frappe.whitelist()
+	def cancel_course(self, reason):
+		"""Transition a Course Schedule to Cancelled and run the cascade.
+
+		Permitted only from Open for Enrollment or Enrollment Closed (the
+		state machine forbids cancellation once grading has started). Marks
+		each non-withdrawn Course Enrollment Individual as course_cancelled,
+		deletes the auto-populated Program Enrollment Course rows (preserving
+		partner-seminary rows per ADR 005), and submits a Seminary
+		Announcement to enrolled students.
+		"""
+		roles = set(frappe.get_roles(frappe.session.user))
+		if not roles.intersection(CANCEL_ROLES):
+			frappe.throw(
+				_("Only Registrar or Seminary Manager can cancel a course."),
+				frappe.PermissionError,
+			)
+
+		if self.workflow_state not in CANCELLABLE_STATES:
+			frappe.throw(
+				_(
+					"Cannot cancel a course in state {0}. Cancellation is only allowed before grading starts."
+				).format(self.workflow_state or _("(none)"))
+			)
+
+		if not frappe.db.exists("Course Cancellation Reason", reason):
+			frappe.throw(_("Cancellation reason {0} does not exist.").format(reason))
+
+		# Cancellation isn't a regular workflow transition (intentionally
+		# absent from the workflow fixture so the Desk Action menu cannot
+		# bypass this method). Use db.set_value to skip Frappe's
+		# transition validator — the role/state gates above are the
+		# authoritative checks.
+		cancelled_at = now()
+		user = frappe.session.user
+		frappe.db.set_value(
+			"Course Schedule",
+			self.name,
+			{
+				"cancellation_reason": reason,
+				"cancelled_on": cancelled_at,
+				"cancelled_by": user,
+				"workflow_state": "Cancelled",
+				"published": 0,
+			},
+		)
+		self.cancellation_reason = reason
+		self.cancelled_on = cancelled_at
+		self.cancelled_by = user
+		self.workflow_state = "Cancelled"
+		self.published = 0
+
+		_cascade_cancel_pec_and_cei(self.name, reason)
+		_create_cancellation_announcement(self, reason)
+
+		# Close out any waitlist (the section is gone) and refresh the seat
+		# caches, which now read zero seat-holders.
+		from seminary.seminary.waitlist import mark_waitlist_unseated, recount
+
+		mark_waitlist_unseated(self.name)
+		recount(self.name)
+		# A cancelled section's school meetings are deleted (decisions/051a §5).
+		from seminary.seminary import school_meetings
+
+		school_meetings.on_section_gone(self)
+		from seminary.seminary import oral_meetings
+
+		oral_meetings.on_section_gone(self.name)
+
+	@frappe.whitelist()
+	def import_template(self, source_cs):
+		"""Copy LMS structure (chapters, lessons, assessment criteria) from
+		another Course Schedule of the same course into this one.
+
+		All validations (target + source) run as cheap reads up-front. Only
+		when every check passes does the write phase begin — there are no
+		expected rollbacks. Frappe's request-level transaction still rolls
+		back on genuine exceptions.
+
+		Replaces the target's SCAC rows (so the placeholder satisfying
+		``courseassescrit_sc.reqd:1`` is overwritten). Refuses if the target
+		already has chapters or any graded data. Roster, grades, SCAC
+		due_dates and cut-offs, and student due date overrides are NOT
+		copied; the late policy and the assessment categories are.
+		"""
+		self._validate_target_for_import(source_cs)
+		_validate_source_for_import(source_cs, self)
+
+		# All persistence is via direct child-doc inserts. self.save() is
+		# avoided on purpose: Course Lesson.updates_lessons (and any other
+		# denorm hook chain) bumps target fields via db.set_value during
+		# the inserts below, and a parent save would race that — both on
+		# the modified timestamp (TimestampMismatchError) and on stale
+		# denorm field values (lessons count getting overwritten with the
+		# in-memory 0). Source weights are validated up-front, so we don't
+		# lose any meaningful save-time check.
+		from seminary.seminary import cbe_reflection
+
+		if self.chapters:
+			cbe_reflection.clear_scaffold(self.name)
+		scac_name_map = _replace_scac_rows(source_cs, self.name)
+		folder_report = _new_folder_report()
+		# Lesson content is copied verbatim, URLs included. Files attached to
+		# the source section get a twin on this one, or the new section's
+		# students could not open them (p007 §8.2, `file_policy.adopt`).
+		frappe.flags.seminary_adopt_from = ("Course Schedule", source_cs)
+		try:
+			n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
+				source_cs, self.name, folder_report=folder_report
+			)
+		finally:
+			frappe.flags.seminary_adopt_from = None
+		_remap_lesson_scac_links(lesson_name_map, scac_name_map)
+		# Fill what the template lacked, stamp the reflections it brought, and
+		# file its assessments on the chapters they now sit in.
+		cbe_reflection.scaffold(self.name)
+		frappe.get_doc("Course Schedule", self.name).refile_assessment_competencies()
+
+		_copy_late_policy(source_cs, self.name)
+		_copy_categories(source_cs, self.name)
+		# Other apps copy what they keep per assessment row (aretenic's
+		# outcome maps, p023); a failure rolls the import back with it.
+		for fn in frappe.get_hooks("course_template_imported"):
+			frappe.get_attr(fn)(source_cs, self.name, scac_name_map)
+		n_scac = len(scac_name_map)
+		lines = [
+			_(
+				"Imported template from {0} on {1} by {2}. "
+				"Copied: {3} chapters, {4} lessons, {5} assessment criteria."
+			).format(
+				source_cs,
+				formatdate(now()),
+				frappe.session.user,
+				n_chapters,
+				n_lessons,
+				n_scac,
+			)
+		]
+		for r in folder_report["rescoped"]:
+			lines.append(
+				_("Folder '{0}' re-scoped from {1} to {2}.").format(
+					r["foldername"], r["from_scope"], r["to_scope"]
+				)
+			)
+		for c in folder_report["copied"]:
+			lines.append(
+				_("Folder '{0}' copied into a new Instructor folder for {1}.").format(
+					c["foldername"], c["instructor"]
+				)
+			)
+		lines.extend(folder_report["warnings"])
+		self.add_comment("Info", "<br>".join(lines))
+
+		return {
+			"chapters": n_chapters,
+			"lessons": n_lessons,
+			"scac": n_scac,
+			"folder_rescoped": folder_report["rescoped"],
+			"folder_copied": folder_report["copied"],
+			"folder_warnings": folder_report["warnings"],
+		}
+
+	def _validate_target_for_import(self, source_cs):
+		"""Read-only checks on the target side. Throws on any violation."""
+		roles = set(frappe.get_roles(frappe.session.user))
+		if not roles.intersection(TEMPLATE_IMPORT_ROLES):
+			frappe.throw(
+				_("Only Program Chair, Seminary Manager, or Registrar can import a course template."),
+				frappe.PermissionError,
+			)
+
+		if self.workflow_state not in TEMPLATE_IMPORT_STATES:
+			frappe.throw(
+				_(
+					"Cannot import a template while the course is in state {0}. "
+					"Allowed states: Draft, Open for Enrollment."
+				).format(self.workflow_state or _("(none)"))
+			)
+
+		if source_cs == self.name:
+			frappe.throw(_("A schedule cannot be imported into itself."))
+
+		if not frappe.db.exists("Course Schedule", source_cs):
+			frappe.throw(_("Source Course Schedule {0} does not exist.").format(source_cs))
+		# The three roles read every Course Schedule today; the check is here
+		# so Phase 1's course scoping does not reopen the source (p006 §2.2b).
+		frappe.has_permission("Course Schedule", "read", doc=source_cs, throw=True)
+
+		source_course = frappe.db.get_value("Course Schedule", source_cs, "course")
+		if source_course != self.course:
+			frappe.throw(
+				_(
+					"Source schedule belongs to course {0}; this schedule "
+					"belongs to {1}. Templates can only be imported between "
+					"schedules of the same course."
+				).format(source_course, self.course)
+			)
+
+		from seminary.seminary import cbe_reflection
+
+		# An outline that is only the scaffold gives way to the template and
+		# is rebuilt around it afterwards (ADR 079 decision 8).
+		n_chapters = len(self.chapters or [])
+		if n_chapters > 0 and not cbe_reflection.untouched_scaffold(self.name):
+			frappe.throw(
+				_(
+					"Target schedule already has {0} chapter(s). Clear them "
+					"first or import into a fresh schedule."
+				).format(n_chapters)
+			)
+
+		graded_count = frappe.db.sql(
+			"""
             SELECT COUNT(*)
             FROM `tabCourse Assess Results Detail` card
             JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
             WHERE scr.course_sc = %s AND COALESCE(card.graded_card, 0) = 1
             """,
-            (self.name,),
-        )[0][0]
-        if graded_count:
-            frappe.throw(
-                _(
-                    "Target schedule already has graded assessments and cannot "
-                    "be overwritten by a template import."
-                )
-            )
+			(self.name,),
+		)[0][0]
+		if graded_count:
+			frappe.throw(
+				_(
+					"Target schedule already has graded assessments and cannot "
+					"be overwritten by a template import."
+				)
+			)
 
 
 def _same_time(a, b):
-    """Two meeting times are equal when both are blank or both are the same time."""
-    if not a and not b:
-        return True
-    if not a or not b:
-        return False
-    return get_time(a) == get_time(b)
+	"""Two meeting times are equal when both are blank or both are the same time."""
+	if not a and not b:
+		return True
+	if not a or not b:
+		return False
+	return get_time(a) == get_time(b)
 
 
 def _meeting_row_in_use(row):
-    """True when something points at this meeting row, so it must not be removed.
+	"""True when something points at this meeting row, so it must not be removed.
 
-    Today that is attendance (051 #4). Provider meetings (051a) and captured
-    activities (100d) add their checks here.
-    """
-    if row.attendance:
-        return True
-    if not row.name:
-        return False
-    if frappe.db.exists("Student Attendance", {"meeting": row.name}):
-        return True
-    # An oral activity captures, or has captured, this meeting (100d).
-    from seminary.seminary.oral_meetings import row_in_use
+	Today that is attendance (051 #4). Provider meetings (051a) and captured
+	activities (100d) add their checks here.
+	"""
+	if row.attendance:
+		return True
+	if not row.name:
+		return False
+	if frappe.db.exists("Student Attendance", {"meeting": row.name}):
+		return True
+	# An oral activity captures, or has captured, this meeting (100d).
+	from seminary.seminary.oral_meetings import row_in_use
 
-    return row_in_use(row.name)
+	return row_in_use(row.name)
 
 
 def refile_chapter_competencies(course_schedule):
-    """Write each assessment's chapter competency onto its row, and return
-    the rows that changed.
+	"""Write each assessment's chapter competency onto its row, and return
+	the rows that changed.
 
-    The same rule as ``refile_assessment_competencies``, but row by row rather
-    than through a section save: a lesson save must not fail on an unrelated
-    section validation, and the value is derived, never entered.
-    """
-    if not course_schedule or not frappe.db.exists(
-        "Course Schedule Chapter",
-        {"coursesc": course_schedule, "course_competency": ("is", "set")},
-    ):
-        return []
-    changed = []
-    cs = frappe.get_doc("Course Schedule", course_schedule)
-    for row, competency in cs._chapter_competencies():
-        if row.course_competency != competency:
-            frappe.db.set_value(
-                "Scheduled Course Assess Criteria",
-                row.name,
-                "course_competency",
-                competency,
-            )
-            changed.append(row.name)
-    return changed
+	The same rule as ``refile_assessment_competencies``, but row by row rather
+	than through a section save: a lesson save must not fail on an unrelated
+	section validation, and the value is derived, never entered.
+	"""
+	if not course_schedule or not frappe.db.exists(
+		"Course Schedule Chapter",
+		{"coursesc": course_schedule, "course_competency": ("is", "set")},
+	):
+		return []
+	changed = []
+	cs = frappe.get_doc("Course Schedule", course_schedule)
+	for row, competency in cs._chapter_competencies():
+		if row.course_competency != competency:
+			frappe.db.set_value(
+				"Scheduled Course Assess Criteria",
+				row.name,
+				"course_competency",
+				competency,
+			)
+			changed.append(row.name)
+	return changed
 
 
 def _cascade_cancel_pec_and_cei(cs_name, reason):
-    """Mark CEIs as course-cancelled and hard-delete the auto-populated PECs.
+	"""Mark CEIs as course-cancelled and hard-delete the auto-populated PECs.
 
-    Mirrors the direct ``db.set_value`` pattern used in withdrawal.py to avoid
-    re-running CEI validate() on every flip. Partner-seminary PEC rows (per
-    ADR 005) are preserved by the COALESCE filter — those rows reuse the same
-    course link with a different meaning and are not part of this cascade.
-    """
-    cei_names = frappe.get_all(
-        "Course Enrollment Individual",
-        filters={
-            "coursesc_ce": cs_name,
-            "withdrawn": 0,
-            "docstatus": 1,
-        },
-        pluck="name",
-    )
-    cancelled_at = now()
-    for cei in cei_names:
-        frappe.db.set_value(
-            "Course Enrollment Individual",
-            cei,
-            {
-                "course_cancelled": 1,
-                "course_cancellation_reason": reason,
-                "course_cancelled_on": cancelled_at,
-            },
-        )
+	Mirrors the direct ``db.set_value`` pattern used in withdrawal.py to avoid
+	re-running CEI validate() on every flip. Partner-seminary PEC rows (per
+	ADR 005) are preserved by the COALESCE filter — those rows reuse the same
+	course link with a different meaning and are not part of this cascade.
+	"""
+	cei_names = frappe.get_all(
+		"Course Enrollment Individual",
+		filters={
+			"coursesc_ce": cs_name,
+			"withdrawn": 0,
+			"docstatus": 1,
+		},
+		pluck="name",
+	)
+	cancelled_at = now()
+	for cei in cei_names:
+		frappe.db.set_value(
+			"Course Enrollment Individual",
+			cei,
+			{
+				"course_cancelled": 1,
+				"course_cancellation_reason": reason,
+				"course_cancelled_on": cancelled_at,
+			},
+		)
 
-    frappe.db.sql(
-        """
+	frappe.db.sql(
+		"""
         DELETE FROM `tabProgram Enrollment Course`
         WHERE course = %s
           AND COALESCE(partner_seminary, '') = ''
         """,
-        (cs_name,),
-    )
+		(cs_name,),
+	)
 
 
 def _create_cancellation_announcement(cs, reason):
-    """Submit a Seminary Announcement notifying enrolled students.
+	"""Submit a Seminary Announcement notifying enrolled students.
 
-    Skipped when there are no enrolled students — Seminary Announcement
-    rejects empty audiences and the throw would roll back the cancellation
-    transaction. A cancellation with nobody to notify is still a valid
-    cancellation.
-    """
-    if not frappe.db.count(
-        "Course Enrollment Individual",
-        {"coursesc_ce": cs.name, "withdrawn": 0, "docstatus": 1},
-    ):
-        return
+	Skipped when there are no enrolled students — Seminary Announcement
+	rejects empty audiences and the throw would roll back the cancellation
+	transaction. A cancellation with nobody to notify is still a valid
+	cancellation.
+	"""
+	if not frappe.db.count(
+		"Course Enrollment Individual",
+		{"coursesc_ce": cs.name, "withdrawn": 0, "docstatus": 1},
+	):
+		return
 
-    doc = frappe.get_doc(
-        {
-            "doctype": "Seminary Announcement",
-            "subject": _("Course cancelled: {0}").format(cs.title or cs.name),
-            "academic_term": cs.academic_term,
-            "message": _(
-                "<p>The course <b>{course}</b> ({term}) has been cancelled.</p>"
-                "<p><b>Reason:</b> {reason}</p>"
-                "<p>Please contact the registrar about rescheduling or "
-                "alternative enrollment options.</p>"
-            ).format(
-                course=cs.title or cs.name,
-                term=cs.academic_term,
-                reason=reason,
-            ),
-            "audience_students_enrolled": 1,
-            "courses": [{"course_schedule": cs.name}],
-        }
-    )
-    doc.insert(ignore_permissions=True)
-    doc.submit()
+	doc = frappe.get_doc(
+		{
+			"doctype": "Seminary Announcement",
+			"subject": _("Course cancelled: {0}").format(cs.title or cs.name),
+			"academic_term": cs.academic_term,
+			"message": _(
+				"<p>The course <b>{course}</b> ({term}) has been cancelled.</p>"
+				"<p><b>Reason:</b> {reason}</p>"
+				"<p>Please contact the registrar about rescheduling or "
+				"alternative enrollment options.</p>"
+			).format(
+				course=cs.title or cs.name,
+				term=cs.academic_term,
+				reason=reason,
+			),
+			"audience_students_enrolled": 1,
+			"courses": [{"course_schedule": cs.name}],
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	doc.submit()
 
 
 @frappe.whitelist()
 def bulk_close_enrollment(names):
-    """Drive selected Course Schedules from Open for Enrollment to Enrollment Closed.
+	"""Drive selected Course Schedules from Open for Enrollment to Enrollment Closed.
 
-    Used by the registrar to mass-close enrollment at the end of the
-    registration window when a manual sweep is preferred over the daily
-    scheduler. Skips schedules that are not in Open for Enrollment or that
-    the caller cannot edit.
-    """
-    if isinstance(names, str):
-        names = json.loads(names)
+	Used by the registrar to mass-close enrollment at the end of the
+	registration window when a manual sweep is preferred over the daily
+	scheduler. Skips schedules that are not in Open for Enrollment or that
+	the caller cannot edit.
+	"""
+	if isinstance(names, str):
+		names = json.loads(names)
 
-    closed, skipped = [], []
-    for name in names:
-        if not frappe.has_permission("Course Schedule", "write", doc=name):
-            skipped.append(name)
-            continue
-        state = frappe.db.get_value("Course Schedule", name, "workflow_state")
-        if state != "Open for Enrollment":
-            skipped.append(name)
-            continue
-        try:
-            apply_workflow(frappe.get_doc("Course Schedule", name), "Close Enrollment")
-            closed.append(name)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"bulk_close_enrollment failed: {name}",
-            )
-            skipped.append(name)
-    return {"closed": closed, "skipped": skipped}
+	closed, skipped = [], []
+	for name in names:
+		if not frappe.has_permission("Course Schedule", "write", doc=name):
+			skipped.append(name)
+			continue
+		state = frappe.db.get_value("Course Schedule", name, "workflow_state")
+		if state != "Open for Enrollment":
+			skipped.append(name)
+			continue
+		try:
+			apply_workflow(frappe.get_doc("Course Schedule", name), "Close Enrollment")
+			closed.append(name)
+		except Exception:
+			frappe.log_error(
+				frappe.get_traceback(),
+				f"bulk_close_enrollment failed: {name}",
+			)
+			skipped.append(name)
+	return {"closed": closed, "skipped": skipped}
 
 
 # ── Course Template Import helpers ──────────────────────────────────────────
 
 
 def _validate_source_for_import(source_cs, target):
-    """Read-only checks on the source side. Throws on any violation."""
-    scac_count = frappe.db.count(
-        "Scheduled Course Assess Criteria", {"parent": source_cs}
-    )
-    if not scac_count:
-        frappe.throw(
-            _(
-                "Source schedule {0} has no assessment criteria; "
-                "nothing structural to import."
-            ).format(source_cs)
-        )
+	"""Read-only checks on the source side. Throws on any violation."""
+	scac_count = frappe.db.count("Scheduled Course Assess Criteria", {"parent": source_cs})
+	if not scac_count:
+		frappe.throw(
+			_("Source schedule {0} has no assessment criteria; nothing structural to import.").format(
+				source_cs
+			)
+		)
 
-    # Weights are only checked where they will be read: a competency target
-    # has no weighted grade, so it takes a source's rows as they are, whatever
-    # they add up to -- the rule `validate_assessment_criteria` applies.
-    from seminary.seminary import cbe
+	# Weights are only checked where they will be read: a competency target
+	# has no weighted grade, so it takes a source's rows as they are, whatever
+	# they add up to -- the rule `validate_assessment_criteria` applies.
+	from seminary.seminary import cbe
 
-    if cbe.framework_for_course_and_scale(target.course, target.gradesc_cs):
-        return
+	if cbe.framework_for_course_and_scale(target.course, target.gradesc_cs):
+		return
 
-    # A source with categories was checked against them when it was saved
-    # (decisions/096); its row weights are shares of a category, not of 100.
-    if frappe.db.count(
-        "Scheduled Course Assess Category",
-        {"parent": source_cs, "parenttype": "Course Schedule"},
-    ):
-        return
+	# A source with categories was checked against them when it was saved
+	# (decisions/096); its row weights are shares of a category, not of 100.
+	if frappe.db.count(
+		"Scheduled Course Assess Category",
+		{"parent": source_cs, "parenttype": "Course Schedule"},
+	):
+		return
 
-    weight_total = (
-        frappe.db.sql(
-            """
+	weight_total = (
+		frappe.db.sql(
+			"""
             SELECT COALESCE(SUM(weight_scac), 0)
             FROM `tabScheduled Course Assess Criteria`
             WHERE parent = %s AND COALESCE(extracredit_scac, 0) = 0
             """,
-            (source_cs,),
-        )[0][0]
-        or 0
-    )
-    if int(weight_total) != 100:
-        frappe.throw(
-            _(
-                "Source schedule {0}'s non-extra-credit weights total {1}% "
-                "(must be 100% before it can be used as a template). "
-                "Fix source first."
-            ).format(source_cs, weight_total)
-        )
+			(source_cs,),
+		)[0][0]
+		or 0
+	)
+	if int(weight_total) != 100:
+		frappe.throw(
+			_(
+				"Source schedule {0}'s non-extra-credit weights total {1}% "
+				"(must be 100% before it can be used as a template). "
+				"Fix source first."
+			).format(source_cs, weight_total)
+		)
 
 
 # Fields excluded when copying a SCAC row:
 #   - due_date: per-CS state; stays null on target until set
 #   - lesson:   free-text label of the source lesson; not valid on target
 _SCAC_COPYABLE_FIELDS = (
-    "assesscriteria_scac",
-    "title",
-    "weight_scac",
-    "quiz",
-    "assignment",
-    "exam",
-    "discussion",
-    "oral",
-    "extracredit_scac",
-    "fudgepoints_scac",
-    # Whether the section's late deductions apply (decisions/082 section 6).
-    # The cut-off and replies due date are dates, like due_date: not copied.
-    "late_policy_exempt",
-    # The row's category and whether it may drop (decisions/096 section 7).
-    "category_code",
-    "never_drop",
+	"assesscriteria_scac",
+	"title",
+	"weight_scac",
+	"quiz",
+	"assignment",
+	"exam",
+	"discussion",
+	"oral",
+	"extracredit_scac",
+	"fudgepoints_scac",
+	# Whether the section's late deductions apply (decisions/082 section 6).
+	# The cut-off and replies due date are dates, like due_date: not copied.
+	"late_policy_exempt",
+	# The row's category and whether it may drop (decisions/096 section 7).
+	"category_code",
+	"never_drop",
 )
 
 
 def _copy_late_policy(source_cs_name, target_cs_name):
-    """The late policy is how the course is taught, not when it runs, so a
-    template carries it (decisions/082 section 6). Written directly for the
-    same reason the rows are: a parent save here races the denorm hooks."""
-    from seminary.seminary.deadlines import POLICY_FIELDS
+	"""The late policy is how the course is taught, not when it runs, so a
+	template carries it (decisions/082 section 6). Written directly for the
+	same reason the rows are: a parent save here races the denorm hooks."""
+	from seminary.seminary.deadlines import POLICY_FIELDS
 
-    values = frappe.db.get_value(
-        "Course Schedule", source_cs_name, list(POLICY_FIELDS), as_dict=True
-    )
-    if values:
-        frappe.db.set_value("Course Schedule", target_cs_name, values)
+	values = frappe.db.get_value("Course Schedule", source_cs_name, list(POLICY_FIELDS), as_dict=True)
+	if values:
+		frappe.db.set_value("Course Schedule", target_cs_name, values)
 
 
 def _copy_categories(source_cs_name, target_cs_name):
-    """Categories and their drop rules travel with the template, like the
-    late policy (decisions/096 section 7). Inserted directly, for the reason
-    given in import_template."""
-    frappe.db.delete(
-        "Scheduled Course Assess Category",
-        {"parent": target_cs_name, "parenttype": "Course Schedule"},
-    )
-    for row in frappe.get_all(
-        "Scheduled Course Assess Category",
-        filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
-        fields=["idx", "category_code", "title", "weight", "drop_lowest"],
-        order_by="idx asc",
-    ):
-        new_row = frappe.get_doc(
-            {
-                "doctype": "Scheduled Course Assess Category",
-                "parent": target_cs_name,
-                "parenttype": "Course Schedule",
-                "parentfield": "assess_categories",
-                **row,
-            }
-        )
-        new_row.flags.ignore_permissions = True
-        new_row.insert()
+	"""Categories and their drop rules travel with the template, like the
+	late policy (decisions/096 section 7). Inserted directly, for the reason
+	given in import_template."""
+	frappe.db.delete(
+		"Scheduled Course Assess Category",
+		{"parent": target_cs_name, "parenttype": "Course Schedule"},
+	)
+	for row in frappe.get_all(
+		"Scheduled Course Assess Category",
+		filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
+		fields=["idx", "category_code", "title", "weight", "drop_lowest"],
+		order_by="idx asc",
+	):
+		new_row = frappe.get_doc(
+			{
+				"doctype": "Scheduled Course Assess Category",
+				"parent": target_cs_name,
+				"parenttype": "Course Schedule",
+				"parentfield": "assess_categories",
+				**row,
+			}
+		)
+		new_row.flags.ignore_permissions = True
+		new_row.insert()
 
 
 def _replace_scac_rows(source_cs_name, target_cs_name):
-    """Delete target's SCAC rows and insert fresh copies from source via
-    direct child-doc inserts (bypasses parent save).
+	"""Delete target's SCAC rows and insert fresh copies from source via
+	direct child-doc inserts (bypasses parent save).
 
-    Returns ``{source_scac_name: new_scac_name}`` for the lesson Link remap.
-    """
-    frappe.db.delete(
-        "Scheduled Course Assess Criteria",
-        {"parent": target_cs_name, "parenttype": "Course Schedule"},
-    )
+	Returns ``{source_scac_name: new_scac_name}`` for the lesson Link remap.
+	"""
+	frappe.db.delete(
+		"Scheduled Course Assess Criteria",
+		{"parent": target_cs_name, "parenttype": "Course Schedule"},
+	)
 
-    source_rows = frappe.get_all(
-        "Scheduled Course Assess Criteria",
-        filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
-        fields=["name", "idx"] + list(_SCAC_COPYABLE_FIELDS),
-        order_by="idx asc",
-    )
+	source_rows = frappe.get_all(
+		"Scheduled Course Assess Criteria",
+		filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
+		fields=["name", "idx", *list(_SCAC_COPYABLE_FIELDS)],
+		order_by="idx asc",
+	)
 
-    name_map = {}
-    for row in source_rows:
-        new_row = frappe.get_doc(
-            {
-                "doctype": "Scheduled Course Assess Criteria",
-                "parent": target_cs_name,
-                "parenttype": "Course Schedule",
-                "parentfield": "courseassescrit_sc",
-                "idx": row.idx,
-                **{field: row.get(field) for field in _SCAC_COPYABLE_FIELDS},
-            }
-        )
-        new_row.flags.ignore_permissions = True
-        new_row.insert()
-        name_map[row.name] = new_row.name
-    return name_map
+	name_map = {}
+	for row in source_rows:
+		new_row = frappe.get_doc(
+			{
+				"doctype": "Scheduled Course Assess Criteria",
+				"parent": target_cs_name,
+				"parenttype": "Course Schedule",
+				"parentfield": "courseassescrit_sc",
+				"idx": row.idx,
+				**{field: row.get(field) for field in _SCAC_COPYABLE_FIELDS},
+			}
+		)
+		new_row.flags.ignore_permissions = True
+		new_row.insert()
+		name_map[row.name] = new_row.name
+	return name_map
 
 
 # Course Schedule Chapter fields copied verbatim (besides chapter_title and
@@ -1573,10 +1503,10 @@ def _replace_scac_rows(source_cs_name, target_cs_name):
 # (p009 §2.13). Copying the ref verbatim would give the new chapter a package
 # reference nothing had counted.
 _CHAPTER_COPYABLE_FIELDS = (
-    "is_scorm_package",
-    "scorm_package",
-    # Same course, same competencies: the mapping carries over (ADR 079).
-    "course_competency",
+	"is_scorm_package",
+	"scorm_package",
+	# Same course, same competencies: the mapping carries over (ADR 079).
+	"course_competency",
 )
 
 # `scorm_sco_identifier` is copied so the new section's lessons still match the
@@ -1589,363 +1519,361 @@ _CHAPTER_COPYABLE_FIELDS = (
 # target SCAC rows have names. course_sc, course_code, is_scorm_package
 # auto-fetch from the new chapter.
 _LESSON_COPYABLE_FIELDS = (
-    "scorm_sco_identifier",
-    "lesson_title",
-    "body",
-    "content",
-    "preview",
-    "youtube",
-    "instructor_notes",
-    "instructor_content",
-    "allow_discuss",
+	"scorm_sco_identifier",
+	"lesson_title",
+	"body",
+	"content",
+	"preview",
+	"youtube",
+	"instructor_notes",
+	"instructor_content",
+	"allow_discuss",
 )
 
 
 def _new_folder_report():
-    return {"rescoped": [], "copied": [], "warnings": [], "_seen": {}}
+	return {"rescoped": [], "copied": [], "warnings": [], "_seen": {}}
 
 
 def _copy_chapters_and_lessons(source_cs_name, target_cs_name, folder_report=None):
-    """Clone Course Schedule Chapter + Course Lesson docs from source to target.
+	"""Clone Course Schedule Chapter + Course Lesson docs from source to target.
 
-    All child-table refs (chapter refs on the CS, lesson refs on each new
-    chapter) are inserted as direct child docs — no parent save. This is
-    deliberate: ``Course Lesson.updates_lessons`` (and any other denorm
-    hook) writes back to the target via ``db.set_value`` during the lesson
-    inserts, and a subsequent parent save would race those writes. See
-    ``import_template`` for the full rationale.
+	All child-table refs (chapter refs on the CS, lesson refs on each new
+	chapter) are inserted as direct child docs — no parent save. This is
+	deliberate: ``Course Lesson.updates_lessons`` (and any other denorm
+	hook) writes back to the target via ``db.set_value`` during the lesson
+	inserts, and a subsequent parent save would race those writes. See
+	``import_template`` for the full rationale.
 
-    After each lesson is copied its folder references are remapped under the
-    p006 F2 scope rules (``_remap_lesson_folders``); ``folder_report``, when
-    given, collects every re-scope and copy for the import result.
+	After each lesson is copied its folder references are remapped under the
+	p006 F2 scope rules (``_remap_lesson_folders``); ``folder_report``, when
+	given, collects every re-scope and copy for the import result.
 
-    Returns ``(n_chapters, n_lessons, lesson_name_map)``. The map is
-    ``{source_lesson_name: new_lesson_name}`` — used by the SCAC link remap.
-    """
-    n_chapters = 0
-    n_lessons = 0
-    lesson_name_map = {}
-    if folder_report is None:
-        folder_report = _new_folder_report()
-    folder_ctx = _FolderRemapContext(source_cs_name, target_cs_name, folder_report)
+	Returns ``(n_chapters, n_lessons, lesson_name_map)``. The map is
+	``{source_lesson_name: new_lesson_name}`` — used by the SCAC link remap.
+	"""
+	n_chapters = 0
+	n_lessons = 0
+	lesson_name_map = {}
+	if folder_report is None:
+		folder_report = _new_folder_report()
+	folder_ctx = _FolderRemapContext(source_cs_name, target_cs_name, folder_report)
 
-    chapter_refs = frappe.get_all(
-        "Course Schedule Chapter Reference",
-        filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
-        fields=["chapter", "idx"],
-        order_by="idx asc",
-    )
-    for ref in chapter_refs:
-        if not ref.chapter:
-            continue
-        src_chapter = frappe.get_doc("Course Schedule Chapter", ref.chapter)
+	chapter_refs = frappe.get_all(
+		"Course Schedule Chapter Reference",
+		filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
+		fields=["chapter", "idx"],
+		order_by="idx asc",
+	)
+	for ref in chapter_refs:
+		if not ref.chapter:
+			continue
+		src_chapter = frappe.get_doc("Course Schedule Chapter", ref.chapter)
 
-        new_chapter = frappe.new_doc("Course Schedule Chapter")
-        new_chapter.coursesc = target_cs_name
-        new_chapter.chapter_title = src_chapter.chapter_title
-        for field in _CHAPTER_COPYABLE_FIELDS:
-            new_chapter.set(field, src_chapter.get(field))
-        new_chapter.flags.ignore_permissions = True
-        new_chapter.insert()
-        n_chapters += 1
+		new_chapter = frappe.new_doc("Course Schedule Chapter")
+		new_chapter.coursesc = target_cs_name
+		new_chapter.chapter_title = src_chapter.chapter_title
+		for field in _CHAPTER_COPYABLE_FIELDS:
+			new_chapter.set(field, src_chapter.get(field))
+		new_chapter.flags.ignore_permissions = True
+		new_chapter.insert()
+		n_chapters += 1
 
-        if new_chapter.is_scorm_package and new_chapter.scorm_package:
-            # Same zip, so the unpack job's content-hash dedup adopts the
-            # package that already exists instead of unpacking it again
-            # (p009 §2.13). The ref is NOT copied above -- it is re-derived
-            # here, so the refcount counts this chapter.
-            from seminary.seminary.api import queue_scorm_unpack
+		if new_chapter.is_scorm_package and new_chapter.scorm_package:
+			# Same zip, so the unpack job's content-hash dedup adopts the
+			# package that already exists instead of unpacking it again
+			# (p009 §2.13). The ref is NOT copied above -- it is re-derived
+			# here, so the refcount counts this chapter.
+			from seminary.seminary.api import queue_scorm_unpack
 
-            queue_scorm_unpack(new_chapter.name, new_chapter.scorm_package)
+			queue_scorm_unpack(new_chapter.name, new_chapter.scorm_package)
 
-        lesson_refs = frappe.get_all(
-            "Course Schedule Lesson Reference",
-            filters={
-                "parent": src_chapter.name,
-                "parenttype": "Course Schedule Chapter",
-            },
-            fields=["lesson", "idx"],
-            order_by="idx asc",
-        )
-        for lesson_idx, lref in enumerate(lesson_refs, start=1):
-            if not lref.lesson:
-                continue
-            src_lesson = frappe.get_doc("Course Lesson", lref.lesson)
-            new_lesson = frappe.new_doc("Course Lesson")
-            new_lesson.chapter = new_chapter.name
-            for field in _LESSON_COPYABLE_FIELDS:
-                new_lesson.set(field, src_lesson.get(field))
-            new_lesson.flags.ignore_permissions = True
-            new_lesson.insert()
-            n_lessons += 1
-            lesson_name_map[src_lesson.name] = new_lesson.name
-            _remap_lesson_folders(new_lesson, folder_ctx)
+		lesson_refs = frappe.get_all(
+			"Course Schedule Lesson Reference",
+			filters={
+				"parent": src_chapter.name,
+				"parenttype": "Course Schedule Chapter",
+			},
+			fields=["lesson", "idx"],
+			order_by="idx asc",
+		)
+		for lesson_idx, lref in enumerate(lesson_refs, start=1):
+			if not lref.lesson:
+				continue
+			src_lesson = frappe.get_doc("Course Lesson", lref.lesson)
+			new_lesson = frappe.new_doc("Course Lesson")
+			new_lesson.chapter = new_chapter.name
+			for field in _LESSON_COPYABLE_FIELDS:
+				new_lesson.set(field, src_lesson.get(field))
+			new_lesson.flags.ignore_permissions = True
+			new_lesson.insert()
+			n_lessons += 1
+			lesson_name_map[src_lesson.name] = new_lesson.name
+			_remap_lesson_folders(new_lesson, folder_ctx)
 
-            # Direct child insert into Course Schedule Chapter.lessons —
-            # skips a chapter parent save.
-            lesson_ref = frappe.get_doc(
-                {
-                    "doctype": "Course Schedule Lesson Reference",
-                    "parent": new_chapter.name,
-                    "parenttype": "Course Schedule Chapter",
-                    "parentfield": "lessons",
-                    "idx": lesson_idx,
-                    "lesson": new_lesson.name,
-                }
-            )
-            lesson_ref.flags.ignore_permissions = True
-            lesson_ref.insert()
+			# Direct child insert into Course Schedule Chapter.lessons —
+			# skips a chapter parent save.
+			lesson_ref = frappe.get_doc(
+				{
+					"doctype": "Course Schedule Lesson Reference",
+					"parent": new_chapter.name,
+					"parenttype": "Course Schedule Chapter",
+					"parentfield": "lessons",
+					"idx": lesson_idx,
+					"lesson": new_lesson.name,
+				}
+			)
+			lesson_ref.flags.ignore_permissions = True
+			lesson_ref.insert()
 
-        # Direct child insert into Course Schedule.chapters — skips the CS
-        # parent save (which would race the denorm hooks above).
-        chapter_ref = frappe.get_doc(
-            {
-                "doctype": "Course Schedule Chapter Reference",
-                "parent": target_cs_name,
-                "parenttype": "Course Schedule",
-                "parentfield": "chapters",
-                "idx": ref.idx,
-                "chapter": new_chapter.name,
-            }
-        )
-        chapter_ref.flags.ignore_permissions = True
-        chapter_ref.insert()
+		# Direct child insert into Course Schedule.chapters — skips the CS
+		# parent save (which would race the denorm hooks above).
+		chapter_ref = frappe.get_doc(
+			{
+				"doctype": "Course Schedule Chapter Reference",
+				"parent": target_cs_name,
+				"parenttype": "Course Schedule",
+				"parentfield": "chapters",
+				"idx": ref.idx,
+				"chapter": new_chapter.name,
+			}
+		)
+		chapter_ref.flags.ignore_permissions = True
+		chapter_ref.insert()
 
-    return n_chapters, n_lessons, lesson_name_map
+	return n_chapters, n_lessons, lesson_name_map
 
 
 class _FolderRemapContext:
-    """Per-import memo for the folder rules: the two sections' instructors and
-    the decision already taken for each referenced folder, so a folder embedded
-    in five lessons is re-scoped or copied once."""
+	"""Per-import memo for the folder rules: the two sections' instructors and
+	the decision already taken for each referenced folder, so a folder embedded
+	in five lessons is re-scoped or copied once."""
 
-    def __init__(self, source_cs, target_cs, report):
-        from seminary.seminary.doctype.course_folder.course_folder import (
-            section_instructors,
-        )
+	def __init__(self, source_cs, target_cs, report):
+		from seminary.seminary.doctype.course_folder.course_folder import (
+			section_instructors,
+		)
 
-        self.source_cs = source_cs
-        self.target_cs = target_cs
-        self.target_instructors = section_instructors(target_cs)
-        self.report = report
-        self.decisions = report.setdefault("_seen", {})  # folder -> new docname
+		self.source_cs = source_cs
+		self.target_cs = target_cs
+		self.target_instructors = section_instructors(target_cs)
+		self.report = report
+		self.decisions = report.setdefault("_seen", {})  # folder -> new docname
 
 
 def _remap_lesson_folders(lesson, ctx):
-    """Apply the §2.2b "rule on import" table to one copied lesson.
+	"""Apply the §2.2b "rule on import" table to one copied lesson.
 
-    | referenced folder scope                 | rule                                   |
-    |-----------------------------------------|----------------------------------------|
-    | Course / School                         | keep the reference                     |
-    | Section, an instructor on both sections | re-scope to Instructor for that person |
-    | Section, different instructors          | re-scope to Course                     |
-    | Instructor, same professor on target    | keep the reference                     |
-    | Instructor, different professor         | copy into a new Instructor folder for  |
-    |                                         | the target's first instructor, rewrite |
+	| referenced folder scope                 | rule                                   |
+	|-----------------------------------------|----------------------------------------|
+	| Course / School                         | keep the reference                     |
+	| Section, an instructor on both sections | re-scope to Instructor for that person |
+	| Section, different instructors          | re-scope to Course                     |
+	| Instructor, same professor on target    | keep the reference                     |
+	| Instructor, different professor         | copy into a new Instructor folder for  |
+	|                                         | the target's first instructor, rewrite |
 
-    Writes go through ``frappe.db.set_value`` on the freshly inserted lesson so
-    ``Course Lesson.on_update`` does not run a second time.
-    """
-    from seminary.seminary.course_pack import editorjs
+	Writes go through ``frappe.db.set_value`` on the freshly inserted lesson so
+	``Course Lesson.on_update`` does not run a second time.
+	"""
+	from seminary.seminary.course_pack import editorjs
 
-    update = {}
-    for field in ("content", "instructor_content"):
-        value = lesson.get(field)
-        refs = editorjs.scan_folder_refs(value)
-        if not refs:
-            continue
-        mapping = {}
-        for ref in refs:
-            key = ref["folder_ref"] or ref["folder"]
-            docname = ref["folder_ref"]
-            if not docname and ref["folder"]:
-                # A block that predates docname references: resolve by
-                # (foldername, this course), never site-wide.
-                course = frappe.db.get_value("Course Schedule", ctx.target_cs, "course")
-                docname = frappe.db.get_value(
-                    "Course Folder",
-                    {"foldername": ref["folder"], "course": course},
-                    "name",
-                )
-            if not docname:
-                continue
-            new = _decide_folder(docname, ctx)
-            if new:
-                mapping[key] = new
-        rewritten = editorjs.rewrite_folder_refs(value, mapping)
-        if rewritten != value:
-            update[field] = rewritten
+	update = {}
+	for field in ("content", "instructor_content"):
+		value = lesson.get(field)
+		refs = editorjs.scan_folder_refs(value)
+		if not refs:
+			continue
+		mapping = {}
+		for ref in refs:
+			key = ref["folder_ref"] or ref["folder"]
+			docname = ref["folder_ref"]
+			if not docname and ref["folder"]:
+				# A block that predates docname references: resolve by
+				# (foldername, this course), never site-wide.
+				course = frappe.db.get_value("Course Schedule", ctx.target_cs, "course")
+				docname = frappe.db.get_value(
+					"Course Folder",
+					{"foldername": ref["folder"], "course": course},
+					"name",
+				)
+			if not docname:
+				continue
+			new = _decide_folder(docname, ctx)
+			if new:
+				mapping[key] = new
+		rewritten = editorjs.rewrite_folder_refs(value, mapping)
+		if rewritten != value:
+			update[field] = rewritten
 
-    for field in ("body", "instructor_notes"):
-        value = lesson.get(field)
-        refs = [n for d, n in editorjs.scan_body_refs(value) if d == "Course Folder"]
-        if not refs:
-            continue
-        mapping = {}
-        for name in refs:
-            docname = name if frappe.db.exists("Course Folder", name) else None
-            if not docname:
-                continue
-            new = _decide_folder(docname, ctx)
-            if new and new != name:
-                mapping[name] = new
-        if mapping:
-            update[field] = editorjs.rewrite_body_refs(value, mapping)
+	for field in ("body", "instructor_notes"):
+		value = lesson.get(field)
+		refs = [n for d, n in editorjs.scan_body_refs(value) if d == "Course Folder"]
+		if not refs:
+			continue
+		mapping = {}
+		for name in refs:
+			docname = name if frappe.db.exists("Course Folder", name) else None
+			if not docname:
+				continue
+			new = _decide_folder(docname, ctx)
+			if new and new != name:
+				mapping[name] = new
+		if mapping:
+			update[field] = editorjs.rewrite_body_refs(value, mapping)
 
-    if update:
-        frappe.db.set_value("Course Lesson", lesson.name, update, update_modified=False)
+	if update:
+		frappe.db.set_value("Course Lesson", lesson.name, update, update_modified=False)
 
 
 def _decide_folder(docname, ctx):
-    """Return the docname the lesson should reference after the rule ran
-    (the same one unless the folder was copied). Memoised per import."""
-    from seminary.seminary.doctype.course_folder import course_folder as cf
+	"""Return the docname the lesson should reference after the rule ran
+	(the same one unless the folder was copied). Memoised per import."""
+	from seminary.seminary.doctype.course_folder import course_folder as cf
 
-    if docname in ctx.decisions:
-        return ctx.decisions[docname]
+	if docname in ctx.decisions:
+		return ctx.decisions[docname]
 
-    folder = frappe.get_doc("Course Folder", docname)
-    scope = folder.scope or "Course"
-    into = _("by template import into {0}").format(ctx.target_cs)
-    result = docname
+	folder = frappe.get_doc("Course Folder", docname)
+	scope = folder.scope or "Course"
+	into = _("by template import into {0}").format(ctx.target_cs)
+	result = docname
 
-    if scope in ("Course", "School"):
-        cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
+	if scope in ("Course", "School"):
+		cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
 
-    elif scope == "Section":
-        common = [
-            i
-            for i in ctx.target_instructors
-            if i in set(cf.section_instructors(folder.course_schedule))
-        ]
-        if common:
-            cf.rescope(
-                docname,
-                "Instructor",
-                instructor=common[0],
-                note=into,
-                section=ctx.target_cs,
-            )
-            to_scope = "Instructor"
-        else:
-            cf.rescope(docname, "Course", note=into, section=ctx.target_cs)
-            to_scope = "Course"
-        ctx.report["rescoped"].append(
-            {
-                "folder": docname,
-                "foldername": folder.foldername,
-                "from_scope": "Section",
-                "to_scope": to_scope,
-                "instructor": common[0] if common else None,
-            }
-        )
+	elif scope == "Section":
+		common = [
+			i for i in ctx.target_instructors if i in set(cf.section_instructors(folder.course_schedule))
+		]
+		if common:
+			cf.rescope(
+				docname,
+				"Instructor",
+				instructor=common[0],
+				note=into,
+				section=ctx.target_cs,
+			)
+			to_scope = "Instructor"
+		else:
+			cf.rescope(docname, "Course", note=into, section=ctx.target_cs)
+			to_scope = "Course"
+		ctx.report["rescoped"].append(
+			{
+				"folder": docname,
+				"foldername": folder.foldername,
+				"from_scope": "Section",
+				"to_scope": to_scope,
+				"instructor": common[0] if common else None,
+			}
+		)
 
-    elif scope == "Instructor":
-        if folder.instructor in ctx.target_instructors:
-            cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
-        elif not ctx.target_instructors:
-            ctx.report["warnings"].append(
-                _(
-                    "Folder '{0}' belongs to another instructor and {1} has no "
-                    "instructor yet; the reference was kept. Assign an instructor "
-                    "and re-import, or share the folder."
-                ).format(folder.foldername, ctx.target_cs)
-            )
-            cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
-        else:
-            result = _copy_instructor_folder(folder, ctx.target_instructors[0], ctx)
+	elif scope == "Instructor":
+		if folder.instructor in ctx.target_instructors:
+			cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
+		elif not ctx.target_instructors:
+			ctx.report["warnings"].append(
+				_(
+					"Folder '{0}' belongs to another instructor and {1} has no "
+					"instructor yet; the reference was kept. Assign an instructor "
+					"and re-import, or share the folder."
+				).format(folder.foldername, ctx.target_cs)
+			)
+			cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
+		else:
+			result = _copy_instructor_folder(folder, ctx.target_instructors[0], ctx)
 
-    ctx.decisions[docname] = result
-    return result
+	ctx.decisions[docname] = result
+	return result
 
 
 def _copy_instructor_folder(source, instructor, ctx):
-    """A new Instructor folder for `instructor` with the source's files copied;
-    the source professor keeps control of theirs."""
-    from seminary.seminary.doctype.course_folder import course_folder as cf
+	"""A new Instructor folder for `instructor` with the source's files copied;
+	the source professor keeps control of theirs."""
+	from seminary.seminary.doctype.course_folder import course_folder as cf
 
-    base = source.foldername
-    final, n = base, 2
-    while frappe.db.exists(
-        "Course Folder",
-        {
-            "course": source.course,
-            "scope": "Instructor",
-            "instructor": instructor,
-            "foldername": final,
-        },
-    ):
-        final = f"{base} ({n})"
-        n += 1
-    new = frappe.get_doc(
-        {
-            "doctype": "Course Folder",
-            "course": source.course,
-            "scope": "Instructor",
-            "instructor": instructor,
-            "foldername": final,
-        }
-    )
-    new.flags.ignore_permissions = True
-    new.insert()
-    n_files = cf.copy_file_tree(source.file_reference, new.file_reference, new.name)
-    into = _("by template import into {0}").format(ctx.target_cs)
-    cf.log_activity(
-        new.name,
-        "copied",
-        section=ctx.target_cs,
-        note=_("from {0} ({1} files) {2}").format(source.name, n_files, into),
-    )
-    cf.log_activity(
-        source.name,
-        "copied",
-        section=ctx.target_cs,
-        note=_("to {0} for {1} {2}").format(new.name, instructor, into),
-    )
-    ctx.report["copied"].append(
-        {
-            "source": source.name,
-            "folder": new.name,
-            "foldername": final,
-            "instructor": instructor,
-            "files": n_files,
-        }
-    )
-    return new.name
+	base = source.foldername
+	final, n = base, 2
+	while frappe.db.exists(
+		"Course Folder",
+		{
+			"course": source.course,
+			"scope": "Instructor",
+			"instructor": instructor,
+			"foldername": final,
+		},
+	):
+		final = f"{base} ({n})"
+		n += 1
+	new = frappe.get_doc(
+		{
+			"doctype": "Course Folder",
+			"course": source.course,
+			"scope": "Instructor",
+			"instructor": instructor,
+			"foldername": final,
+		}
+	)
+	new.flags.ignore_permissions = True
+	new.insert()
+	n_files = cf.copy_file_tree(source.file_reference, new.file_reference, new.name)
+	into = _("by template import into {0}").format(ctx.target_cs)
+	cf.log_activity(
+		new.name,
+		"copied",
+		section=ctx.target_cs,
+		note=_("from {0} ({1} files) {2}").format(source.name, n_files, into),
+	)
+	cf.log_activity(
+		source.name,
+		"copied",
+		section=ctx.target_cs,
+		note=_("to {0} for {1} {2}").format(new.name, instructor, into),
+	)
+	ctx.report["copied"].append(
+		{
+			"source": source.name,
+			"folder": new.name,
+			"foldername": final,
+			"instructor": instructor,
+			"files": n_files,
+		}
+	)
+	return new.name
 
 
 _LESSON_SCAC_LINK_FIELDS = (
-    "assessment_criteria_quiz",
-    "assessment_criteria_assignment",
-    "assessment_criteria_exam",
-    "assessment_criteria_discussion",
+	"assessment_criteria_quiz",
+	"assessment_criteria_assignment",
+	"assessment_criteria_exam",
+	"assessment_criteria_discussion",
 )
 
 
 def _remap_lesson_scac_links(lesson_name_map, scac_name_map):
-    """Rewrite each new lesson's assessment_criteria_* Links to point at the
-    target CS's SCAC rows (not the source CS's).
+	"""Rewrite each new lesson's assessment_criteria_* Links to point at the
+	target CS's SCAC rows (not the source CS's).
 
-    Reads source's Links, looks up the new SCAC name in scac_name_map, writes
-    via ``frappe.db.set_value`` (which bypasses ``Course Lesson.on_update``
-    so we don't race ``update_lesson_assessments``). Skips nulls.
-    """
-    for src_lesson_name, new_lesson_name in lesson_name_map.items():
-        src_links = frappe.db.get_value(
-            "Course Lesson",
-            src_lesson_name,
-            list(_LESSON_SCAC_LINK_FIELDS),
-            as_dict=True,
-        )
-        if not src_links:
-            continue
-        update = {}
-        for field in _LESSON_SCAC_LINK_FIELDS:
-            old_scac = src_links.get(field)
-            if not old_scac:
-                continue
-            new_scac = scac_name_map.get(old_scac)
-            if new_scac:
-                update[field] = new_scac
-        if update:
-            frappe.db.set_value("Course Lesson", new_lesson_name, update)
+	Reads source's Links, looks up the new SCAC name in scac_name_map, writes
+	via ``frappe.db.set_value`` (which bypasses ``Course Lesson.on_update``
+	so we don't race ``update_lesson_assessments``). Skips nulls.
+	"""
+	for src_lesson_name, new_lesson_name in lesson_name_map.items():
+		src_links = frappe.db.get_value(
+			"Course Lesson",
+			src_lesson_name,
+			list(_LESSON_SCAC_LINK_FIELDS),
+			as_dict=True,
+		)
+		if not src_links:
+			continue
+		update = {}
+		for field in _LESSON_SCAC_LINK_FIELDS:
+			old_scac = src_links.get(field)
+			if not old_scac:
+				continue
+			new_scac = scac_name_map.get(old_scac)
+			if new_scac:
+				update[field] = new_scac
+		if update:
+			frappe.db.set_value("Course Lesson", new_lesson_name, update)

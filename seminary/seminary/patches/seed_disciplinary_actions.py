@@ -11,5 +11,5 @@ from seminary.install import seed_disciplinary_actions
 
 
 def execute():
-    seed_disciplinary_actions()
-    print("Ensured starter Disciplinary Actions exist.")
+	seed_disciplinary_actions()
+	print("Ensured starter Disciplinary Actions exist.")

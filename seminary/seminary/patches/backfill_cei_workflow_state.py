@@ -18,36 +18,36 @@ import frappe
 
 
 def execute():
-    rows = frappe.db.sql(
-        """SELECT name, docstatus, COALESCE(withdrawn, 0) AS withdrawn
+	rows = frappe.db.sql(
+		"""SELECT name, docstatus, COALESCE(withdrawn, 0) AS withdrawn
            FROM `tabCourse Enrollment Individual`
            WHERE workflow_state IS NULL OR workflow_state = ''""",
-        as_dict=True,
-    )
-    if not rows:
-        print("No CEI rows need workflow_state backfill.")
-        return
+		as_dict=True,
+	)
+	if not rows:
+		print("No CEI rows need workflow_state backfill.")
+		return
 
-    counts = {"Draft": 0, "Submitted": 0, "Withdrawn": 0}
-    for row in rows:
-        if row.docstatus == 0:
-            target = "Draft"
-        elif row.withdrawn:
-            target = "Withdrawn"
-        else:
-            target = "Submitted"
-        frappe.db.set_value(
-            "Course Enrollment Individual",
-            row.name,
-            "workflow_state",
-            target,
-            update_modified=False,
-        )
-        counts[target] += 1
+	counts = {"Draft": 0, "Submitted": 0, "Withdrawn": 0}
+	for row in rows:
+		if row.docstatus == 0:
+			target = "Draft"
+		elif row.withdrawn:
+			target = "Withdrawn"
+		else:
+			target = "Submitted"
+		frappe.db.set_value(
+			"Course Enrollment Individual",
+			row.name,
+			"workflow_state",
+			target,
+			update_modified=False,
+		)
+		counts[target] += 1
 
-    frappe.db.commit()
-    print(
-        f"Backfilled CEI workflow_state: "
-        f"Draft={counts['Draft']}, Submitted={counts['Submitted']}, "
-        f"Withdrawn={counts['Withdrawn']}."
-    )
+	frappe.db.commit()
+	print(
+		f"Backfilled CEI workflow_state: "
+		f"Draft={counts['Draft']}, Submitted={counts['Submitted']}, "
+		f"Withdrawn={counts['Withdrawn']}."
+	)

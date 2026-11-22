@@ -1,41 +1,39 @@
-import frappe
 import hmac
-from datetime import datetime
-from datetime import timedelta
 import re
+from datetime import datetime, timedelta
+
+import frappe
+import pytz
 from frappe import _
 from frappe.rate_limiter import rate_limit
 from ics import Calendar, Event
-import pytz
 
 
 def validate_token(course_schedule: str | None = None, token: str | None = None):
-    """Validate calendar token for a given course schedule.
+	"""Validate calendar token for a given course schedule.
 
-    Not whitelisted: its only caller is :func:`course_ics`, and exposing it was
-    exposing a token-checking oracle (p005a A04-3). The comparison is
-    constant-time — p006 F12 did this for the recommender token and left this
-    one on ``!=`` (p005 A04-2).
-    """
-    if not course_schedule or not token:
-        raise frappe.ValidationError(_("Course Schedule and token are required."))
+	Not whitelisted: its only caller is :func:`course_ics`, and exposing it was
+	exposing a token-checking oracle (p005a A04-3). The comparison is
+	constant-time — p006 F12 did this for the recommender token and left this
+	one on ``!=`` (p005 A04-2).
+	"""
+	if not course_schedule or not token:
+		raise frappe.ValidationError(_("Course Schedule and token are required."))
 
-    stored_token = frappe.db.get_value(
-        "Course Schedule", course_schedule, "calendar_token"
-    )
-    if not stored_token or not hmac.compare_digest(str(stored_token), str(token)):
-        raise frappe.ValidationError(_("Invalid calendar token provided."))
+	stored_token = frappe.db.get_value("Course Schedule", course_schedule, "calendar_token")
+	if not stored_token or not hmac.compare_digest(str(stored_token), str(token)):
+		raise frappe.ValidationError(_("Invalid calendar token provided."))
 
-    return True
+	return True
 
 
 def convert_to_ics_datetime(dt):
-    """Convert a datetime object to ICS format with timezone."""
-    if not dt:
-        return None
-    dt = frappe.utils.get_datetime(dt)
-    dt_utc = dt.astimezone(pytz.utc)
-    return dt_utc.strftime("%Y%m%dT%H%M%SZ")
+	"""Convert a datetime object to ICS format with timezone."""
+	if not dt:
+		return None
+	dt = frappe.utils.get_datetime(dt)
+	dt_utc = dt.astimezone(pytz.utc)
+	return dt_utc.strftime("%Y%m%dT%H%M%SZ")
 
 
 # A calendar client polls; it does not poll 120 times an hour. Keyed on the
@@ -44,14 +42,14 @@ def convert_to_ics_datetime(dt):
 @frappe.whitelist(allow_guest=True)
 @rate_limit(key="course_schedule", limit=120, seconds=3600, ip_based=True)
 def course_ics(course_schedule=None, token=None):
-    """Generate ICS calendar data for a given course schedule."""
-    if not course_schedule or not token:
-        raise frappe.ValidationError(_("Course Schedule and token are required."))
+	"""Generate ICS calendar data for a given course schedule."""
+	if not course_schedule or not token:
+		raise frappe.ValidationError(_("Course Schedule and token are required."))
 
-    # Validate the token
-    validate_token(course_schedule, token)
-    meeting_dates = frappe.db.sql(
-        """
+	# Validate the token
+	validate_token(course_schedule, token)
+	meeting_dates = frappe.db.sql(
+		"""
         select mt.name, mt.cs_fromtime, mt.cs_totime, mt.cs_meetdate, mt.cs_online,
                COALESCE(mt.cs_room, cs.room) as room,
                COALESCE(mt.cs_web_meeting, cs.web_meeting) as web_meeting,
@@ -60,90 +58,82 @@ def course_ics(course_schedule=None, token=None):
         where mt.parent = %s and
         mt.parent = cs.name
         """,
-        (course_schedule,),
-        as_dict=True,
-    )
+		(course_schedule,),
+		as_dict=True,
+	)
 
-    assignments = frappe.db.sql(
-        """
+	assignments = frappe.db.sql(
+		"""
         select assignment, parent, due_date, creation from `tabScheduled Course Assess Criteria` where parent = %s
         """,
-        (course_schedule,),
-        as_dict=True,
-    )
+		(course_schedule,),
+		as_dict=True,
+	)
 
-    calendar = Calendar()
-    # Meetings recorded for an oral activity say so (decisions/100d §5).
-    from seminary.seminary.oral_meetings import captured_rows
+	calendar = Calendar()
+	# Meetings recorded for an oral activity say so (decisions/100d §5).
+	from seminary.seminary.oral_meetings import captured_rows
 
-    recorded = captured_rows(course_schedule)
+	recorded = captured_rows(course_schedule)
 
-    for meeting in meeting_dates:
-        event = Event()
-        event.begin = convert_to_ics_datetime(
-            datetime.combine(
-                meeting.cs_meetdate, (datetime.min + meeting.cs_fromtime).time()
-            )
-        )
-        event.end = convert_to_ics_datetime(
-            datetime.combine(
-                meeting.cs_meetdate, (datetime.min + meeting.cs_totime).time()
-            )
-        )
-        event.name = f"{course_schedule} (_( Class Session))"
-        event.description = f"Course Schedule: {course_schedule}\nMeeting Date: {meeting.cs_meetdate}\nFrom: {meeting.cs_fromtime}\nTo: {meeting.cs_totime}"
-        if meeting.web_meeting:
-            event.description += f"\nJoin online: {meeting.web_meeting}"
-        if meeting.name in recorded:
-            event.description += "\n" + _(
-                "This meeting is recorded for an oral assessment."
-            )
-        # Online meetings have no physical room; show the room otherwise.
-        if meeting.cs_online:
-            event.location = meeting.web_meeting or _("Online")
-        elif meeting.room:
-            event.location = meeting.room
-        # Parse Frappe creation field and convert to UTC for DTSTAMP
-        creation_datetime = frappe.utils.get_datetime(meeting.creation)
-        event.created = datetime.astimezone(creation_datetime, pytz.UTC)
-        calendar.events.add(event)
-    for assignment in assignments:
-        event = Event()
-        event.begin = convert_to_ics_datetime(assignment.due_date - timedelta(hours=1))
-        event.end = convert_to_ics_datetime(assignment.due_date)
-        event.name = f"{course_schedule} - {assignment.assignment} (_( Assignment Due))"
-        event.description = f"Course Schedule: {course_schedule}\nAssignment: {assignment.assignment}\nDue Date: {assignment.due_date}"
-        event.created = frappe.utils.get_datetime(assignment.creation)
-        calendar.events.add(event)
+	for meeting in meeting_dates:
+		event = Event()
+		event.begin = convert_to_ics_datetime(
+			datetime.combine(meeting.cs_meetdate, (datetime.min + meeting.cs_fromtime).time())
+		)
+		event.end = convert_to_ics_datetime(
+			datetime.combine(meeting.cs_meetdate, (datetime.min + meeting.cs_totime).time())
+		)
+		event.name = f"{course_schedule} (_( Class Session))"
+		event.description = f"Course Schedule: {course_schedule}\nMeeting Date: {meeting.cs_meetdate}\nFrom: {meeting.cs_fromtime}\nTo: {meeting.cs_totime}"
+		if meeting.web_meeting:
+			event.description += f"\nJoin online: {meeting.web_meeting}"
+		if meeting.name in recorded:
+			event.description += "\n" + _("This meeting is recorded for an oral assessment.")
+		# Online meetings have no physical room; show the room otherwise.
+		if meeting.cs_online:
+			event.location = meeting.web_meeting or _("Online")
+		elif meeting.room:
+			event.location = meeting.room
+		# Parse Frappe creation field and convert to UTC for DTSTAMP
+		creation_datetime = frappe.utils.get_datetime(meeting.creation)
+		event.created = datetime.astimezone(creation_datetime, pytz.UTC)
+		calendar.events.add(event)
+	for assignment in assignments:
+		event = Event()
+		event.begin = convert_to_ics_datetime(assignment.due_date - timedelta(hours=1))
+		event.end = convert_to_ics_datetime(assignment.due_date)
+		event.name = f"{course_schedule} - {assignment.assignment} (_( Assignment Due))"
+		event.description = f"Course Schedule: {course_schedule}\nAssignment: {assignment.assignment}\nDue Date: {assignment.due_date}"
+		event.created = frappe.utils.get_datetime(assignment.creation)
+		calendar.events.add(event)
 
-    # Use serialize() to generate the ICS representation
-    calendar_data = calendar.serialize()
+	# Use serialize() to generate the ICS representation
+	calendar_data = calendar.serialize()
 
-    # Ensure proper line folding for ICS format (75 characters per line)
-    def fold_ics_lines(data):
-        """Fold iCalendar lines at 75 characters with proper continuation."""
-        folded_lines = []
-        for line in data.splitlines():
-            while len(line) > 75:
-                folded_lines.append(line[:75])
-                line = " " + line[75:]  # Continuation line starts with space
-            folded_lines.append(line)
-        return "\r\n".join(folded_lines)
+	# Ensure proper line folding for ICS format (75 characters per line)
+	def fold_ics_lines(data):
+		"""Fold iCalendar lines at 75 characters with proper continuation."""
+		folded_lines = []
+		for line in data.splitlines():
+			while len(line) > 75:
+				folded_lines.append(line[:75])
+				line = " " + line[75:]  # Continuation line starts with space
+			folded_lines.append(line)
+		return "\r\n".join(folded_lines)
 
-    calendar_data = fold_ics_lines(calendar_data)
+	calendar_data = fold_ics_lines(calendar_data)
 
-    frappe.local.response.filename = f"{course_schedule}.ics"
-    frappe.local.response.filecontent = calendar_data
-    frappe.local.response.type = "raw"
-    frappe.local.response.content_type = "text/calendar; charset=utf-8"
-    frappe.local.response.display_content_as = "inline"
-    return
+	frappe.local.response.filename = f"{course_schedule}.ics"
+	frappe.local.response.filecontent = calendar_data
+	frappe.local.response.type = "raw"
+	frappe.local.response.content_type = "text/calendar; charset=utf-8"
+	frappe.local.response.display_content_as = "inline"
+	return
 
 
 @frappe.whitelist()
 def get_calendar_instructions():
-    """Fetch calendar instructions from Seminary Settings."""
-    instructions = frappe.db.get_single_value(
-        "Seminary Settings", "calendar_instructions"
-    )
-    return instructions
+	"""Fetch calendar instructions from Seminary Settings."""
+	instructions = frappe.db.get_single_value("Seminary Settings", "calendar_instructions")
+	return instructions

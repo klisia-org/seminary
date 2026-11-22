@@ -51,43 +51,41 @@ ARCHIVE_RELEASES_MEMBERS = "Release members"
 
 
 def releases_on_archive(cohort_type):
-    """Does archiving a cohort of this type end its members' place in it?
+	"""Does archiving a cohort of this type end its members' place in it?
 
-    The category answers unless the school has overridden it, and what it turns
-    on is whether the thing the cohort is scoped to can come round again for the
-    same person.
+	The category answers unless the school has overridden it, and what it turns
+	on is whether the thing the cohort is scoped to can come round again for the
+	same person.
 
-    **Bound to one Program: keep them.** The cohort belonged to that degree;
-    when the degree is done the group is done, and the membership is the record
-    of having been in it. Nothing asks the question a second time, because a
-    second degree is a different program and so a different type.
+	**Bound to one Program: keep them.** The cohort belonged to that degree;
+	when the degree is done the group is done, and the membership is the record
+	of having been in it. Nothing asks the question a second time, because a
+	second degree is a different program and so a different type.
 
-    **Course scoped: keep them.** Same reason, and one more. A course cohort is
-    scoped to an offering that runs once, but the seeding a registrar does for
-    the next course in a sequence reads *active* memberships to know who is
-    already placed. Releasing on archive would silently undo that: archiving
-    last term's groups would make this term's seeding offer to place everybody
-    again, in a type whose whole point was that it does not.
+	**Course scoped: keep them.** Same reason, and one more. A course cohort is
+	scoped to an offering that runs once, but the seeding a registrar does for
+	the next course in a sequence reads *active* memberships to know who is
+	already placed. Releasing on archive would silently undo that: archiving
+	last term's groups would make this term's seeding offer to place everybody
+	again, in a type whose whole point was that it does not.
 
-    **Everything else: release them.** A level-wide type most of all. Someone who
-    took a master's years ago, in a cohort long since archived, is exactly the
-    person a second master's should place in a new one -- holding their seat
-    against a group that ended would refuse them a requirement of the programme
-    they have just started. Unrestricted types, where the alumni cohorts live,
-    are the same case with nothing bound at all.
-    """
-    row = frappe.db.get_value(
-        "Cohort Type", cohort_type, ["on_archive", "category", "program"], as_dict=True
-    )
-    if not row:
-        return False
-    if row.on_archive == ARCHIVE_KEEPS_MEMBERS:
-        return False
-    if row.on_archive == ARCHIVE_RELEASES_MEMBERS:
-        return True
-    if row.category == COURSE_SCOPED:
-        return False
-    return not (row.category in PROGRAM_CATEGORIES and row.program)
+	**Everything else: release them.** A level-wide type most of all. Someone who
+	took a master's years ago, in a cohort long since archived, is exactly the
+	person a second master's should place in a new one -- holding their seat
+	against a group that ended would refuse them a requirement of the programme
+	they have just started. Unrestricted types, where the alumni cohorts live,
+	are the same case with nothing bound at all.
+	"""
+	row = frappe.db.get_value("Cohort Type", cohort_type, ["on_archive", "category", "program"], as_dict=True)
+	if not row:
+		return False
+	if row.on_archive == ARCHIVE_KEEPS_MEMBERS:
+		return False
+	if row.on_archive == ARCHIVE_RELEASES_MEMBERS:
+		return True
+	if row.category == COURSE_SCOPED:
+		return False
+	return not (row.category in PROGRAM_CATEGORIES and row.program)
 
 
 #: Reminder hours a new type starts with (decisions/101 section 4.5).
@@ -95,377 +93,372 @@ DEFAULT_REMINDER_HOURS = (24, 1)
 
 
 class CohortType(Document):
-    def before_insert(self):
-        self.start_with_community_defaults()
+	def before_insert(self):
+		self.start_with_community_defaults()
 
-    def validate(self):
-        self.clear_fields_the_category_does_not_use()
-        self.validate_binding()
-        self.validate_leaders_have_something_to_be_alumni_of()
-        self.validate_alumni_self_service()
-        self.validate_graduation_target()
-        self.validate_one_paced_type_per_program()
-        self.validate_planning_settings()
-        self.validate_channels()
+	def validate(self):
+		self.clear_fields_the_category_does_not_use()
+		self.validate_binding()
+		self.validate_leaders_have_something_to_be_alumni_of()
+		self.validate_alumni_self_service()
+		self.validate_graduation_target()
+		self.validate_one_paced_type_per_program()
+		self.validate_planning_settings()
+		self.validate_channels()
 
-    def start_with_community_defaults(self):
-        """A new type offers the default channels and reminds 24 and 1 hours
-        before a meeting (decisions/101 sections 1.2 and 4.5). Staff trim
-        either afterwards; an empty reminder table then means no reminders."""
-        if not self.get("channels"):
-            for channel in frappe.get_all(
-                "Cohort Channel",
-                filters={"enabled": 1, "is_default": 1},
-                pluck="name",
-                order_by="sort_order asc, channel_name asc",
-            ):
-                self.append("channels", {"channel": channel})
-        if not self.get("meeting_reminders"):
-            for hours in DEFAULT_REMINDER_HOURS:
-                self.append("meeting_reminders", {"hours_before": hours})
+	def start_with_community_defaults(self):
+		"""A new type offers the default channels and reminds 24 and 1 hours
+		before a meeting (decisions/101 sections 1.2 and 4.5). Staff trim
+		either afterwards; an empty reminder table then means no reminders."""
+		if not self.get("channels"):
+			for channel in frappe.get_all(
+				"Cohort Channel",
+				filters={"enabled": 1, "is_default": 1},
+				pluck="name",
+				order_by="sort_order asc, channel_name asc",
+			):
+				self.append("channels", {"channel": channel})
+		if not self.get("meeting_reminders"):
+			for hours in DEFAULT_REMINDER_HOURS:
+				self.append("meeting_reminders", {"hours_before": hours})
 
-    def validate_channels(self):
-        """A cohort with no channel has nowhere to post. Only asked once the
-        site has channels at all, so installing in any order still works."""
-        if any((r.hours_before or 0) < 0 for r in self.get("meeting_reminders") or []):
-            frappe.throw(_("Reminder hours cannot be negative."))
-        if self.get("channels") or frappe.flags.in_install or frappe.flags.in_patch:
-            return
-        if frappe.db.exists("Cohort Channel", {"enabled": 1}):
-            frappe.throw(_("Choose at least one channel for this cohort type."))
+	def validate_channels(self):
+		"""A cohort with no channel has nowhere to post. Only asked once the
+		site has channels at all, so installing in any order still works."""
+		if any((r.hours_before or 0) < 0 for r in self.get("meeting_reminders") or []):
+			frappe.throw(_("Reminder hours cannot be negative."))
+		if self.get("channels") or frappe.flags.in_install or frappe.flags.in_patch:
+			return
+		if frappe.db.exists("Cohort Channel", {"enabled": 1}):
+			frappe.throw(_("Choose at least one channel for this cohort type."))
 
-    def clear_fields_the_category_does_not_use(self):
-        """A hidden field that still holds a value is a rule nobody can see.
+	def clear_fields_the_category_does_not_use(self):
+		"""A hidden field that still holds a value is a rule nobody can see.
 
-        `depends_on` only hides; it does not clear. Two kinds of field are
-        hidden by a category, and they want different treatment:
+		`depends_on` only hides; it does not clear. Two kinds of field are
+		hidden by a category, and they want different treatment:
 
-        Fields that make the system *act* -- the planning flag and the
-        withdrawal sweep -- are cleared on every save. A stale one is a job
-        firing on a type whose form does not admit to having it.
+		Fields that make the system *act* -- the planning flag and the
+		withdrawal sweep -- are cleared on every save. A stale one is a job
+		firing on a type whose form does not admit to having it.
 
-        Bindings and destinations are inert without a lifecycle to run them, so
-        they are cleared only when the category actually moves away from them.
-        That is what lets a type parked at `Unrestricted` (the state the ADR 066
-        patch left every existing type in) be reclassified later and find its
-        `graduates_to` still there, rather than punishing the chair for having
-        opened the record in between.
+		Bindings and destinations are inert without a lifecycle to run them, so
+		they are cleared only when the category actually moves away from them.
+		That is what lets a type parked at `Unrestricted` (the state the ADR 066
+		patch left every existing type in) be reclassified later and find its
+		`graduates_to` still there, rather than punishing the chair for having
+		opened the record in between.
 
-        The exception is a binding the *leadership* rule reads. The category is
-        not the only reason to hold one, so clearing on a category change would
-        take away the answer and then refuse the save for not having it -- the
-        chair would be told to name a program they had just named.
-        """
-        if self.category not in PROGRAM_CATEGORIES:
-            self.plannable = 0
-            self.remove_on_withdrawal = 0
-        if self.category == COURSE_SCOPED:
-            # A course-scoped type forms one cohort per course and a student
-            # takes many courses, often at once. "One cohort per member" is not
-            # a policy a school could hold here; it is a contradiction of the
-            # category, and holding it would refuse the second course's seeding.
-            self.max_lineages_per_member = 0
-        if not self.plannable:
-            self.mentor_unit = None
-            self.automation_min_size = 0
-            self.automation_max_size = 0
+		The exception is a binding the *leadership* rule reads. The category is
+		not the only reason to hold one, so clearing on a category change would
+		take away the answer and then refuse the save for not having it -- the
+		chair would be told to name a program they had just named.
+		"""
+		if self.category not in PROGRAM_CATEGORIES:
+			self.plannable = 0
+			self.remove_on_withdrawal = 0
+		if self.category == COURSE_SCOPED:
+			# A course-scoped type forms one cohort per course and a student
+			# takes many courses, often at once. "One cohort per member" is not
+			# a policy a school could hold here; it is a contradiction of the
+			# category, and holding it would refuse the second course's seeding.
+			self.max_lineages_per_member = 0
+		if not self.plannable:
+			self.mentor_unit = None
+			self.automation_min_size = 0
+			self.automation_max_size = 0
 
-        before = self.get_doc_before_save()
-        if before and before.category == self.category:
-            return
-        if self.category not in PROGRAM_CATEGORIES:
-            self.graduates_to = None
-        if self.category != THROUGHOUT and not self.leaders_read_the_binding():
-            # Only a program-long cohort can span a whole tier; everything else
-            # is bound to one program or to none.
-            self.program_tier = None
-        if self.category == UNRESTRICTED and not self.leaders_read_the_binding():
-            self.program = None
+		before = self.get_doc_before_save()
+		if before and before.category == self.category:
+			return
+		if self.category not in PROGRAM_CATEGORIES:
+			self.graduates_to = None
+		if self.category != THROUGHOUT and not self.leaders_read_the_binding():
+			# Only a program-long cohort can span a whole tier; everything else
+			# is bound to one program or to none.
+			self.program_tier = None
+		if self.category == UNRESTRICTED and not self.leaders_read_the_binding():
+			self.program = None
 
-    def leaders_read_the_binding(self):
-        """Does the leadership rule need a program or a tier to check against?"""
-        return self.leader_eligibility == BOUND_ALUMNUS
+	def leaders_read_the_binding(self):
+		"""Does the leadership rule need a program or a tier to check against?"""
+		return self.leader_eligibility == BOUND_ALUMNUS
 
-    def validate_binding(self):
-        """What the cohort is bound to, per category."""
-        if self.program and self.program_tier:
-            frappe.throw(
-                _(
-                    "A cohort type binds to a Program or to a Program Tier, not "
-                    "to both -- two bindings is two answers to the question of "
-                    "who belongs here. Clear one."
-                )
-            )
+	def validate_binding(self):
+		"""What the cohort is bound to, per category."""
+		if self.program and self.program_tier:
+			frappe.throw(
+				_(
+					"A cohort type binds to a Program or to a Program Tier, not "
+					"to both -- two bindings is two answers to the question of "
+					"who belongs here. Clear one."
+				)
+			)
 
-        if self.category == PACED:
-            # A paced cohort moves its members together, which is only definable
-            # over one program: two programs of the same tier advance on their
-            # own schedules, so "the whole cohort moves up" has no meaning there.
-            if not self.program:
-                frappe.throw(
-                    _(
-                        "A {0} cohort advances its members together, so it must "
-                        "name the Program they advance through. Program Tier is "
-                        "not enough -- programs of one tier keep their own "
-                        "schedules."
-                    ).format(frappe.bold(PACED))
-                )
-            program_type = frappe.db.get_value("Program", self.program, "program_type")
-            if program_type and program_type != "Time-based":
-                frappe.throw(
-                    _(
-                        "{0} is a {1} program, so there is no term boundary for a "
-                        "{2} cohort to advance on. Use {3} instead."
-                    ).format(
-                        frappe.bold(self.program),
-                        program_type,
-                        frappe.bold(PACED),
-                        frappe.bold(THROUGHOUT),
-                    )
-                )
+		if self.category == PACED:
+			# A paced cohort moves its members together, which is only definable
+			# over one program: two programs of the same tier advance on their
+			# own schedules, so "the whole cohort moves up" has no meaning there.
+			if not self.program:
+				frappe.throw(
+					_(
+						"A {0} cohort advances its members together, so it must "
+						"name the Program they advance through. Program Tier is "
+						"not enough -- programs of one tier keep their own "
+						"schedules."
+					).format(frappe.bold(PACED))
+				)
+			program_type = frappe.db.get_value("Program", self.program, "program_type")
+			if program_type and program_type != "Time-based":
+				frappe.throw(
+					_(
+						"{0} is a {1} program, so there is no term boundary for a "
+						"{2} cohort to advance on. Use {3} instead."
+					).format(
+						frappe.bold(self.program),
+						program_type,
+						frappe.bold(PACED),
+						frappe.bold(THROUGHOUT),
+					)
+				)
 
-        if self.category == THROUGHOUT and not (self.program or self.program_tier):
-            frappe.throw(
-                _(
-                    "A {0} cohort runs from enrollment to graduation, so it must "
-                    "name the Program or the Program Tier it runs alongside."
-                ).format(frappe.bold(THROUGHOUT))
-            )
+		if self.category == THROUGHOUT and not (self.program or self.program_tier):
+			frappe.throw(
+				_(
+					"A {0} cohort runs from enrollment to graduation, so it must "
+					"name the Program or the Program Tier it runs alongside."
+				).format(frappe.bold(THROUGHOUT))
+			)
 
-    def validate_leaders_have_something_to_be_alumni_of(self):
-        """`Alumnus of the bound program or level` needs a binding to read.
+	def validate_leaders_have_something_to_be_alumni_of(self):
+		"""`Alumnus of the bound program or level` needs a binding to read.
 
-        Without one the rule has no question to ask, and the membership check
-        would have to invent an answer: either refuse every candidate, or accept
-        an alumnus of anywhere. It used to do the second silently, which granted
-        leadership on a scope the school never named. `Any alumnus` is now that
-        second answer, said out loud, so this refuses rather than guesses.
-        """
-        if not self.leaders_read_the_binding():
-            return
-        if self.program or self.program_tier:
-            return
-        frappe.throw(
-            _(
-                "Leaders of this type must be alumni of the program or tier it "
-                "is bound to, and it is bound to neither. Name a {0} or a {1} "
-                "above, or set Leader Eligibility to {2} if any graduate of this "
-                "school may lead."
-            ).format(_("Program"), _("Program Tier"), frappe.bold(ANY_ALUMNUS))
-        )
+		Without one the rule has no question to ask, and the membership check
+		would have to invent an answer: either refuse every candidate, or accept
+		an alumnus of anywhere. It used to do the second silently, which granted
+		leadership on a scope the school never named. `Any alumnus` is now that
+		second answer, said out loud, so this refuses rather than guesses.
+		"""
+		if not self.leaders_read_the_binding():
+			return
+		if self.program or self.program_tier:
+			return
+		frappe.throw(
+			_(
+				"Leaders of this type must be alumni of the program or tier it "
+				"is bound to, and it is bound to neither. Name a {0} or a {1} "
+				"above, or set Leader Eligibility to {2} if any graduate of this "
+				"school may lead."
+			).format(_("Program"), _("Program Tier"), frappe.bold(ANY_ALUMNUS))
+		)
 
-    def validate_alumni_self_service(self):
-        """Cohorts a school does not set up, and the one limit it still sets.
+	def validate_alumni_self_service(self):
+		"""Cohorts a school does not set up, and the one limit it still sets.
 
-        Asking alumni to lead is asking people who have left to come back to a
-        platform they have no other reason to open, and requiring a staff member
-        in the desk for each group is most of the friction. Letting the alumnus
-        create their own removes it -- but it also removes the moment a person
-        looked at the group, so the type has to say in advance how large one may
-        get. Hence a limit that refuses rather than warns: there is nobody on the
-        other side of the warning.
+		Asking alumni to lead is asking people who have left to come back to a
+		platform they have no other reason to open, and requiring a staff member
+		in the desk for each group is most of the friction. Letting the alumnus
+		create their own removes it -- but it also removes the moment a person
+		looked at the group, so the type has to say in advance how large one may
+		get. Hence a limit that refuses rather than warns: there is nobody on the
+		other side of the warning.
 
-        Both settings only mean anything on an alumnus-led type, so they are
-        cleared elsewhere rather than left as a rule nobody can see.
-        """
-        if self.leader_eligibility not in ALUMNUS_RULES:
-            self.alumni_may_create = 0
-            self.portal_size_limit = 0
-            return
+		Both settings only mean anything on an alumnus-led type, so they are
+		cleared elsewhere rather than left as a rule nobody can see.
+		"""
+		if self.leader_eligibility not in ALUMNUS_RULES:
+			self.alumni_may_create = 0
+			self.portal_size_limit = 0
+			return
 
-        # 0 means "no limit" on either field, so only two real numbers can
-        # disagree -- and advising a size the portal then refuses is two answers
-        # to how big a cohort of this type may be.
-        if (
-            self.portal_size_limit
-            and self.default_max_size
-            and self.default_max_size > self.portal_size_limit
-        ):
-            frappe.throw(
-                _(
-                    "Default Max Size ({0}) is above the Portal Size Limit ({1}), "
-                    "so a cohort would be advised to grow to a size the portal "
-                    "refuses to let it reach. Lower the suggestion, or raise the "
-                    "limit."
-                ).format(self.default_max_size, self.portal_size_limit)
-            )
+		# 0 means "no limit" on either field, so only two real numbers can
+		# disagree -- and advising a size the portal then refuses is two answers
+		# to how big a cohort of this type may be.
+		if (
+			self.portal_size_limit
+			and self.default_max_size
+			and self.default_max_size > self.portal_size_limit
+		):
+			frappe.throw(
+				_(
+					"Default Max Size ({0}) is above the Portal Size Limit ({1}), "
+					"so a cohort would be advised to grow to a size the portal "
+					"refuses to let it reach. Lower the suggestion, or raise the "
+					"limit."
+				).format(self.default_max_size, self.portal_size_limit)
+			)
 
-    def validate_graduation_target(self):
-        """Graduating into a type is itself how that type gets filled.
+	def validate_graduation_target(self):
+		"""Graduating into a type is itself how that type gets filled.
 
-        A type that both receives graduates and forms its own cohorts would
-        place students into a stage they have not reached -- the planner would
-        fill it from the enrolled pool while graduation was still years away
-        (ADR 066 section 7.15). Checked from both sides, because either edit can
-        create the conflict.
-        """
-        if self.graduates_to == self.name:
-            frappe.throw(_("A Cohort Type cannot graduate into itself."))
+		A type that both receives graduates and forms its own cohorts would
+		place students into a stage they have not reached -- the planner would
+		fill it from the enrolled pool while graduation was still years away
+		(ADR 066 section 7.15). Checked from both sides, because either edit can
+		create the conflict.
+		"""
+		if self.graduates_to == self.name:
+			frappe.throw(_("A Cohort Type cannot graduate into itself."))
 
-        if self.graduates_to:
-            target_plannable = frappe.db.get_value(
-                "Cohort Type", self.graduates_to, "plannable"
-            )
-            if target_plannable:
-                frappe.throw(
-                    _(
-                        "{0} forms its own cohorts in the planner, so it cannot "
-                        "also receive graduates -- students would be placed "
-                        "there before they graduate. Untick its bulk planning "
-                        "box, or graduate into a hand-authored type."
-                    ).format(frappe.bold(self.graduates_to))
-                )
+		if self.graduates_to:
+			target_plannable = frappe.db.get_value("Cohort Type", self.graduates_to, "plannable")
+			if target_plannable:
+				frappe.throw(
+					_(
+						"{0} forms its own cohorts in the planner, so it cannot "
+						"also receive graduates -- students would be placed "
+						"there before they graduate. Untick its bulk planning "
+						"box, or graduate into a hand-authored type."
+					).format(frappe.bold(self.graduates_to))
+				)
 
-        if self.plannable:
-            feeder = frappe.db.get_value(
-                "Cohort Type",
-                {"graduates_to": self.name, "name": ("!=", self.name)},
-                "name",
-            )
-            if feeder:
-                frappe.throw(
-                    _(
-                        "{0} already graduates into this type, which is how its "
-                        "cohorts get their members. Planning it in bulk as well "
-                        "would place students before they graduate."
-                    ).format(frappe.bold(feeder))
-                )
+		if self.plannable:
+			feeder = frappe.db.get_value(
+				"Cohort Type",
+				{"graduates_to": self.name, "name": ("!=", self.name)},
+				"name",
+			)
+			if feeder:
+				frappe.throw(
+					_(
+						"{0} already graduates into this type, which is how its "
+						"cohorts get their members. Planning it in bulk as well "
+						"would place students before they graduate."
+					).format(frappe.bold(feeder))
+				)
 
-    def validate_planning_settings(self):
-        """The planner needs a pool and a coherent pair of sizes.
+	def validate_planning_settings(self):
+		"""The planner needs a pool and a coherent pair of sizes.
 
-        `mentor_unit` carries a `link_filters` hint on the form, which is a
-        convenience and not a rule -- it constrains the picker and nothing else,
-        so the type is re-checked here where a REST insert or an import also
-        passes through (ADR 067 section 4).
-        """
-        if not self.plannable:
-            return
+		`mentor_unit` carries a `link_filters` hint on the form, which is a
+		convenience and not a rule -- it constrains the picker and nothing else,
+		so the type is re-checked here where a REST insert or an import also
+		passes through (ADR 067 section 4).
+		"""
+		if not self.plannable:
+			return
 
-        if not self.mentor_unit:
-            frappe.throw(
-                _(
-                    "A type that may be planned in bulk needs a Mentor Unit -- "
-                    "that is where the planner finds mentors and reads how many "
-                    "students each of them can carry."
-                )
-            )
+		if not self.mentor_unit:
+			frappe.throw(
+				_(
+					"A type that may be planned in bulk needs a Mentor Unit -- "
+					"that is where the planner finds mentors and reads how many "
+					"students each of them can carry."
+				)
+			)
 
-        unit_type, is_active = frappe.db.get_value(
-            "Academic Unit", self.mentor_unit, ["unit_type", "is_active"]
-        )
-        if unit_type != MENTORING_DEPARTMENT:
-            frappe.throw(
-                _("{0} is {1}, so it cannot be a Mentor Unit. Choose a {2}.").format(
-                    frappe.bold(self.mentor_unit),
-                    unit_type or _("of no type"),
-                    frappe.bold(MENTORING_DEPARTMENT),
-                )
-            )
-        if not is_active:
-            frappe.throw(
-                _(
-                    "{0} is not active, so the planner would find no mentors in it."
-                ).format(frappe.bold(self.mentor_unit))
-            )
+		unit_type, is_active = frappe.db.get_value(
+			"Academic Unit", self.mentor_unit, ["unit_type", "is_active"]
+		)
+		if unit_type != MENTORING_DEPARTMENT:
+			frappe.throw(
+				_("{0} is {1}, so it cannot be a Mentor Unit. Choose a {2}.").format(
+					frappe.bold(self.mentor_unit),
+					unit_type or _("of no type"),
+					frappe.bold(MENTORING_DEPARTMENT),
+				)
+			)
+		if not is_active:
+			frappe.throw(
+				_("{0} is not active, so the planner would find no mentors in it.").format(
+					frappe.bold(self.mentor_unit)
+				)
+			)
 
-        self.validate_criteria_have_their_data()
+		self.validate_criteria_have_their_data()
 
-        # 0 means "no bound" on either field, so only two real numbers can
-        # contradict each other. A minimum above the maximum is a type that can
-        # never propose a group the planner is willing to show without a flag.
-        if (
-            self.automation_min_size
-            and self.automation_max_size
-            and self.automation_min_size > self.automation_max_size
-        ):
-            frappe.throw(
-                _(
-                    "The minimum cohort size ({0}) is larger than the maximum "
-                    "({1}), so no proposed cohort could ever be the right size."
-                ).format(self.automation_min_size, self.automation_max_size)
-            )
+		# 0 means "no bound" on either field, so only two real numbers can
+		# contradict each other. A minimum above the maximum is a type that can
+		# never propose a group the planner is willing to show without a flag.
+		if (
+			self.automation_min_size
+			and self.automation_max_size
+			and self.automation_min_size > self.automation_max_size
+		):
+			frappe.throw(
+				_(
+					"The minimum cohort size ({0}) is larger than the maximum "
+					"({1}), so no proposed cohort could ever be the right size."
+				).format(self.automation_min_size, self.automation_max_size)
+			)
 
-    def validate_one_paced_type_per_program(self):
-        """Two paced types over one program would advance a student two ways.
+	def validate_one_paced_type_per_program(self):
+		"""Two paced types over one program would advance a student two ways.
 
-        Other types may coexist freely -- an academic grouping and a formation
-        grouping serve different purposes and a school may want both. What may
-        not coexist is two answers to "where does this student go next term"
-        (ADR 066 section 7.9). Scoped to active types, so retiring one and
-        defining its replacement is an ordinary two-step edit.
-        """
-        if self.category != PACED or not self.is_active:
-            return
-        clash = frappe.db.get_value(
-            "Cohort Type",
-            {
-                "category": PACED,
-                "program": self.program,
-                "is_active": 1,
-                "name": ("!=", self.name or ""),
-            },
-            "name",
-        )
-        if clash:
-            frappe.throw(
-                _(
-                    "{0} is already the {1} type for {2}, and two of them would "
-                    "advance the same student in two directions. Deactivate it "
-                    "first, or use another category."
-                ).format(frappe.bold(clash), PACED, frappe.bold(self.program))
-            )
+		Other types may coexist freely -- an academic grouping and a formation
+		grouping serve different purposes and a school may want both. What may
+		not coexist is two answers to "where does this student go next term"
+		(ADR 066 section 7.9). Scoped to active types, so retiring one and
+		defining its replacement is an ordinary two-step edit.
+		"""
+		if self.category != PACED or not self.is_active:
+			return
+		clash = frappe.db.get_value(
+			"Cohort Type",
+			{
+				"category": PACED,
+				"program": self.program,
+				"is_active": 1,
+				"name": ("!=", self.name or ""),
+			},
+			"name",
+		)
+		if clash:
+			frappe.throw(
+				_(
+					"{0} is already the {1} type for {2}, and two of them would "
+					"advance the same student in two directions. Deactivate it "
+					"first, or use another category."
+				).format(frappe.bold(clash), PACED, frappe.bold(self.program))
+			)
 
-    def validate_criteria_have_their_data(self):
-        """A rule may only be chosen when its datum is guaranteed (ADR 067 §9).
+	def validate_criteria_have_their_data(self):
+		"""A rule may only be chosen when its datum is guaranteed (ADR 067 §9).
 
-        Checked here and not only in the picker, because a picker filter is a
-        convenience and this is a rule: a REST insert, an import or a fixture
-        never sees one. A criterion whose detail the school has not made
-        required would match nobody and say nothing about why -- the failure
-        would look like a data problem in every individual student rather than
-        a configuration one, which is exactly the shape of bug this refuses.
-        """
-        if not self.criteria:
-            return
-        for row in self.criteria:
-            entry = frappe.db.get_value(
-                "Cohort Assignment Criterion",
-                row.criterion,
-                ["criterion_name", "requires_field", "is_active"],
-                as_dict=True,
-            )
-            if not entry:
-                continue
-            if not entry.is_active:
-                frappe.msgprint(
-                    _(
-                        "{0} has been retired, so it will be skipped when this "
-                        "type is planned."
-                    ).format(frappe.bold(entry.criterion_name)),
-                    indicator="orange",
-                )
-                continue
-            if not entry.requires_field:
-                continue
-            required = frappe.db.get_value(
-                "Mandatory Personal Field",
-                entry.requires_field,
-                ["mandatory", "field_label"],
-                as_dict=True,
-            )
-            if required and required.mandatory:
-                continue
-            frappe.throw(
-                _(
-                    "{0} matches on {1}, so {1} has to be a detail your school "
-                    "requires — otherwise the rule would quietly match nobody. "
-                    "Tick Required on it under Mandatory Personal Field, or "
-                    "remove this rule."
-                ).format(
-                    frappe.bold(entry.criterion_name),
-                    frappe.bold(
-                        (required and required.field_label) or entry.requires_field
-                    ),
-                )
-            )
+		Checked here and not only in the picker, because a picker filter is a
+		convenience and this is a rule: a REST insert, an import or a fixture
+		never sees one. A criterion whose detail the school has not made
+		required would match nobody and say nothing about why -- the failure
+		would look like a data problem in every individual student rather than
+		a configuration one, which is exactly the shape of bug this refuses.
+		"""
+		if not self.criteria:
+			return
+		for row in self.criteria:
+			entry = frappe.db.get_value(
+				"Cohort Assignment Criterion",
+				row.criterion,
+				["criterion_name", "requires_field", "is_active"],
+				as_dict=True,
+			)
+			if not entry:
+				continue
+			if not entry.is_active:
+				frappe.msgprint(
+					_("{0} has been retired, so it will be skipped when this type is planned.").format(
+						frappe.bold(entry.criterion_name)
+					),
+					indicator="orange",
+				)
+				continue
+			if not entry.requires_field:
+				continue
+			required = frappe.db.get_value(
+				"Mandatory Personal Field",
+				entry.requires_field,
+				["mandatory", "field_label"],
+				as_dict=True,
+			)
+			if required and required.mandatory:
+				continue
+			frappe.throw(
+				_(
+					"{0} matches on {1}, so {1} has to be a detail your school "
+					"requires — otherwise the rule would quietly match nobody. "
+					"Tick Required on it under Mandatory Personal Field, or "
+					"remove this rule."
+				).format(
+					frappe.bold(entry.criterion_name),
+					frappe.bold((required and required.field_label) or entry.requires_field),
+				)
+			)

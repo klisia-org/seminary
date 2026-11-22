@@ -40,177 +40,170 @@ EARTH_RADIUS_KM = 6371.0088
 
 
 def haversine_km(a_lat, a_lon, b_lat, b_lon):
-    """Great-circle distance in kilometres.
+	"""Great-circle distance in kilometres.
 
-    Good enough by a wide margin: the question this answers is "is this mentor
-    nearer than that one", over distances where the difference between a sphere
-    and the real geoid is far below the precision of a rooftop geocode.
-    """
-    lat1, lon1, lat2, lon2 = (math.radians(v) for v in (a_lat, a_lon, b_lat, b_lon))
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    h = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-    )
-    return 2 * EARTH_RADIUS_KM * math.asin(math.sqrt(h))
+	Good enough by a wide margin: the question this answers is "is this mentor
+	nearer than that one", over distances where the difference between a sphere
+	and the real geoid is far below the precision of a rooftop geocode.
+	"""
+	lat1, lon1, lat2, lon2 = (math.radians(v) for v in (a_lat, a_lon, b_lat, b_lon))
+	dlat = lat2 - lat1
+	dlon = lon2 - lon1
+	h = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+	return 2 * EARTH_RADIUS_KM * math.asin(math.sqrt(h))
 
 
 class Criterion:
-    """One rule, in the shape the planner consumes.
+	"""One rule, in the shape the planner consumes.
 
-    `requires_field` names a `person_fields` attribute. It is what the readiness
-    pre-flight counts, and what a school's mandatory-field curation will gate
-    the rule on -- so it is a name from that registry, not a column name picked
-    here.
-    """
+	`requires_field` names a `person_fields` attribute. It is what the readiness
+	pre-flight counts, and what a school's mandatory-field curation will gate
+	the rule on -- so it is a name from that registry, not a column name picked
+	here.
+	"""
 
-    kind = None
-    handler = None
-    requires_field = None
-    #: How to name the missing datum to a person. `requires_field` is a registry
-    #: key -- telling a chair that four mentors "have no latitude" names a
-    #: column, not the thing they have to go and fix.
-    reads_label = None
-    label = None
-    description = None
+	kind = None
+	handler = None
+	requires_field = None
+	#: How to name the missing datum to a person. `requires_field` is a registry
+	#: key -- telling a chair that four mentors "have no latitude" names a
+	#: column, not the thing they have to go and fix.
+	reads_label = None
+	label = None
+	description = None
 
-    def missing(self, row):
-        """Is the datum this rule needs absent for this person?"""
-        raise NotImplementedError
+	def missing(self, row):
+		"""Is the datum this rule needs absent for this person?"""
+		raise NotImplementedError
 
-    def excludes(self, student, mentor):
-        """Filter only: a reason this pairing is refused, or None to allow it.
+	def excludes(self, student, mentor):
+		"""Filter only: a reason this pairing is refused, or None to allow it.
 
-        The reason is shown to a chair beside an unplaced student, so it says
-        what is wrong in their words.
-        """
-        return None
+		The reason is shown to a chair beside an unplaced student, so it says
+		what is wrong in their words.
+		"""
+		return None
 
-    def rank(self, student, mentor):
-        """Ranking only: a sort key, lowest first. `UNRANKED` sorts last."""
-        return UNRANKED
+	def rank(self, student, mentor):
+		"""Ranking only: a sort key, lowest first. `UNRANKED` sorts last."""
+		return UNRANKED
 
-    def note(self, student, mentor, alternatives):
-        """A short decision hint for this student in this group, or None.
+	def note(self, student, mentor, alternatives):
+		"""A short decision hint for this student in this group, or None.
 
-        `alternatives` is the student's ranked shortlist of *other* mentors, so
-        a note can say what moving them would cost. A bare fact ("12 km") is not
-        a decision aid; the comparison is.
-        """
-        return None
+		`alternatives` is the student's ranked shortlist of *other* mentors, so
+		a note can say what moving them would cost. A bare fact ("12 km") is not
+		a decision aid; the comparison is.
+		"""
+		return None
 
-    def pair_value(self, student, mentor):
-        """A number for this pairing the page can re-render after a drag.
+	def pair_value(self, student, mentor):
+		"""A number for this pairing the page can re-render after a drag.
 
-        The page cannot recompute a distance: the coordinates stay server-side
-        and only what is derived from them is sent (ADR 067 section 10). So a
-        rule whose note is a quantity publishes that quantity per pair, already
-        in the school's unit, and the page renders the comparison itself when a
-        student is moved.
-        """
-        return None
+		The page cannot recompute a distance: the coordinates stay server-side
+		and only what is derived from them is sent (ADR 067 section 10). So a
+		rule whose note is a quantity publishes that quantity per pair, already
+		in the school's unit, and the page renders the comparison itself when a
+		student is moved.
+		"""
+		return None
 
-    def pair_suffix(self):
-        """What `pair_value` is measured in, translated. None if not a
-        quantity."""
-        return None
+	def pair_suffix(self):
+		"""What `pair_value` is measured in, translated. None if not a
+		quantity."""
+		return None
 
 
 class GenderMatch(Criterion):
-    kind = FILTER
-    handler = "match_gender"
-    requires_field = "gender"
-    reads_label = "gender"
-    label = "Match student and mentor gender"
-    description = (
-        "Only offer a mentor of the same gender as the student. A person whose "
-        "gender is not recorded cannot be matched by this rule at all."
-    )
+	kind = FILTER
+	handler = "match_gender"
+	requires_field = "gender"
+	reads_label = "gender"
+	label = "Match student and mentor gender"
+	description = (
+		"Only offer a mentor of the same gender as the student. A person whose "
+		"gender is not recorded cannot be matched by this rule at all."
+	)
 
-    def missing(self, row):
-        return not row.get("gender")
+	def missing(self, row):
+		return not row.get("gender")
 
-    def excludes(self, student, mentor):
-        if not student.get("gender"):
-            return _("This student's gender is not recorded.")
-        if not mentor.get("gender"):
-            return _("{0} has no gender recorded.").format(mentor.get("full_name"))
-        if student["gender"] != mentor["gender"]:
-            return _("{0} is not the same gender as this student.").format(
-                mentor.get("full_name")
-            )
-        return None
+	def excludes(self, student, mentor):
+		if not student.get("gender"):
+			return _("This student's gender is not recorded.")
+		if not mentor.get("gender"):
+			return _("{0} has no gender recorded.").format(mentor.get("full_name"))
+		if student["gender"] != mentor["gender"]:
+			return _("{0} is not the same gender as this student.").format(mentor.get("full_name"))
+		return None
 
-    def note(self, student, mentor, alternatives):
-        # Worth saying only when it is the binding constraint: a chair about to
-        # drag this student needs to know there is nowhere else to drag them.
-        #
-        # "Alternatives" are the other *proposed cohorts*, not the whole mentor
-        # pool -- those are the only places a student can be dragged to. Saying
-        # "the pool" claimed something broader and untrue: there may well be
-        # another matching mentor who is not leading a cohort in this plan.
-        if not alternatives:
-            return _("No other cohort here matches this student's gender.")
-        return None
+	def note(self, student, mentor, alternatives):
+		# Worth saying only when it is the binding constraint: a chair about to
+		# drag this student needs to know there is nowhere else to drag them.
+		#
+		# "Alternatives" are the other *proposed cohorts*, not the whole mentor
+		# pool -- those are the only places a student can be dragged to. Saying
+		# "the pool" claimed something broader and untrue: there may well be
+		# another matching mentor who is not leading a cohort in this plan.
+		if not alternatives:
+			return _("No other cohort here matches this student's gender.")
+		return None
 
 
 class NearestMentor(Criterion):
-    kind = RANKING
-    handler = "nearest_mentor"
-    requires_field = "latitude"
-    reads_label = "address we could locate"
-    label = "Mentor closest to the student"
-    description = (
-        "Prefer the nearest mentor. Only meaningful for a distributed program -- "
-        "in a residential one every student is next to every mentor and this "
-        "orders nothing. Requires both people to have a resolved address."
-    )
+	kind = RANKING
+	handler = "nearest_mentor"
+	requires_field = "latitude"
+	reads_label = "address we could locate"
+	label = "Mentor closest to the student"
+	description = (
+		"Prefer the nearest mentor. Only meaningful for a distributed program -- "
+		"in a residential one every student is next to every mentor and this "
+		"orders nothing. Requires both people to have a resolved address."
+	)
 
-    def missing(self, row):
-        return not row.get("has_point")
+	def missing(self, row):
+		return not row.get("has_point")
 
-    def _distance(self, student, mentor):
-        if not (student.get("has_point") and mentor.get("has_point")):
-            return None
-        return haversine_km(
-            student["latitude"],
-            student["longitude"],
-            mentor["latitude"],
-            mentor["longitude"],
-        )
+	def _distance(self, student, mentor):
+		if not (student.get("has_point") and mentor.get("has_point")):
+			return None
+		return haversine_km(
+			student["latitude"],
+			student["longitude"],
+			mentor["latitude"],
+			mentor["longitude"],
+		)
 
-    def pair_value(self, student, mentor):
-        km = self._distance(student, mentor)
-        return None if km is None else round(in_school_unit(km), 1)
+	def pair_value(self, student, mentor):
+		km = self._distance(student, mentor)
+		return None if km is None else round(in_school_unit(km), 1)
 
-    def pair_suffix(self):
-        return unit_suffix()
+	def pair_suffix(self):
+		return unit_suffix()
 
-    def rank(self, student, mentor):
-        km = self._distance(student, mentor)
-        # A mentor with no usable point is not "infinitely far": they are
-        # unordered by this rule and fall to the back, where a later ranking or
-        # the tie-break decides between them.
-        return UNRANKED if km is None else (0, km)
+	def rank(self, student, mentor):
+		km = self._distance(student, mentor)
+		# A mentor with no usable point is not "infinitely far": they are
+		# unordered by this rule and fall to the back, where a later ranking or
+		# the tie-break decides between them.
+		return UNRANKED if km is None else (0, km)
 
-    def note(self, student, mentor, alternatives):
-        km = self._distance(student, mentor)
-        if km is None:
-            return None
-        nearer = None
-        for other in alternatives:
-            other_km = self._distance(student, other)
-            if other_km is not None:
-                nearer = other_km
-                break
-        if nearer is None:
-            return _(
-                "{0} away; no other cohort here has a mentor we could locate."
-            ).format(format_distance(km))
-        return _("{0} away; next nearest cohort {1}.").format(
-            format_distance(km), format_distance(nearer)
-        )
+	def note(self, student, mentor, alternatives):
+		km = self._distance(student, mentor)
+		if km is None:
+			return None
+		nearer = None
+		for other in alternatives:
+			other_km = self._distance(student, other)
+			if other_km is not None:
+				nearer = other_km
+				break
+		if nearer is None:
+			return _("{0} away; no other cohort here has a mentor we could locate.").format(
+				format_distance(km)
+			)
+		return _("{0} away; next nearest cohort {1}.").format(format_distance(km), format_distance(nearer))
 
 
 #: Handler key -> instance. Instances are stateless, so one each is enough.
@@ -218,11 +211,11 @@ _REGISTRY = {c.handler: c for c in (GenderMatch(), NearestMentor())}
 
 
 def registry():
-    return dict(_REGISTRY)
+	return dict(_REGISTRY)
 
 
 def get(handler):
-    return _REGISTRY.get(handler)
+	return _REGISTRY.get(handler)
 
 
 # ------------------------------------------------------------------- rendering
@@ -234,29 +227,29 @@ _KM_PER_MILE = 1.609344
 
 
 def using_unit(unit):
-    """Set the school's unit for this request.
+	"""Set the school's unit for this request.
 
-    On `frappe.local` rather than a module global: a module global outlives the
-    request in a long-running worker, so one school's setting would render the
-    next school's plan (the same reason `frappe.local.cbe_cache` lives there).
-    """
-    frappe.local.cohort_distance_unit = unit if unit in (KM, MILES) else KM
+	On `frappe.local` rather than a module global: a module global outlives the
+	request in a long-running worker, so one school's setting would render the
+	next school's plan (the same reason `frappe.local.cbe_cache` lives there).
+	"""
+	frappe.local.cohort_distance_unit = unit if unit in (KM, MILES) else KM
 
 
 def in_school_unit(km):
-    """The same distance in whatever the school reads in."""
-    if getattr(frappe.local, "cohort_distance_unit", KM) == MILES:
-        return km / _KM_PER_MILE
-    return km
+	"""The same distance in whatever the school reads in."""
+	if getattr(frappe.local, "cohort_distance_unit", KM) == MILES:
+		return km / _KM_PER_MILE
+	return km
 
 
 def unit_suffix():
-    if getattr(frappe.local, "cohort_distance_unit", KM) == MILES:
-        return _("mi")
-    return _("km")
+	if getattr(frappe.local, "cohort_distance_unit", KM) == MILES:
+		return _("mi")
+	return _("km")
 
 
 def format_distance(km):
-    """Distances reach a person, never a coordinate -- the point itself is held
-    at permlevel 1 and stays server-side (ADR 067 section 10)."""
-    return "%s %s" % (round(in_school_unit(km), 1), unit_suffix())
+	"""Distances reach a person, never a coordinate -- the point itself is held
+	at permlevel 1 and stays server-side (ADR 067 section 10)."""
+	return "%s %s" % (round(in_school_unit(km), 1), unit_suffix())

@@ -26,45 +26,45 @@ LINKED_DOC_HOOK_FLAG = "_seminary_grad_link_doctypes"
 
 
 def resolve_policy(program, on_date):
-    """Return the name of the active Program Graduation Requirement for the
-    given program at on_date, or None if no policy applies.
+	"""Return the name of the active Program Graduation Requirement for the
+	given program at on_date, or None if no policy applies.
 
-    Picks the policy whose [active_from, active_until] interval covers on_date.
-    If multiple match (data-entry bug; PGR.validate prevents this on the same
-    program), the one with the latest active_from wins.
+	Picks the policy whose [active_from, active_until] interval covers on_date.
+	If multiple match (data-entry bug; PGR.validate prevents this on the same
+	program), the one with the latest active_from wins.
 
-    Returns None for ongoing programs (no graduation concept).
-    """
-    if not program or not on_date:
-        return None
+	Returns None for ongoing programs (no graduation concept).
+	"""
+	if not program or not on_date:
+		return None
 
-    if frappe.db.get_value("Program", program, "is_ongoing"):
-        return None
+	if frappe.db.get_value("Program", program, "is_ongoing"):
+		return None
 
-    on_date = getdate(on_date)
-    # Only submitted, Active policies bind. Draft successors (spawned by the
-    # 'Change Version' action) sit at docstatus 0 and must never be resolved.
-    candidates = frappe.get_all(
-        "Program Graduation Requirement",
-        filters={"program_name": program, "active": 1, "docstatus": 1},
-        fields=["name", "active_from", "active_until"],
-    )
+	on_date = getdate(on_date)
+	# Only submitted, Active policies bind. Draft successors (spawned by the
+	# 'Change Version' action) sit at docstatus 0 and must never be resolved.
+	candidates = frappe.get_all(
+		"Program Graduation Requirement",
+		filters={"program_name": program, "active": 1, "docstatus": 1},
+		fields=["name", "active_from", "active_until"],
+	)
 
-    matches = []
-    for cand in candidates:
-        start = getdate(cand.active_from) if cand.active_from else None
-        end = getdate(cand.active_until) if cand.active_until else None
-        if start and on_date < start:
-            continue
-        if end and on_date > end:
-            continue
-        matches.append((start or getdate("1900-01-01"), cand.name))
+	matches = []
+	for cand in candidates:
+		start = getdate(cand.active_from) if cand.active_from else None
+		end = getdate(cand.active_until) if cand.active_until else None
+		if start and on_date < start:
+			continue
+		if end and on_date > end:
+			continue
+		matches.append((start or getdate("1900-01-01"), cand.name))
 
-    if not matches:
-        return None
+	if not matches:
+		return None
 
-    matches.sort(key=lambda x: x[0], reverse=True)
-    return matches[0][1]
+	matches.sort(key=lambda x: x[0], reverse=True)
+	return matches[0][1]
 
 
 # ---------------------------------------------------------------------------
@@ -73,49 +73,47 @@ def resolve_policy(program, on_date):
 
 
 def snapshot_graduation_requirements(program_enrollment_doc):
-    """Populate Program Enrollment's graduation_requirements child table from
-    the resolved policy. Idempotent: skips if already populated."""
-    if program_enrollment_doc.get("graduation_requirements"):
-        return
+	"""Populate Program Enrollment's graduation_requirements child table from
+	the resolved policy. Idempotent: skips if already populated."""
+	if program_enrollment_doc.get("graduation_requirements"):
+		return
 
-    policy_name = resolve_policy(
-        program_enrollment_doc.program, program_enrollment_doc.enrollment_date
-    )
-    if not policy_name:
-        return
+	policy_name = resolve_policy(program_enrollment_doc.program, program_enrollment_doc.enrollment_date)
+	if not policy_name:
+		return
 
-    policy = frappe.get_doc("Program Graduation Requirement", policy_name)
-    program_enrollment_doc.graduation_policy = policy_name
+	policy = frappe.get_doc("Program Graduation Requirement", policy_name)
+	program_enrollment_doc.graduation_policy = policy_name
 
-    applicable = _applicable_emphasis_tracks(program_enrollment_doc)
-    scoped_libs_added = set()
-    for pgr_item in policy.pgr_items or []:
-        if not _pgr_item_applies(pgr_item, applicable):
-            continue
-        if _pgr_item_scope(pgr_item):
-            # Dedup emphasis-scoped rows by library item, so a student in two
-            # emphasis that both require the same thing gets a single row.
-            if pgr_item.grad_requirement_item in scoped_libs_added:
-                continue
-            scoped_libs_added.add(pgr_item.grad_requirement_item)
-        _append_pgr_item_rows(program_enrollment_doc, pgr_item)
+	applicable = _applicable_emphasis_tracks(program_enrollment_doc)
+	scoped_libs_added = set()
+	for pgr_item in policy.pgr_items or []:
+		if not _pgr_item_applies(pgr_item, applicable):
+			continue
+		if _pgr_item_scope(pgr_item):
+			# Dedup emphasis-scoped rows by library item, so a student in two
+			# emphasis that both require the same thing gets a single row.
+			if pgr_item.grad_requirement_item in scoped_libs_added:
+				continue
+			scoped_libs_added.add(pgr_item.grad_requirement_item)
+		_append_pgr_item_rows(program_enrollment_doc, pgr_item)
 
 
 def _append_pgr_item_rows(program_enrollment_doc, pgr_item):
-    """Append the SGR slot row(s) for one policy item — one row, or N rows for
-    a Manual Verification requiring N instances."""
-    library_type = frappe.db.get_value(
-        "Graduation Requirement Item",
-        pgr_item.grad_requirement_item,
-        "requirement_type",
-    )
-    if library_type == "Manual Verification":
-        quantity = max(int(pgr_item.quantity_required or 1), 1)
-    else:
-        quantity = 1
-    for slot in range(1, quantity + 1):
-        row = _build_sgr_row(program_enrollment_doc, pgr_item, slot)
-        program_enrollment_doc.append("graduation_requirements", row)
+	"""Append the SGR slot row(s) for one policy item — one row, or N rows for
+	a Manual Verification requiring N instances."""
+	library_type = frappe.db.get_value(
+		"Graduation Requirement Item",
+		pgr_item.grad_requirement_item,
+		"requirement_type",
+	)
+	if library_type == "Manual Verification":
+		quantity = max(int(pgr_item.quantity_required or 1), 1)
+	else:
+		quantity = 1
+	for slot in range(1, quantity + 1):
+		row = _build_sgr_row(program_enrollment_doc, pgr_item, slot)
+		program_enrollment_doc.append("graduation_requirements", row)
 
 
 # ---------------------------------------------------------------------------
@@ -124,218 +122,195 @@ def _append_pgr_item_rows(program_enrollment_doc, pgr_item):
 
 
 def _pgr_item_scope(pgr_item):
-    """The emphasis (Program Track) a policy item is scoped to, as a 0/1-element
-    list (empty = applies to all). Returned as a list so callers stay uniform.
-    Stored as a single Link on the PGRI row — Frappe forbids table fields on a
-    child doctype, so this is not a multi-select (ADR 056)."""
-    track = pgr_item.get("applies_to_emphasis")
-    return [track] if track else []
+	"""The emphasis (Program Track) a policy item is scoped to, as a 0/1-element
+	list (empty = applies to all). Returned as a list so callers stay uniform.
+	Stored as a single Link on the PGRI row — Frappe forbids table fields on a
+	child doctype, so this is not a multi-select (ADR 056)."""
+	track = pgr_item.get("applies_to_emphasis")
+	return [track] if track else []
 
 
 def _pgr_item_applies(pgr_item, applicable_tracks):
-    """True when a policy item applies to this student: either it is unscoped
-    (program-flat) or the student holds one of its scoping emphases."""
-    scope = _pgr_item_scope(pgr_item)
-    if not scope:
-        return True
-    return bool(set(scope) & set(applicable_tracks))
+	"""True when a policy item applies to this student: either it is unscoped
+	(program-flat) or the student holds one of its scoping emphases."""
+	scope = _pgr_item_scope(pgr_item)
+	if not scope:
+		return True
+	return bool(set(scope) & set(applicable_tracks))
 
 
 def _applicable_emphasis_tracks(program_enrollment_doc):
-    """Program Track names the student has declared that count for requirement
-    scoping: status Active or Completed, excluding advisory-only emphases."""
-    tracks = {
-        e.emphasis_track
-        for e in (program_enrollment_doc.get("emphases") or [])
-        if e.get("status") in ("Active", "Completed") and e.get("emphasis_track")
-    }
-    if not tracks:
-        return set()
-    advisory = set(
-        frappe.get_all(
-            "Program Track",
-            filters={"name": ("in", list(tracks)), "advisory_only": 1},
-            pluck="name",
-        )
-    )
-    return tracks - advisory
+	"""Program Track names the student has declared that count for requirement
+	scoping: status Active or Completed, excluding advisory-only emphases."""
+	tracks = {
+		e.emphasis_track
+		for e in (program_enrollment_doc.get("emphases") or [])
+		if e.get("status") in ("Active", "Completed") and e.get("emphasis_track")
+	}
+	if not tracks:
+		return set()
+	advisory = set(
+		frappe.get_all(
+			"Program Track",
+			filters={"name": ("in", list(tracks)), "advisory_only": 1},
+			pluck="name",
+		)
+	)
+	return tracks - advisory
 
 
 def emphasis_scope_for_pgr_item(pgr_item_name):
-    """Report helper: the emphasis (Program Track) a policy item is scoped to."""
-    if not pgr_item_name:
-        return []
-    track = frappe.db.get_value(
-        "Program Grad Req Items", pgr_item_name, "applies_to_emphasis"
-    )
-    return [track] if track else []
+	"""Report helper: the emphasis (Program Track) a policy item is scoped to."""
+	if not pgr_item_name:
+		return []
+	track = frappe.db.get_value("Program Grad Req Items", pgr_item_name, "applies_to_emphasis")
+	return [track] if track else []
 
 
 def ensure_emphasis_scoped_requirements(program_enrollment_doc):
-    """Idempotently append SGR rows for emphasis-scoped policy items that have
-    become applicable (e.g. an emphasis declared after enrollment).
+	"""Idempotently append SGR rows for emphasis-scoped policy items that have
+	become applicable (e.g. an emphasis declared after enrollment).
 
-    Adds only; never removes. Program-flat rows are untouched (the catalog-year
-    contract holds for the base requirement set); orphans left by a dropped
-    emphasis are surfaced by the Orphan Graduation Requirements report."""
-    policy_name = program_enrollment_doc.get("graduation_policy")
-    if not policy_name:
-        return
-    applicable = _applicable_emphasis_tracks(program_enrollment_doc)
-    if not applicable:
-        return
-    rows = program_enrollment_doc.get("graduation_requirements") or []
-    existing = {r.pgr_item for r in rows if r.pgr_item}
-    # Library items already covered by an emphasis-scoped row — used to dedup a
-    # student who holds two emphases that require the same thing.
-    existing_scoped_libs = {
-        r.grad_requirement_item
-        for r in rows
-        if r.emphasis_scoped and r.grad_requirement_item
-    }
-    policy = frappe.get_doc("Program Graduation Requirement", policy_name)
-    for pgr_item in policy.pgr_items or []:
-        scope = _pgr_item_scope(pgr_item)
-        if not scope:
-            continue  # program-flat: frozen at enrollment, not our concern
-        if pgr_item.name in existing:
-            continue  # already materialized for this student
-        if not (set(scope) & applicable):
-            continue  # student does not hold this emphasis
-        if pgr_item.grad_requirement_item in existing_scoped_libs:
-            continue  # same requirement already added via another emphasis
-        _append_pgr_item_rows(program_enrollment_doc, pgr_item)
-        existing_scoped_libs.add(pgr_item.grad_requirement_item)
+	Adds only; never removes. Program-flat rows are untouched (the catalog-year
+	contract holds for the base requirement set); orphans left by a dropped
+	emphasis are surfaced by the Orphan Graduation Requirements report."""
+	policy_name = program_enrollment_doc.get("graduation_policy")
+	if not policy_name:
+		return
+	applicable = _applicable_emphasis_tracks(program_enrollment_doc)
+	if not applicable:
+		return
+	rows = program_enrollment_doc.get("graduation_requirements") or []
+	existing = {r.pgr_item for r in rows if r.pgr_item}
+	# Library items already covered by an emphasis-scoped row — used to dedup a
+	# student who holds two emphases that require the same thing.
+	existing_scoped_libs = {
+		r.grad_requirement_item for r in rows if r.emphasis_scoped and r.grad_requirement_item
+	}
+	policy = frappe.get_doc("Program Graduation Requirement", policy_name)
+	for pgr_item in policy.pgr_items or []:
+		scope = _pgr_item_scope(pgr_item)
+		if not scope:
+			continue  # program-flat: frozen at enrollment, not our concern
+		if pgr_item.name in existing:
+			continue  # already materialized for this student
+		if not (set(scope) & applicable):
+			continue  # student does not hold this emphasis
+		if pgr_item.grad_requirement_item in existing_scoped_libs:
+			continue  # same requirement already added via another emphasis
+		_append_pgr_item_rows(program_enrollment_doc, pgr_item)
+		existing_scoped_libs.add(pgr_item.grad_requirement_item)
 
 
 def _build_sgr_row(program_enrollment_doc, pgr_item, slot_index):
-    library = frappe.get_cached_doc(
-        "Graduation Requirement Item", pgr_item.grad_requirement_item
-    )
-    row = {
-        "requirement_name": library.requirement_name,
-        "requirement_type": library.requirement_type,
-        "mandatory": pgr_item.mandatory,
-        # Per-program override (ADR 012): the PGR row — not the library default —
-        # decides whether this requirement blocks the graduation request. Only
-        # meaningful when mandatory, mirroring the GRI's depends_on.
-        "blocks_graduation_request": (
-            (pgr_item.get("blocks_graduation_request") or 0)
-            if pgr_item.mandatory
-            else 0
-        ),
-        "slot_index": slot_index,
-        "emphasis_scoped": 1 if _pgr_item_scope(pgr_item) else 0,
-        "status": "Not Started",
-        "link_doctype": (
-            library.link_doctype
-            if library.requirement_type == "Linked Document"
-            else None
-        ),
-        "linked_doc_status": (
-            fulfilling_status(library.link_doctype)
-            if library.requirement_type == "Linked Document"
-            else None
-        ),
-        # Snapshot the program's required internship hours (ADR 054) so an
-        # internship application reads its target from the frozen student row,
-        # not the live (re-versionable) policy.
-        "internship_hours_required": (
-            (pgr_item.get("internship_hours_required") or 0)
-            if library.link_doctype == "Internship Application"
-            else 0
-        ),
-        "student_choice": getattr(library, "student_choice", 0) or 0,
-        "event_custom_category": (
-            library.event_custom_category
-            if library.requirement_type == "Event Attendance"
-            else None
-        ),
-        "grad_requirement_item": library.name,
-        "pgr_item": pgr_item.name,
-    }
-    if library.requirement_type == "Chapel Attendance":
-        # Count-based: snapshot how many chapel services are required; the
-        # running count is reflected by seminary.seminary.chapel.
-        row["required_count"] = library.default_quantity or 1
-        row["attended_count"] = 0
-    _apply_initial_choice_state(row, library)
-    due = compute_due_date(pgr_item, program_enrollment_doc)
-    if due:
-        row["due_date"] = due
-    return row
+	library = frappe.get_cached_doc("Graduation Requirement Item", pgr_item.grad_requirement_item)
+	row = {
+		"requirement_name": library.requirement_name,
+		"requirement_type": library.requirement_type,
+		"mandatory": pgr_item.mandatory,
+		# Per-program override (ADR 012): the PGR row — not the library default —
+		# decides whether this requirement blocks the graduation request. Only
+		# meaningful when mandatory, mirroring the GRI's depends_on.
+		"blocks_graduation_request": (
+			(pgr_item.get("blocks_graduation_request") or 0) if pgr_item.mandatory else 0
+		),
+		"slot_index": slot_index,
+		"emphasis_scoped": 1 if _pgr_item_scope(pgr_item) else 0,
+		"status": "Not Started",
+		"link_doctype": (library.link_doctype if library.requirement_type == "Linked Document" else None),
+		"linked_doc_status": (
+			fulfilling_status(library.link_doctype) if library.requirement_type == "Linked Document" else None
+		),
+		# Snapshot the program's required internship hours (ADR 054) so an
+		# internship application reads its target from the frozen student row,
+		# not the live (re-versionable) policy.
+		"internship_hours_required": (
+			(pgr_item.get("internship_hours_required") or 0)
+			if library.link_doctype == "Internship Application"
+			else 0
+		),
+		"student_choice": getattr(library, "student_choice", 0) or 0,
+		"event_custom_category": (
+			library.event_custom_category if library.requirement_type == "Event Attendance" else None
+		),
+		"grad_requirement_item": library.name,
+		"pgr_item": pgr_item.name,
+	}
+	if library.requirement_type == "Chapel Attendance":
+		# Count-based: snapshot how many chapel services are required; the
+		# running count is reflected by seminary.seminary.chapel.
+		row["required_count"] = library.default_quantity or 1
+		row["attended_count"] = 0
+	_apply_initial_choice_state(row, library)
+	due = compute_due_date(pgr_item, program_enrollment_doc)
+	if due:
+		row["due_date"] = due
+	return row
 
 
 def _apply_initial_choice_state(row, library):
-    """Set choice_pending / auto-select on a fresh SGR row.
+	"""Set choice_pending / auto-select on a fresh SGR row.
 
-    - "Choose Option" umbrellas always start pending (a sub-GRI must be chosen).
-    - Culminating Project requirements with several allowed types start pending;
-      a single allowed type is auto-selected.
-    """
-    if library.requirement_type == "Choose Option":
-        row["choice_pending"] = 1
-        return
-    if (
-        library.requirement_type == "Linked Document"
-        and library.link_doctype == "Culminating Project"
-    ):
-        allowed = [
-            r.culminating_project_type
-            for r in (library.culm_proj_types or [])
-            if r.culminating_project_type
-        ]
-        if len(allowed) == 1:
-            row["chosen_project_type"] = allowed[0]
-        elif len(allowed) > 1:
-            row["choice_pending"] = 1
+	- "Choose Option" umbrellas always start pending (a sub-GRI must be chosen).
+	- Culminating Project requirements with several allowed types start pending;
+	  a single allowed type is auto-selected.
+	"""
+	if library.requirement_type == "Choose Option":
+		row["choice_pending"] = 1
+		return
+	if library.requirement_type == "Linked Document" and library.link_doctype == "Culminating Project":
+		allowed = [
+			r.culminating_project_type for r in (library.culm_proj_types or []) if r.culminating_project_type
+		]
+		if len(allowed) == 1:
+			row["chosen_project_type"] = allowed[0]
+		elif len(allowed) > 1:
+			row["choice_pending"] = 1
 
 
 @frappe.whitelist()
 def resnapshot(program_enrollment, preserve_waivers=1):
-    """Registrar action: rebuild the snapshot from the currently-resolved
-    policy. Preserves waived rows by default.
+	"""Registrar action: rebuild the snapshot from the currently-resolved
+	policy. Preserves waived rows by default.
 
-    Gated in p008a G6: it had no role check, and rebuilding a student's
-    graduation snapshot is not something the permission model can undo."""
-    require_registrar()
-    preserve_waivers = int(preserve_waivers or 0)
-    enrollment = frappe.get_doc("Program Enrollment", program_enrollment)
+	Gated in p008a G6: it had no role check, and rebuilding a student's
+	graduation snapshot is not something the permission model can undo."""
+	require_registrar()
+	preserve_waivers = int(preserve_waivers or 0)
+	enrollment = frappe.get_doc("Program Enrollment", program_enrollment)
 
-    keep = []
-    if preserve_waivers:
-        keep = [
-            row.as_dict() for row in enrollment.graduation_requirements if row.waived
-        ]
+	keep = []
+	if preserve_waivers:
+		keep = [row.as_dict() for row in enrollment.graduation_requirements if row.waived]
 
-    enrollment.graduation_requirements = []
-    enrollment.graduation_policy = None
-    snapshot_graduation_requirements(enrollment)
+	enrollment.graduation_requirements = []
+	enrollment.graduation_policy = None
+	snapshot_graduation_requirements(enrollment)
 
-    if keep:
-        _merge_preserved_waivers(enrollment, keep)
+	if keep:
+		_merge_preserved_waivers(enrollment, keep)
 
-    enrollment.save(ignore_permissions=False)
-    if keep:
-        from seminary.seminary.exceptions import relink_after_resnapshot
+	enrollment.save(ignore_permissions=False)
+	if keep:
+		from seminary.seminary.exceptions import relink_after_resnapshot
 
-        relink_after_resnapshot(enrollment)
-    return {"requirements": len(enrollment.graduation_requirements)}
+		relink_after_resnapshot(enrollment)
+	return {"requirements": len(enrollment.graduation_requirements)}
 
 
 def _merge_preserved_waivers(enrollment, keep):
-    """Re-apply waiver state to matching rows in the new snapshot."""
-    by_key = {(k.get("grad_requirement_item"), k.get("slot_index")): k for k in keep}
-    for row in enrollment.graduation_requirements:
-        preserved = by_key.get((row.grad_requirement_item, row.slot_index))
-        if not preserved:
-            continue
-        row.waived = 1
-        row.waiver_reason = preserved.get("waiver_reason")
-        row.waived_by = preserved.get("waived_by")
-        row.waived_on = preserved.get("waived_on")
-        row.requirement_exception = preserved.get("requirement_exception")
-        row.status = "Waived"
+	"""Re-apply waiver state to matching rows in the new snapshot."""
+	by_key = {(k.get("grad_requirement_item"), k.get("slot_index")): k for k in keep}
+	for row in enrollment.graduation_requirements:
+		preserved = by_key.get((row.grad_requirement_item, row.slot_index))
+		if not preserved:
+			continue
+		row.waived = 1
+		row.waiver_reason = preserved.get("waiver_reason")
+		row.waived_by = preserved.get("waived_by")
+		row.waived_on = preserved.get("waived_on")
+		row.requirement_exception = preserved.get("requirement_exception")
+		row.status = "Waived"
 
 
 # ---------------------------------------------------------------------------
@@ -344,182 +319,178 @@ def _merge_preserved_waivers(enrollment, keep):
 
 
 def evaluate_activation(sgr_row, program_enrollment):
-    """Return True if the requirement is currently active (i.e. countable
-    towards graduation eligibility). Always Active rows return True; others
-    consult their activation_mode rules.
+	"""Return True if the requirement is currently active (i.e. countable
+	towards graduation eligibility). Always Active rows return True; others
+	consult their activation_mode rules.
 
-    Returns False when the requirement exists but is not yet active. Returns
-    True when the source pgr_item can no longer be located (treat as active so
-    policy deletes do not silently mute requirements)."""
-    if not sgr_row.pgr_item:
-        return True
+	Returns False when the requirement exists but is not yet active. Returns
+	True when the source pgr_item can no longer be located (treat as active so
+	policy deletes do not silently mute requirements)."""
+	if not sgr_row.pgr_item:
+		return True
 
-    pgr_item = _load_pgr_item(sgr_row.pgr_item)
-    if not pgr_item:
-        return True
+	pgr_item = _load_pgr_item(sgr_row.pgr_item)
+	if not pgr_item:
+		return True
 
-    mode = pgr_item.get("activation_mode") or "Always Active"
+	mode = pgr_item.get("activation_mode") or "Always Active"
 
-    if mode == "Always Active":
-        return True
+	if mode == "Always Active":
+		return True
 
-    if mode == "Credits Passed":
-        required = pgr_item.get("activation_credits") or 0
-        if not required:
-            return True
-        return (program_enrollment.get("totalcredits") or 0) >= required
+	if mode == "Credits Passed":
+		required = pgr_item.get("activation_credits") or 0
+		if not required:
+			return True
+		return (program_enrollment.get("totalcredits") or 0) >= required
 
-    if mode == "Course Passed":
-        course = pgr_item.get("prerequisite_course")
-        if not course:
-            return True
-        # A single passing attempt satisfies the gate permanently — even for a
-        # repeatable course (ADR 056). A leveling exemption / placed-out course
-        # also satisfies it (ADR 058).
-        if frappe.db.exists(
-            "Program Enrollment Course",
-            {
-                "parent": program_enrollment.get("name"),
-                "course_name": course,
-                "status": ("in", ("Pass", "Exempt")),
-            },
-        ):
-            return True
-        from seminary.seminary.leveling import leveling_sets
+	if mode == "Course Passed":
+		course = pgr_item.get("prerequisite_course")
+		if not course:
+			return True
+		# A single passing attempt satisfies the gate permanently — even for a
+		# repeatable course (ADR 056). A leveling exemption / placed-out course
+		# also satisfies it (ADR 058).
+		if frappe.db.exists(
+			"Program Enrollment Course",
+			{
+				"parent": program_enrollment.get("name"),
+				"course_name": course,
+				"status": ("in", ("Pass", "Exempt")),
+			},
+		):
+			return True
+		from seminary.seminary.leveling import leveling_sets
 
-        exempted, _required, _lvl = leveling_sets(program_enrollment.get("name"))
-        return course in exempted
+		exempted, _required, _lvl = leveling_sets(program_enrollment.get("name"))
+		return course in exempted
 
-    if mode == "After Requirement":
-        needed = pgr_item.get("prerequisite_requirement")
-        if not needed:
-            return True
-        fulfilled_libs = {
-            r.grad_requirement_item
-            for r in program_enrollment.graduation_requirements
-            if r.status in ("Fulfilled", "Waived")
-        }
-        return needed in fulfilled_libs
+	if mode == "After Requirement":
+		needed = pgr_item.get("prerequisite_requirement")
+		if not needed:
+			return True
+		fulfilled_libs = {
+			r.grad_requirement_item
+			for r in program_enrollment.graduation_requirements
+			if r.status in ("Fulfilled", "Waived")
+		}
+		return needed in fulfilled_libs
 
-    if mode == "Time Offset":
-        due = _time_offset_due(pgr_item, program_enrollment)
-        return getdate(today()) >= getdate(due) if due else True
+	if mode == "Time Offset":
+		due = _time_offset_due(pgr_item, program_enrollment)
+		return getdate(today()) >= getdate(due) if due else True
 
-    if mode == "On Document Status":
-        # Activation is event-driven via reflect_linked_doc_status; the row is
-        # considered active for display from creation.
-        return True
+	if mode == "On Document Status":
+		# Activation is event-driven via reflect_linked_doc_status; the row is
+		# considered active for display from creation.
+		return True
 
-    return True
+	return True
 
 
 def compute_due_date(pgr_item, program_enrollment):
-    """Return the due date for a Time Offset requirement, or None for other
-    activation modes."""
-    if not pgr_item or pgr_item.get("activation_mode") != "Time Offset":
-        return None
-    return _time_offset_due(pgr_item, program_enrollment)
+	"""Return the due date for a Time Offset requirement, or None for other
+	activation modes."""
+	if not pgr_item or pgr_item.get("activation_mode") != "Time Offset":
+		return None
+	return _time_offset_due(pgr_item, program_enrollment)
 
 
 def _time_offset_due(pgr_item, program_enrollment):
-    """Resolve a Time Offset requirement's date via the shared resolver. Day
-    offsets add days to the anchor; term offsets ("Academic Term") walk whole
-    terms from the term containing the anchor date (ADR 025) — replacing the
-    old ~120-day approximation."""
-    context = {
-        "anchors": {
-            anchor: _resolve_anchor_date(anchor, program_enrollment)
-            for anchor in (
-                "Expected Graduation Date",
-                "Program Starts",
-                "Last Term Starts",
-            )
-        }
-    }
-    return date_rules.resolve(
-        pgr_item.get("offset_anchor"),
-        pgr_item.get("offset_value"),
-        pgr_item.get("offset_unit"),
-        context,
-    )
+	"""Resolve a Time Offset requirement's date via the shared resolver. Day
+	offsets add days to the anchor; term offsets ("Academic Term") walk whole
+	terms from the term containing the anchor date (ADR 025) — replacing the
+	old ~120-day approximation."""
+	context = {
+		"anchors": {
+			anchor: _resolve_anchor_date(anchor, program_enrollment)
+			for anchor in (
+				"Expected Graduation Date",
+				"Program Starts",
+				"Last Term Starts",
+			)
+		}
+	}
+	return date_rules.resolve(
+		pgr_item.get("offset_anchor"),
+		pgr_item.get("offset_value"),
+		pgr_item.get("offset_unit"),
+		context,
+	)
 
 
 def _resolve_anchor_date(anchor, program_enrollment):
-    if anchor == "Expected Graduation Date":
-        return program_enrollment.get("expected_graduation_date")
-    if anchor == "Program Starts":
-        return program_enrollment.get("enrollment_date")
-    if anchor == "Last Term Starts":
-        # Walk forward from the enrollment term by Program.terms_complete - 1.
-        program = frappe.get_cached_doc("Program", program_enrollment.program)
-        terms = int(program.get("terms_complete") or 0) or 1
-        start_term = program_enrollment.get("academic_term")
-        last_term = _shift_term(start_term, terms - 1) if start_term else None
-        return (
-            frappe.db.get_value("Academic Term", last_term, "term_start_date")
-            if last_term
-            else None
-        )
-    return None
+	if anchor == "Expected Graduation Date":
+		return program_enrollment.get("expected_graduation_date")
+	if anchor == "Program Starts":
+		return program_enrollment.get("enrollment_date")
+	if anchor == "Last Term Starts":
+		# Walk forward from the enrollment term by Program.terms_complete - 1.
+		program = frappe.get_cached_doc("Program", program_enrollment.program)
+		terms = int(program.get("terms_complete") or 0) or 1
+		start_term = program_enrollment.get("academic_term")
+		last_term = _shift_term(start_term, terms - 1) if start_term else None
+		return frappe.db.get_value("Academic Term", last_term, "term_start_date") if last_term else None
+	return None
 
 
 def _shift_term(term_name, n):
-    """Walk n academic terms forward (or backward) from the given term."""
-    if not term_name or not n:
-        return term_name
-    current = frappe.db.get_value(
-        "Academic Term", term_name, ["academic_year", "term_start_date"], as_dict=True
-    )
-    if not current:
-        return term_name
+	"""Walk n academic terms forward (or backward) from the given term."""
+	if not term_name or not n:
+		return term_name
+	current = frappe.db.get_value(
+		"Academic Term", term_name, ["academic_year", "term_start_date"], as_dict=True
+	)
+	if not current:
+		return term_name
 
-    direction_asc = n > 0
-    step = 1 if direction_asc else -1
-    remaining = abs(n)
-    cursor = term_name
-    while remaining > 0:
-        next_term = _next_term(cursor, ascending=direction_asc)
-        if not next_term:
-            break
-        cursor = next_term
-        remaining -= step * (1 if direction_asc else -1)
-    return cursor
+	direction_asc = n > 0
+	step = 1 if direction_asc else -1
+	remaining = abs(n)
+	cursor = term_name
+	while remaining > 0:
+		next_term = _next_term(cursor, ascending=direction_asc)
+		if not next_term:
+			break
+		cursor = next_term
+		remaining -= step * (1 if direction_asc else -1)
+	return cursor
 
 
 def _next_term(term_name, ascending=True):
-    current_start = frappe.db.get_value("Academic Term", term_name, "term_start_date")
-    if not current_start:
-        return None
-    op = (">", "asc") if ascending else ("<", "desc")
-    row = frappe.get_all(
-        "Academic Term",
-        filters={"term_start_date": (op[0], current_start)},
-        order_by=f"term_start_date {op[1]}",
-        limit=1,
-        pluck="name",
-    )
-    return row[0] if row else None
+	current_start = frappe.db.get_value("Academic Term", term_name, "term_start_date")
+	if not current_start:
+		return None
+	op = (">", "asc") if ascending else ("<", "desc")
+	row = frappe.get_all(
+		"Academic Term",
+		filters={"term_start_date": (op[0], current_start)},
+		order_by=f"term_start_date {op[1]}",
+		limit=1,
+		pluck="name",
+	)
+	return row[0] if row else None
 
 
 def _load_pgr_item(name):
-    if not name:
-        return None
-    row = frappe.db.get_value(
-        "Program Grad Req Items",
-        name,
-        [
-            "activation_mode",
-            "activation_credits",
-            "offset_anchor",
-            "offset_value",
-            "offset_unit",
-            "prerequisite_requirement",
-            "prerequisite_course",
-            "applies_to_emphasis",
-        ],
-        as_dict=True,
-    )
-    return row
+	if not name:
+		return None
+	row = frappe.db.get_value(
+		"Program Grad Req Items",
+		name,
+		[
+			"activation_mode",
+			"activation_credits",
+			"offset_anchor",
+			"offset_value",
+			"offset_unit",
+			"prerequisite_requirement",
+			"prerequisite_course",
+			"applies_to_emphasis",
+		],
+		as_dict=True,
+	)
+	return row
 
 
 # ---------------------------------------------------------------------------
@@ -528,37 +499,37 @@ def _load_pgr_item(name):
 
 
 def compute_expected_graduation_date(program_enrollment):
-    """Default the expected graduation date.
+	"""Default the expected graduation date.
 
-    Strategy:
-    1. If Program.terms_complete is set, walk that many academic terms forward
-       from the enrollment term and use the last term's end date.
-    2. Otherwise, fall back to enrollment_date + 4 years as a generic seminary
-       program length. The registrar can always override.
-    """
-    if program_enrollment.get("expected_graduation_date"):
-        return program_enrollment.expected_graduation_date
+	Strategy:
+	1. If Program.terms_complete is set, walk that many academic terms forward
+	   from the enrollment term and use the last term's end date.
+	2. Otherwise, fall back to enrollment_date + 4 years as a generic seminary
+	   program length. The registrar can always override.
+	"""
+	if program_enrollment.get("expected_graduation_date"):
+		return program_enrollment.expected_graduation_date
 
-    if not program_enrollment.get("program"):
-        return None
+	if not program_enrollment.get("program"):
+		return None
 
-    program = frappe.get_cached_doc("Program", program_enrollment.program)
-    if program.is_ongoing:
-        return None
-    terms = int(program.get("terms_complete") or 0)
-    enrollment_date = program_enrollment.get("enrollment_date")
+	program = frappe.get_cached_doc("Program", program_enrollment.program)
+	if program.is_ongoing:
+		return None
+	terms = int(program.get("terms_complete") or 0)
+	enrollment_date = program_enrollment.get("enrollment_date")
 
-    if terms > 0 and program_enrollment.get("academic_term"):
-        last_term = _shift_term(program_enrollment.academic_term, terms - 1)
-        if last_term:
-            end = frappe.db.get_value("Academic Term", last_term, "term_end_date")
-            if end:
-                return end
+	if terms > 0 and program_enrollment.get("academic_term"):
+		last_term = _shift_term(program_enrollment.academic_term, terms - 1)
+		if last_term:
+			end = frappe.db.get_value("Academic Term", last_term, "term_end_date")
+			if end:
+				return end
 
-    if enrollment_date:
-        return add_days(enrollment_date, 365 * 4)
+	if enrollment_date:
+		return add_days(enrollment_date, 365 * 4)
 
-    return None
+	return None
 
 
 # ---------------------------------------------------------------------------
@@ -567,85 +538,85 @@ def compute_expected_graduation_date(program_enrollment):
 
 
 def reflect_linked_doc_status(doc, method=None):
-    """Generic on_update_after_submit hook. If `doc.doctype` is a Linked
-    Document target for any Graduation Requirement Item, look for SGR rows
-    whose `linked_doc == doc.name` and update their status to match the
-    configured `linked_doc_status`."""
-    if doc.doctype not in _linked_doctypes():
-        return
+	"""Generic on_update_after_submit hook. If `doc.doctype` is a Linked
+	Document target for any Graduation Requirement Item, look for SGR rows
+	whose `linked_doc == doc.name` and update their status to match the
+	configured `linked_doc_status`."""
+	if doc.doctype not in _linked_doctypes():
+		return
 
-    rows = frappe.get_all(
-        "Student Graduation Requirement",
-        filters={"link_doctype": doc.doctype, "linked_doc": doc.name},
-        fields=[
-            "name",
-            "parent",
-            "parenttype",
-            "pgr_item",
-            "status",
-            "waived",
-            "linked_doc_status",
-        ],
-    )
-    if not rows:
-        return
+	rows = frappe.get_all(
+		"Student Graduation Requirement",
+		filters={"link_doctype": doc.doctype, "linked_doc": doc.name},
+		fields=[
+			"name",
+			"parent",
+			"parenttype",
+			"pgr_item",
+			"status",
+			"waived",
+			"linked_doc_status",
+		],
+	)
+	if not rows:
+		return
 
-    current_value = (
-        doc.get("workflow_state") if doc.meta.get_field("workflow_state") else None
-    ) or doc.get("status")
+	current_value = (doc.get("workflow_state") if doc.meta.get_field("workflow_state") else None) or doc.get(
+		"status"
+	)
 
-    for row in rows:
-        if row.waived:
-            continue
-        # Prefer the row's own fulfilling status (snapshotted when an umbrella
-        # option was chosen); fall back to the policy row's configured value.
-        expected = row.linked_doc_status or frappe.db.get_value(
-            "Program Grad Req Items", row.pgr_item, "linked_doc_status"
-        )
-        if expected and current_value == expected and row.status != "Fulfilled":
-            _mark_sgr_fulfilled(row.parent, row.parenttype, row.name)
+	for row in rows:
+		if row.waived:
+			continue
+		# Prefer the row's own fulfilling status (snapshotted when an umbrella
+		# option was chosen); fall back to the policy row's configured value.
+		expected = row.linked_doc_status or frappe.db.get_value(
+			"Program Grad Req Items", row.pgr_item, "linked_doc_status"
+		)
+		if expected and current_value == expected and row.status != "Fulfilled":
+			_mark_sgr_fulfilled(row.parent, row.parenttype, row.name)
 
 
 def _mark_sgr_fulfilled(parent, parenttype, sgr_name):
-    parent_doc = frappe.get_doc(parenttype, parent)
-    for child in parent_doc.graduation_requirements:
-        if child.name == sgr_name and child.status != "Fulfilled":
-            child.status = "Fulfilled"
-            child.fulfilled_on = today()
-            parent_doc.save(ignore_permissions=True)
-            break
+	parent_doc = frappe.get_doc(parenttype, parent)
+	for child in parent_doc.graduation_requirements:
+		if child.name == sgr_name and child.status != "Fulfilled":
+			child.status = "Fulfilled"
+			child.fulfilled_on = today()
+			parent_doc.save(ignore_permissions=True)
+			break
 
 
 def _linked_doctypes():
-    """Cached set of DocTypes that appear as a link_doctype on any library
-    requirement item. Cleared by the library item's controller on save."""
-    cached = frappe.cache().get_value(LINKED_DOC_HOOK_FLAG)
-    if cached is not None:
-        return set(cached)
+	"""Cached set of DocTypes that appear as a link_doctype on any library
+	requirement item. Cleared by the library item's controller on save."""
+	cached = frappe.cache().get_value(LINKED_DOC_HOOK_FLAG)
+	if cached is not None:
+		return set(cached)
 
-    if not frappe.db.table_exists("Graduation Requirement Item"):
-        return set()
+	if not frappe.db.table_exists("Graduation Requirement Item"):
+		return set()
 
-    # No docstatus filter: the Library is no longer submittable (it uses an
-    # Active/Retired workflow). Retired items still count here — students may
-    # hold snapshots of them whose linked-doc status must keep propagating.
-    doctypes = frappe.get_all(
-        "Graduation Requirement Item",
-        filters={
-            "requirement_type": "Linked Document",
-            "link_doctype": ("is", "set"),
-        },
-        pluck="link_doctype",
-    )
-    doctypes = list({d for d in doctypes if d})
-    frappe.cache().set_value(LINKED_DOC_HOOK_FLAG, doctypes, expires_in_sec=300)
-    return set(doctypes)
+	# No docstatus filter: the Library is no longer submittable (it uses an
+	# Active/Retired workflow). Retired items still count here — students may
+	# hold snapshots of them whose linked-doc status must keep propagating.
+	doctypes = frappe.get_all(
+		"Graduation Requirement Item",
+		filters={
+			"requirement_type": "Linked Document",
+			"link_doctype": ("is", "set"),
+		},
+		pluck="link_doctype",
+	)
+	doctypes = list({d for d in doctypes if d})
+	frappe.cache().set_value(LINKED_DOC_HOOK_FLAG, doctypes, expires_in_sec=300)
+	return set(doctypes)
 
 
 def invalidate_linked_doctype_cache(doc=None, method=None):
-    """Hook fired on Graduation Requirement Item save/delete to refresh the
-    linked-doctype cache used by reflect_linked_doc_status."""
-    frappe.cache().delete_value(LINKED_DOC_HOOK_FLAG)
+	"""Hook fired on Graduation Requirement Item save/delete to refresh the
+	linked-doctype cache used by reflect_linked_doc_status."""
+	frappe.cache().delete_value(LINKED_DOC_HOOK_FLAG)
 
 
 # ---------------------------------------------------------------------------
@@ -654,17 +625,17 @@ def invalidate_linked_doctype_cache(doc=None, method=None):
 
 
 def all_mandatory_satisfied(program_enrollment):
-    """Return True when every active mandatory SGR row is Fulfilled or
-    Waived. Inactive (not-yet-due) requirements do not block eligibility."""
-    for row in program_enrollment.graduation_requirements or []:
-        if not row.mandatory:
-            continue
-        if row.status in ("Fulfilled", "Waived"):
-            continue
-        if not evaluate_activation(row, program_enrollment):
-            continue
-        return False
-    return True
+	"""Return True when every active mandatory SGR row is Fulfilled or
+	Waived. Inactive (not-yet-due) requirements do not block eligibility."""
+	for row in program_enrollment.graduation_requirements or []:
+		if not row.mandatory:
+			continue
+		if row.status in ("Fulfilled", "Waived"):
+			continue
+		if not evaluate_activation(row, program_enrollment):
+			continue
+		return False
+	return True
 
 
 # ---------------------------------------------------------------------------
@@ -674,194 +645,173 @@ def all_mandatory_satisfied(program_enrollment):
 
 @frappe.whitelist()
 def mark_sgr_verified(program_enrollment, sgr_name, attachment_url=None):
-    """Staff action: mark a Manual Verification row Fulfilled, optionally
-    attaching staff evidence. (Placement-exam scoring moved to leveling's own
-    mark_placement_scored in ADR 060 — this is now purely graduation-requirement
-    verification.)"""
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    row = _find_sgr(pe, sgr_name)
-    # When the requirement is routed to an Academic Unit (ADR 059), a wired
-    # Manual-Verification Verifier (or full-access role) may act from their
-    # worklist; otherwise fall back to the caller's own PE permission.
-    unit = (
-        frappe.db.get_value(
-            "Graduation Requirement Item", row.grad_requirement_item, "academic_unit"
-        )
-        if row.grad_requirement_item
-        else None
-    )
-    ignore = False
-    if unit:
-        from seminary.seminary import faculty
+	"""Staff action: mark a Manual Verification row Fulfilled, optionally
+	attaching staff evidence. (Placement-exam scoring moved to leveling's own
+	mark_placement_scored in ADR 060 — this is now purely graduation-requirement
+	verification.)"""
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	row = _find_sgr(pe, sgr_name)
+	# When the requirement is routed to an Academic Unit (ADR 059), a wired
+	# Manual-Verification Verifier (or full-access role) may act from their
+	# worklist; otherwise fall back to the caller's own PE permission.
+	unit = (
+		frappe.db.get_value("Graduation Requirement Item", row.grad_requirement_item, "academic_unit")
+		if row.grad_requirement_item
+		else None
+	)
+	ignore = False
+	if unit:
+		from seminary.seminary import faculty
 
-        faculty.require_capability(unit, faculty.MANUAL_VERIFICATION_ROUTE)
-        ignore = True
-    if attachment_url:
-        row.staff_evidence_attachment = attachment_url
-    row.status = "Fulfilled"
-    row.fulfilled_on = today()
-    row.verified_by = frappe.session.user
-    row.verified_on = now_datetime()
-    pe.save(ignore_permissions=ignore)
-    return {"status": row.status}
+		faculty.require_capability(unit, faculty.MANUAL_VERIFICATION_ROUTE)
+		ignore = True
+	if attachment_url:
+		row.staff_evidence_attachment = attachment_url
+	row.status = "Fulfilled"
+	row.fulfilled_on = today()
+	row.verified_by = frappe.session.user
+	row.verified_on = now_datetime()
+	pe.save(ignore_permissions=ignore)
+	return {"status": row.status}
 
 
 @frappe.whitelist()
 def waive_sgr(program_enrollment, sgr_name, reason):
-    """Staff action: waive a requirement, recording who and why.
+	"""Staff action: waive a requirement, recording who and why.
 
-    Every waiver is a Requirement Exception approved by the caller
-    (decisions/098 §4), so the waiver keeps its trail; the exception's
-    insert writes the waiver onto the row."""
-    require_registrar()
-    if not reason or not reason.strip():
-        frappe.throw(_("A waiver reason is required."))
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    _find_sgr(pe, sgr_name)  # validates existence
-    frappe.get_doc(
-        {
-            "doctype": "Requirement Exception",
-            "program_enrollment": program_enrollment,
-            "kind": "Requirement Waiver",
-            "student_graduation_requirement": sgr_name,
-            "reason": reason,
-        }
-    ).insert(ignore_permissions=True)
-    return {"status": "Waived"}
+	Every waiver is a Requirement Exception approved by the caller
+	(decisions/098 §4), so the waiver keeps its trail; the exception's
+	insert writes the waiver onto the row."""
+	require_registrar()
+	if not reason or not reason.strip():
+		frappe.throw(_("A waiver reason is required."))
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	_find_sgr(pe, sgr_name)  # validates existence
+	frappe.get_doc(
+		{
+			"doctype": "Requirement Exception",
+			"program_enrollment": program_enrollment,
+			"kind": "Requirement Waiver",
+			"student_graduation_requirement": sgr_name,
+			"reason": reason,
+		}
+	).insert(ignore_permissions=True)
+	return {"status": "Waived"}
 
 
 @frappe.whitelist()
 def cancel_orphan_requirement(program_enrollment, sgr_name):
-    """Registrar action (Orphan Graduation Requirements report): drop an
-    emphasis-scoped requirement row whose scoping emphasis the student no
-    longer holds. Removes the SGR row outright.
+	"""Registrar action (Orphan Graduation Requirements report): drop an
+	emphasis-scoped requirement row whose scoping emphasis the student no
+	longer holds. Removes the SGR row outright.
 
-    The registrar check is first, as in the sibling ``withdraw_orphan_requirement``
-    (p008a G10). Until p008a G6 the only control was ``pe.save`` -- which is
-    correct as far as it goes, but it leaves the refusal to the end of a function
-    that has already rebuilt the child table, and it says nothing about *which*
-    staff role this action belongs to."""
-    require_registrar()
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    _find_sgr(pe, sgr_name)  # validates existence
-    pe.graduation_requirements = [
-        r for r in pe.graduation_requirements if r.name != sgr_name
-    ]
-    pe.save(ignore_permissions=False)
-    return {"removed": sgr_name}
+	The registrar check is first, as in the sibling ``withdraw_orphan_requirement``
+	(p008a G10). Until p008a G6 the only control was ``pe.save`` -- which is
+	correct as far as it goes, but it leaves the refusal to the end of a function
+	that has already rebuilt the child table, and it says nothing about *which*
+	staff role this action belongs to."""
+	require_registrar()
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	_find_sgr(pe, sgr_name)  # validates existence
+	pe.graduation_requirements = [r for r in pe.graduation_requirements if r.name != sgr_name]
+	pe.save(ignore_permissions=False)
+	return {"removed": sgr_name}
 
 
 @frappe.whitelist()
 def withdraw_orphan_requirement(program_enrollment, sgr_name):
-    """Registrar action: when the orphan's fulfillment is a linked document
-    (e.g. Internship Application, Culminating Project), withdraw that document
-    and then drop the orphan row. Errors clearly when there is nothing to
-    withdraw — use Cancel or Waive instead.
+	"""Registrar action: when the orphan's fulfillment is a linked document
+	(e.g. Internship Application, Culminating Project), withdraw that document
+	and then drop the orphan row. Errors clearly when there is nothing to
+	withdraw — use Cancel or Waive instead.
 
-    The registrar check comes first on purpose. ``_withdraw_linked_doc`` moves
-    the linked document to Withdrawn with ``db_set`` -- which no permission layer
-    sees -- BEFORE the permission-checked ``pe.save`` below. For a caller without
-    write on the enrollment that was only undone by the failed save rolling the
-    transaction back: correct by accident, and one ``frappe.db.commit()`` away
-    from a student withdrawing someone's internship (p008a G10 inventory)."""
-    require_registrar()
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    row = _find_sgr(pe, sgr_name)
-    if not (row.link_doctype and row.linked_doc):
-        frappe.throw(
-            _(
-                "This requirement has no linked document to withdraw. "
-                "Use Cancel or Waive instead."
-            )
-        )
-    _withdraw_linked_doc(row.link_doctype, row.linked_doc)
-    pe.graduation_requirements = [
-        r for r in pe.graduation_requirements if r.name != sgr_name
-    ]
-    pe.save(ignore_permissions=False)
-    return {"withdrawn": row.linked_doc}
+	The registrar check comes first on purpose. ``_withdraw_linked_doc`` moves
+	the linked document to Withdrawn with ``db_set`` -- which no permission layer
+	sees -- BEFORE the permission-checked ``pe.save`` below. For a caller without
+	write on the enrollment that was only undone by the failed save rolling the
+	transaction back: correct by accident, and one ``frappe.db.commit()`` away
+	from a student withdrawing someone's internship (p008a G10 inventory)."""
+	require_registrar()
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	row = _find_sgr(pe, sgr_name)
+	if not (row.link_doctype and row.linked_doc):
+		frappe.throw(_("This requirement has no linked document to withdraw. Use Cancel or Waive instead."))
+	_withdraw_linked_doc(row.link_doctype, row.linked_doc)
+	pe.graduation_requirements = [r for r in pe.graduation_requirements if r.name != sgr_name]
+	pe.save(ignore_permissions=False)
+	return {"withdrawn": row.linked_doc}
 
 
 def _withdraw_linked_doc(doctype, name):
-    """Move a fulfilling document to its 'Withdrawn' workflow state, following
-    the codebase pattern for system-driven transitions (db_set on
-    workflow_state). Guards when the doctype has no such state."""
-    from frappe.model.workflow import get_workflow_name
+	"""Move a fulfilling document to its 'Withdrawn' workflow state, following
+	the codebase pattern for system-driven transitions (db_set on
+	workflow_state). Guards when the doctype has no such state."""
+	from frappe.model.workflow import get_workflow_name
 
-    workflow = get_workflow_name(doctype)
-    if not workflow:
-        frappe.throw(
-            _("{0} has no workflow; withdraw it manually, then Cancel here.").format(
-                doctype
-            )
-        )
-    states = frappe.get_all(
-        "Workflow Document State", filters={"parent": workflow}, pluck="state"
-    )
-    if "Withdrawn" not in states:
-        frappe.throw(
-            _(
-                "{0} has no 'Withdrawn' state; withdraw it manually, then Cancel here."
-            ).format(doctype)
-        )
-    if not frappe.db.exists(doctype, name):
-        return
-    frappe.get_doc(doctype, name).db_set("workflow_state", "Withdrawn")
+	workflow = get_workflow_name(doctype)
+	if not workflow:
+		frappe.throw(_("{0} has no workflow; withdraw it manually, then Cancel here.").format(doctype))
+	states = frappe.get_all("Workflow Document State", filters={"parent": workflow}, pluck="state")
+	if "Withdrawn" not in states:
+		frappe.throw(
+			_("{0} has no 'Withdrawn' state; withdraw it manually, then Cancel here.").format(doctype)
+		)
+	if not frappe.db.exists(doctype, name):
+		return
+	frappe.get_doc(doctype, name).db_set("workflow_state", "Withdrawn")
 
 
 @frappe.whitelist()
 def submit_student_evidence(program_enrollment, sgr_name, attachment_url):
-    """Student-portal action: attach evidence and flip status to Submitted."""
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    row = _find_sgr(pe, sgr_name)
-    if pe.student != frappe.db.get_value(
-        "User", frappe.session.user, "username"
-    ) and not _user_owns_enrollment(pe):
-        frappe.throw(
-            _("You can only submit evidence for your own enrollment."),
-            frappe.PermissionError,
-        )
-    row.student_evidence_attachment = attachment_url
-    if row.status in ("Not Started", "In Progress"):
-        row.status = "Submitted"
-    pe.save(ignore_permissions=True)
+	"""Student-portal action: attach evidence and flip status to Submitted."""
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	row = _find_sgr(pe, sgr_name)
+	if pe.student != frappe.db.get_value(
+		"User", frappe.session.user, "username"
+	) and not _user_owns_enrollment(pe):
+		frappe.throw(
+			_("You can only submit evidence for your own enrollment."),
+			frappe.PermissionError,
+		)
+	row.student_evidence_attachment = attachment_url
+	if row.status in ("Not Started", "In Progress"):
+		row.status = "Submitted"
+	pe.save(ignore_permissions=True)
 
-    # The student uploads evidence as an unattached private file (they have no
-    # write permission on Program Enrollment, by design — see ProgramAudit.vue).
-    # Attach their own uploaded file to the enrollment now, with elevated
-    # permission, so reviewing staff (who can read the PE) can open the private
-    # file. Scoped to a file the student themselves owns.
-    if attachment_url:
-        file_name = frappe.db.get_value(
-            "File", {"file_url": attachment_url, "owner": frappe.session.user}, "name"
-        )
-        if file_name:
-            frappe.db.set_value(
-                "File",
-                file_name,
-                {
-                    "attached_to_doctype": "Program Enrollment",
-                    "attached_to_name": program_enrollment,
-                },
-                update_modified=False,
-            )
-    return {"status": row.status}
+	# The student uploads evidence as an unattached private file (they have no
+	# write permission on Program Enrollment, by design — see ProgramAudit.vue).
+	# Attach their own uploaded file to the enrollment now, with elevated
+	# permission, so reviewing staff (who can read the PE) can open the private
+	# file. Scoped to a file the student themselves owns.
+	if attachment_url:
+		file_name = frappe.db.get_value(
+			"File", {"file_url": attachment_url, "owner": frappe.session.user}, "name"
+		)
+		if file_name:
+			frappe.db.set_value(
+				"File",
+				file_name,
+				{
+					"attached_to_doctype": "Program Enrollment",
+					"attached_to_name": program_enrollment,
+				},
+				update_modified=False,
+			)
+	return {"status": row.status}
 
 
 def _find_sgr(program_enrollment_doc, sgr_name):
-    for row in program_enrollment_doc.graduation_requirements or []:
-        if row.name == sgr_name:
-            return row
-    frappe.throw(_("Requirement {0} not found on this enrollment.").format(sgr_name))
+	for row in program_enrollment_doc.graduation_requirements or []:
+		if row.name == sgr_name:
+			return row
+	frappe.throw(_("Requirement {0} not found on this enrollment.").format(sgr_name))
 
 
 def _user_owns_enrollment(program_enrollment_doc):
-    """Return True when the current session user is the student on this enrollment."""
-    user_email = frappe.session.user
-    student_email = frappe.db.get_value(
-        "Student", program_enrollment_doc.student, "student_email_id"
-    )
-    return user_email == student_email
+	"""Return True when the current session user is the student on this enrollment."""
+	user_email = frappe.session.user
+	student_email = frappe.db.get_value("Student", program_enrollment_doc.student, "student_email_id")
+	return user_email == student_email
 
 
 # ---------------------------------------------------------------------------
@@ -871,397 +821,365 @@ def _user_owns_enrollment(program_enrollment_doc):
 # The linked-document status that fulfils each linked doctype (used when an
 # umbrella option is chosen, since the umbrella's policy row carries no status).
 LINKED_DOC_FULFILL_STATUS = {
-    "Culminating Project": "Completed",
-    "Recommendation Letter": "Approved",
+	"Culminating Project": "Completed",
+	"Recommendation Letter": "Approved",
 }
 
 
 def fulfilling_status(link_doctype):
-    """The document status that fulfils a Linked Document requirement. Reads the
-    curated Allowed Graduation Document lookup (name == document_type), falling
-    back to the built-in defaults so legacy data keeps resolving (ADR 054)."""
-    if not link_doctype:
-        return None
-    val = frappe.db.get_value(
-        "Allowed Graduation Document", link_doctype, "fulfilling_status"
-    )
-    return val or LINKED_DOC_FULFILL_STATUS.get(link_doctype)
+	"""The document status that fulfils a Linked Document requirement. Reads the
+	curated Allowed Graduation Document lookup (name == document_type), falling
+	back to the built-in defaults so legacy data keeps resolving (ADR 054)."""
+	if not link_doctype:
+		return None
+	val = frappe.db.get_value("Allowed Graduation Document", link_doctype, "fulfilling_status")
+	return val or LINKED_DOC_FULFILL_STATUS.get(link_doctype)
 
 
 def apply_sgr_choices(program_enrollment_doc):
-    """Resolve and validate pending choices on SGR rows. Idempotent. Called from
-    ProgramEnrollment.before_update_after_submit so desk grid edits and the
-    whitelisted portal actions both funnel through one place — a direct grid edit
-    to an invalid choice is rejected here too (belt and suspenders).
+	"""Resolve and validate pending choices on SGR rows. Idempotent. Called from
+	ProgramEnrollment.before_update_after_submit so desk grid edits and the
+	whitelisted portal actions both funnel through one place — a direct grid edit
+	to an invalid choice is rejected here too (belt and suspenders).
 
-    A 'Choose Option' umbrella **spawns** a dedicated requirement row for the
-    chosen sub-GRI (rather than morphing in place), so each option keeps its own
-    behavior (Manual Verification, Recommendation Letter, Culminating Project,
-    …). The umbrella mirrors the spawned row's status."""
-    for row in program_enrollment_doc.graduation_requirements or []:
-        if row.requirement_type == "Choose Option":
-            _resolve_umbrella(program_enrollment_doc, row)
-        if row.chosen_project_type:
-            _validate_chosen_project_type(row)
-            if row.choice_pending and row.link_doctype == "Culminating Project":
-                row.choice_pending = 0
+	A 'Choose Option' umbrella **spawns** a dedicated requirement row for the
+	chosen sub-GRI (rather than morphing in place), so each option keeps its own
+	behavior (Manual Verification, Recommendation Letter, Culminating Project,
+	…). The umbrella mirrors the spawned row's status."""
+	for row in program_enrollment_doc.graduation_requirements or []:
+		if row.requirement_type == "Choose Option":
+			_resolve_umbrella(program_enrollment_doc, row)
+		if row.chosen_project_type:
+			_validate_chosen_project_type(row)
+			if row.choice_pending and row.link_doctype == "Culminating Project":
+				row.choice_pending = 0
 
 
 def _validate_chosen_option(row):
-    """The chosen umbrella option must be one of the GRI's grad_req_option rows."""
-    library = frappe.get_cached_doc(
-        "Graduation Requirement Item", row.grad_requirement_item
-    )
-    allowed = {o.grad_req_item for o in (library.grad_req_option or [])}
-    if row.chosen_option not in allowed:
-        frappe.throw(
-            _("{0} is not a valid option for requirement '{1}'.").format(
-                row.chosen_option, row.requirement_name
-            )
-        )
+	"""The chosen umbrella option must be one of the GRI's grad_req_option rows."""
+	library = frappe.get_cached_doc("Graduation Requirement Item", row.grad_requirement_item)
+	allowed = {o.grad_req_item for o in (library.grad_req_option or [])}
+	if row.chosen_option not in allowed:
+		frappe.throw(
+			_("{0} is not a valid option for requirement '{1}'.").format(
+				row.chosen_option, row.requirement_name
+			)
+		)
 
 
 def _validate_chosen_project_type(row):
-    """The chosen project type must be in the requirement's culm_proj_types
-    allow-list (when one is configured)."""
-    if row.link_doctype != "Culminating Project":
-        frappe.throw(
-            _(
-                "Requirement '{0}' is not a Culminating Project; it cannot carry a project type."
-            ).format(row.requirement_name)
-        )
-    library = frappe.get_cached_doc(
-        "Graduation Requirement Item", row.grad_requirement_item
-    )
-    allowed = _culm_types(library)
-    if allowed and row.chosen_project_type not in allowed:
-        frappe.throw(
-            _(
-                "{0} is not an allowed Culminating Project Type for requirement '{1}'."
-            ).format(row.chosen_project_type, row.requirement_name)
-        )
+	"""The chosen project type must be in the requirement's culm_proj_types
+	allow-list (when one is configured)."""
+	if row.link_doctype != "Culminating Project":
+		frappe.throw(
+			_("Requirement '{0}' is not a Culminating Project; it cannot carry a project type.").format(
+				row.requirement_name
+			)
+		)
+	library = frappe.get_cached_doc("Graduation Requirement Item", row.grad_requirement_item)
+	allowed = _culm_types(library)
+	if allowed and row.chosen_project_type not in allowed:
+		frappe.throw(
+			_("{0} is not an allowed Culminating Project Type for requirement '{1}'.").format(
+				row.chosen_project_type, row.requirement_name
+			)
+		)
 
 
 def _resolve_umbrella(pe, umbrella):
-    """Spawn (or replace) the dedicated requirement row for the chosen option and
-    keep the umbrella mirroring its status. An unchosen umbrella stays pending
-    (and thus keeps blocking graduation)."""
-    if not umbrella.chosen_option:
-        umbrella.choice_pending = 1
-        return
-    _validate_chosen_option(umbrella)
+	"""Spawn (or replace) the dedicated requirement row for the chosen option and
+	keep the umbrella mirroring its status. An unchosen umbrella stays pending
+	(and thus keeps blocking graduation)."""
+	if not umbrella.chosen_option:
+		umbrella.choice_pending = 1
+		return
+	_validate_chosen_option(umbrella)
 
-    spawned = _find_spawned(pe, umbrella)
-    if spawned and spawned.grad_requirement_item != umbrella.chosen_option:
-        # Choice changed — drop the row created for the previous option.
-        pe.graduation_requirements.remove(spawned)
-        spawned = None
-    if not spawned:
-        spawned = pe.append(
-            "graduation_requirements",
-            _build_choice_row(pe, umbrella, umbrella.chosen_option),
-        )
+	spawned = _find_spawned(pe, umbrella)
+	if spawned and spawned.grad_requirement_item != umbrella.chosen_option:
+		# Choice changed — drop the row created for the previous option.
+		pe.graduation_requirements.remove(spawned)
+		spawned = None
+	if not spawned:
+		spawned = pe.append(
+			"graduation_requirements",
+			_build_choice_row(pe, umbrella, umbrella.chosen_option),
+		)
 
-    umbrella.choice_pending = 0
-    # Mirror the spawned row's status so the umbrella reflects real progress and
-    # stops blocking graduation once the chosen requirement is fulfilled.
-    umbrella.status = spawned.status
-    umbrella.fulfilled_on = spawned.fulfilled_on
-    if spawned.name and umbrella.spawned_sgr != spawned.name:
-        umbrella.spawned_sgr = spawned.name
+	umbrella.choice_pending = 0
+	# Mirror the spawned row's status so the umbrella reflects real progress and
+	# stops blocking graduation once the chosen requirement is fulfilled.
+	umbrella.status = spawned.status
+	umbrella.fulfilled_on = spawned.fulfilled_on
+	if spawned.name and umbrella.spawned_sgr != spawned.name:
+		umbrella.spawned_sgr = spawned.name
 
 
 def _find_spawned(pe, umbrella):
-    for row in pe.graduation_requirements or []:
-        if row is not umbrella and row.parent_choice == umbrella.name:
-            return row
-    return None
+	for row in pe.graduation_requirements or []:
+		if row is not umbrella and row.parent_choice == umbrella.name:
+			return row
+	return None
 
 
 def _build_choice_row(pe, umbrella, sub_name):
-    """Build the SGR row for a chosen umbrella option, carrying the sub-GRI's full
-    behavior (type, link, fulfilling status, and any nested project-type choice)."""
-    sub = frappe.get_cached_doc("Graduation Requirement Item", sub_name)
-    is_linked = sub.requirement_type == "Linked Document"
-    row = {
-        "requirement_name": sub.requirement_name,
-        "requirement_type": sub.requirement_type,
-        "mandatory": umbrella.mandatory,
-        "blocks_graduation_request": getattr(sub, "blocks_graduation_request", 0) or 0,
-        "slot_index": 1,
-        "status": "Not Started",
-        "link_doctype": sub.link_doctype if is_linked else None,
-        "linked_doc_status": (
-            fulfilling_status(sub.link_doctype) if is_linked else None
-        ),
-        "student_choice": umbrella.student_choice,
-        "grad_requirement_item": sub.name,
-        "pgr_item": umbrella.pgr_item,
-        "parent_choice": umbrella.name,
-    }
-    _apply_initial_choice_state(row, sub)
-    if umbrella.pgr_item:
-        pgr = frappe.db.get_value(
-            "Program Grad Req Items",
-            umbrella.pgr_item,
-            ["activation_mode", "offset_anchor", "offset_value", "offset_unit"],
-            as_dict=True,
-        )
-        if pgr:
-            due = compute_due_date(pgr, pe)
-            if due:
-                row["due_date"] = due
-    return row
+	"""Build the SGR row for a chosen umbrella option, carrying the sub-GRI's full
+	behavior (type, link, fulfilling status, and any nested project-type choice)."""
+	sub = frappe.get_cached_doc("Graduation Requirement Item", sub_name)
+	is_linked = sub.requirement_type == "Linked Document"
+	row = {
+		"requirement_name": sub.requirement_name,
+		"requirement_type": sub.requirement_type,
+		"mandatory": umbrella.mandatory,
+		"blocks_graduation_request": getattr(sub, "blocks_graduation_request", 0) or 0,
+		"slot_index": 1,
+		"status": "Not Started",
+		"link_doctype": sub.link_doctype if is_linked else None,
+		"linked_doc_status": (fulfilling_status(sub.link_doctype) if is_linked else None),
+		"student_choice": umbrella.student_choice,
+		"grad_requirement_item": sub.name,
+		"pgr_item": umbrella.pgr_item,
+		"parent_choice": umbrella.name,
+	}
+	_apply_initial_choice_state(row, sub)
+	if umbrella.pgr_item:
+		pgr = frappe.db.get_value(
+			"Program Grad Req Items",
+			umbrella.pgr_item,
+			["activation_mode", "offset_anchor", "offset_value", "offset_unit"],
+			as_dict=True,
+		)
+		if pgr:
+			due = compute_due_date(pgr, pe)
+			if due:
+				row["due_date"] = due
+	return row
 
 
 def _culm_types(library):
-    return [
-        r.culminating_project_type
-        for r in (library.culm_proj_types or [])
-        if r.culminating_project_type
-    ]
+	return [r.culminating_project_type for r in (library.culm_proj_types or []) if r.culminating_project_type]
 
 
 def _check_choice_permission(pe, row):
-    """Student may choose only when the library item flags student_choice;
-    otherwise the choice is a staff (registrar) assignment."""
-    if row.student_choice and _user_owns_enrollment(pe):
-        return
-    if not frappe.has_permission("Program Enrollment", "write", doc=pe):
-        frappe.throw(
-            _("You are not permitted to set this requirement's choice."),
-            frappe.PermissionError,
-        )
+	"""Student may choose only when the library item flags student_choice;
+	otherwise the choice is a staff (registrar) assignment."""
+	if row.student_choice and _user_owns_enrollment(pe):
+		return
+	if not frappe.has_permission("Program Enrollment", "write", doc=pe):
+		frappe.throw(
+			_("You are not permitted to set this requirement's choice."),
+			frappe.PermissionError,
+		)
 
 
 @frappe.whitelist()
 def choose_requirement_option(program_enrollment, sgr_name, chosen_grad_req_item):
-    """Pick which sub-GRI fulfils a 'Choose Option' umbrella. On save this spawns
-    (or replaces) a dedicated requirement row for the chosen option via
-    apply_sgr_choices."""
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    row = _find_sgr(pe, sgr_name)
-    _check_choice_permission(pe, row)
-    if row.requirement_type != "Choose Option":
-        frappe.throw(_("This requirement is not a Choose Option umbrella."))
+	"""Pick which sub-GRI fulfils a 'Choose Option' umbrella. On save this spawns
+	(or replaces) a dedicated requirement row for the chosen option via
+	apply_sgr_choices."""
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	row = _find_sgr(pe, sgr_name)
+	_check_choice_permission(pe, row)
+	if row.requirement_type != "Choose Option":
+		frappe.throw(_("This requirement is not a Choose Option umbrella."))
 
-    library = frappe.get_cached_doc(
-        "Graduation Requirement Item", row.grad_requirement_item
-    )
-    allowed = {o.grad_req_item for o in (library.grad_req_option or [])}
-    if chosen_grad_req_item not in allowed:
-        frappe.throw(
-            _("{0} is not an option for this requirement.").format(chosen_grad_req_item)
-        )
+	library = frappe.get_cached_doc("Graduation Requirement Item", row.grad_requirement_item)
+	allowed = {o.grad_req_item for o in (library.grad_req_option or [])}
+	if chosen_grad_req_item not in allowed:
+		frappe.throw(_("{0} is not an option for this requirement.").format(chosen_grad_req_item))
 
-    row.chosen_option = chosen_grad_req_item
-    pe.save(ignore_permissions=True)
-    return {"chosen_option": row.chosen_option, "spawned_sgr": row.spawned_sgr}
+	row.chosen_option = chosen_grad_req_item
+	pe.save(ignore_permissions=True)
+	return {"chosen_option": row.chosen_option, "spawned_sgr": row.spawned_sgr}
 
 
 @frappe.whitelist()
 def choose_project_type(program_enrollment, sgr_name, culminating_project_type):
-    """Pick the Culminating Project Type for a CP requirement, before the project
-    document is created."""
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    row = _find_sgr(pe, sgr_name)
-    _check_choice_permission(pe, row)
-    if row.link_doctype != "Culminating Project":
-        frappe.throw(_("This requirement is not a Culminating Project."))
+	"""Pick the Culminating Project Type for a CP requirement, before the project
+	document is created."""
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	row = _find_sgr(pe, sgr_name)
+	_check_choice_permission(pe, row)
+	if row.link_doctype != "Culminating Project":
+		frappe.throw(_("This requirement is not a Culminating Project."))
 
-    library = frappe.get_cached_doc(
-        "Graduation Requirement Item", row.grad_requirement_item
-    )
-    allowed = _culm_types(library)
-    if allowed and culminating_project_type not in allowed:
-        frappe.throw(
-            _("{0} is not an allowed project type for this requirement.").format(
-                culminating_project_type
-            )
-        )
+	library = frappe.get_cached_doc("Graduation Requirement Item", row.grad_requirement_item)
+	allowed = _culm_types(library)
+	if allowed and culminating_project_type not in allowed:
+		frappe.throw(
+			_("{0} is not an allowed project type for this requirement.").format(culminating_project_type)
+		)
 
-    row.chosen_project_type = culminating_project_type
-    pe.save(ignore_permissions=True)
-    return {"chosen_project_type": culminating_project_type}
+	row.chosen_project_type = culminating_project_type
+	pe.save(ignore_permissions=True)
+	return {"chosen_project_type": culminating_project_type}
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def get_choose_option_items(doctype, txt, searchfield, start, page_len, filters):
-    """Link-query for SGR.chosen_option: only the sub-GRIs listed in the
-    umbrella GRI's grad_req_option child table. Used by the Program Enrollment
-    desk form's set_query."""
-    gri = (filters or {}).get("grad_requirement_item")
-    if not gri:
-        return []
-    allowed = [
-        a
-        for a in frappe.get_all(
-            "Graduation Requirement Options",
-            filters={"parent": gri, "parenttype": "Graduation Requirement Item"},
-            pluck="grad_req_item",
-        )
-        if a
-    ]
-    if not allowed:
-        return []
-    return frappe.get_all(
-        "Graduation Requirement Item",
-        filters=[["name", "in", allowed]],
-        # Match on name OR title: link validation (validate_link_and_fetch) sends
-        # txt = the row name (e.g. "GRI-0011"), while the search box sends the
-        # title text — both must resolve, or the picked value is cleared.
-        or_filters=[
-            ["name", "like", f"%{txt}%"],
-            ["requirement_name", "like", f"%{txt}%"],
-        ],
-        fields=["name", "requirement_name"],
-        limit_start=start,
-        limit_page_length=page_len,
-        as_list=True,
-    )
+	"""Link-query for SGR.chosen_option: only the sub-GRIs listed in the
+	umbrella GRI's grad_req_option child table. Used by the Program Enrollment
+	desk form's set_query."""
+	gri = (filters or {}).get("grad_requirement_item")
+	if not gri:
+		return []
+	allowed = [
+		a
+		for a in frappe.get_all(
+			"Graduation Requirement Options",
+			filters={"parent": gri, "parenttype": "Graduation Requirement Item"},
+			pluck="grad_req_item",
+		)
+		if a
+	]
+	if not allowed:
+		return []
+	return frappe.get_all(
+		"Graduation Requirement Item",
+		filters=[["name", "in", allowed]],
+		# Match on name OR title: link validation (validate_link_and_fetch) sends
+		# txt = the row name (e.g. "GRI-0011"), while the search box sends the
+		# title text — both must resolve, or the picked value is cleared.
+		or_filters=[
+			["name", "like", f"%{txt}%"],
+			["requirement_name", "like", f"%{txt}%"],
+		],
+		fields=["name", "requirement_name"],
+		limit_start=start,
+		limit_page_length=page_len,
+		as_list=True,
+	)
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def get_allowed_culm_types(doctype, txt, searchfield, start, page_len, filters):
-    """Link-query for SGR.chosen_project_type: only the types listed in the
-    requirement's culm_proj_types allow-list. Used by the Program Enrollment
-    desk form's set_query."""
-    gri = (filters or {}).get("grad_requirement_item")
-    if not gri:
-        return []
-    allowed = [
-        a
-        for a in frappe.get_all(
-            "Grad Req Item Culm Proj Type",
-            filters={"parent": gri, "parenttype": "Graduation Requirement Item"},
-            pluck="culminating_project_type",
-        )
-        if a
-    ]
-    if not allowed:
-        return []
-    return frappe.get_all(
-        "Culminating Project Type",
-        filters=[["name", "in", allowed], ["name", "like", f"%{txt}%"]],
-        fields=["name"],
-        limit_start=start,
-        limit_page_length=page_len,
-        as_list=True,
-    )
+	"""Link-query for SGR.chosen_project_type: only the types listed in the
+	requirement's culm_proj_types allow-list. Used by the Program Enrollment
+	desk form's set_query."""
+	gri = (filters or {}).get("grad_requirement_item")
+	if not gri:
+		return []
+	allowed = [
+		a
+		for a in frappe.get_all(
+			"Grad Req Item Culm Proj Type",
+			filters={"parent": gri, "parenttype": "Graduation Requirement Item"},
+			pluck="culminating_project_type",
+		)
+		if a
+	]
+	if not allowed:
+		return []
+	return frappe.get_all(
+		"Culminating Project Type",
+		filters=[["name", "in", allowed], ["name", "like", f"%{txt}%"]],
+		fields=["name"],
+		limit_start=start,
+		limit_page_length=page_len,
+		as_list=True,
+	)
 
 
 @frappe.whitelist()
 def start_recommendation_letter(
-    program_enrollment,
-    sgr_name,
-    recommender_name,
-    recommender_email,
-    recommender_role=None,
+	program_enrollment,
+	sgr_name,
+	recommender_name,
+	recommender_email,
+	recommender_role=None,
 ):
-    """Student-portal action: create and submit a Recommendation Letter that
-    fulfills the given SGR slot. Triggers the request email to the recommender."""
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    if not _user_owns_enrollment(pe):
-        frappe.throw(
-            _("You can only request recommendations for your own enrollment."),
-            frappe.PermissionError,
-        )
+	"""Student-portal action: create and submit a Recommendation Letter that
+	fulfills the given SGR slot. Triggers the request email to the recommender."""
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	if not _user_owns_enrollment(pe):
+		frappe.throw(
+			_("You can only request recommendations for your own enrollment."),
+			frappe.PermissionError,
+		)
 
-    row = _find_sgr(pe, sgr_name)
-    if row.link_doctype != "Recommendation Letter":
-        frappe.throw(_("This requirement is not a Recommendation Letter slot."))
-    if row.linked_doc:
-        frappe.throw(_("A recommendation letter already exists for this slot."))
+	row = _find_sgr(pe, sgr_name)
+	if row.link_doctype != "Recommendation Letter":
+		frappe.throw(_("This requirement is not a Recommendation Letter slot."))
+	if row.linked_doc:
+		frappe.throw(_("A recommendation letter already exists for this slot."))
 
-    letter = frappe.get_doc(
-        {
-            "doctype": "Recommendation Letter",
-            "program_enrollment": program_enrollment,
-            "student_grad_requirement": sgr_name,
-            "slot_index": row.slot_index or 1,
-            "recommender_name": recommender_name,
-            "recommender_email": recommender_email,
-            "recommender_role": recommender_role,
-        }
-    )
-    letter.insert(ignore_permissions=True)
-    # The submit is the student's too, and it needs saying: Student holds no
-    # submit on Recommendation Letter (p007 F1 -- the letter is about them, and
-    # its body and token are hidden from them at permlevel 1), so a bare
-    # ``submit()`` raised PermissionError for every student who used this
-    # portal button. The authorisation is _user_owns_enrollment above, as it
-    # already is for the insert one line up (p008 student-path sweep).
-    letter.flags.ignore_permissions = True
-    letter.submit()
-    return {"name": letter.name}
+	letter = frappe.get_doc(
+		{
+			"doctype": "Recommendation Letter",
+			"program_enrollment": program_enrollment,
+			"student_grad_requirement": sgr_name,
+			"slot_index": row.slot_index or 1,
+			"recommender_name": recommender_name,
+			"recommender_email": recommender_email,
+			"recommender_role": recommender_role,
+		}
+	)
+	letter.insert(ignore_permissions=True)
+	# The submit is the student's too, and it needs saying: Student holds no
+	# submit on Recommendation Letter (p007 F1 -- the letter is about them, and
+	# its body and token are hidden from them at permlevel 1), so a bare
+	# ``submit()`` raised PermissionError for every student who used this
+	# portal button. The authorisation is _user_owns_enrollment above, as it
+	# already is for the insert one line up (p008 student-path sweep).
+	letter.flags.ignore_permissions = True
+	letter.submit()
+	return {"name": letter.name}
 
 
 @frappe.whitelist()
 def start_culminating_project(
-    program_enrollment,
-    sgr_name,
-    project_title,
-    advisor,
-    project_type=None,
-    abstract=None,
+	program_enrollment,
+	sgr_name,
+	project_title,
+	advisor,
+	project_type=None,
+	abstract=None,
 ):
-    """Student-portal action: create a Culminating Project (Draft state) that
-    fulfills the given SGR slot."""
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    if not _user_owns_enrollment(pe):
-        frappe.throw(
-            _("You can only start a project for your own enrollment."),
-            frappe.PermissionError,
-        )
+	"""Student-portal action: create a Culminating Project (Draft state) that
+	fulfills the given SGR slot."""
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	if not _user_owns_enrollment(pe):
+		frappe.throw(
+			_("You can only start a project for your own enrollment."),
+			frappe.PermissionError,
+		)
 
-    row = _find_sgr(pe, sgr_name)
-    if row.link_doctype != "Culminating Project":
-        frappe.throw(_("This requirement is not a Culminating Project slot."))
-    if row.linked_doc:
-        frappe.throw(_("A culminating project already exists for this slot."))
-    if row.choice_pending:
-        frappe.throw(
-            _(
-                "Choose a Culminating Project Type for this requirement before starting the project."
-            )
-        )
+	row = _find_sgr(pe, sgr_name)
+	if row.link_doctype != "Culminating Project":
+		frappe.throw(_("This requirement is not a Culminating Project slot."))
+	if row.linked_doc:
+		frappe.throw(_("A culminating project already exists for this slot."))
+	if row.choice_pending:
+		frappe.throw(_("Choose a Culminating Project Type for this requirement before starting the project."))
 
-    # The type is decided on the requirement (decoupled from the project doc).
-    # Fall back to the legacy param only when the requirement enumerates no types.
-    chosen_type = row.chosen_project_type or project_type
-    allowed = _culm_types(
-        frappe.get_cached_doc("Graduation Requirement Item", row.grad_requirement_item)
-    )
-    if allowed:
-        if not chosen_type:
-            frappe.throw(
-                _("Choose a Culminating Project Type for this requirement first.")
-            )
-        if chosen_type not in allowed:
-            frappe.throw(
-                _("{0} is not an allowed project type for this requirement.").format(
-                    chosen_type
-                )
-            )
+	# The type is decided on the requirement (decoupled from the project doc).
+	# Fall back to the legacy param only when the requirement enumerates no types.
+	chosen_type = row.chosen_project_type or project_type
+	allowed = _culm_types(frappe.get_cached_doc("Graduation Requirement Item", row.grad_requirement_item))
+	if allowed:
+		if not chosen_type:
+			frappe.throw(_("Choose a Culminating Project Type for this requirement first."))
+		if chosen_type not in allowed:
+			frappe.throw(_("{0} is not an allowed project type for this requirement.").format(chosen_type))
 
-    project = frappe.get_doc(
-        {
-            "doctype": "Culminating Project",
-            "program_enrollment": program_enrollment,
-            "student_grad_requirement": sgr_name,
-            "project_title": project_title,
-            "project_type": chosen_type or "Thesis",
-            "advisor": advisor,
-            "abstract": abstract,
-        }
-    )
-    project.insert(ignore_permissions=True)
-    # Link the SGR row to the draft project so the student can find it from
-    # the audit page even before workflow advances.
-    row.linked_doc = project.name
-    row.link_doctype = "Culminating Project"
-    row.status = "In Progress"
-    pe.save(ignore_permissions=True)
-    return {"name": project.name}
+	project = frappe.get_doc(
+		{
+			"doctype": "Culminating Project",
+			"program_enrollment": program_enrollment,
+			"student_grad_requirement": sgr_name,
+			"project_title": project_title,
+			"project_type": chosen_type or "Thesis",
+			"advisor": advisor,
+			"abstract": abstract,
+		}
+	)
+	project.insert(ignore_permissions=True)
+	# Link the SGR row to the draft project so the student can find it from
+	# the audit page even before workflow advances.
+	row.linked_doc = project.name
+	row.link_doctype = "Culminating Project"
+	row.status = "In Progress"
+	pe.save(ignore_permissions=True)
+	return {"name": project.name}

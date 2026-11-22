@@ -1,19 +1,19 @@
+import os
+import re
+
 import frappe
+from frappe import _
+from frappe.desk.doctype.global_search_settings.global_search_settings import (
+	update_global_search_doctypes,
+)
 
 # from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.desk.page.setup_wizard.setup_wizard import make_records
-import os
-import re
-from frappe.desk.doctype.global_search_settings.global_search_settings import (
-    update_global_search_doctypes,
-)
 from frappe.utils.dashboard import sync_dashboards
-from frappe import _
 
-from seminary.seminary.ethnic_groups import seed_ethnic_groups
 from seminary.language import rename_frappe_languages
 from seminary.seminary.doctype.program_level.program_level import seed_program_levels
-
+from seminary.seminary.ethnic_groups import seed_ethnic_groups
 
 # TODO: create uninstall file and remove all the custom fields, roles, assessment groups, fixtures, etc
 # TODO: Remove all Items created when Fee Category is created
@@ -21,49 +21,49 @@ from seminary.seminary.doctype.program_level.program_level import seed_program_l
 
 
 def after_install():
-    setup_fixtures()
-    seed_program_levels()
-    setup_genders()
-    create_studentappl_role()
-    create_student_role()
-    create_alumni_role()
-    create_partner_role()
-    create_registrar_role()
-    create_instructor_role()
-    create_external_examiner_role()
-    create_program_chair_role()
-    create_seminary_manager_role()
-    create_cohort_participant_role()
-    seed_assessment_criteria()
-    seed_course_cancellation_reasons()
-    seed_grading_scale()
-    seed_culminating_project_types()
-    seed_disciplinary_actions()
-    seed_faculty_capabilities()
-    seed_cohort_assignment_criteria()
-    seed_mandatory_personal_fields()
-    seed_room_features()
-    seed_communication_channels()
-    seed_channel_provider_accounts()
-    seed_mailing_label_formats()
-    seed_communication_templates()
-    seed_portal_messaging_rules()
-    seed_partner_types()
-    seed_ethnic_groups()
-    seed_skill_tags()
-    seed_allowed_graduation_documents()
-    seed_internship_types()
-    seed_internship_communication()
-    seed_public_website_defaults()
-    seed_website_branding()
-    seed_website_navigation()
-    seed_website_pages()
-    seed_cohort_reaction_types()
-    seed_cohort_channels()
-    seed_standard_reading_plans()
-    setup_user_bible_field()
-    ensure_registrar_tools()
-    rename_frappe_languages()
+	setup_fixtures()
+	seed_program_levels()
+	setup_genders()
+	create_studentappl_role()
+	create_student_role()
+	create_alumni_role()
+	create_partner_role()
+	create_registrar_role()
+	create_instructor_role()
+	create_external_examiner_role()
+	create_program_chair_role()
+	create_seminary_manager_role()
+	create_cohort_participant_role()
+	seed_assessment_criteria()
+	seed_course_cancellation_reasons()
+	seed_grading_scale()
+	seed_culminating_project_types()
+	seed_disciplinary_actions()
+	seed_faculty_capabilities()
+	seed_cohort_assignment_criteria()
+	seed_mandatory_personal_fields()
+	seed_room_features()
+	seed_communication_channels()
+	seed_channel_provider_accounts()
+	seed_mailing_label_formats()
+	seed_communication_templates()
+	seed_portal_messaging_rules()
+	seed_partner_types()
+	seed_ethnic_groups()
+	seed_skill_tags()
+	seed_allowed_graduation_documents()
+	seed_internship_types()
+	seed_internship_communication()
+	seed_public_website_defaults()
+	seed_website_branding()
+	seed_website_navigation()
+	seed_website_pages()
+	seed_cohort_reaction_types()
+	seed_cohort_channels()
+	seed_standard_reading_plans()
+	setup_user_bible_field()
+	ensure_registrar_tools()
+	rename_frappe_languages()
 
 
 # ERPNext install-time checks (check_erpnext*) moved to the oikonomos bridge's
@@ -72,267 +72,259 @@ def after_install():
 
 
 def setup_fixtures():
-    # Academic setup only. The ERPNext groups (Item Group, Customer Groups,
-    # Supplier Group, billing UOMs) are created by the oikonomos bridge.
-    records = [
-        # Instructor Category defaults — schools can add/remove
-        {
-            "doctype": "Instructor Category",
-            "category_name": _("Instructor of Record"),
-            "is_instructor_of_record": 1,
-            "description": _(
-                "Primary instructor responsible for the course for accreditation purposes."
-            ),
-        },
-        {
-            "doctype": "Instructor Category",
-            "category_name": _("Co-Instructor"),
-            "description": _("Shares teaching duties with the Instructor of Record."),
-        },
-        {
-            "doctype": "Instructor Category",
-            "category_name": _("Graduate Teaching Assistant"),
-            "description": _(
-                "Graduate student assisting with teaching and grading under faculty supervision."
-            ),
-        },
-        {
-            "doctype": "Instructor Category",
-            "category_name": _("Grader"),
-            "description": _("Grades assignments and assessments only."),
-        },
-    ]
-    make_records(records)
+	# Academic setup only. The ERPNext groups (Item Group, Customer Groups,
+	# Supplier Group, billing UOMs) are created by the oikonomos bridge.
+	records = [
+		# Instructor Category defaults — schools can add/remove
+		{
+			"doctype": "Instructor Category",
+			"category_name": _("Instructor of Record"),
+			"is_instructor_of_record": 1,
+			"description": _("Primary instructor responsible for the course for accreditation purposes."),
+		},
+		{
+			"doctype": "Instructor Category",
+			"category_name": _("Co-Instructor"),
+			"description": _("Shares teaching duties with the Instructor of Record."),
+		},
+		{
+			"doctype": "Instructor Category",
+			"category_name": _("Graduate Teaching Assistant"),
+			"description": _(
+				"Graduate student assisting with teaching and grading under faculty supervision."
+			),
+		},
+		{
+			"doctype": "Instructor Category",
+			"category_name": _("Grader"),
+			"description": _("Grades assignments and assessments only."),
+		},
+	]
+	make_records(records)
 
 
 def seed_assessment_criteria():
-    """Seed the starter Assessment Criteria if they don't already exist.
+	"""Seed the starter Assessment Criteria if they don't already exist.
 
-    NOT fixtures: seminaries curate their own grading criteria on the desk, and a
-    fixture re-import would clobber those edits every migrate. Created once,
-    create-only-if-missing. (The "Discussion" row shipped in the old fixture was
-    mis-typed as a Discussion Activity — a per-course transactional doctype, not
-    a catalog — so it never became a real criterion; it's seeded correctly here.)
-    """
-    if not frappe.db.exists("DocType", "Assessment Criteria"):
-        return
-    # assessment_criteria (name), type
-    defaults = [
-        ("Project", "Assignment"),
-        ("Participation", "Offline"),
-        ("Quiz", "Quiz"),
-        ("Exam", "Exam"),
-        ("Discussion", "Discussion"),
-        ("Oral Presentation", "Oral"),
-        ("Academic Paper with Online Submission", "Assignment"),
-    ]
-    for criteria, criteria_type in defaults:
-        if frappe.db.exists("Assessment Criteria", criteria):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Assessment Criteria",
-                "assessment_criteria": criteria,
-                "type": criteria_type,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	NOT fixtures: seminaries curate their own grading criteria on the desk, and a
+	fixture re-import would clobber those edits every migrate. Created once,
+	create-only-if-missing. (The "Discussion" row shipped in the old fixture was
+	mis-typed as a Discussion Activity — a per-course transactional doctype, not
+	a catalog — so it never became a real criterion; it's seeded correctly here.)
+	"""
+	if not frappe.db.exists("DocType", "Assessment Criteria"):
+		return
+	# assessment_criteria (name), type
+	defaults = [
+		("Project", "Assignment"),
+		("Participation", "Offline"),
+		("Quiz", "Quiz"),
+		("Exam", "Exam"),
+		("Discussion", "Discussion"),
+		("Oral Presentation", "Oral"),
+		("Academic Paper with Online Submission", "Assignment"),
+	]
+	for criteria, criteria_type in defaults:
+		if frappe.db.exists("Assessment Criteria", criteria):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Assessment Criteria",
+				"assessment_criteria": criteria,
+				"type": criteria_type,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_course_cancellation_reasons():
-    """Seed the starter Course Cancellation Reasons if they don't already exist.
+	"""Seed the starter Course Cancellation Reasons if they don't already exist.
 
-    NOT fixtures: seminaries add/retire reasons on the desk, and a fixture
-    re-import would clobber those edits (and the is_active toggle) every migrate.
-    Created once, create-only-if-missing.
-    """
-    if not frappe.db.exists("DocType", "Course Cancellation Reason"):
-        return
-    # reason_name, description
-    defaults = [
-        (
-            "Insufficient Enrollment",
-            _(
-                "The course did not reach the minimum number of enrolled students by the enrollment deadline."
-            ),
-        ),
-        (
-            "Instructor Unavailable",
-            _(
-                "The instructor cannot teach the course (illness, leave, departure, scheduling conflict)."
-            ),
-        ),
-        (
-            "Curriculum Change",
-            _(
-                "The course was removed from or changed in the curriculum after the schedule was published."
-            ),
-        ),
-        (
-            "Administrative Decision",
-            _(
-                "The course is cancelled by administrative or departmental decision (resource constraints, restructuring)."
-            ),
-        ),
-        (
-            "Force Majeure",
-            _(
-                "The course is cancelled due to circumstances beyond the seminary's control (natural disaster, public health, civil unrest)."
-            ),
-        ),
-    ]
-    for reason_name, description in defaults:
-        if frappe.db.exists("Course Cancellation Reason", reason_name):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Course Cancellation Reason",
-                "reason_name": reason_name,
-                "is_active": 1,
-                "description": description,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	NOT fixtures: seminaries add/retire reasons on the desk, and a fixture
+	re-import would clobber those edits (and the is_active toggle) every migrate.
+	Created once, create-only-if-missing.
+	"""
+	if not frappe.db.exists("DocType", "Course Cancellation Reason"):
+		return
+	# reason_name, description
+	defaults = [
+		(
+			"Insufficient Enrollment",
+			_("The course did not reach the minimum number of enrolled students by the enrollment deadline."),
+		),
+		(
+			"Instructor Unavailable",
+			_("The instructor cannot teach the course (illness, leave, departure, scheduling conflict)."),
+		),
+		(
+			"Curriculum Change",
+			_("The course was removed from or changed in the curriculum after the schedule was published."),
+		),
+		(
+			"Administrative Decision",
+			_(
+				"The course is cancelled by administrative or departmental decision (resource constraints, restructuring)."
+			),
+		),
+		(
+			"Force Majeure",
+			_(
+				"The course is cancelled due to circumstances beyond the seminary's control (natural disaster, public health, civil unrest)."
+			),
+		),
+	]
+	for reason_name, description in defaults:
+		if frappe.db.exists("Course Cancellation Reason", reason_name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Course Cancellation Reason",
+				"reason_name": reason_name,
+				"is_active": 1,
+				"description": description,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_grading_scale():
-    """Seed the starter Default Numeric Scale if it doesn't already exist.
+	"""Seed the starter Default Numeric Scale if it doesn't already exist.
 
-    NOT a fixture: Grading Scale is submittable and seminaries define their own
-    scales; a fixture re-import would clobber edits every migrate. Created once,
-    create-only-if-missing, and submitted (docstatus=1) so it can be used.
-    """
-    if not frappe.db.exists("DocType", "Grading Scale"):
-        return
-    name = "Default Numeric Scale"
-    if frappe.db.exists("Grading Scale", name):
-        return
-    # grade_code, grade_pass, threshold
-    intervals = [
-        ("A+", "Pass", 98.0),
-        ("A", "Pass", 96.0),
-        ("A-", "Pass", 94.0),
-        ("B+", "Pass", 92.0),
-        ("B", "Pass", 89.0),
-        ("B-", "Pass", 86.0),
-        ("C+", "Pass", 83.0),
-        ("C", "Pass", 80.0),
-        ("C-", "Pass", 77.0),
-        ("D+", "Pass", 74.0),
-        ("D", "Pass", 72.0),
-        ("D-", "Pass", 69.0),
-        ("F", "Fail", 0.0),
-    ]
-    doc = frappe.get_doc(
-        {
-            "doctype": "Grading Scale",
-            "grading_scale_name": name,
-            "grscale_type": "Points",
-            "maxnumgrade": 100.0,
-            "fa_code": "FA",
-            "fa_gpa": 0,
-            "intervals": [
-                {
-                    "grade_code": code,
-                    "grade_description": code,
-                    "grade_pass": grade_pass,
-                    "threshold": threshold,
-                }
-                for code, grade_pass, threshold in intervals
-            ],
-        }
-    )
-    doc.insert(ignore_permissions=True)
-    doc.submit()
-    frappe.db.commit()
+	NOT a fixture: Grading Scale is submittable and seminaries define their own
+	scales; a fixture re-import would clobber edits every migrate. Created once,
+	create-only-if-missing, and submitted (docstatus=1) so it can be used.
+	"""
+	if not frappe.db.exists("DocType", "Grading Scale"):
+		return
+	name = "Default Numeric Scale"
+	if frappe.db.exists("Grading Scale", name):
+		return
+	# grade_code, grade_pass, threshold
+	intervals = [
+		("A+", "Pass", 98.0),
+		("A", "Pass", 96.0),
+		("A-", "Pass", 94.0),
+		("B+", "Pass", 92.0),
+		("B", "Pass", 89.0),
+		("B-", "Pass", 86.0),
+		("C+", "Pass", 83.0),
+		("C", "Pass", 80.0),
+		("C-", "Pass", 77.0),
+		("D+", "Pass", 74.0),
+		("D", "Pass", 72.0),
+		("D-", "Pass", 69.0),
+		("F", "Fail", 0.0),
+	]
+	doc = frappe.get_doc(
+		{
+			"doctype": "Grading Scale",
+			"grading_scale_name": name,
+			"grscale_type": "Points",
+			"maxnumgrade": 100.0,
+			"fa_code": "FA",
+			"fa_gpa": 0,
+			"intervals": [
+				{
+					"grade_code": code,
+					"grade_description": code,
+					"grade_pass": grade_pass,
+					"threshold": threshold,
+				}
+				for code, grade_pass, threshold in intervals
+			],
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	doc.submit()
+	frappe.db.commit()
 
 
 def seed_culminating_project_types():
-    """Seed the starter Culminating Project Types if they don't already exist.
+	"""Seed the starter Culminating Project Types if they don't already exist.
 
-    These are NOT shipped as fixtures: seminaries configure each type's
-    milestones on the desk, and a fixture re-import on every migrate would wipe
-    those milestone rows. So we create the defaults once (create-only-if-missing)
-    and never overwrite an existing type or its milestones.
-    """
-    defaults = [
-        (
-            "Thesis",
-            _("A formal research thesis directed by an advisor and a second reader."),
-        ),
-        (
-            "Capstone",
-            _("An integrative capstone project demonstrating mastery of the program."),
-        ),
-        ("Dissertation", _("An extended doctoral-level research dissertation.")),
-        (
-            "Summative Paper",
-            _("A summative research paper offered as an alternative to a full thesis."),
-        ),
-        (
-            "Doctrinal Statement",
-            _("A written doctrinal statement offered as a culminating-project option."),
-        ),
-    ]
-    for type_name, description in defaults:
-        if frappe.db.exists("Culminating Project Type", type_name):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Culminating Project Type",
-                "type_name": type_name,
-                "is_active": 1,
-                "description": description,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	These are NOT shipped as fixtures: seminaries configure each type's
+	milestones on the desk, and a fixture re-import on every migrate would wipe
+	those milestone rows. So we create the defaults once (create-only-if-missing)
+	and never overwrite an existing type or its milestones.
+	"""
+	defaults = [
+		(
+			"Thesis",
+			_("A formal research thesis directed by an advisor and a second reader."),
+		),
+		(
+			"Capstone",
+			_("An integrative capstone project demonstrating mastery of the program."),
+		),
+		("Dissertation", _("An extended doctoral-level research dissertation.")),
+		(
+			"Summative Paper",
+			_("A summative research paper offered as an alternative to a full thesis."),
+		),
+		(
+			"Doctrinal Statement",
+			_("A written doctrinal statement offered as a culminating-project option."),
+		),
+	]
+	for type_name, description in defaults:
+		if frappe.db.exists("Culminating Project Type", type_name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Culminating Project Type",
+				"type_name": type_name,
+				"is_active": 1,
+				"description": description,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_disciplinary_actions():
-    """Seed the starter Disciplinary Actions if they don't already exist.
+	"""Seed the starter Disciplinary Actions if they don't already exist.
 
-    Like Culminating Project Types, these are NOT fixtures: seminaries adjust
-    the catalog on the desk and a fixture re-import would clobber edits. Created
-    once, create-only-if-missing. The Dismissal action carries
-    `triggers_dismissal` so an applied dismissal sanction drives a program
-    separation through the shared spine (see ADR 032).
-    """
-    defaults = [
-        ("Verbal Warning", "Informal", 0, _("An informal verbal warning.")),
-        ("Written Warning", "Formal", 0, _("A formal written warning on record.")),
-        (
-            "Disciplinary Probation",
-            "Probation",
-            0,
-            _("A defined period of probation with conditions."),
-        ),
-        (
-            "Suspension",
-            "Suspension",
-            0,
-            _("Temporary suspension from program activities."),
-        ),
-        (
-            "Dismissal",
-            "Dismissal",
-            1,
-            _("Involuntary dismissal from the program."),
-        ),
-    ]
-    for action_name, severity, triggers, description in defaults:
-        if frappe.db.exists("Disciplinary Action", action_name):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Disciplinary Action",
-                "action_name": action_name,
-                "severity": severity,
-                "triggers_dismissal": triggers,
-                "is_active": 1,
-                "description": description,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	Like Culminating Project Types, these are NOT fixtures: seminaries adjust
+	the catalog on the desk and a fixture re-import would clobber edits. Created
+	once, create-only-if-missing. The Dismissal action carries
+	`triggers_dismissal` so an applied dismissal sanction drives a program
+	separation through the shared spine (see ADR 032).
+	"""
+	defaults = [
+		("Verbal Warning", "Informal", 0, _("An informal verbal warning.")),
+		("Written Warning", "Formal", 0, _("A formal written warning on record.")),
+		(
+			"Disciplinary Probation",
+			"Probation",
+			0,
+			_("A defined period of probation with conditions."),
+		),
+		(
+			"Suspension",
+			"Suspension",
+			0,
+			_("Temporary suspension from program activities."),
+		),
+		(
+			"Dismissal",
+			"Dismissal",
+			1,
+			_("Involuntary dismissal from the program."),
+		),
+	]
+	for action_name, severity, triggers, description in defaults:
+		if frappe.db.exists("Disciplinary Action", action_name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Disciplinary Action",
+				"action_name": action_name,
+				"severity": severity,
+				"triggers_dismissal": triggers,
+				"is_active": 1,
+				"description": description,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 #: Shared attributes that make no sense to *require*, so they are not offered.
@@ -345,1018 +337,997 @@ NOT_CURATABLE = ("address_line_2", "full_name")
 
 
 def seed_mandatory_personal_fields():
-    """One row per shared personal attribute, for the school to curate (ADR 067 §9).
+	"""One row per shared personal attribute, for the school to curate (ADR 067 §9).
 
-    Create-only on the `mandatory` bit, like every other catalog -- that bit is
-    the school's and a re-import on every migrate would undo their choice. The
-    rest is refreshed from `person_fields.py` by the controller on save, so a
-    row never drifts from the code.
+	Create-only on the `mandatory` bit, like every other catalog -- that bit is
+	the school's and a re-import on every migrate would undo their choice. The
+	rest is refreshed from `person_fields.py` by the controller on save, so a
+	row never drifts from the code.
 
-    A field a *live* matching rule already reads is seeded as required. The
-    school chose that rule, which is the same statement; seeding it off would
-    make every Cohort Type using it unsaveable the moment this shipped, which is
-    a migration breaking working configuration rather than a policy being
-    applied.
-    """
-    if not frappe.db.exists("DocType", "Mandatory Personal Field"):
-        return
-    from seminary.seminary import person_fields
-    from seminary.seminary.doctype.mandatory_personal_field import (
-        mandatory_personal_field as mpf,
-    )
+	A field a *live* matching rule already reads is seeded as required. The
+	school chose that rule, which is the same statement; seeding it off would
+	make every Cohort Type using it unsaveable the moment this shipped, which is
+	a migration breaking working configuration rather than a policy being
+	applied.
+	"""
+	if not frappe.db.exists("DocType", "Mandatory Personal Field"):
+		return
+	from seminary.seminary import person_fields
+	from seminary.seminary.doctype.mandatory_personal_field import (
+		mandatory_personal_field as mpf,
+	)
 
-    # Withdrawn rows are removed here rather than by a patch: this list is the
-    # seeder's own, it runs on every migrate, and a patch would need its own
-    # bookkeeping to say the same thing once. Only where nobody has ticked it --
-    # a school that deliberately required one has a reason we do not know, and
-    # silently deleting their setting is worse than an extra row.
-    for fieldname in NOT_CURATABLE:
-        row = frappe.db.get_value(
-            "Mandatory Personal Field", fieldname, ["name", "mandatory"], as_dict=True
-        )
-        if row and not row.mandatory:
-            frappe.delete_doc(
-                "Mandatory Personal Field",
-                row.name,
-                force=True,
-                ignore_permissions=True,
-            )
+	# Withdrawn rows are removed here rather than by a patch: this list is the
+	# seeder's own, it runs on every migrate, and a patch would need its own
+	# bookkeeping to say the same thing once. Only where nobody has ticked it --
+	# a school that deliberately required one has a reason we do not know, and
+	# silently deleting their setting is worse than an extra row.
+	for fieldname in NOT_CURATABLE:
+		row = frappe.db.get_value("Mandatory Personal Field", fieldname, ["name", "mandatory"], as_dict=True)
+		if row and not row.mandatory:
+			frappe.delete_doc(
+				"Mandatory Personal Field",
+				row.name,
+				force=True,
+				ignore_permissions=True,
+			)
 
-    for spec in person_fields.SPEC:
-        if spec.person_field in NOT_CURATABLE:
-            continue
-        existing = frappe.db.get_value(
-            "Mandatory Personal Field",
-            spec.person_field,
-            ["name", "field_label", "sources", "derived", "automation_valid"],
-            as_dict=True,
-        )
-        if not existing:
-            in_use = bool(mpf.cohort_types_depending_on(spec.person_field))
-            frappe.get_doc(
-                {
-                    "doctype": "Mandatory Personal Field",
-                    "person_field": spec.person_field,
-                    "mandatory": 1 if in_use else 0,
-                }
-            ).insert(ignore_permissions=True)
-            continue
+	for spec in person_fields.SPEC:
+		if spec.person_field in NOT_CURATABLE:
+			continue
+		existing = frappe.db.get_value(
+			"Mandatory Personal Field",
+			spec.person_field,
+			["name", "field_label", "sources", "derived", "automation_valid"],
+			as_dict=True,
+		)
+		if not existing:
+			in_use = bool(mpf.cohort_types_depending_on(spec.person_field))
+			frappe.get_doc(
+				{
+					"doctype": "Mandatory Personal Field",
+					"person_field": spec.person_field,
+					"mandatory": 1 if in_use else 0,
+				}
+			).insert(ignore_permissions=True)
+			continue
 
-        # Create-only applies to `mandatory` -- the school's bit. Everything
-        # else is a projection of the code, so it has to track the code: a row
-        # seeded before a rule started reading it, or before its label was
-        # reworded, would otherwise describe the app as it was.
-        wanted = {
-            "field_label": mpf.label_for(spec),
-            "sources": "\n".join(mpf.sources_for(spec)),
-            "derived": 1 if spec.derived else 0,
-        }
-        if any(existing.get(k) != v for k, v in wanted.items()):
-            frappe.get_doc("Mandatory Personal Field", spec.person_field).save(
-                ignore_permissions=True
-            )
-    frappe.db.commit()
+		# Create-only applies to `mandatory` -- the school's bit. Everything
+		# else is a projection of the code, so it has to track the code: a row
+		# seeded before a rule started reading it, or before its label was
+		# reworded, would otherwise describe the app as it was.
+		wanted = {
+			"field_label": mpf.label_for(spec),
+			"sources": "\n".join(mpf.sources_for(spec)),
+			"derived": 1 if spec.derived else 0,
+		}
+		if any(existing.get(k) != v for k, v in wanted.items()):
+			frappe.get_doc("Mandatory Personal Field", spec.person_field).save(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_cohort_assignment_criteria():
-    """Seed the assignment rules the cohort planner can apply (ADR 067 §8).
+	"""Seed the assignment rules the cohort planner can apply (ADR 067 §8).
 
-    Create-only, like every other catalog: a school renames these, describes
-    them in its own words and retires the ones it does not want, and a re-import
-    on every migrate would undo all three. The `handler` is the docname because
-    it is code, not configuration -- which is also what keeps a rename from
-    orphaning a Cohort Type that lists the rule.
+	Create-only, like every other catalog: a school renames these, describes
+	them in its own words and retires the ones it does not want, and a re-import
+	on every migrate would undo all three. The `handler` is the docname because
+	it is code, not configuration -- which is also what keeps a rename from
+	orphaning a Cohort Type that lists the rule.
 
-    Seeded inactive is deliberately *not* done: an unused rule costs nothing,
-    and a school that wants one has to add it to a Cohort Type anyway.
-    """
-    if not frappe.db.exists("DocType", "Cohort Assignment Criterion"):
-        return
-    from seminary.seminary.discipleship import criteria
+	Seeded inactive is deliberately *not* done: an unused rule costs nothing,
+	and a school that wants one has to add it to a Cohort Type anyway.
+	"""
+	if not frappe.db.exists("DocType", "Cohort Assignment Criterion"):
+		return
+	from seminary.seminary.discipleship import criteria
 
-    for handler, rule in criteria.registry().items():
-        if frappe.db.exists("Cohort Assignment Criterion", handler):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Cohort Assignment Criterion",
-                "handler": handler,
-                "criterion_name": _(rule.label),
-                "kind": rule.kind,
-                "requires_field": rule.requires_field,
-                "description": _(rule.description),
-                "is_active": 1,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	for handler, rule in criteria.registry().items():
+		if frappe.db.exists("Cohort Assignment Criterion", handler):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Cohort Assignment Criterion",
+				"handler": handler,
+				"criterion_name": _(rule.label),
+				"kind": rule.kind,
+				"requires_field": rule.requires_field,
+				"description": _(rule.description),
+				"is_active": 1,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_faculty_capabilities():
-    """Seed the starter Faculty Capabilities if they don't already exist (ADR 059).
+	"""Seed the starter Faculty Capabilities if they don't already exist (ADR 059).
 
-    NOT fixtures: seminaries curate the catalog on the desk and a fixture
-    re-import would clobber edits. One starter capability per ``routes_to``
-    machine key; schools rename the display name or add more freely.
-    """
-    if not frappe.db.exists("DocType", "Faculty Capability"):
-        return
-    # (capability_name, routes_to, tracks_capacity, requires_instructor, description).
-    # Capacity-aware routes (advising/examining/verifying) feed claim_capability's
-    # round-robin; Course Instructor (CS-driven) / Mentor (free link) / Board carry no
-    # cap. requires_instructor is 0 only for organizational capacities a plain Person
-    # may hold (Board/Committee, training oversight); academic routes need a faculty
-    # record (ADR 062).
-    defaults = [
-        ("Course Instructor", "Course Instructor", 0, 1, _("Teaches course sections.")),
-        (
-            "Thesis/CP Advisor",
-            "Thesis/CP Advisor",
-            1,
-            1,
-            _("Advises culminating projects."),
-        ),
-        ("Internship Advisor", "Internship Advisor", 1, 1, _("Oversees internships.")),
-        (
-            "Placement Examiner",
-            "Placement Examiner",
-            1,
-            1,
-            _("Grades placement assessments."),
-        ),
-        (
-            "Manual-Verification Verifier",
-            "Manual-Verification Verifier",
-            1,
-            1,
-            _("Verifies manual graduation requirements."),
-        ),
-        ("Mentor", "Mentor", 0, 1, _("Mentors student groups.")),
-        # Distinct from "Mentor" on purpose: that route is a free link with no
-        # ceiling, and giving it one would silently re-price every row a school
-        # has already created. Capacity is the whole reason this route exists --
-        # the cohort planner will not seat a mentor it cannot budget (ADR 067
-        # section 1).
-        (
-            "Program Cohort Mentorship",
-            "Program Cohort Mentorship",
-            1,
-            1,
-            _("Leads program cohorts, with a ceiling on how many students."),
-        ),
-        (
-            "Committee/Board Member",
-            "Committee/Board Member",
-            0,
-            0,
-            _("Serves on a board or committee (no instructor record required)."),
-        ),
-        (
-            "Unit Training Overseer",
-            "Oversees Unit Training",
-            0,
-            0,
-            _(
-                "Oversees the training of a unit's members (no instructor record required)."
-            ),
-        ),
-    ]
-    for (
-        capability_name,
-        routes_to,
-        tracks_capacity,
-        requires_instructor,
-        description,
-    ) in defaults:
-        if frappe.db.exists("Faculty Capability", capability_name):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Faculty Capability",
-                "capability_name": capability_name,
-                "routes_to": routes_to,
-                "tracks_capacity": tracks_capacity,
-                "requires_instructor": requires_instructor,
-                "is_active": 1,
-                "description": description,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	NOT fixtures: seminaries curate the catalog on the desk and a fixture
+	re-import would clobber edits. One starter capability per ``routes_to``
+	machine key; schools rename the display name or add more freely.
+	"""
+	if not frappe.db.exists("DocType", "Faculty Capability"):
+		return
+	# (capability_name, routes_to, tracks_capacity, requires_instructor, description).
+	# Capacity-aware routes (advising/examining/verifying) feed claim_capability's
+	# round-robin; Course Instructor (CS-driven) / Mentor (free link) / Board carry no
+	# cap. requires_instructor is 0 only for organizational capacities a plain Person
+	# may hold (Board/Committee, training oversight); academic routes need a faculty
+	# record (ADR 062).
+	defaults = [
+		("Course Instructor", "Course Instructor", 0, 1, _("Teaches course sections.")),
+		(
+			"Thesis/CP Advisor",
+			"Thesis/CP Advisor",
+			1,
+			1,
+			_("Advises culminating projects."),
+		),
+		("Internship Advisor", "Internship Advisor", 1, 1, _("Oversees internships.")),
+		(
+			"Placement Examiner",
+			"Placement Examiner",
+			1,
+			1,
+			_("Grades placement assessments."),
+		),
+		(
+			"Manual-Verification Verifier",
+			"Manual-Verification Verifier",
+			1,
+			1,
+			_("Verifies manual graduation requirements."),
+		),
+		("Mentor", "Mentor", 0, 1, _("Mentors student groups.")),
+		# Distinct from "Mentor" on purpose: that route is a free link with no
+		# ceiling, and giving it one would silently re-price every row a school
+		# has already created. Capacity is the whole reason this route exists --
+		# the cohort planner will not seat a mentor it cannot budget (ADR 067
+		# section 1).
+		(
+			"Program Cohort Mentorship",
+			"Program Cohort Mentorship",
+			1,
+			1,
+			_("Leads program cohorts, with a ceiling on how many students."),
+		),
+		(
+			"Committee/Board Member",
+			"Committee/Board Member",
+			0,
+			0,
+			_("Serves on a board or committee (no instructor record required)."),
+		),
+		(
+			"Unit Training Overseer",
+			"Oversees Unit Training",
+			0,
+			0,
+			_("Oversees the training of a unit's members (no instructor record required)."),
+		),
+	]
+	for (
+		capability_name,
+		routes_to,
+		tracks_capacity,
+		requires_instructor,
+		description,
+	) in defaults:
+		if frappe.db.exists("Faculty Capability", capability_name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Faculty Capability",
+				"capability_name": capability_name,
+				"routes_to": routes_to,
+				"tracks_capacity": tracks_capacity,
+				"requires_instructor": requires_instructor,
+				"is_active": 1,
+				"description": description,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_room_features():
-    """Seed starter Room Features if they don't already exist.
+	"""Seed starter Room Features if they don't already exist.
 
-    Not fixtures (seminaries curate their own catalog on the desk, and a
-    fixture re-import would clobber edits — see ADR 035). The accessibility
-    feature in particular lets a Course Type *require* an accessible room,
-    which the standalone Room.accessible check could never express. Created
-    once, create-only-if-missing.
-    """
-    if not frappe.db.exists("DocType", "Room Feature"):
-        return
-    defaults = [
-        ("Wheelchair Accessible", "Specialized"),
-        ("Projector", "AV Equipment"),
-        ("Screen", "AV Equipment"),
-        ("Sound System", "AV Equipment"),
-        ("Whiteboard", "Room Configuration"),
-        ("Piano", "Musical"),
-        ("Movable Seating", "Room Configuration"),
-    ]
-    for feature, category in defaults:
-        if frappe.db.exists("Room Feature", {"feature": feature}):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Room Feature",
-                "feature": feature,
-                "category": category,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	Not fixtures (seminaries curate their own catalog on the desk, and a
+	fixture re-import would clobber edits — see ADR 035). The accessibility
+	feature in particular lets a Course Type *require* an accessible room,
+	which the standalone Room.accessible check could never express. Created
+	once, create-only-if-missing.
+	"""
+	if not frappe.db.exists("DocType", "Room Feature"):
+		return
+	defaults = [
+		("Wheelchair Accessible", "Specialized"),
+		("Projector", "AV Equipment"),
+		("Screen", "AV Equipment"),
+		("Sound System", "AV Equipment"),
+		("Whiteboard", "Room Configuration"),
+		("Piano", "Musical"),
+		("Movable Seating", "Room Configuration"),
+	]
+	for feature, category in defaults:
+		if frappe.db.exists("Room Feature", {"feature": feature}):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Room Feature",
+				"feature": feature,
+				"category": category,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 # Inline brand SVGs for the portal contact icons (formerly the Messaging App
 # master, retired into Communication Channel — see the migration patch).
-_WHATSAPP_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'  # noqa: E501
-_TELEGRAM_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#26A5E4"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>'  # noqa: E501
-_INAPP_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'  # noqa: E501
-_EMAIL_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>'  # noqa: E501
+_WHATSAPP_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'
+_TELEGRAM_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#26A5E4"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>'
+_INAPP_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+_EMAIL_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>'
 
 
 def seed_communication_channels():
-    """Seed the semantic Communication Channels (ADR 042/043).
+	"""Seed the semantic Communication Channels (ADR 042/043).
 
-    Not fixtures (a re-import would clobber seminary edits — channels grow
-    configuration like provider accounts and rate limits in ADR 043). Created
-    once, create-only-if-missing. Names are stable identifiers referenced from
-    code (Person primary-address sync); descriptions are free to edit.
+	Not fixtures (a re-import would clobber seminary edits — channels grow
+	configuration like provider accounts and rate limits in ADR 043). Created
+	once, create-only-if-missing. Names are stable identifiers referenced from
+	code (Person primary-address sync); descriptions are free to edit.
 
-    Portal-contact metadata (icon, deep-link prefix, the portal_contactable
-    flag) is seeded here and backfilled onto existing rows when empty, so the
-    instructor contact icons (formerly the Messaging App master) render from the
-    channel itself — without clobbering a seminary's edits.
-    """
-    if not frappe.db.exists("DocType", "Communication Channel"):
-        return
-    # name, description, portal_contactable, weblink_prefix, svg_icon
-    defaults = [
-        ("Email", _("Email delivery."), 1, "mailto:", _EMAIL_SVG),
-        ("SMS", _("Text messages to the primary mobile number."), 0, None, None),
-        ("WhatsApp", _("WhatsApp messages."), 1, "https://wa.me/", _WHATSAPP_SVG),
-        ("Telegram", _("Telegram messages."), 1, "https://t.me/", _TELEGRAM_SVG),
-        ("In-App", _("Portal inbox messages."), 1, None, _INAPP_SVG),
-        ("Print", _("Generated PDF documents / printed letters."), 0, None, None),
-        ("Voice", _("Voice / IVR calls."), 0, None, None),
-    ]
-    for channel_name, description, contactable, prefix, svg in defaults:
-        if not frappe.db.exists("Communication Channel", channel_name):
-            frappe.get_doc(
-                {
-                    "doctype": "Communication Channel",
-                    "channel_name": channel_name,
-                    "enabled": 1,
-                    "description": description,
-                    "portal_contactable": contactable,
-                    "weblink_prefix": prefix,
-                    "svg_icon": svg,
-                }
-            ).insert(ignore_permissions=True)
-            continue
-        # Backfill contact metadata onto an existing row only where empty, so a
-        # re-run (or an old install predating these fields) lights up the icons
-        # without overwriting any seminary customisation.
-        if not contactable and not prefix and not svg:
-            continue
-        current = frappe.db.get_value(
-            "Communication Channel",
-            channel_name,
-            ["portal_contactable", "weblink_prefix", "svg_icon"],
-            as_dict=True,
-        )
-        updates = {}
-        if contactable and not current.portal_contactable:
-            updates["portal_contactable"] = 1
-        if prefix and not current.weblink_prefix:
-            updates["weblink_prefix"] = prefix
-        if svg and not current.svg_icon:
-            updates["svg_icon"] = svg
-        if updates:
-            frappe.db.set_value("Communication Channel", channel_name, updates)
-    frappe.db.commit()
+	Portal-contact metadata (icon, deep-link prefix, the portal_contactable
+	flag) is seeded here and backfilled onto existing rows when empty, so the
+	instructor contact icons (formerly the Messaging App master) render from the
+	channel itself — without clobbering a seminary's edits.
+	"""
+	if not frappe.db.exists("DocType", "Communication Channel"):
+		return
+	# name, description, portal_contactable, weblink_prefix, svg_icon
+	defaults = [
+		("Email", _("Email delivery."), 1, "mailto:", _EMAIL_SVG),
+		("SMS", _("Text messages to the primary mobile number."), 0, None, None),
+		("WhatsApp", _("WhatsApp messages."), 1, "https://wa.me/", _WHATSAPP_SVG),
+		("Telegram", _("Telegram messages."), 1, "https://t.me/", _TELEGRAM_SVG),
+		("In-App", _("Portal inbox messages."), 1, None, _INAPP_SVG),
+		("Print", _("Generated PDF documents / printed letters."), 0, None, None),
+		("Voice", _("Voice / IVR calls."), 0, None, None),
+	]
+	for channel_name, description, contactable, prefix, svg in defaults:
+		if not frappe.db.exists("Communication Channel", channel_name):
+			frappe.get_doc(
+				{
+					"doctype": "Communication Channel",
+					"channel_name": channel_name,
+					"enabled": 1,
+					"description": description,
+					"portal_contactable": contactable,
+					"weblink_prefix": prefix,
+					"svg_icon": svg,
+				}
+			).insert(ignore_permissions=True)
+			continue
+		# Backfill contact metadata onto an existing row only where empty, so a
+		# re-run (or an old install predating these fields) lights up the icons
+		# without overwriting any seminary customisation.
+		if not contactable and not prefix and not svg:
+			continue
+		current = frappe.db.get_value(
+			"Communication Channel",
+			channel_name,
+			["portal_contactable", "weblink_prefix", "svg_icon"],
+			as_dict=True,
+		)
+		updates = {}
+		if contactable and not current.portal_contactable:
+			updates["portal_contactable"] = 1
+		if prefix and not current.weblink_prefix:
+			updates["weblink_prefix"] = prefix
+		if svg and not current.svg_icon:
+			updates["svg_icon"] = svg
+		if updates:
+			frappe.db.set_value("Communication Channel", channel_name, updates)
+	frappe.db.commit()
 
 
 def seed_mailing_label_formats():
-    """Seed common Avery label layouts (ADR 045). Create-only-if-missing; a
-    seminary edits these or adds its own measured stock."""
-    if not frappe.db.exists("DocType", "Mailing Label Format"):
-        return
-    # name, page, cols, rows, label_w, label_h, margin_top, margin_left, description
-    defaults = [
-        (
-            "Avery 5160",
-            "Letter",
-            3,
-            10,
-            66.7,
-            25.4,
-            12.7,
-            4.8,
-            _("30 per US Letter sheet, 2.625×1 in"),
-        ),
-        (
-            "Avery 5161",
-            "Letter",
-            2,
-            10,
-            101.6,
-            25.4,
-            12.7,
-            4.0,
-            _("20 per US Letter sheet, 4×1 in"),
-        ),
-        (
-            "Avery 5163",
-            "Letter",
-            2,
-            5,
-            101.6,
-            50.8,
-            12.7,
-            4.8,
-            _("10 per US Letter sheet, 4×2 in"),
-        ),
-        (
-            "Avery L7160",
-            "A4",
-            3,
-            7,
-            63.5,
-            38.1,
-            15.1,
-            7.0,
-            _("21 per A4 sheet, 63.5×38.1 mm"),
-        ),
-    ]
-    for name, page, cols, rows, lw, lh, mt, ml, desc in defaults:
-        if frappe.db.exists("Mailing Label Format", name):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Mailing Label Format",
-                "format_name": name,
-                "page_size": page,
-                "columns": cols,
-                "rows": rows,
-                "label_width": lw,
-                "label_height": lh,
-                "margin_top": mt,
-                "margin_left": ml,
-                "description": desc,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	"""Seed common Avery label layouts (ADR 045). Create-only-if-missing; a
+	seminary edits these or adds its own measured stock."""
+	if not frappe.db.exists("DocType", "Mailing Label Format"):
+		return
+	# name, page, cols, rows, label_w, label_h, margin_top, margin_left, description
+	defaults = [
+		(
+			"Avery 5160",
+			"Letter",
+			3,
+			10,
+			66.7,
+			25.4,
+			12.7,
+			4.8,
+			_("30 per US Letter sheet, 2.625×1 in"),
+		),
+		(
+			"Avery 5161",
+			"Letter",
+			2,
+			10,
+			101.6,
+			25.4,
+			12.7,
+			4.0,
+			_("20 per US Letter sheet, 4×1 in"),
+		),
+		(
+			"Avery 5163",
+			"Letter",
+			2,
+			5,
+			101.6,
+			50.8,
+			12.7,
+			4.8,
+			_("10 per US Letter sheet, 4×2 in"),
+		),
+		(
+			"Avery L7160",
+			"A4",
+			3,
+			7,
+			63.5,
+			38.1,
+			15.1,
+			7.0,
+			_("21 per A4 sheet, 63.5×38.1 mm"),
+		),
+	]
+	for name, page, cols, rows, lw, lh, mt, ml, desc in defaults:
+		if frappe.db.exists("Mailing Label Format", name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Mailing Label Format",
+				"format_name": name,
+				"page_size": page,
+				"columns": cols,
+				"rows": rows,
+				"label_width": lw,
+				"label_height": lh,
+				"margin_top": mt,
+				"margin_left": ml,
+				"description": desc,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_channel_provider_accounts():
-    """Default provider accounts so Email and In-App work out of the box
-    (ADR 043). Create-only-if-missing per CHANNEL — if the seminary configured
-    any account for a channel (even renamed), we never add another."""
-    if not frappe.db.exists("DocType", "Channel Provider Account"):
-        return
-    defaults = [
-        ("Default Email", "Email", "frappe-email"),
-        ("Portal Inbox", "In-App", "in-app"),
-        ("Print Spool", "Print", "print"),
-    ]
-    for account_name, channel, provider in defaults:
-        if not frappe.db.exists("Communication Channel", channel):
-            continue
-        if frappe.db.exists("Channel Provider Account", {"channel": channel}):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Channel Provider Account",
-                "account_name": account_name,
-                "channel": channel,
-                "provider": provider,
-                "enabled": 1,
-                "hourly_limit": 0,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	"""Default provider accounts so Email and In-App work out of the box
+	(ADR 043). Create-only-if-missing per CHANNEL — if the seminary configured
+	any account for a channel (even renamed), we never add another."""
+	if not frappe.db.exists("DocType", "Channel Provider Account"):
+		return
+	defaults = [
+		("Default Email", "Email", "frappe-email"),
+		("Portal Inbox", "In-App", "in-app"),
+		("Print Spool", "Print", "print"),
+	]
+	for account_name, channel, provider in defaults:
+		if not frappe.db.exists("Communication Channel", channel):
+			continue
+		if frappe.db.exists("Channel Provider Account", {"channel": channel}):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Channel Provider Account",
+				"account_name": account_name,
+				"channel": channel,
+				"provider": provider,
+				"enabled": 1,
+				"hourly_limit": 0,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_communication_templates():
-    """Seed the Communication Templates the system call sites reference
-    (ADR 043/044). Create-only-if-missing by template_key — seminaries edit
-    bodies and add language versions on the desk, so a fixture re-import would
-    clobber them. Bodies are deliberately NOT gettext-wrapped: per-language
-    copy lives in additional Communication Template Version rows, not .po
-    files."""
-    if not frappe.db.exists("DocType", "Communication Template"):
-        return
-    defaults = [
-        {
-            "template_key": "waitlist-promoted",
-            "category": "Transactional",
-            "description": "Student notice: promoted off a course waitlist.",
-            "subject": "You're off the waitlist: {{ course }}",
-            "body": (
-                "<p>Good news — a seat opened in {{ course }} and you've been "
-                "moved off the waitlist.{% if awaiting_payment %} A seat invoice "
-                "has been issued — please complete payment to keep your seat."
-                "{% endif %}</p>"
-            ),
-        },
-        {
-            "template_key": "waitlist-promoted-registrar",
-            "category": "Transactional",
-            "description": "Registrar notice: a student was auto-promoted from a waitlist.",
-            "subject": "Waitlist promotion: {{ course }}",
-            "body": (
-                "<p>{{ student }} was auto-promoted from the waitlist into "
-                "{{ course }} (now {{ state }}).</p>"
-            ),
-        },
-        {
-            "template_key": "waitlist-closed",
-            "category": "Transactional",
-            "description": "Student notice: enrollment closed without a seat opening.",
-            "subject": "Waitlist closed: {{ course }}",
-            "body": (
-                "<p>Enrollment for {{ course }} has closed and a seat did not open "
-                "before the deadline. Please contact the registrar about "
-                "alternatives.</p>"
-            ),
-        },
-        {
-            "template_key": "cei-payment-threshold",
-            "category": "Transactional",
-            "description": "Registrar notice: a Submitted enrollment dropped below the payment threshold.",
-            "subject": "Payment threshold dropped: {{ student }}",
-            "body": (
-                "<p>Payment threshold no longer met for {{ student }} (course "
-                "{{ course }}). Now at {{ paid_percent }}%, threshold is "
-                "{{ threshold }}%. Review whether to file a Withdrawal Request or "
-                "follow up with the student.</p>"
-            ),
-        },
-        {
-            "template_key": "late-grades-nag",
-            "category": "Transactional",
-            "description": "Instructor/registrar nag: final grades are past the grade close date.",
-            "subject": "Grades overdue for {{ course }}",
-            "body": (
-                "<p>Final grades for <b>{{ course }}</b> ({{ term }}) were due on "
-                "<b>{{ due }}</b> ({{ days }} day(s) ago) and have not yet been "
-                "sent.</p><p>Please enter and finalize all grades, then use "
-                "<b>Send Grades</b> to close the course for the term.</p>"
-            ),
-        },
-        {
-            "template_key": "few-academic-terms",
-            "category": "Transactional",
-            "description": "Registrar warning: fewer than two future Academic Terms exist.",
-            "subject": "Few Academic Terms",
-            "body": (
-                "<p>There are only {{ count }} future academic term(s) in the "
-                "pipeline. Please create more to avoid disruptions.</p>"
-            ),
-        },
-        {
-            "template_key": "recommendation-request",
-            "category": "Transactional",
-            "description": "External recommender: secure-link request for a recommendation letter.",
-            "subject": "Recommendation request for {{ student }}",
-            "body": (
-                "Dear {{ recommender }},<br><br>{{ student }} has requested a "
-                "recommendation letter from you for their seminary program. "
-                "Please use the secure link below to submit your letter:<br><br>"
-                '<a href="{{ url }}">{{ url }}</a><br><br>'
-                "This link expires on {{ expires }}. Thank you."
-            ),
-        },
-        {
-            "template_key": "address-verification",
-            # Transactional: a confirmation is account service, not outreach,
-            # and must not be silenced by a Community opt-out (ADR 070).
-            "category": "Transactional",
-            "description": (
-                "Confirms a contact address the person added themselves, so it "
-                "can be used and optionally shown in the alumni directory."
-            ),
-            "subject": "Confirm your contact address",
-            "body": (
-                "<p>Please confirm that this address reaches you:</p>"
-                "<p><strong>{{ address }}</strong></p>"
-                '<p><a href="{{ url }}">{{ url }}</a></p>'
-                "<p>The link is valid for {{ days }} days. If you did not add "
-                "this address, you can ignore this message — nothing changes "
-                "until the link is opened.</p>"
-            ),
-        },
-    ]
-    for tpl in defaults:
-        if frappe.db.exists("Communication Template", tpl["template_key"]):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Communication Template",
-                "template_key": tpl["template_key"],
-                "category": tpl["category"],
-                "description": tpl["description"],
-                "enabled": 1,
-                "versions": [
-                    {
-                        "channel": "Email",
-                        "subject": tpl["subject"],
-                        "body": tpl["body"],
-                    }
-                ],
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	"""Seed the Communication Templates the system call sites reference
+	(ADR 043/044). Create-only-if-missing by template_key — seminaries edit
+	bodies and add language versions on the desk, so a fixture re-import would
+	clobber them. Bodies are deliberately NOT gettext-wrapped: per-language
+	copy lives in additional Communication Template Version rows, not .po
+	files."""
+	if not frappe.db.exists("DocType", "Communication Template"):
+		return
+	defaults = [
+		{
+			"template_key": "waitlist-promoted",
+			"category": "Transactional",
+			"description": "Student notice: promoted off a course waitlist.",
+			"subject": "You're off the waitlist: {{ course }}",
+			"body": (
+				"<p>Good news — a seat opened in {{ course }} and you've been "
+				"moved off the waitlist.{% if awaiting_payment %} A seat invoice "
+				"has been issued — please complete payment to keep your seat."
+				"{% endif %}</p>"
+			),
+		},
+		{
+			"template_key": "waitlist-promoted-registrar",
+			"category": "Transactional",
+			"description": "Registrar notice: a student was auto-promoted from a waitlist.",
+			"subject": "Waitlist promotion: {{ course }}",
+			"body": (
+				"<p>{{ student }} was auto-promoted from the waitlist into "
+				"{{ course }} (now {{ state }}).</p>"
+			),
+		},
+		{
+			"template_key": "waitlist-closed",
+			"category": "Transactional",
+			"description": "Student notice: enrollment closed without a seat opening.",
+			"subject": "Waitlist closed: {{ course }}",
+			"body": (
+				"<p>Enrollment for {{ course }} has closed and a seat did not open "
+				"before the deadline. Please contact the registrar about "
+				"alternatives.</p>"
+			),
+		},
+		{
+			"template_key": "cei-payment-threshold",
+			"category": "Transactional",
+			"description": "Registrar notice: a Submitted enrollment dropped below the payment threshold.",
+			"subject": "Payment threshold dropped: {{ student }}",
+			"body": (
+				"<p>Payment threshold no longer met for {{ student }} (course "
+				"{{ course }}). Now at {{ paid_percent }}%, threshold is "
+				"{{ threshold }}%. Review whether to file a Withdrawal Request or "
+				"follow up with the student.</p>"
+			),
+		},
+		{
+			"template_key": "late-grades-nag",
+			"category": "Transactional",
+			"description": "Instructor/registrar nag: final grades are past the grade close date.",
+			"subject": "Grades overdue for {{ course }}",
+			"body": (
+				"<p>Final grades for <b>{{ course }}</b> ({{ term }}) were due on "
+				"<b>{{ due }}</b> ({{ days }} day(s) ago) and have not yet been "
+				"sent.</p><p>Please enter and finalize all grades, then use "
+				"<b>Send Grades</b> to close the course for the term.</p>"
+			),
+		},
+		{
+			"template_key": "few-academic-terms",
+			"category": "Transactional",
+			"description": "Registrar warning: fewer than two future Academic Terms exist.",
+			"subject": "Few Academic Terms",
+			"body": (
+				"<p>There are only {{ count }} future academic term(s) in the "
+				"pipeline. Please create more to avoid disruptions.</p>"
+			),
+		},
+		{
+			"template_key": "recommendation-request",
+			"category": "Transactional",
+			"description": "External recommender: secure-link request for a recommendation letter.",
+			"subject": "Recommendation request for {{ student }}",
+			"body": (
+				"Dear {{ recommender }},<br><br>{{ student }} has requested a "
+				"recommendation letter from you for their seminary program. "
+				"Please use the secure link below to submit your letter:<br><br>"
+				'<a href="{{ url }}">{{ url }}</a><br><br>'
+				"This link expires on {{ expires }}. Thank you."
+			),
+		},
+		{
+			"template_key": "address-verification",
+			# Transactional: a confirmation is account service, not outreach,
+			# and must not be silenced by a Community opt-out (ADR 070).
+			"category": "Transactional",
+			"description": (
+				"Confirms a contact address the person added themselves, so it "
+				"can be used and optionally shown in the alumni directory."
+			),
+			"subject": "Confirm your contact address",
+			"body": (
+				"<p>Please confirm that this address reaches you:</p>"
+				"<p><strong>{{ address }}</strong></p>"
+				'<p><a href="{{ url }}">{{ url }}</a></p>'
+				"<p>The link is valid for {{ days }} days. If you did not add "
+				"this address, you can ignore this message — nothing changes "
+				"until the link is opened.</p>"
+			),
+		},
+	]
+	for tpl in defaults:
+		if frappe.db.exists("Communication Template", tpl["template_key"]):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Communication Template",
+				"template_key": tpl["template_key"],
+				"category": tpl["category"],
+				"description": tpl["description"],
+				"enabled": 1,
+				"versions": [
+					{
+						"channel": "Email",
+						"subject": tpl["subject"],
+						"body": tpl["body"],
+					}
+				],
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_portal_messaging_rules():
-    """Seed the default Portal Messaging Rules on Seminary Settings (ADR 043) so
-    the portal Inbox works out of the box: students reach their course
-    instructors plus the support user; staff reach the whole roster.
+	"""Seed the default Portal Messaging Rules on Seminary Settings (ADR 043) so
+	the portal Inbox works out of the box: students reach their course
+	instructors plus the support user; staff reach the whole roster.
 
-    Seeded once, create-only-if-empty — if a seminary has configured any rule
-    we never touch the table. NOT fixtures: a re-import would clobber the
-    seminary's desk edits (and child rows) on every migrate.
-    """
-    if not frappe.db.exists("DocType", "Portal Messaging Rule"):
-        return
-    settings = frappe.get_single("Seminary Settings")
-    if settings.get("portal_messaging_rules"):
-        return
-    defaults = [
-        ("Student", "Course Instructors"),
-        ("Student", "Support User"),
-        ("Instructor", "All Instructors"),
-        ("Instructor", "All Students"),
-        ("Seminary Manager", "All Instructors"),
-        ("Seminary Manager", "All Students"),
-        ("Program Chair", "All Instructors"),
-        ("Program Chair", "All Students"),
-    ]
-    for sender_role, audience in defaults:
-        if not frappe.db.exists("Role", sender_role):
-            continue
-        settings.append(
-            "portal_messaging_rules",
-            {"enabled": 1, "sender_role": sender_role, "audience": audience},
-        )
-    settings.flags.ignore_permissions = True
-    settings.save()
-    frappe.db.commit()
+	Seeded once, create-only-if-empty — if a seminary has configured any rule
+	we never touch the table. NOT fixtures: a re-import would clobber the
+	seminary's desk edits (and child rows) on every migrate.
+	"""
+	if not frappe.db.exists("DocType", "Portal Messaging Rule"):
+		return
+	settings = frappe.get_single("Seminary Settings")
+	if settings.get("portal_messaging_rules"):
+		return
+	defaults = [
+		("Student", "Course Instructors"),
+		("Student", "Support User"),
+		("Instructor", "All Instructors"),
+		("Instructor", "All Students"),
+		("Seminary Manager", "All Instructors"),
+		("Seminary Manager", "All Students"),
+		("Program Chair", "All Instructors"),
+		("Program Chair", "All Students"),
+	]
+	for sender_role, audience in defaults:
+		if not frappe.db.exists("Role", sender_role):
+			continue
+		settings.append(
+			"portal_messaging_rules",
+			{"enabled": 1, "sender_role": sender_role, "audience": audience},
+		)
+	settings.flags.ignore_permissions = True
+	settings.save()
+	frappe.db.commit()
 
 
 def seed_public_website_defaults():
-    """The public pages start on, and the navbar's Portal link points at the
-    portal (093). A new Single field reads as 0 or empty until a row is
-    written, so install and the 093 patch write both once; after that they
-    are the school's to change, and an empty Portal link hides it."""
-    frappe.db.set_single_value("Seminary Settings", "public_website", 1)
-    if frappe.db.exists("DocType", "Website Branding"):
-        frappe.db.set_single_value("Website Branding", "portal_link", "/seminary")
+	"""The public pages start on, and the navbar's Portal link points at the
+	portal (093). A new Single field reads as 0 or empty until a row is
+	written, so install and the 093 patch write both once; after that they
+	are the school's to change, and an empty Portal link hides it."""
+	frappe.db.set_single_value("Seminary Settings", "public_website", 1)
+	if frappe.db.exists("DocType", "Website Branding"):
+		frappe.db.set_single_value("Website Branding", "portal_link", "/seminary")
 
 
 def seed_website_branding():
-    """Seed the Website Branding singleton (ADR 061). Copies the legacy
-    Seminary Settings website logo across on first run and fills the default
-    colour/font scheme when unset. Create-only-if-empty per field, so a
-    seminary's own choices are never overwritten. NOT fixtures: Website
-    Branding is user-configurable; a re-import would clobber desk edits.
-    """
-    if not frappe.db.exists("DocType", "Website Branding"):
-        return
-    branding = frappe.get_single("Website Branding")
-    changed = False
+	"""Seed the Website Branding singleton (ADR 061). Copies the legacy
+	Seminary Settings website logo across on first run and fills the default
+	colour/font scheme when unset. Create-only-if-empty per field, so a
+	seminary's own choices are never overwritten. NOT fixtures: Website
+	Branding is user-configurable; a re-import would clobber desk edits.
+	"""
+	if not frappe.db.exists("DocType", "Website Branding"):
+		return
+	branding = frappe.get_single("Website Branding")
+	changed = False
 
-    if not branding.website_logo:
-        try:
-            legacy_logo = frappe.db.get_single_value(
-                "Seminary Settings", "website_logo"
-            )
-        except Exception:
-            legacy_logo = None
-        if legacy_logo:
-            branding.website_logo = legacy_logo
-            changed = True
+	if not branding.website_logo:
+		try:
+			legacy_logo = frappe.db.get_single_value("Seminary Settings", "website_logo")
+		except Exception:
+			legacy_logo = None
+		if legacy_logo:
+			branding.website_logo = legacy_logo
+			changed = True
 
-    defaults = {
-        "primary_color": "#0d3049",
-        "secondary_color": "#1b4a6b",
-        "tertiary_color": "#c8a24b",
-        "accent_color": "#b3801f",
-        "background_color": "#ffffff",
-        "text_color": "#1a2330",
-        "heading_font": "Poppins",
-        "body_font": "Inter",
-    }
-    for field, value in defaults.items():
-        if not branding.get(field):
-            branding.set(field, value)
-            changed = True
+	defaults = {
+		"primary_color": "#0d3049",
+		"secondary_color": "#1b4a6b",
+		"tertiary_color": "#c8a24b",
+		"accent_color": "#b3801f",
+		"background_color": "#ffffff",
+		"text_color": "#1a2330",
+		"heading_font": "Poppins",
+		"body_font": "Inter",
+	}
+	for field, value in defaults.items():
+		if not branding.get(field):
+			branding.set(field, value)
+			changed = True
 
-    if changed:
-        branding.flags.ignore_permissions = True
-        branding.save()
-        frappe.db.commit()
+	if changed:
+		branding.flags.ignore_permissions = True
+		branding.save()
+		frappe.db.commit()
 
 
 def seed_website_navigation(commit=True):
-    """Point the public website at the seminary's custom navbar/footer Web
-    Templates and seed the starter top-bar / footer links (ADR 061).
-    Create-only-if-empty: if a site already has a navbar template or top bar
-    items configured, we leave its navigation untouched. NOT fixtures:
-    Website Settings is user-configurable.
-    """
-    if not frappe.db.exists("Web Template", "Seminary Navbar"):
-        return
-    ws = frappe.get_single("Website Settings")
-    changed = False
+	"""Point the public website at the seminary's custom navbar/footer Web
+	Templates and seed the starter top-bar / footer links (ADR 061).
+	Create-only-if-empty: if a site already has a navbar template or top bar
+	items configured, we leave its navigation untouched. NOT fixtures:
+	Website Settings is user-configurable.
+	"""
+	if not frappe.db.exists("Web Template", "Seminary Navbar"):
+		return
+	ws = frappe.get_single("Website Settings")
+	changed = False
 
-    if not ws.navbar_template:
-        ws.navbar_template = "Seminary Navbar"
-        changed = True
-    if not ws.footer_template and frappe.db.exists("Web Template", "Seminary Footer"):
-        ws.footer_template = "Seminary Footer"
-        changed = True
-    # With the public pages off (093) only the navbar and footer are seeded:
-    # they and Website Branding keep serving other apps' public pages.
-    from seminary.seminary import public_website
+	if not ws.navbar_template:
+		ws.navbar_template = "Seminary Navbar"
+		changed = True
+	if not ws.footer_template and frappe.db.exists("Web Template", "Seminary Footer"):
+		ws.footer_template = "Seminary Footer"
+		changed = True
+	# With the public pages off (093) only the navbar and footer are seeded:
+	# they and Website Branding keep serving other apps' public pages.
+	from seminary.seminary import public_website
 
-    if public_website.enabled():
-        if not ws.home_page:
-            # "/" serves the public marketing Home page (www/home).
-            ws.home_page = public_website.HOME_PAGE
-            changed = True
+	if public_website.enabled():
+		if not ws.home_page:
+			# "/" serves the public marketing Home page (www/home).
+			ws.home_page = public_website.HOME_PAGE
+			changed = True
 
-        if not ws.get("top_bar_items"):
-            for label, url in public_website.TOP_BAR_ITEMS:
-                ws.append("top_bar_items", {"label": label, "url": url})
-            changed = True
+		if not ws.get("top_bar_items"):
+			for label, url in public_website.TOP_BAR_ITEMS:
+				ws.append("top_bar_items", {"label": label, "url": url})
+			changed = True
 
-        if not ws.get("footer_items"):
-            for label, url in public_website.FOOTER_ITEMS:
-                ws.append("footer_items", {"label": label, "url": url})
-            changed = True
+		if not ws.get("footer_items"):
+			for label, url in public_website.FOOTER_ITEMS:
+				ws.append("footer_items", {"label": label, "url": url})
+			changed = True
 
-    if changed:
-        ws.flags.ignore_permissions = True
-        ws.save()
-        if commit:
-            frappe.db.commit()
+	if changed:
+		ws.flags.ignore_permissions = True
+		ws.save()
+		if commit:
+			frappe.db.commit()
 
 
 # Starter prose pages for the public website (061). public_website.tidy()
 # unpublishes the ones still exactly as seeded.
 STARTER_WEB_PAGES = [
-    {
-        "title": "Our History",
-        "route": "our-history",
-        "main_section": "<p>Share your seminary's story here — its founding, "
-        "mission, and milestones. Edit this page under Website &gt; Web Page.</p>",
-    },
-    {
-        "title": "Privacy Policy",
-        "route": "privacy",
-        "main_section": "<p>Add your privacy policy here. "
-        "Edit this page under Website &gt; Web Page.</p>",
-    },
-    {
-        "title": "Contact Us",
-        "route": "contact",
-        "main_section": "<p>We'd love to hear from you.</p>"
-        '<p>Email: <a href="mailto:info@example.org">info@example.org</a><br>'
-        "Phone: +00 000 000 0000<br>Address: Your address here</p>"
-        "<p>Edit this page under Website &gt; Web Page.</p>",
-    },
+	{
+		"title": "Our History",
+		"route": "our-history",
+		"main_section": "<p>Share your seminary's story here — its founding, "
+		"mission, and milestones. Edit this page under Website &gt; Web Page.</p>",
+	},
+	{
+		"title": "Privacy Policy",
+		"route": "privacy",
+		"main_section": "<p>Add your privacy policy here. Edit this page under Website &gt; Web Page.</p>",
+	},
+	{
+		"title": "Contact Us",
+		"route": "contact",
+		"main_section": "<p>We'd love to hear from you.</p>"
+		'<p>Email: <a href="mailto:info@example.org">info@example.org</a><br>'
+		"Phone: +00 000 000 0000<br>Address: Your address here</p>"
+		"<p>Edit this page under Website &gt; Web Page.</p>",
+	},
 ]
 
 
 def seed_website_pages(commit=True):
-    """Seed starter public prose Web Pages (History / Privacy / Contact) for the
-    website (ADR 061). Create-only-if-missing by route; staff edit them in Desk
-    afterwards (Website > Web Page). NOT fixtures — this is staff-owned content.
-    """
-    if not frappe.db.exists("DocType", "Web Page"):
-        return
-    from seminary.seminary import public_website
+	"""Seed starter public prose Web Pages (History / Privacy / Contact) for the
+	website (ADR 061). Create-only-if-missing by route; staff edit them in Desk
+	afterwards (Website > Web Page). NOT fixtures — this is staff-owned content.
+	"""
+	if not frappe.db.exists("DocType", "Web Page"):
+		return
+	from seminary.seminary import public_website
 
-    if not public_website.enabled():
-        return
-    pages = STARTER_WEB_PAGES
-    for p in pages:
-        if frappe.db.exists("Web Page", {"route": p["route"]}):
-            continue
-        doc = frappe.get_doc(
-            {
-                "doctype": "Web Page",
-                "title": p["title"],
-                "route": p["route"],
-                "published": 1,
-                "content_type": "Rich Text",
-                "main_section": p["main_section"],
-            }
-        )
-        doc.flags.ignore_permissions = True
-        doc.insert()
-    if commit:
-        frappe.db.commit()
+	if not public_website.enabled():
+		return
+	pages = STARTER_WEB_PAGES
+	for p in pages:
+		if frappe.db.exists("Web Page", {"route": p["route"]}):
+			continue
+		doc = frappe.get_doc(
+			{
+				"doctype": "Web Page",
+				"title": p["title"],
+				"route": p["route"],
+				"published": 1,
+				"content_type": "Rich Text",
+				"main_section": p["main_section"],
+			}
+		)
+		doc.flags.ignore_permissions = True
+		doc.insert()
+	if commit:
+		frappe.db.commit()
 
 
 def seed_partner_types():
-    """Seed the starter Partner Types if they don't already exist (ADR 053).
+	"""Seed the starter Partner Types if they don't already exist (ADR 053).
 
-    NOT fixtures: partner_type is an open taxonomy seminaries curate on the
-    desk, and a fixture re-import would clobber those edits (and the is_active
-    toggle) every migrate. Created once, create-only-if-missing. The starter set
-    mirrors the partner-flavored Customer Groups already seeded in
-    setup_fixtures(). Skipped silently until the doctype exists (install
-    ordering)."""
-    if not frappe.db.exists("DocType", "Partner Type"):
-        return
-    defaults = [
-        ("Church", _("A local church or congregation.")),
-        ("Denomination", _("A denominational or network body of churches.")),
-        (
-            "Mission Agency",
-            _("A sending or field mission organization."),
-        ),
-        (
-            "Para-church Organization",
-            _("A ministry working alongside churches (camps, media, relief)."),
-        ),
-        ("NGO", _("A non-governmental / non-profit organization.")),
-    ]
-    for type_name, description in defaults:
-        if frappe.db.exists("Partner Type", type_name):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Partner Type",
-                "partner_type_name": type_name,
-                "is_active": 1,
-                "description": description,
-                "funding_line": FUNDING_LINE_DEFAULTS.get(type_name),
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	NOT fixtures: partner_type is an open taxonomy seminaries curate on the
+	desk, and a fixture re-import would clobber those edits (and the is_active
+	toggle) every migrate. Created once, create-only-if-missing. The starter set
+	mirrors the partner-flavored Customer Groups already seeded in
+	setup_fixtures(). Skipped silently until the doctype exists (install
+	ordering)."""
+	if not frappe.db.exists("DocType", "Partner Type"):
+		return
+	defaults = [
+		("Church", _("A local church or congregation.")),
+		("Denomination", _("A denominational or network body of churches.")),
+		(
+			"Mission Agency",
+			_("A sending or field mission organization."),
+		),
+		(
+			"Para-church Organization",
+			_("A ministry working alongside churches (camps, media, relief)."),
+		),
+		("NGO", _("A non-governmental / non-profit organization.")),
+	]
+	for type_name, description in defaults:
+		if frappe.db.exists("Partner Type", type_name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Partner Type",
+				"partner_type_name": type_name,
+				"is_active": 1,
+				"description": description,
+				"funding_line": FUNDING_LINE_DEFAULTS.get(type_name),
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 # Where the starter Partner Types report in Sources of Funding (p020).
 FUNDING_LINE_DEFAULTS = {
-    "Church": "Churches and denominations",
-    "Denomination": "Churches and denominations",
+	"Church": "Churches and denominations",
+	"Denomination": "Churches and denominations",
 }
 
 
 def seed_internship_communication():
-    """Seed starter internship notification templates + triggers (ADR 044/054).
+	"""Seed starter internship notification templates + triggers (ADR 044/054).
 
-    Create-only-if-missing; seminaries edit the wording and enable/disable each
-    trigger on the desk. Edge-triggered, consent-aware and rate-limited through
-    the communication ledger (ADR 043), so they never spam."""
-    if not frappe.db.exists("DocType", "Communication Trigger"):
-        return
-    # The triggers below link to the Internship Application doctype via
-    # `reference_doctype`. On a site that hasn't synced the internship doctypes
-    # yet, that Link fails validation — skip until it exists (after_migrate runs
-    # every migrate, so this self-heals once the doctype lands).
-    if not frappe.db.exists("DocType", "Internship Application"):
-        return
+	Create-only-if-missing; seminaries edit the wording and enable/disable each
+	trigger on the desk. Edge-triggered, consent-aware and rate-limited through
+	the communication ledger (ADR 043), so they never spam."""
+	if not frappe.db.exists("DocType", "Communication Trigger"):
+		return
+	# The triggers below link to the Internship Application doctype via
+	# `reference_doctype`. On a site that hasn't synced the internship doctypes
+	# yet, that Link fails validation — skip until it exists (after_migrate runs
+	# every migrate, so this self-heals once the doctype lands).
+	if not frappe.db.exists("DocType", "Internship Application"):
+		return
 
-    templates = [
-        (
-            "internship-accepted",
-            "Your internship application was accepted",
-            "<p>Good news — your internship application has been accepted. Open "
-            "<b>My Internships</b> on your student portal for your placement and next steps.</p>",
-        ),
-        (
-            "internship-rejected",
-            "Update on your internship application",
-            "<p>Your internship application was not accepted this time. Please speak with "
-            "your faculty advisor or the registrar about other opportunities.</p>",
-        ),
-        (
-            "internship-completed",
-            "Your internship is complete",
-            "<p>Your internship has been marked complete. Thank you for your faithful service.</p>",
-        ),
-    ]
-    for key, subject, body in templates:
-        if frappe.db.exists("Communication Template", key):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Communication Template",
-                "template_key": key,
-                "category": "Academic",
-                "description": _("Internship notice: {0}.").format(key),
-                "enabled": 1,
-                "versions": [{"channel": "Email", "subject": subject, "body": body}],
-            }
-        ).insert(ignore_permissions=True)
+	templates = [
+		(
+			"internship-accepted",
+			"Your internship application was accepted",
+			"<p>Good news — your internship application has been accepted. Open "
+			"<b>My Internships</b> on your student portal for your placement and next steps.</p>",
+		),
+		(
+			"internship-rejected",
+			"Update on your internship application",
+			"<p>Your internship application was not accepted this time. Please speak with "
+			"your faculty advisor or the registrar about other opportunities.</p>",
+		),
+		(
+			"internship-completed",
+			"Your internship is complete",
+			"<p>Your internship has been marked complete. Thank you for your faithful service.</p>",
+		),
+	]
+	for key, subject, body in templates:
+		if frappe.db.exists("Communication Template", key):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Communication Template",
+				"template_key": key,
+				"category": "Academic",
+				"description": _("Internship notice: {0}.").format(key),
+				"enabled": 1,
+				"versions": [{"channel": "Email", "subject": subject, "body": body}],
+			}
+		).insert(ignore_permissions=True)
 
-    triggers = [
-        ("Internship Accepted", "Accepted", "internship-accepted"),
-        ("Internship Rejected", "Rejected", "internship-rejected"),
-        ("Internship Completed", "Completed", "internship-completed"),
-    ]
-    for name, status_value, template_key in triggers:
-        if frappe.db.exists("Communication Trigger", {"trigger_name": name}):
-            continue
-        if not frappe.db.exists("Communication Template", template_key):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Communication Trigger",
-                "trigger_name": name,
-                "reference_doctype": "Internship Application",
-                "trigger_on": "Save",
-                "enabled": 1,
-                "once_per_document": 1,
-                "template": template_key,
-                "conditions": [
-                    {"fieldname": "status", "operator": "Equals", "value": status_value}
-                ],
-                "recipients": [
-                    {"recipient_type": "Document Field", "document_field": "student"}
-                ],
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	triggers = [
+		("Internship Accepted", "Accepted", "internship-accepted"),
+		("Internship Rejected", "Rejected", "internship-rejected"),
+		("Internship Completed", "Completed", "internship-completed"),
+	]
+	for name, status_value, template_key in triggers:
+		if frappe.db.exists("Communication Trigger", {"trigger_name": name}):
+			continue
+		if not frappe.db.exists("Communication Template", template_key):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Communication Trigger",
+				"trigger_name": name,
+				"reference_doctype": "Internship Application",
+				"trigger_on": "Save",
+				"enabled": 1,
+				"once_per_document": 1,
+				"template": template_key,
+				"conditions": [{"fieldname": "status", "operator": "Equals", "value": status_value}],
+				"recipients": [{"recipient_type": "Document Field", "document_field": "student"}],
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
-    from seminary.seminary.communication_triggers import clear_trigger_cache
+	from seminary.seminary.communication_triggers import clear_trigger_cache
 
-    clear_trigger_cache()
+	clear_trigger_cache()
 
 
 def seed_allowed_graduation_documents():
-    """Seed the built-in Allowed Graduation Document options (ADR 054).
+	"""Seed the built-in Allowed Graduation Document options (ADR 054).
 
-    The curated picker behind a 'Linked Document' graduation requirement, so staff
-    choose from a friendly list instead of every DocType in the system. NOT
-    fixtures: seminaries may extend the list on the desk and a re-import would
-    clobber those edits. Created once, create-only-if-missing. Skipped silently
-    until the doctype exists (install ordering)."""
-    if not frappe.db.exists("DocType", "Allowed Graduation Document"):
-        return
-    defaults = [
-        ("Culminating Project", _("Thesis / Culminating Project"), "Completed"),
-        ("Recommendation Letter", _("Recommendation Letter"), "Approved"),
-        ("Internship Application", _("Internship"), "Completed"),
-    ]
-    for doctype, label, status in defaults:
-        if frappe.db.exists("Allowed Graduation Document", doctype):
-            # Ensure the built-in flag is set even if the backfill patch created
-            # the row first (it can't know which doctypes are canonical built-ins).
-            if not frappe.db.get_value(
-                "Allowed Graduation Document", doctype, "built_in"
-            ):
-                frappe.db.set_value(
-                    "Allowed Graduation Document", doctype, "built_in", 1
-                )
-            continue
-        if not frappe.db.exists("DocType", doctype):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Allowed Graduation Document",
-                "document_type": doctype,
-                "label": label,
-                "fulfilling_status": status,
-                "is_active": 1,
-                "built_in": 1,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	The curated picker behind a 'Linked Document' graduation requirement, so staff
+	choose from a friendly list instead of every DocType in the system. NOT
+	fixtures: seminaries may extend the list on the desk and a re-import would
+	clobber those edits. Created once, create-only-if-missing. Skipped silently
+	until the doctype exists (install ordering)."""
+	if not frappe.db.exists("DocType", "Allowed Graduation Document"):
+		return
+	defaults = [
+		("Culminating Project", _("Thesis / Culminating Project"), "Completed"),
+		("Recommendation Letter", _("Recommendation Letter"), "Approved"),
+		("Internship Application", _("Internship"), "Completed"),
+	]
+	for doctype, label, status in defaults:
+		if frappe.db.exists("Allowed Graduation Document", doctype):
+			# Ensure the built-in flag is set even if the backfill patch created
+			# the row first (it can't know which doctypes are canonical built-ins).
+			if not frappe.db.get_value("Allowed Graduation Document", doctype, "built_in"):
+				frappe.db.set_value("Allowed Graduation Document", doctype, "built_in", 1)
+			continue
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Allowed Graduation Document",
+				"document_type": doctype,
+				"label": label,
+				"fulfilling_status": status,
+				"is_active": 1,
+				"built_in": 1,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_internship_types():
-    """Seed starter Internship Types and their requirement templates if missing (ADR 054).
+	"""Seed starter Internship Types and their requirement templates if missing (ADR 054).
 
-    NOT fixtures: seminaries configure each type's hours, templates, and faculty
-    pool on the desk, and a fixture re-import would clobber those edits every
-    migrate. Created once, create-only-if-missing. Skipped silently until the
-    doctype exists (install ordering)."""
-    if not frappe.db.exists("DocType", "Internship Type"):
-        return
+	NOT fixtures: seminaries configure each type's hours, templates, and faculty
+	pool on the desk, and a fixture re-import would clobber those edits every
+	migrate. Created once, create-only-if-missing. Skipped silently until the
+	doctype exists (install ordering)."""
+	if not frappe.db.exists("DocType", "Internship Type"):
+		return
 
-    defaults = [
-        (
-            "Worship Internship",
-            200,
-            _("A supervised worship-ministry placement in a partner congregation."),
-        ),
-        (
-            "Chaplaincy Internship",
-            400,
-            _(
-                "A supervised chaplaincy placement (hospital, military, or institutional)."
-            ),
-        ),
-    ]
-    for type_name, hours, description in defaults:
-        if frappe.db.exists("Internship Type", type_name):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Internship Type",
-                "type_name": type_name,
-                "is_active": 1,
-                "total_hours_required": hours,
-                "hours_tracking": "Portal Daily Log with Supervisor Confirmation",
-                "evaluation_model": "Pass/Fail",
-                "description": description,
-            }
-        ).insert(ignore_permissions=True)
+	defaults = [
+		(
+			"Worship Internship",
+			200,
+			_("A supervised worship-ministry placement in a partner congregation."),
+		),
+		(
+			"Chaplaincy Internship",
+			400,
+			_("A supervised chaplaincy placement (hospital, military, or institutional)."),
+		),
+	]
+	for type_name, hours, description in defaults:
+		if frappe.db.exists("Internship Type", type_name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Internship Type",
+				"type_name": type_name,
+				"is_active": 1,
+				"total_hours_required": hours,
+				"hours_tracking": "Portal Daily Log with Supervisor Confirmation",
+				"evaluation_model": "Pass/Fail",
+				"description": description,
+			}
+		).insert(ignore_permissions=True)
 
-        # A minimal starter template set, only when this type has none yet.
-        if not frappe.db.exists(
-            "Internship Requirement Template", {"internship_type": type_name}
-        ):
-            frappe.get_doc(
-                {
-                    "doctype": "Internship Requirement Template",
-                    "internship_type": type_name,
-                    "title": _("Learning Covenant"),
-                    "scope": "Application",
-                    "sequence": 1,
-                    "mandatory": 1,
-                    "due_anchor": "Application Date",
-                    "due_offset_value": 14,
-                    "due_offset_unit": "Days",
-                    "student_submits": 1,
-                    "student_label": _("Signed learning covenant"),
-                    "student_submission_type": "Attachment",
-                    "seminary_submits": 0,
-                    "seminary_signs_complete": 1,
-                    "partner_submits": 0,
-                }
-            ).insert(ignore_permissions=True)
-            frappe.get_doc(
-                {
-                    "doctype": "Internship Requirement Template",
-                    "internship_type": type_name,
-                    "title": _("Final Site Evaluation"),
-                    "scope": "Placement",
-                    "sequence": 2,
-                    "mandatory": 1,
-                    "due_anchor": "Placement End",
-                    "due_offset_value": 7,
-                    "due_offset_unit": "Days",
-                    "student_submits": 0,
-                    "seminary_submits": 0,
-                    "partner_submits": 1,
-                    "partner_label": _("Completed site evaluation form"),
-                    "partner_submission_type": "Attachment",
-                    "partner_signs_complete": 1,
-                }
-            ).insert(ignore_permissions=True)
-    frappe.db.commit()
+		# A minimal starter template set, only when this type has none yet.
+		if not frappe.db.exists("Internship Requirement Template", {"internship_type": type_name}):
+			frappe.get_doc(
+				{
+					"doctype": "Internship Requirement Template",
+					"internship_type": type_name,
+					"title": _("Learning Covenant"),
+					"scope": "Application",
+					"sequence": 1,
+					"mandatory": 1,
+					"due_anchor": "Application Date",
+					"due_offset_value": 14,
+					"due_offset_unit": "Days",
+					"student_submits": 1,
+					"student_label": _("Signed learning covenant"),
+					"student_submission_type": "Attachment",
+					"seminary_submits": 0,
+					"seminary_signs_complete": 1,
+					"partner_submits": 0,
+				}
+			).insert(ignore_permissions=True)
+			frappe.get_doc(
+				{
+					"doctype": "Internship Requirement Template",
+					"internship_type": type_name,
+					"title": _("Final Site Evaluation"),
+					"scope": "Placement",
+					"sequence": 2,
+					"mandatory": 1,
+					"due_anchor": "Placement End",
+					"due_offset_value": 7,
+					"due_offset_unit": "Days",
+					"student_submits": 0,
+					"seminary_submits": 0,
+					"partner_submits": 1,
+					"partner_label": _("Completed site evaluation form"),
+					"partner_submission_type": "Attachment",
+					"partner_signs_complete": 1,
+				}
+			).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def seed_skill_tags():
-    """Seed a starter set of Skill Tags if they don't already exist (ADR 053).
+	"""Seed a starter set of Skill Tags if they don't already exist (ADR 053).
 
-    NOT fixtures: skill_tag is an open taxonomy seminaries curate on the desk
-    (and tag onto people / job openings), and a fixture re-import would clobber
-    those edits every migrate. Created once, create-only-if-missing. Skipped
-    silently until the doctype exists (install ordering)."""
-    if not frappe.db.exists("DocType", "Skill Tag"):
-        return
-    defaults = [
-        ("Preaching", "Ministry"),
-        ("Teaching", "Ministry"),
-        ("Youth Ministry", "Ministry"),
-        ("Worship Leading", "Ministry"),
-        ("Pastoral Care / Counseling", "Ministry"),
-        ("Church Administration", "Administration"),
-        ("Bookkeeping / Finance", "Administration"),
-        ("Biblical Languages", "Language"),
-        ("Cross-cultural Missions", "Missions"),
-        ("Discipleship", "Ministry"),
-    ]
-    for skill_name, category in defaults:
-        if frappe.db.exists("Skill Tag", skill_name):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Skill Tag",
-                "skill_name": skill_name,
-                "category": category,
-                "is_active": 1,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	NOT fixtures: skill_tag is an open taxonomy seminaries curate on the desk
+	(and tag onto people / job openings), and a fixture re-import would clobber
+	those edits every migrate. Created once, create-only-if-missing. Skipped
+	silently until the doctype exists (install ordering)."""
+	if not frappe.db.exists("DocType", "Skill Tag"):
+		return
+	defaults = [
+		("Preaching", "Ministry"),
+		("Teaching", "Ministry"),
+		("Youth Ministry", "Ministry"),
+		("Worship Leading", "Ministry"),
+		("Pastoral Care / Counseling", "Ministry"),
+		("Church Administration", "Administration"),
+		("Bookkeeping / Finance", "Administration"),
+		("Biblical Languages", "Language"),
+		("Cross-cultural Missions", "Missions"),
+		("Discipleship", "Ministry"),
+	]
+	for skill_name, category in defaults:
+		if frappe.db.exists("Skill Tag", skill_name):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Skill Tag",
+				"skill_name": skill_name,
+				"category": category,
+				"is_active": 1,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 # setup_customer_person_field moved to the oikonomos bridge
@@ -1366,79 +1337,71 @@ def seed_skill_tags():
 
 
 def setup_donor_person_field():
-    """Soft link Donor (koinonia) <-> Person. koinonia is an optional
-    app, so these fields are created programmatically only when its Donor
-    doctype is present -- re-checked on every migrate, so installing
-    koinonia later and migrating adds them. Donor.person is the canonical
-    FK (set by giving admins); Person.donor is a read-only reverse mirror kept
-    in sync by seminary.seminary.integrations.giving. Mirrors the
-    Customer<->Person pattern in setup_customer_person_field()."""
-    if not frappe.db.exists("DocType", "Donor"):
-        return
-    # koinonia now ships Donor.person as a standard field (koinonia 0007a), so
-    # the custom field is only for older koinonia releases.
-    standard = frappe.get_meta("Donor").get_field("person")
-    if not (standard and not standard.get("is_custom_field")) and not frappe.db.exists(
-        "Custom Field", "Donor-person"
-    ):
-        frappe.get_doc(
-            {
-                "doctype": "Custom Field",
-                "dt": "Donor",
-                "fieldname": "person",
-                "fieldtype": "Link",
-                "options": "Person",
-                "label": "Person",
-                "insert_after": "customer",
-                "search_index": 1,
-            }
-        ).insert(ignore_permissions=True)
-    if not frappe.db.exists("Custom Field", "Person-donor"):
-        frappe.get_doc(
-            {
-                "doctype": "Custom Field",
-                "dt": "Person",
-                "fieldname": "donor",
-                "fieldtype": "Link",
-                "options": "Donor",
-                "label": "Donor",
-                "insert_after": "customer",
-                "read_only": 1,
-                "search_index": 1,
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
+	"""Soft link Donor (koinonia) <-> Person. koinonia is an optional
+	app, so these fields are created programmatically only when its Donor
+	doctype is present -- re-checked on every migrate, so installing
+	koinonia later and migrating adds them. Donor.person is the canonical
+	FK (set by giving admins); Person.donor is a read-only reverse mirror kept
+	in sync by seminary.seminary.integrations.giving. Mirrors the
+	Customer<->Person pattern in setup_customer_person_field()."""
+	if not frappe.db.exists("DocType", "Donor"):
+		return
+	# koinonia now ships Donor.person as a standard field (koinonia 0007a), so
+	# the custom field is only for older koinonia releases.
+	standard = frappe.get_meta("Donor").get_field("person")
+	if not (standard and not standard.get("is_custom_field")) and not frappe.db.exists(
+		"Custom Field", "Donor-person"
+	):
+		frappe.get_doc(
+			{
+				"doctype": "Custom Field",
+				"dt": "Donor",
+				"fieldname": "person",
+				"fieldtype": "Link",
+				"options": "Person",
+				"label": "Person",
+				"insert_after": "customer",
+				"search_index": 1,
+			}
+		).insert(ignore_permissions=True)
+	if not frappe.db.exists("Custom Field", "Person-donor"):
+		frappe.get_doc(
+			{
+				"doctype": "Custom Field",
+				"dt": "Person",
+				"fieldname": "donor",
+				"fieldtype": "Link",
+				"options": "Donor",
+				"label": "Donor",
+				"insert_after": "customer",
+				"read_only": 1,
+				"search_index": 1,
+			}
+		).insert(ignore_permissions=True)
+	frappe.db.commit()
 
 
 def create_studentappl_role():
-    if not frappe.db.exists("Role", "Student Applicant"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Student Applicant", "desk_access": 0}
-        ).save()
+	if not frappe.db.exists("Role", "Student Applicant"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Student Applicant", "desk_access": 0}).save()
 
 
 def create_student_role():
-    if not frappe.db.exists("Role", "Student"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Student", "desk_access": 0}
-        ).save()
+	if not frappe.db.exists("Role", "Student"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Student", "desk_access": 0}).save()
 
 
 def create_alumni_role():
-    if not frappe.db.exists("Role", "Alumni"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Alumni", "desk_access": 0}
-        ).save()
+	if not frappe.db.exists("Role", "Alumni"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Alumni", "desk_access": 0}).save()
 
 
 def create_partner_role():
-    """Portal role for partner-organization staff (the job-board employer side,
-    ADR 053). No desk access; record-level scoping in seminary.partner.permissions
-    limits each partner user to their own organization."""
-    if not frappe.db.exists("Role", "Partner"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Partner", "desk_access": 0}
-        ).save()
+	"""Portal role for partner-organization staff (the job-board employer side,
+	ADR 053). No desk access; record-level scoping in seminary.partner.permissions
+	limits each partner user to their own organization."""
+	if not frappe.db.exists("Role", "Partner"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Partner", "desk_access": 0}).save()
 
 
 # setup_sales_invoice_permissions moved to the oikonomos bridge
@@ -1447,248 +1410,231 @@ def create_partner_role():
 
 
 def create_registrar_role():
-    if not frappe.db.exists("Role", "Registrar"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Registrar", "desk_access": 1}
-        ).save()
+	if not frappe.db.exists("Role", "Registrar"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Registrar", "desk_access": 1}).save()
 
 
 def create_instructor_role():
-    if not frappe.db.exists("Role", "Instructor"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Instructor", "desk_access": 1}
-        ).save()
+	if not frappe.db.exists("Role", "Instructor"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Instructor", "desk_access": 1}).save()
 
 
 def create_external_examiner_role():
-    """Reduced-access role for outside readers/examiners (ADR 059/060). Portal
-    gates on this (is_external_examiner) so they reach the CP screens without
-    inheriting instructor access. No desk access."""
-    if not frappe.db.exists("Role", "External Examiner"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "External Examiner", "desk_access": 0}
-        ).save()
+	"""Reduced-access role for outside readers/examiners (ADR 059/060). Portal
+	gates on this (is_external_examiner) so they reach the CP screens without
+	inheriting instructor access. No desk access."""
+	if not frappe.db.exists("Role", "External Examiner"):
+		frappe.get_doc({"doctype": "Role", "role_name": "External Examiner", "desk_access": 0}).save()
 
 
 def create_cohort_participant_role():
-    """Portal role for invited cohort participants (e.g. pastors mentored by
-    alumni). desk_access=1 like Student/Alumni — the SPA lives at /seminary and
-    the participants are System Users, so they need desk access to query the
-    community doctypes and to avoid an error at /app; record-level scoping in
-    seminary.seminary.discipleship.permissions confines them to their cohorts."""
-    if not frappe.db.exists("Role", "Cohort Participant"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Cohort Participant", "desk_access": 1}
-        ).save()
-    elif not frappe.db.get_value("Role", "Cohort Participant", "desk_access"):
-        frappe.db.set_value("Role", "Cohort Participant", "desk_access", 1)
+	"""Portal role for invited cohort participants (e.g. pastors mentored by
+	alumni). desk_access=1 like Student/Alumni — the SPA lives at /seminary and
+	the participants are System Users, so they need desk access to query the
+	community doctypes and to avoid an error at /app; record-level scoping in
+	seminary.seminary.discipleship.permissions confines them to their cohorts."""
+	if not frappe.db.exists("Role", "Cohort Participant"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Cohort Participant", "desk_access": 1}).save()
+	elif not frappe.db.get_value("Role", "Cohort Participant", "desk_access"):
+		frappe.db.set_value("Role", "Cohort Participant", "desk_access", 1)
 
 
 def seed_cohort_reaction_types():
-    """Seed the starter community reaction set. Create-only-if-missing so a
-    seminary can add or rename reactions without them being clobbered."""
-    if not frappe.db.exists("DocType", "Cohort Reaction Type"):
-        return
-    # label, glyph, sort_order, saves_post (decisions/101 section 3: praying
-    # keeps the request in the person's Saved list)
-    defaults = [
-        (_("Like"), "\U0001f44d", 1, 0),
-        (_("Amen"), "\U0001f64c", 2, 0),
-        (_("Pray"), "\U0001f64f", 3, 1),
-        (_("Insightful"), "\U0001f4a1", 4, 0),
-    ]
-    for label, glyph, order, saves in defaults:
-        if not frappe.db.exists("Cohort Reaction Type", label):
-            frappe.get_doc(
-                {
-                    "doctype": "Cohort Reaction Type",
-                    "label": label,
-                    "glyph": glyph,
-                    "enabled": 1,
-                    "sort_order": order,
-                    "saves_post": saves,
-                }
-            ).insert(ignore_permissions=True)
+	"""Seed the starter community reaction set. Create-only-if-missing so a
+	seminary can add or rename reactions without them being clobbered."""
+	if not frappe.db.exists("DocType", "Cohort Reaction Type"):
+		return
+	# label, glyph, sort_order, saves_post (decisions/101 section 3: praying
+	# keeps the request in the person's Saved list)
+	defaults = [
+		(_("Like"), "\U0001f44d", 1, 0),
+		(_("Amen"), "\U0001f64c", 2, 0),
+		(_("Pray"), "\U0001f64f", 3, 1),
+		(_("Insightful"), "\U0001f4a1", 4, 0),
+	]
+	for label, glyph, order, saves in defaults:
+		if not frappe.db.exists("Cohort Reaction Type", label):
+			frappe.get_doc(
+				{
+					"doctype": "Cohort Reaction Type",
+					"label": label,
+					"glyph": glyph,
+					"enabled": 1,
+					"sort_order": order,
+					"saves_post": saves,
+				}
+			).insert(ignore_permissions=True)
 
 
 def _chapters(book, first, last):
-    return [{"from_book": book, "from_chapter": c} for c in range(first, last + 1)]
+	return [{"from_book": book, "from_chapter": c} for c in range(first, last + 1)]
 
 
 def _standard_reading_plans():
-    """ADR 087 §4. Book codes are OSIS, so the readings need no translation;
-    titles are translated once, in the language the site is installed in."""
-    romans = [
-        (1, 2),
-        (3, 4),
-        (5, 5),
-        (6, 6),
-        (7, 7),
-        (8, 8),
-        (9, 10),
-        (11, 11),
-        (12, 13),
-        (14, 16),
-    ]
-    sermon = [
-        (5, 1, 5, 16),
-        (5, 17, 5, 48),
-        (6, 1, 6, 18),
-        (6, 19, 6, 34),
-        (7, 1, 7, 12),
-        (7, 13, 7, 29),
-    ]
-    return [
-        (
-            "romans-10",
-            _("Romans in 10 days"),
-            _("Paul's letter to the Romans, one or two chapters a day."),
-            [
-                {"from_book": "ROM", "from_chapter": a, "to_chapter": b}
-                for a, b in romans
-            ],
-        ),
-        (
-            "mark-16",
-            _("Mark in 16 days"),
-            _("The Gospel of Mark, a chapter a day."),
-            _chapters("MRK", 1, 16),
-        ),
-        (
-            "philippians-4",
-            _("Philippians in 4 days"),
-            _("Paul's letter of joy, a chapter a day."),
-            _chapters("PHP", 1, 4),
-        ),
-        (
-            "sermon-on-the-mount-6",
-            _("The Sermon on the Mount in 6 days"),
-            _("Matthew 5 to 7, in six readings."),
-            [
-                {
-                    "from_book": "MAT",
-                    "from_chapter": a,
-                    "from_verse": b,
-                    "to_chapter": c,
-                    "to_verse": d,
-                }
-                for a, b, c, d in sermon
-            ],
-        ),
-        (
-            "psalms-of-ascent-15",
-            _("Psalms of Ascent in 15 days"),
-            _("Psalms 120 to 134, the songs pilgrims sang on the way up to Jerusalem."),
-            _chapters("PSA", 120, 134),
-        ),
-    ]
+	"""ADR 087 §4. Book codes are OSIS, so the readings need no translation;
+	titles are translated once, in the language the site is installed in."""
+	romans = [
+		(1, 2),
+		(3, 4),
+		(5, 5),
+		(6, 6),
+		(7, 7),
+		(8, 8),
+		(9, 10),
+		(11, 11),
+		(12, 13),
+		(14, 16),
+	]
+	sermon = [
+		(5, 1, 5, 16),
+		(5, 17, 5, 48),
+		(6, 1, 6, 18),
+		(6, 19, 6, 34),
+		(7, 1, 7, 12),
+		(7, 13, 7, 29),
+	]
+	return [
+		(
+			"romans-10",
+			_("Romans in 10 days"),
+			_("Paul's letter to the Romans, one or two chapters a day."),
+			[{"from_book": "ROM", "from_chapter": a, "to_chapter": b} for a, b in romans],
+		),
+		(
+			"mark-16",
+			_("Mark in 16 days"),
+			_("The Gospel of Mark, a chapter a day."),
+			_chapters("MRK", 1, 16),
+		),
+		(
+			"philippians-4",
+			_("Philippians in 4 days"),
+			_("Paul's letter of joy, a chapter a day."),
+			_chapters("PHP", 1, 4),
+		),
+		(
+			"sermon-on-the-mount-6",
+			_("The Sermon on the Mount in 6 days"),
+			_("Matthew 5 to 7, in six readings."),
+			[
+				{
+					"from_book": "MAT",
+					"from_chapter": a,
+					"from_verse": b,
+					"to_chapter": c,
+					"to_verse": d,
+				}
+				for a, b, c, d in sermon
+			],
+		),
+		(
+			"psalms-of-ascent-15",
+			_("Psalms of Ascent in 15 days"),
+			_("Psalms 120 to 134, the songs pilgrims sang on the way up to Jerusalem."),
+			_chapters("PSA", 120, 134),
+		),
+	]
 
 
 def seed_standard_reading_plans():
-    """Create-only-if-missing, by a stable key, so a plan a school has started
-    is never rewritten under it."""
-    if not frappe.db.exists("DocType", "Reading Plan"):
-        return
-    for key, title, description, steps in _standard_reading_plans():
-        if frappe.db.exists("Reading Plan", {"standard_key": key}):
-            continue
-        doc = frappe.get_doc(
-            {
-                "doctype": "Reading Plan",
-                "title": title,
-                "plan_type": "Bible",
-                "description": description,
-                "is_standard": 1,
-                "standard_key": key,
-                "steps": steps,
-            }
-        )
-        doc.flags.allow_standard_edit = True
-        doc.insert(ignore_permissions=True)
+	"""Create-only-if-missing, by a stable key, so a plan a school has started
+	is never rewritten under it."""
+	if not frappe.db.exists("DocType", "Reading Plan"):
+		return
+	for key, title, description, steps in _standard_reading_plans():
+		if frappe.db.exists("Reading Plan", {"standard_key": key}):
+			continue
+		doc = frappe.get_doc(
+			{
+				"doctype": "Reading Plan",
+				"title": title,
+				"plan_type": "Bible",
+				"description": description,
+				"is_standard": 1,
+				"standard_key": key,
+				"steps": steps,
+			}
+		)
+		doc.flags.allow_standard_edit = True
+		doc.insert(ignore_permissions=True)
 
 
 def seed_cohort_channels():
-    """Seed the starter community channels. Create-only-if-missing; a seminary
-    adds, renames, or disables channels from the desk without them reverting."""
-    if not frappe.db.exists("DocType", "Cohort Channel"):
-        return
-    # name, kind, description
-    defaults = [
-        ("Sermon Lab", "video_timestamp", _("Timestamped feedback on sermon videos.")),
-        (
-            "Exegetical Insight",
-            "bible_passage",
-            _("Discussion anchored to Bible passages."),
-        ),
-        ("Prayer", "prayer", _("Prayer requests and answered prayers.")),
-        ("Family Ministry", "generic", _("Family and marriage ministry.")),
-        ("Children's Ministry", "generic", _("Children's ministry.")),
-        ("Discipleship", "generic", _("Discipleship and spiritual growth.")),
-        ("Missions", "generic", _("Missions and outreach.")),
-        ("Personal Challenges", "generic", _("Personal struggles and encouragement.")),
-    ]
-    for i, (name, kind, desc) in enumerate(defaults):
-        if not frappe.db.exists("Cohort Channel", name):
-            frappe.get_doc(
-                {
-                    "doctype": "Cohort Channel",
-                    "channel_name": name,
-                    "channel_kind": kind,
-                    "enabled": 1,
-                    "is_default": 1,
-                    "default_visibility": "cohort_only",
-                    "sort_order": i,
-                    "description": desc,
-                    "reactions": [
-                        {"reaction_type": r} for r in _channel_reactions(kind)
-                    ],
-                }
-            ).insert(ignore_permissions=True)
+	"""Seed the starter community channels. Create-only-if-missing; a seminary
+	adds, renames, or disables channels from the desk without them reverting."""
+	if not frappe.db.exists("DocType", "Cohort Channel"):
+		return
+	# name, kind, description
+	defaults = [
+		("Sermon Lab", "video_timestamp", _("Timestamped feedback on sermon videos.")),
+		(
+			"Exegetical Insight",
+			"bible_passage",
+			_("Discussion anchored to Bible passages."),
+		),
+		("Prayer", "prayer", _("Prayer requests and answered prayers.")),
+		("Family Ministry", "generic", _("Family and marriage ministry.")),
+		("Children's Ministry", "generic", _("Children's ministry.")),
+		("Discipleship", "generic", _("Discipleship and spiritual growth.")),
+		("Missions", "generic", _("Missions and outreach.")),
+		("Personal Challenges", "generic", _("Personal struggles and encouragement.")),
+	]
+	for i, (name, kind, desc) in enumerate(defaults):
+		if not frappe.db.exists("Cohort Channel", name):
+			frappe.get_doc(
+				{
+					"doctype": "Cohort Channel",
+					"channel_name": name,
+					"channel_kind": kind,
+					"enabled": 1,
+					"is_default": 1,
+					"default_visibility": "cohort_only",
+					"sort_order": i,
+					"description": desc,
+					"reactions": [{"reaction_type": r} for r in _channel_reactions(kind)],
+				}
+			).insert(ignore_permissions=True)
 
 
 # The reactions that fit each kind of channel (decisions/101 section 2.1):
 # Insightful on a prayer request reads wrong; Pray on a sermon critique too.
 _REACTIONS_BY_KIND = {
-    "prayer": ("Pray", "Amen"),
-    "bible_passage": ("Insightful", "Like"),
-    "video_timestamp": ("Like", "Amen", "Insightful"),
+	"prayer": ("Pray", "Amen"),
+	"bible_passage": ("Insightful", "Like"),
+	"video_timestamp": ("Like", "Amen", "Insightful"),
 }
 
 
 def _channel_reactions(kind):
-    """Seeded reactions for a channel kind, as they exist on this site: a
-    renamed or deleted reaction is simply left out."""
-    labels = _REACTIONS_BY_KIND.get(kind)
-    rows = frappe.get_all(
-        "Cohort Reaction Type",
-        filters={"enabled": 1},
-        fields=["name", "label"],
-        order_by="sort_order asc",
-    )
-    if not labels:
-        return [r.name for r in rows]
-    wanted = {_(label) for label in labels} | set(labels)
-    return [r.name for r in rows if r.label in wanted or r.name in wanted]
+	"""Seeded reactions for a channel kind, as they exist on this site: a
+	renamed or deleted reaction is simply left out."""
+	labels = _REACTIONS_BY_KIND.get(kind)
+	rows = frappe.get_all(
+		"Cohort Reaction Type",
+		filters={"enabled": 1},
+		fields=["name", "label"],
+		order_by="sort_order asc",
+	)
+	if not labels:
+		return [r.name for r in rows]
+	wanted = {_(label) for label in labels} | set(labels)
+	return [r.name for r in rows if r.label in wanted or r.name in wanted]
 
 
 def create_program_chair_role():
-    """Broad academic authority over programs & curriculum.
+	"""Broad academic authority over programs & curriculum.
 
-    Replaces the ERPNext-inherited "Academics User" role, which Seminary used as
-    its de-facto content-owner role but never created itself. See ADR 030.
-    """
-    if not frappe.db.exists("Role", "Program Chair"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Program Chair", "desk_access": 1}
-        ).save()
+	Replaces the ERPNext-inherited "Academics User" role, which Seminary used as
+	its de-facto content-owner role but never created itself. See ADR 030.
+	"""
+	if not frappe.db.exists("Role", "Program Chair"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Program Chair", "desk_access": 1}).save()
 
 
 def create_seminary_manager_role():
-    """Module administrator. Previously relied on ERPNext to provide this role."""
-    if not frappe.db.exists("Role", "Seminary Manager"):
-        frappe.get_doc(
-            {"doctype": "Role", "role_name": "Seminary Manager", "desk_access": 1}
-        ).save()
+	"""Module administrator. Previously relied on ERPNext to provide this role."""
+	if not frappe.db.exists("Role", "Seminary Manager"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Seminary Manager", "desk_access": 1}).save()
 
 
 # update_company_in_item_details moved to the oikonomos bridge
@@ -1697,206 +1643,206 @@ def create_seminary_manager_role():
 
 
 def setup_withdrawal_workflow():
-    """Create the Course Withdrawal workflow and its dependencies if they don't exist."""
-    import json
+	"""Create the Course Withdrawal workflow and its dependencies if they don't exist."""
+	import json
 
-    fixtures_dir = os.path.join(os.path.dirname(__file__), "fixtures")
+	fixtures_dir = os.path.join(os.path.dirname(__file__), "fixtures")
 
-    # Create workflow states
-    states_path = os.path.join(fixtures_dir, "workflow_state.json")
-    if os.path.exists(states_path):
-        with open(states_path) as f:
-            states = json.load(f)
-        for state_data in states:
-            if not frappe.db.exists("Workflow State", state_data["name"]):
-                doc = frappe.get_doc(state_data)
-                doc.insert(ignore_permissions=True)
+	# Create workflow states
+	states_path = os.path.join(fixtures_dir, "workflow_state.json")
+	if os.path.exists(states_path):
+		with open(states_path) as f:
+			states = json.load(f)
+		for state_data in states:
+			if not frappe.db.exists("Workflow State", state_data["name"]):
+				doc = frappe.get_doc(state_data)
+				doc.insert(ignore_permissions=True)
 
-    # Create workflow actions
-    actions_path = os.path.join(fixtures_dir, "workflow_action_master.json")
-    if os.path.exists(actions_path):
-        with open(actions_path) as f:
-            actions = json.load(f)
-        for action_data in actions:
-            if not frappe.db.exists("Workflow Action Master", action_data["name"]):
-                doc = frappe.get_doc(action_data)
-                doc.insert(ignore_permissions=True)
+	# Create workflow actions
+	actions_path = os.path.join(fixtures_dir, "workflow_action_master.json")
+	if os.path.exists(actions_path):
+		with open(actions_path) as f:
+			actions = json.load(f)
+		for action_data in actions:
+			if not frappe.db.exists("Workflow Action Master", action_data["name"]):
+				doc = frappe.get_doc(action_data)
+				doc.insert(ignore_permissions=True)
 
-    # Create workflows (create-only-if-missing, per workflow — so a workflow
-    # whose doctype only lands in a later release still gets seeded then).
-    wf_path = os.path.join(fixtures_dir, "workflow.json")
-    if os.path.exists(wf_path):
-        with open(wf_path) as f:
-            workflows = json.load(f)
-        for wf_data in workflows:
-            if frappe.db.exists("Workflow", wf_data.get("workflow_name")):
-                continue
-            # A version-skewed site may not carry every workflow's target
-            # doctype yet — skip those rather than abort the whole migrate on a
-            # link-validation error (a later migrate seeds it once it lands).
-            if not frappe.db.exists("DocType", wf_data.get("document_type")):
-                continue
-            wf_data.pop("creation", None)
-            wf_data.pop("modified", None)
-            wf_data.pop("modified_by", None)
-            doc = frappe.get_doc(wf_data)
-            doc.insert(ignore_permissions=True)
+	# Create workflows (create-only-if-missing, per workflow — so a workflow
+	# whose doctype only lands in a later release still gets seeded then).
+	wf_path = os.path.join(fixtures_dir, "workflow.json")
+	if os.path.exists(wf_path):
+		with open(wf_path) as f:
+			workflows = json.load(f)
+		for wf_data in workflows:
+			if frappe.db.exists("Workflow", wf_data.get("workflow_name")):
+				continue
+			# A version-skewed site may not carry every workflow's target
+			# doctype yet — skip those rather than abort the whole migrate on a
+			# link-validation error (a later migrate seeds it once it lands).
+			if not frappe.db.exists("DocType", wf_data.get("document_type")):
+				continue
+			wf_data.pop("creation", None)
+			wf_data.pop("modified", None)
+			wf_data.pop("modified_by", None)
+			doc = frappe.get_doc(wf_data)
+			doc.insert(ignore_permissions=True)
 
-    frappe.db.commit()
+	frappe.db.commit()
 
 
 def after_migrate():
-    setup_genders()
-    # Roles first: the Course Withdrawal workflow's transitions link to several
-    # of these roles, so they must exist before setup_withdrawal_workflow runs.
-    create_alumni_role()
-    create_partner_role()
-    create_external_examiner_role()
-    create_program_chair_role()
-    create_seminary_manager_role()
-    setup_withdrawal_workflow()
-    seed_assessment_criteria()
-    seed_course_cancellation_reasons()
-    seed_grading_scale()
-    seed_faculty_capabilities()
-    seed_cohort_assignment_criteria()
-    seed_mandatory_personal_fields()
-    seed_room_features()
-    seed_communication_channels()
-    seed_channel_provider_accounts()
-    seed_mailing_label_formats()
-    seed_communication_templates()
-    seed_portal_messaging_rules()
-    seed_partner_types()
-    seed_skill_tags()
-    seed_allowed_graduation_documents()
-    seed_internship_types()
-    seed_internship_communication()
-    seed_website_branding()
-    seed_website_navigation()
-    seed_website_pages()
-    seed_cohort_reaction_types()
-    seed_cohort_channels()
-    seed_standard_reading_plans()
-    setup_donor_person_field()
-    setup_user_bible_field()
-    create_cohort_participant_role()
-    ensure_registrar_tools()
-    merge_academics_user_into_program_chair()
-    ensure_instructor_community_access()
-    # Frappe's language rows get English names for editors (languages.py).
-    rename_frappe_languages()
+	setup_genders()
+	# Roles first: the Course Withdrawal workflow's transitions link to several
+	# of these roles, so they must exist before setup_withdrawal_workflow runs.
+	create_alumni_role()
+	create_partner_role()
+	create_external_examiner_role()
+	create_program_chair_role()
+	create_seminary_manager_role()
+	setup_withdrawal_workflow()
+	seed_assessment_criteria()
+	seed_course_cancellation_reasons()
+	seed_grading_scale()
+	seed_faculty_capabilities()
+	seed_cohort_assignment_criteria()
+	seed_mandatory_personal_fields()
+	seed_room_features()
+	seed_communication_channels()
+	seed_channel_provider_accounts()
+	seed_mailing_label_formats()
+	seed_communication_templates()
+	seed_portal_messaging_rules()
+	seed_partner_types()
+	seed_skill_tags()
+	seed_allowed_graduation_documents()
+	seed_internship_types()
+	seed_internship_communication()
+	seed_website_branding()
+	seed_website_navigation()
+	seed_website_pages()
+	seed_cohort_reaction_types()
+	seed_cohort_channels()
+	seed_standard_reading_plans()
+	setup_donor_person_field()
+	setup_user_bible_field()
+	create_cohort_participant_role()
+	ensure_registrar_tools()
+	merge_academics_user_into_program_chair()
+	ensure_instructor_community_access()
+	# Frappe's language rows get English names for editors (languages.py).
+	rename_frappe_languages()
 
 
 def merge_academics_user_into_program_chair():
-    """Collapse a resurrected "Academics User" role back into "Program Chair".
+	"""Collapse a resurrected "Academics User" role back into "Program Chair".
 
-    ADR 034 renamed the role and a patch did the migration — but patches run
-    once, and Frappe recreates any role named in a DocPerm that doesn't exist
-    (`doctype.py` :: `update_permissions` / role auto-create, with desk_access=1).
-    Three third-party apps still name it — erpnext's Department, hrms's Interest
-    and koinonia's donor_base chart — so on a site with any of them the role
-    reappears on the very next `bench migrate` and the one-shot patch can never
-    fire again. Hence a hook: whatever recreates it, we collapse it each time
-    (ADR 074).
+	ADR 034 renamed the role and a patch did the migration — but patches run
+	once, and Frappe recreates any role named in a DocPerm that doesn't exist
+	(`doctype.py` :: `update_permissions` / role auto-create, with desk_access=1).
+	Three third-party apps still name it — erpnext's Department, hrms's Interest
+	and koinonia's donor_base chart — so on a site with any of them the role
+	reappears on the very next `bench migrate` and the one-shot patch can never
+	fire again. Hence a hook: whatever recreates it, we collapse it each time
+	(ADR 074).
 
-    The resurrected role is worse than clutter — it carries no seminary
-    permissions (those moved to Program Chair) but still reads like the academic
-    authority role it used to be, so granting it looks meaningful and does
-    nothing.
+	The resurrected role is worse than clutter — it carries no seminary
+	permissions (those moved to Program Chair) but still reads like the academic
+	authority role it used to be, so granting it looks meaningful and does
+	nothing.
 
-    Merging is safe only while the role is vestigial upstream, which it is:
-    Academics User belongs to Frappe's Education and LMS products, both
-    redundant with seminary. Re-check on major erpnext/hrms upgrades.
-    """
-    if not frappe.db.exists("Role", "Academics User"):
-        return
-    if not frappe.db.exists("Role", "Program Chair"):
-        create_program_chair_role()
+	Merging is safe only while the role is vestigial upstream, which it is:
+	Academics User belongs to Frappe's Education and LMS products, both
+	redundant with seminary. Re-check on major erpnext/hrms upgrades.
+	"""
+	if not frappe.db.exists("Role", "Academics User"):
+		return
+	if not frappe.db.exists("Role", "Program Chair"):
+		create_program_chair_role()
 
-    frappe.rename_doc("Role", "Academics User", "Program Chair", merge=True, force=True)
-    frappe.db.commit()
-    print('Merged resurrected role "Academics User" -> "Program Chair".')
+	frappe.rename_doc("Role", "Academics User", "Program Chair", merge=True, force=True)
+	frappe.db.commit()
+	print('Merged resurrected role "Academics User" -> "Program Chair".')
 
 
 def ensure_instructor_community_access():
-    """Grant `Instructor` read on the discipleship doctypes.
+	"""Grant `Instructor` read on the discipleship doctypes.
 
-    The Community subsystem shipped with portal read for Student, Alumni and
-    Cohort Participant but not Instructor, while `AppSidebar` shows the Community
-    link to any `is_instructor` user -- so an instructor who led or mentored a
-    cohort followed the link and got "Insufficient Permission for Cohort Post".
-    CBE (ADR 065) makes it load-bearing rather than cosmetic: a Personal Mentor
-    is resolved through `Cohort Membership`, and mentors are usually instructors.
+	The Community subsystem shipped with portal read for Student, Alumni and
+	Cohort Participant but not Instructor, while `AppSidebar` shows the Community
+	link to any `is_instructor` user -- so an instructor who led or mentored a
+	cohort followed the link and got "Insufficient Permission for Cohort Post".
+	CBE (ADR 065) makes it load-bearing rather than cosmetic: a Personal Mentor
+	is resolved through `Cohort Membership`, and mentors are usually instructors.
 
-    Read-only, exactly mirroring Student: every write goes through a whitelisted
-    API, and `discipleship/permissions.py` still scopes rows to the cohorts the
-    user can actually see. Instructor is deliberately NOT in `STAFF_BYPASS`, so
-    this grants reach, not oversight.
+	Read-only, exactly mirroring Student: every write goes through a whitelisted
+	API, and `discipleship/permissions.py` still scopes rows to the cohorts the
+	user can actually see. Instructor is deliberately NOT in `STAFF_BYPASS`, so
+	this grants reach, not oversight.
 
-    The doctype JSONs carry the same rows as the source of truth; this exists so
-    an already-migrated site picks them up without a DocType reload.
-    """
-    doctypes = (
-        "Cohort",
-        "Cohort Membership",
-        "Cohort Channel",
-        "Cohort Post",
-        "Cohort Post Comment",
-        "Cohort Post Reaction",
-        "Cohort Post Save",
-        "Cohort Feed Read State",
-        "Cohort Content Flag",
-    )
-    if not frappe.db.exists("Role", "Instructor"):
-        return
-    added = []
-    for dt in doctypes:
-        if not frappe.db.exists("DocType", dt):
-            continue
-        if frappe.db.exists("DocPerm", {"parent": dt, "role": "Instructor"}):
-            continue
-        doc = frappe.get_doc("DocType", dt)
-        doc.append("permissions", {"role": "Instructor", "read": 1, "permlevel": 0})
-        doc.save(ignore_permissions=True)
-        added.append(dt)
-    if added:
-        frappe.db.commit()
-        print("Granted Instructor read on: %s" % ", ".join(added))
+	The doctype JSONs carry the same rows as the source of truth; this exists so
+	an already-migrated site picks them up without a DocType reload.
+	"""
+	doctypes = (
+		"Cohort",
+		"Cohort Membership",
+		"Cohort Channel",
+		"Cohort Post",
+		"Cohort Post Comment",
+		"Cohort Post Reaction",
+		"Cohort Post Save",
+		"Cohort Feed Read State",
+		"Cohort Content Flag",
+	)
+	if not frappe.db.exists("Role", "Instructor"):
+		return
+	added = []
+	for dt in doctypes:
+		if not frappe.db.exists("DocType", dt):
+			continue
+		if frappe.db.exists("DocPerm", {"parent": dt, "role": "Instructor"}):
+			continue
+		doc = frappe.get_doc("DocType", dt)
+		doc.append("permissions", {"role": "Instructor", "read": 1, "permlevel": 0})
+		doc.save(ignore_permissions=True)
+		added.append(dt)
+	if added:
+		frappe.db.commit()
+		print("Granted Instructor read on: %s" % ", ".join(added))
 
 
 def ensure_registrar_tools():
-    """The Registrar workspace's action buttons are Custom HTML Blocks it names.
+	"""The Registrar workspace's action buttons are Custom HTML Blocks it names.
 
-    The workspace ships with the app and syncs on migrate; the blocks did not,
-    so every site that never ran workspaces_bootstrap.run by hand had a
-    Registrar workspace with two dead buttons. Create-only — see the docstring
-    on the helper for why this does not break the "don't re-import
-    user-configurable doctypes" rule.
-    """
-    from seminary.seminary.workspaces_bootstrap import (
-        ensure_registrar_tools as _ensure,
-    )
+	The workspace ships with the app and syncs on migrate; the blocks did not,
+	so every site that never ran workspaces_bootstrap.run by hand had a
+	Registrar workspace with two dead buttons. Create-only — see the docstring
+	on the helper for why this does not break the "don't re-import
+	user-configurable doctypes" rule.
+	"""
+	from seminary.seminary.workspaces_bootstrap import (
+		ensure_registrar_tools as _ensure,
+	)
 
-    _ensure()
+	_ensure()
 
 
 def setup_user_bible_field():
-    """Per-user preferred Bible version. A Data field on User holding an api.bible
-    bible_id; the Bible integration prefers it over the language default when
-    rendering scripture. Re-checked on every migrate (idempotent)."""
-    if not frappe.db.exists("Custom Field", "User-preferred_bible_id"):
-        frappe.get_doc(
-            {
-                "doctype": "Custom Field",
-                "dt": "User",
-                "fieldname": "preferred_bible_id",
-                "fieldtype": "Data",
-                "label": "Preferred Bible Version",
-                "insert_after": "language",
-                "no_copy": 1,
-            }
-        ).insert(ignore_permissions=True)
+	"""Per-user preferred Bible version. A Data field on User holding an api.bible
+	bible_id; the Bible integration prefers it over the language default when
+	rendering scripture. Re-checked on every migrate (idempotent)."""
+	if not frappe.db.exists("Custom Field", "User-preferred_bible_id"):
+		frappe.get_doc(
+			{
+				"doctype": "Custom Field",
+				"dt": "User",
+				"fieldname": "preferred_bible_id",
+				"fieldtype": "Data",
+				"label": "Preferred Bible Version",
+				"insert_after": "language",
+				"no_copy": 1,
+			}
+		).insert(ignore_permissions=True)
 
 
 #: Genders a seminary starts with. Every other row Frappe's setup wizard seeds
@@ -1907,59 +1853,59 @@ DEFAULT_GENDERS = ("Male", "Female")
 
 
 def ensure_gender_disabled_field():
-    """Give Gender a `disabled` Check, and let Frappe do the filtering.
+	"""Give Gender a `disabled` Check, and let Frappe do the filtering.
 
-    The name is load-bearing. `frappe/desk/search.py` excludes rows from every
-    Link picker when the target doctype has a **Check field called `disabled`**
-    — no `link_filters`, no `set_query`, no per-field wiring, and it applies
-    equally to Desk forms and Web Forms. That last part matters: `Web Form
-    Field` has no `link_filters` column at all, so a per-field filter could not
-    have reached the public application form even if we wrote one.
+	The name is load-bearing. `frappe/desk/search.py` excludes rows from every
+	Link picker when the target doctype has a **Check field called `disabled`**
+	— no `link_filters`, no `set_query`, no per-field wiring, and it applies
+	equally to Desk forms and Web Forms. That last part matters: `Web Form
+	Field` has no `link_filters` column at all, so a per-field filter could not
+	have reached the public application form even if we wrote one.
 
-    This replaces an `enabled` Check that did the same job inverted, which
-    nothing ever filtered on — so all seven of Frappe's seeded genders were
-    offered to applicants.
-    """
-    from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+	This replaces an `enabled` Check that did the same job inverted, which
+	nothing ever filtered on — so all seven of Frappe's seeded genders were
+	offered to applicants.
+	"""
+	from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-    create_custom_fields(
-        {
-            "Gender": [
-                {
-                    "fieldname": "disabled",
-                    "fieldtype": "Check",
-                    "label": "Disabled",
-                    "insert_after": "gender",
-                    "description": _(
-                        "Hidden from every Gender picker, including the public "
-                        "application form. Existing records keep their value."
-                    ),
-                }
-            ]
-        },
-        ignore_validate=True,
-    )
+	create_custom_fields(
+		{
+			"Gender": [
+				{
+					"fieldname": "disabled",
+					"fieldtype": "Check",
+					"label": "Disabled",
+					"insert_after": "gender",
+					"description": _(
+						"Hidden from every Gender picker, including the public "
+						"application form. Existing records keep their value."
+					),
+				}
+			]
+		},
+		ignore_validate=True,
+	)
 
 
 def setup_genders():
-    """Seed the default gender selection — **once**, never on every migrate.
+	"""Seed the default gender selection — **once**, never on every migrate.
 
-    This used to run from `after_migrate` and begin with
-    `UPDATE tabGender SET enabled = 0`, so a school that enabled a gender in
-    Desk had it switched off again by the next deploy. Seeding a
-    user-configurable table on every migrate is the same defect as fixturing
-    one; the value pass is now create-only and lives behind an explicit
-    "has anyone chosen yet" check.
-    """
-    ensure_gender_disabled_field()
+	This used to run from `after_migrate` and begin with
+	`UPDATE tabGender SET enabled = 0`, so a school that enabled a gender in
+	Desk had it switched off again by the next deploy. Seeding a
+	user-configurable table on every migrate is the same defect as fixturing
+	one; the value pass is now create-only and lives behind an explicit
+	"has anyone chosen yet" check.
+	"""
+	ensure_gender_disabled_field()
 
-    already_chosen = frappe.db.count("Gender", {"disabled": 1})
-    if already_chosen:
-        return
+	already_chosen = frappe.db.count("Gender", {"disabled": 1})
+	if already_chosen:
+		return
 
-    for name in frappe.get_all("Gender", pluck="name"):
-        # Match on the translated label as well: `install_fixtures` seeds these
-        # through `_()`, so a site set up in pt-BR has "Masculino", not "Male".
-        keep = name in DEFAULT_GENDERS or name in [_(g) for g in DEFAULT_GENDERS]
-        if not keep:
-            frappe.db.set_value("Gender", name, "disabled", 1, update_modified=False)
+	for name in frappe.get_all("Gender", pluck="name"):
+		# Match on the translated label as well: `install_fixtures` seeds these
+		# through `_()`, so a site set up in pt-BR has "Masculino", not "Male".
+		keep = name in DEFAULT_GENDERS or name in [_(g) for g in DEFAULT_GENDERS]
+		if not keep:
+			frappe.db.set_value("Gender", name, "disabled", 1, update_modified=False)

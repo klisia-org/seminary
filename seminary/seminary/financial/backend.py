@@ -31,305 +31,298 @@ from frappe.utils import getdate
 
 @dataclass
 class PaymentAggregate:
-    """A financial snapshot the academic side can reason about without knowing
-    anything about Sales Invoices.
+	"""A financial snapshot the academic side can reason about without knowing
+	anything about Sales Invoices.
 
-    `paid_percent` is carried explicitly (not derived) so the null backend can
-    report "fully paid" (100.0) while reporting zero invoiced/paid — i.e. there
-    is no billing system, so there is nothing to owe.
-    """
+	`paid_percent` is carried explicitly (not derived) so the null backend can
+	report "fully paid" (100.0) while reporting zero invoiced/paid — i.e. there
+	is no billing system, so there is nothing to owe.
+	"""
 
-    invoiced: float = 0.0
-    paid: float = 0.0
-    si_count: int = 0
-    paid_percent: float = 0.0
+	invoiced: float = 0.0
+	paid: float = 0.0
+	si_count: int = 0
+	paid_percent: float = 0.0
 
 
 class FinancialBackend(ABC):
-    """Contract seminary depends on. Implemented by oikonomos (ERPNext-backed);
-    falls back to `NullFinancialBackend` when no financial app is installed."""
+	"""Contract seminary depends on. Implemented by oikonomos (ERPNext-backed);
+	falls back to `NullFinancialBackend` when no financial app is installed."""
 
-    def setup_route(self) -> str | None:
-        """Desk route of the first page a school opens to set up billing, or
-        None. Not abstract: a backend with nothing to point at is still valid."""
-        return None
+	def setup_route(self) -> str | None:
+		"""Desk route of the first page a school opens to set up billing, or
+		None. Not abstract: a backend with nothing to point at is still valid."""
+		return None
 
-    @abstractmethod
-    def has_financials(self) -> bool:
-        """True when a real billing backend is present. Academic code can use
-        this to hide payment UI / workflow states."""
+	@abstractmethod
+	def has_financials(self) -> bool:
+		"""True when a real billing backend is present. Academic code can use
+		this to hide payment UI / workflow states."""
 
-    @abstractmethod
-    def payment_status_for_cei(self, cei_name: str) -> PaymentAggregate:
-        """Aggregate of submitted invoices linked to a Course Enrollment
-        Individual."""
+	@abstractmethod
+	def payment_status_for_cei(self, cei_name: str) -> PaymentAggregate:
+		"""Aggregate of submitted invoices linked to a Course Enrollment
+		Individual."""
 
-    @abstractmethod
-    def payment_status_for_graduation(self, gr_name: str) -> PaymentAggregate:
-        """Aggregate of submitted invoices linked to a Graduation Request."""
+	@abstractmethod
+	def payment_status_for_graduation(self, gr_name: str) -> PaymentAggregate:
+		"""Aggregate of submitted invoices linked to a Graduation Request."""
 
-    @abstractmethod
-    def generate_enrollment_invoice(self, cei_doc) -> int:
-        """Raise the Sales Invoice(s) for a non-free Course Enrollment Individual
-        and return how many payer lines were billed. Idempotency on the CEI
-        (`cei_si`) is handled by the caller, which must only flag the enrollment
-        as invoiced when the return is non-zero — a 0 means nothing was billable
-        (no fee wired up / missing price), not 'successfully free'."""
+	@abstractmethod
+	def generate_enrollment_invoice(self, cei_doc) -> int:
+		"""Raise the Sales Invoice(s) for a non-free Course Enrollment Individual
+		and return how many payer lines were billed. Idempotency on the CEI
+		(`cei_si`) is handled by the caller, which must only flag the enrollment
+		as invoiced when the return is non-zero — a 0 means nothing was billable
+		(no fee wired up / missing price), not 'successfully free'."""
 
-    @abstractmethod
-    def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
-        """Raise the Program-Enrollment Sales Invoices for a Payers Fee Category
-        PE. Returns a {"created", "skipped", "failed"} count dict."""
+	@abstractmethod
+	def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
+		"""Raise the Program-Enrollment Sales Invoices for a Payers Fee Category
+		PE. Returns a {"created", "skipped", "failed"} count dict."""
 
-    @abstractmethod
-    def process_withdrawal_refunds(self, withdrawal_doc) -> None:
-        """Generate credit notes (and any scholarship clawback invoice) for a
-        withdrawn enrollment, per its Withdrawal Rule. Called by the seminary
-        withdrawal dispatcher when the workflow reaches the refund transition."""
+	@abstractmethod
+	def process_withdrawal_refunds(self, withdrawal_doc) -> None:
+		"""Generate credit notes (and any scholarship clawback invoice) for a
+		withdrawn enrollment, per its Withdrawal Rule. Called by the seminary
+		withdrawal dispatcher when the workflow reaches the refund transition."""
 
-    @abstractmethod
-    def charge_readmission(self, pe_name: str, effective_date) -> None:
-        """Bill the readmission fee for an enrollment returning from leave.
+	@abstractmethod
+	def charge_readmission(self, pe_name: str, effective_date) -> None:
+		"""Bill the readmission fee for an enrollment returning from leave.
 
-        The readmission policy (whether a fee is charged and which Fee Category)
-        lives on the Program Level as oikonomos-owned custom fields, so the
-        backend reads it. No-op with no financial app — readmission is free."""
+		The readmission policy (whether a fee is charged and which Fee Category)
+		lives on the Program Level as oikonomos-owned custom fields, so the
+		backend reads it. No-op with no financial app — readmission is free."""
 
-    @abstractmethod
-    def sync_enrollment_payers(self, pe_name: str) -> None:
-        """(Re)build the billing payer snapshot (Payers Fee Category PE + rows)
-        for a Program Enrollment from its program's current Program Fees. Called
-        from the PE form's save action; a no-op with no financial app — a
-        Frappe-only seminary has no payer rows to keep in sync."""
+	@abstractmethod
+	def sync_enrollment_payers(self, pe_name: str) -> None:
+		"""(Re)build the billing payer snapshot (Payers Fee Category PE + rows)
+		for a Program Enrollment from its program's current Program Fees. Called
+		from the PE form's save action; a no-op with no financial app — a
+		Frappe-only seminary has no payer rows to keep in sync."""
 
-    @abstractmethod
-    def student_scholarships(self, student: str) -> list:
-        """Active Scholarship Award(s) for a student, with retention info, for the
-        Fees portal. Empty with no financial app — scholarships are an oikonomos
-        concept."""
+	@abstractmethod
+	def student_scholarships(self, student: str) -> list:
+		"""Active Scholarship Award(s) for a student, with retention info, for the
+		Fees portal. Empty with no financial app — scholarships are an oikonomos
+		concept."""
 
-    @abstractmethod
-    def available_scholarships(self, student: str) -> list:
-        """Scholarship templates the student may apply for on the portal. Empty
-        with no financial app."""
+	@abstractmethod
+	def available_scholarships(self, student: str) -> list:
+		"""Scholarship templates the student may apply for on the portal. Empty
+		with no financial app."""
 
-    @abstractmethod
-    def apply_for_scholarship(
-        self, program_enrollment: str, scholarship: str, comment: str | None = None
-    ) -> str | None:
-        """Create a Scholarship Award request from the portal. Raises with no
-        financial app — there are no scholarships to apply for."""
+	@abstractmethod
+	def apply_for_scholarship(
+		self, program_enrollment: str, scholarship: str, comment: str | None = None
+	) -> str | None:
+		"""Create a Scholarship Award request from the portal. Raises with no
+		financial app — there are no scholarships to apply for."""
 
-    # -- Student-facing invoice reads + payment-gateway URLs -----------------
-    # The portal (Fees / Enrollment / Program Audit pages, the applicant web
-    # form) calls these; a Frappe-only seminary returns empty / None (no
-    # invoices, no gateway).
+	# -- Student-facing invoice reads + payment-gateway URLs -----------------
+	# The portal (Fees / Enrollment / Program Audit pages, the applicant web
+	# form) calls these; a Frappe-only seminary returns empty / None (no
+	# invoices, no gateway).
 
-    @abstractmethod
-    def student_invoices(self, student: str | None = None) -> list:
-        """The student's submitted invoices, formatted for the Fees page."""
+	@abstractmethod
+	def student_invoices(self, student: str | None = None) -> list:
+		"""The student's submitted invoices, formatted for the Fees page."""
 
-    @abstractmethod
-    def pe_unpaid_invoices(self, program_enrollment: str) -> list:
-        """Unpaid invoices for a Program Enrollment, grouped by payer."""
+	@abstractmethod
+	def pe_unpaid_invoices(self, program_enrollment: str) -> list:
+		"""Unpaid invoices for a Program Enrollment, grouped by payer."""
 
-    @abstractmethod
-    def unpaid_invoice_for_cei(self, cei_name: str) -> dict | None:
-        """The latest unpaid invoice for a Course Enrollment Individual, or None."""
+	@abstractmethod
+	def unpaid_invoice_for_cei(self, cei_name: str) -> dict | None:
+		"""The latest unpaid invoice for a Course Enrollment Individual, or None."""
 
-    @abstractmethod
-    def graduation_request_invoices(self, gr_name: str) -> list:
-        """Submitted invoices linked to a Graduation Request."""
+	@abstractmethod
+	def graduation_request_invoices(self, gr_name: str) -> list:
+		"""Submitted invoices linked to a Graduation Request."""
 
-    @abstractmethod
-    def application_payment_url(self, applicant_name: str) -> dict | None:
-        """Payment URL + instructions for an applicant's Application invoice."""
+	@abstractmethod
+	def application_payment_url(self, applicant_name: str) -> dict | None:
+		"""Payment URL + instructions for an applicant's Application invoice."""
 
-    @abstractmethod
-    def invoice_payment_url(self, invoice_name: str) -> dict | None:
-        """Gateway payment URL for one of the student's invoices."""
+	@abstractmethod
+	def invoice_payment_url(self, invoice_name: str) -> dict | None:
+		"""Gateway payment URL for one of the student's invoices."""
 
-    @abstractmethod
-    def student_balance_payment_url(self) -> dict | None:
-        """Gateway payment URL for the student's full outstanding balance."""
+	@abstractmethod
+	def student_balance_payment_url(self) -> dict | None:
+		"""Gateway payment URL for the student's full outstanding balance."""
 
-    @abstractmethod
-    def student_partial_balance_payment_url(
-        self, amount=None, invoices=None
-    ) -> dict | None:
-        """Gateway payment URL for a partial balance payment."""
+	@abstractmethod
+	def student_partial_balance_payment_url(self, amount=None, invoices=None) -> dict | None:
+		"""Gateway payment URL for a partial balance payment."""
 
-    @abstractmethod
-    def cei_invoices(self, cei_name: str, include_cancelled: bool = False) -> list:
-        """Names of the invoices linked to a Course Enrollment Individual. Used by
-        the regenerate-invoice action. Empty with no financial app."""
+	@abstractmethod
+	def cei_invoices(self, cei_name: str, include_cancelled: bool = False) -> list:
+		"""Names of the invoices linked to a Course Enrollment Individual. Used by
+		the regenerate-invoice action. Empty with no financial app."""
 
-    @abstractmethod
-    def set_enrollment_payers_active(self, pe_name: str, active: bool) -> None:
-        """Sync the active flag on a Program Enrollment's payer snapshot when its
-        billability changes (terminal / leave transitions). No-op with no
-        financial app — there are no payer rows."""
+	@abstractmethod
+	def set_enrollment_payers_active(self, pe_name: str, active: bool) -> None:
+		"""Sync the active flag on a Program Enrollment's payer snapshot when its
+		billability changes (terminal / leave transitions). No-op with no
+		financial app — there are no payer rows."""
 
-    # -- ERPNext company context (the bridge owns the Company / Holiday List) ---
+	# -- ERPNext company context (the bridge owns the Company / Holiday List) ---
 
-    @abstractmethod
-    def company_country(self) -> str | None:
-        """Country of the configured billing Company, or None with no financial
-        app (callers fall back to the system default)."""
+	@abstractmethod
+	def company_country(self) -> str | None:
+		"""Country of the configured billing Company, or None with no financial
+		app (callers fall back to the system default)."""
 
-    @abstractmethod
-    def company_holiday_dates(self) -> set:
-        """Holiday dates from the billing Company's holiday list. Empty with no
-        financial app."""
+	@abstractmethod
+	def company_holiday_dates(self) -> set:
+		"""Holiday dates from the billing Company's holiday list. Empty with no
+		financial app."""
 
-    # -- Optional reads -------------------------------------------------------
+	# -- Optional reads -------------------------------------------------------
 
-    def preview_enrollment_charges(
-        self, pe_name: str, course_schedule: str, credits: float, audit: bool = False
-    ) -> list:
-        """What enrolling this student in this section would charge, before
-        scholarships, as [{"payer", "fee", "qty", "rate", "amount"}]. `rate` and
-        `amount` are None where a fee has no price. Nothing is raised. Bulk
-        Course Enrollment shows it before the run (ADR 083 §1). Empty with no
-        financial app."""
-        return []
+	def preview_enrollment_charges(
+		self, pe_name: str, course_schedule: str, credits: float, audit: bool = False
+	) -> list:
+		"""What enrolling this student in this section would charge, before
+		scholarships, as [{"payer", "fee", "qty", "rate", "amount"}]. `rate` and
+		`amount` are None where a fee has no price. Nothing is raised. Bulk
+		Course Enrollment shows it before the run (ADR 083 §1). Empty with no
+		financial app."""
+		return []
 
-    # -- Optional actions: a backend opts in by overriding both methods --------
+	# -- Optional actions: a backend opts in by overriding both methods --------
 
-    def can_regenerate_current_term_charges(self) -> bool:
-        """True when this backend can raise the current term's charges again on
-        demand. Desk shows the Registrar's button only when it can."""
-        return False
+	def can_regenerate_current_term_charges(self) -> bool:
+		"""True when this backend can raise the current term's charges again on
+		demand. Desk shows the Registrar's button only when it can."""
+		return False
 
-    def regenerate_current_term_charges(self) -> dict:
-        """Clear the current term's billing flag and raise its charges again.
-        Returns {"created", "skipped", "failed"}; charges already raised are
-        skipped."""
-        frappe.throw(frappe._("The active billing app cannot regenerate term charges."))
+	def regenerate_current_term_charges(self) -> dict:
+		"""Clear the current term's billing flag and raise its charges again.
+		Returns {"created", "skipped", "failed"}; charges already raised are
+		skipped."""
+		frappe.throw(frappe._("The active billing app cannot regenerate term charges."))
 
-    def fiscal_year(self, on_date=None) -> tuple[date, date]:
-        """The (start, end) of the fiscal year containing `on_date` (p020).
-        The calendar year unless the billing app keeps its own."""
-        year = getdate(on_date).year
-        return date(year, 1, 1), date(year, 12, 31)
+	def fiscal_year(self, on_date=None) -> tuple[date, date]:
+		"""The (start, end) of the fiscal year containing `on_date` (p020).
+		The calendar year unless the billing app keeps its own."""
+		year = getdate(on_date).year
+		return date(year, 1, 1), date(year, 12, 31)
 
-    def tuition_revenue(self, start, end) -> dict:
-        """Tuition and fees posted between `start` and `end` (p020):
-        {"gross", "scholarships", "since"}. `gross` is before institutional
-        scholarships, `scholarships` is what they took off, and `since` is the
-        first date the app has any charge (None when it has none)."""
-        return {"gross": 0.0, "scholarships": 0.0, "since": None}
+	def tuition_revenue(self, start, end) -> dict:
+		"""Tuition and fees posted between `start` and `end` (p020):
+		{"gross", "scholarships", "since"}. `gross` is before institutional
+		scholarships, `scholarships` is what they took off, and `since` is the
+		first date the app has any charge (None when it has none)."""
+		return {"gross": 0.0, "scholarships": 0.0, "since": None}
 
 
 class NullFinancialBackend(FinancialBackend):
-    """No financial app installed. Everything reads as free / fully paid so
-    academic flows never block on payment and never try to bill."""
+	"""No financial app installed. Everything reads as free / fully paid so
+	academic flows never block on payment and never try to bill."""
 
-    def has_financials(self) -> bool:
-        return False
+	def has_financials(self) -> bool:
+		return False
 
-    def payment_status_for_cei(self, cei_name: str) -> PaymentAggregate:
-        return PaymentAggregate(paid_percent=100.0)
+	def payment_status_for_cei(self, cei_name: str) -> PaymentAggregate:
+		return PaymentAggregate(paid_percent=100.0)
 
-    def payment_status_for_graduation(self, gr_name: str) -> PaymentAggregate:
-        return PaymentAggregate(paid_percent=100.0)
+	def payment_status_for_graduation(self, gr_name: str) -> PaymentAggregate:
+		return PaymentAggregate(paid_percent=100.0)
 
-    def generate_enrollment_invoice(self, cei_doc) -> int:
-        return 0
+	def generate_enrollment_invoice(self, cei_doc) -> int:
+		return 0
 
-    def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
-        return {"created": 0, "skipped": 0, "failed": 0}
+	def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
+		return {"created": 0, "skipped": 0, "failed": 0}
 
-    def process_withdrawal_refunds(self, withdrawal_doc) -> None:
-        return None
+	def process_withdrawal_refunds(self, withdrawal_doc) -> None:
+		return None
 
-    def charge_readmission(self, pe_name: str, effective_date) -> None:
-        return None
+	def charge_readmission(self, pe_name: str, effective_date) -> None:
+		return None
 
-    def sync_enrollment_payers(self, pe_name: str) -> None:
-        return None
+	def sync_enrollment_payers(self, pe_name: str) -> None:
+		return None
 
-    def student_scholarships(self, student: str) -> list:
-        return []
+	def student_scholarships(self, student: str) -> list:
+		return []
 
-    def available_scholarships(self, student: str) -> list:
-        return []
+	def available_scholarships(self, student: str) -> list:
+		return []
 
-    def apply_for_scholarship(
-        self, program_enrollment: str, scholarship: str, comment: str | None = None
-    ) -> str | None:
-        frappe.throw(frappe._("Scholarship applications are not enabled."))
+	def apply_for_scholarship(
+		self, program_enrollment: str, scholarship: str, comment: str | None = None
+	) -> str | None:
+		frappe.throw(frappe._("Scholarship applications are not enabled."))
 
-    def student_invoices(self, student: str | None = None) -> list:
-        return []
+	def student_invoices(self, student: str | None = None) -> list:
+		return []
 
-    def pe_unpaid_invoices(self, program_enrollment: str) -> list:
-        return []
+	def pe_unpaid_invoices(self, program_enrollment: str) -> list:
+		return []
 
-    def unpaid_invoice_for_cei(self, cei_name: str) -> dict | None:
-        return None
+	def unpaid_invoice_for_cei(self, cei_name: str) -> dict | None:
+		return None
 
-    def graduation_request_invoices(self, gr_name: str) -> list:
-        return []
+	def graduation_request_invoices(self, gr_name: str) -> list:
+		return []
 
-    def application_payment_url(self, applicant_name: str) -> dict | None:
-        return None
+	def application_payment_url(self, applicant_name: str) -> dict | None:
+		return None
 
-    def invoice_payment_url(self, invoice_name: str) -> dict | None:
-        return None
+	def invoice_payment_url(self, invoice_name: str) -> dict | None:
+		return None
 
-    def student_balance_payment_url(self) -> dict | None:
-        return None
+	def student_balance_payment_url(self) -> dict | None:
+		return None
 
-    def student_partial_balance_payment_url(
-        self, amount=None, invoices=None
-    ) -> dict | None:
-        return None
+	def student_partial_balance_payment_url(self, amount=None, invoices=None) -> dict | None:
+		return None
 
-    def cei_invoices(self, cei_name: str, include_cancelled: bool = False) -> list:
-        return []
+	def cei_invoices(self, cei_name: str, include_cancelled: bool = False) -> list:
+		return []
 
-    def set_enrollment_payers_active(self, pe_name: str, active: bool) -> None:
-        return None
+	def set_enrollment_payers_active(self, pe_name: str, active: bool) -> None:
+		return None
 
-    def company_country(self) -> str | None:
-        return None
+	def company_country(self) -> str | None:
+		return None
 
-    def company_holiday_dates(self) -> set:
-        return set()
+	def company_holiday_dates(self) -> set:
+		return set()
 
 
 def registered_financial_backends() -> dict[str, str]:
-    """{app name: backend class path} for every installed financial app, in
-    hook order. The app name is the first segment of the registered path."""
-    return {
-        path.split(".", 1)[0]: path
-        for path in frappe.get_hooks("seminary_financial_backend")
-    }
+	"""{app name: backend class path} for every installed financial app, in
+	hook order. The app name is the first segment of the registered path."""
+	return {path.split(".", 1)[0]: path for path in frappe.get_hooks("seminary_financial_backend")}
 
 
 def active_financial_app() -> str | None:
-    """The app whose backend is active, or None with no financial app.
+	"""The app whose backend is active, or None with no financial app.
 
-    Two financial apps may be installed on one site — a school changing ledgers
-    keeps the old app's history — but only one is active. With more than one
-    registered, `Seminary Settings.financial_backend` names it; when it is unset
-    or names an app no longer installed, the last registration wins (standard
-    Frappe hook-override semantics).
-    """
-    backends = registered_financial_backends()
-    if not backends:
-        return None
-    if len(backends) > 1:
-        chosen = frappe.db.get_single_value("Seminary Settings", "financial_backend")
-        if chosen in backends:
-            return chosen
-    return list(backends)[-1]
+	Two financial apps may be installed on one site — a school changing ledgers
+	keeps the old app's history — but only one is active. With more than one
+	registered, `Seminary Settings.financial_backend` names it; when it is unset
+	or names an app no longer installed, the last registration wins (standard
+	Frappe hook-override semantics).
+	"""
+	backends = registered_financial_backends()
+	if not backends:
+		return None
+	if len(backends) > 1:
+		chosen = frappe.db.get_single_value("Seminary Settings", "financial_backend")
+		if chosen in backends:
+			return chosen
+	return list(backends)[-1]
 
 
 def get_financial_backend() -> FinancialBackend:
-    """Resolve the active financial backend, or the null fallback."""
-    app = active_financial_app()
-    if not app:
-        return NullFinancialBackend()
-    return frappe.get_attr(registered_financial_backends()[app])()
+	"""Resolve the active financial backend, or the null fallback."""
+	app = active_financial_app()
+	if not app:
+		return NullFinancialBackend()
+	return frappe.get_attr(registered_financial_backends()[app])()

@@ -23,57 +23,51 @@ from frappe.model.naming import make_autoname
 
 # doctype -> the new naming series
 TARGETS = {
-    "Instructor": "INST-.#####",
-    "Alumni Profile": "ALUM-.#####",
-    "Student Applicant": "APP-.#####",
+	"Instructor": "INST-.#####",
+	"Alumni Profile": "ALUM-.#####",
+	"Student Applicant": "APP-.#####",
 }
 
 
 def execute():
-    _backfill_applicant_access_keys()
-    for doctype, series in TARGETS.items():
-        if not frappe.db.exists("DocType", doctype):
-            continue
-        prefix = series.split(".", 1)[0]
-        stale = [
-            name
-            for name in frappe.get_all(doctype, pluck="name")
-            if not str(name).startswith(prefix)
-        ]
-        for old in stale:
-            frappe.rename_doc(
-                doctype,
-                old,
-                make_autoname(series, doctype),
-                # force=True covers `allow_rename`; the patch runs as
-                # Administrator so there is no permission to bypass. (The
-                # `frappe.rename_doc` wrapper does not forward
-                # ignore_permissions — only the inner model function takes it.)
-                force=True,
-                merge=False,
-                show_alert=False,
-            )
-        if stale:
-            print("  renamed %d %s records to %s" % (len(stale), doctype, prefix))
+	_backfill_applicant_access_keys()
+	for doctype, series in TARGETS.items():
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		prefix = series.split(".", 1)[0]
+		stale = [name for name in frappe.get_all(doctype, pluck="name") if not str(name).startswith(prefix)]
+		for old in stale:
+			frappe.rename_doc(
+				doctype,
+				old,
+				make_autoname(series, doctype),
+				# force=True covers `allow_rename`; the patch runs as
+				# Administrator so there is no permission to bypass. (The
+				# `frappe.rename_doc` wrapper does not forward
+				# ignore_permissions — only the inner model function takes it.)
+				force=True,
+				merge=False,
+				show_alert=False,
+			)
+		if stale:
+			print("  renamed %d %s records to %s" % (len(stale), doctype, prefix))
 
 
 def _backfill_applicant_access_keys():
-    """Give existing applicants the key the payment page now requires.
+	"""Give existing applicants the key the payment page now requires.
 
-    Without this every application submitted before the rename would meet
-    "this payment link is invalid" — a security fix that quietly breaks the
-    thank-you page for real people is not a fix.
-    """
-    names = frappe.get_all(
-        "Student Applicant", filters={"access_key": ["is", "not set"]}, pluck="name"
-    )
-    for name in names:
-        frappe.db.set_value(
-            "Student Applicant",
-            name,
-            "access_key",
-            frappe.generate_hash(length=32),
-            update_modified=False,
-        )
-    if names:
-        print("  issued access keys to %d Student Applicant records" % len(names))
+	Without this every application submitted before the rename would meet
+	"this payment link is invalid" — a security fix that quietly breaks the
+	thank-you page for real people is not a fix.
+	"""
+	names = frappe.get_all("Student Applicant", filters={"access_key": ["is", "not set"]}, pluck="name")
+	for name in names:
+		frappe.db.set_value(
+			"Student Applicant",
+			name,
+			"access_key",
+			frappe.generate_hash(length=32),
+			update_modified=False,
+		)
+	if names:
+		print("  issued access keys to %d Student Applicant records" % len(names))

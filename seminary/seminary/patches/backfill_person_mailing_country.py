@@ -20,28 +20,28 @@ import frappe
 
 
 def execute():
-    rows = frappe.get_all(
-        "Person",
-        filters={
-            "mailing_country": ("is", "not set"),
-            "country": ("is", "set"),
-        },
-        fields=["name", "country", "address_line_1", "city"],
-    )
-    filled = 0
-    for row in rows:
-        # Only where a postal address actually exists: a country on its own is
-        # the routing selector doing its job, not an unfilled mailing field.
-        if not (row.address_line_1 or row.city):
-            continue
-        frappe.db.set_value(
-            "Person",
-            row.name,
-            "mailing_country",
-            row.country,
-            update_modified=False,
-        )
-        filled += 1
+	rows = frappe.get_all(
+		"Person",
+		filters={
+			"mailing_country": ("is", "not set"),
+			"country": ("is", "set"),
+		},
+		fields=["name", "country", "address_line_1", "city"],
+	)
+	filled = 0
+	for row in rows:
+		# Only where a postal address actually exists: a country on its own is
+		# the routing selector doing its job, not an unfilled mailing field.
+		if not (row.address_line_1 or row.city):
+			continue
+		frappe.db.set_value(
+			"Person",
+			row.name,
+			"mailing_country",
+			row.country,
+			update_modified=False,
+		)
+		filled += 1
 
-    if filled:
-        print("  mailing country filled from routing country: %d" % filled)
+	if filled:
+		print("  mailing country filled from routing country: %d" % filled)

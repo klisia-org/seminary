@@ -19,16 +19,16 @@ import frappe
 
 
 def execute():
-    if frappe.db.has_column("Student Applicant", "student_admission"):
-        frappe.db.sql("UPDATE `tabStudent Applicant` SET student_admission = NULL")
-        print("Cleared student_admission on Student Applicant.")
+	if frappe.db.has_column("Student Applicant", "student_admission"):
+		frappe.db.sql("UPDATE `tabStudent Applicant` SET student_admission = NULL")
+		print("Cleared student_admission on Student Applicant.")
 
-    if frappe.db.exists("DocType", "Student Admission Program"):
-        frappe.db.sql("DELETE FROM `tabStudent Admission Program`")
-        print("Cleared Student Admission Program records.")
+	if frappe.db.exists("DocType", "Student Admission Program"):
+		frappe.db.sql("DELETE FROM `tabStudent Admission Program`")
+		print("Cleared Student Admission Program records.")
 
-    if frappe.db.exists("DocType", "Student Admission"):
-        frappe.db.sql("DELETE FROM `tabStudent Admission`")
-        print("Cleared Student Admission records.")
+	if frappe.db.exists("DocType", "Student Admission"):
+		frappe.db.sql("DELETE FROM `tabStudent Admission`")
+		print("Cleared Student Admission records.")
 
-    frappe.db.commit()
+	frappe.db.commit()

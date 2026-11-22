@@ -40,12 +40,17 @@ frappe.query_reports["Students At Attendance Risk"] = {
 				return;
 			}
 			frappe.confirm(
-				__("Fail {0} selected student(s) for unexcused absences? Their final grade becomes the FA code (Fail).", [names.length]),
+				__(
+					"Fail {0} selected student(s) for unexcused absences? Their final grade becomes the FA code (Fail).",
+					[names.length]
+				),
 				() => {
 					frappe.dom.freeze(__("Failing..."));
 					Promise.all(
 						names.map((rosterName) =>
-							frappe.call("seminary.seminary.api.fail_for_absence", { name: rosterName })
+							frappe.call("seminary.seminary.api.fail_for_absence", {
+								name: rosterName,
+							})
 						)
 					)
 						.then(() => {
@@ -73,10 +78,13 @@ frappe.query_reports["Students At Attendance Risk"] = {
 					frappe.dom.freeze(__("Saving..."));
 					Promise.all(
 						names.map((rosterName) =>
-							frappe.call("seminary.seminary.absence_decisions.keep_grade_despite_absences", {
-								name: rosterName,
-								reason: values.reason,
-							})
+							frappe.call(
+								"seminary.seminary.absence_decisions.keep_grade_despite_absences",
+								{
+									name: rosterName,
+									reason: values.reason,
+								}
+							)
 						)
 					)
 						.then(() => {
@@ -110,15 +118,24 @@ frappe.query_reports["Students At Attendance Risk"] = {
 					return;
 				}
 				frappe.db
-					.get_value("Scheduled Course Roster", rosterName, ["student", "program_std_scr"])
+					.get_value("Scheduled Course Roster", rosterName, [
+						"student",
+						"program_std_scr",
+					])
 					.then((r) => {
 						const v = (r && r.message) || {};
 						frappe.db
-							.get_value("Program Enrollment", { student: v.student, program: v.program_std_scr }, "name")
+							.get_value(
+								"Program Enrollment",
+								{ student: v.student, program: v.program_std_scr },
+								"name"
+							)
 							.then((peRes) => {
 								const pe = peRes && peRes.message && peRes.message.name;
 								if (!pe) {
-									frappe.msgprint(__("No Program Enrollment found for this student."));
+									frappe.msgprint(
+										__("No Program Enrollment found for this student.")
+									);
 									return;
 								}
 								frappe.route_options = { pe: pe, reason: reason };

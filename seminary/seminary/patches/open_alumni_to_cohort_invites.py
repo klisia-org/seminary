@@ -12,13 +12,13 @@ import frappe
 
 
 def execute():
-    updated = frappe.db.sql(
-        """
+	frappe.db.sql(
+		"""
         UPDATE `tabAlumni Profile`
         SET open_to_cohort_invites = 1
         WHERE IFNULL(open_to_cohort_invites, 0) = 0
         """
-    )
-    frappe.db.commit()
-    count = frappe.db.count("Alumni Profile", {"open_to_cohort_invites": 1})
-    print("  alumni open to cohort invitations: %d" % count)
+	)
+	frappe.db.commit()
+	count = frappe.db.count("Alumni Profile", {"open_to_cohort_invites": 1})
+	print("  alumni open to cohort invitations: %d" % count)

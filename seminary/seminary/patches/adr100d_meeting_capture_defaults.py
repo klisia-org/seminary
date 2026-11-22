@@ -5,8 +5,6 @@ import frappe
 
 
 def execute():
-    for field in ("meeting_capture_account", "meeting_capture_bot"):
-        if not frappe.db.exists(
-            "Singles", {"doctype": "Seminary Settings", "field": field}
-        ):
-            frappe.db.set_single_value("Seminary Settings", field, 1)
+	for field in ("meeting_capture_account", "meeting_capture_bot"):
+		if not frappe.db.exists("Singles", {"doctype": "Seminary Settings", "field": field}):
+			frappe.db.set_single_value("Seminary Settings", field, 1)

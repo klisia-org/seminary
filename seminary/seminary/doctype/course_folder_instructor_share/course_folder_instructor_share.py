@@ -5,4 +5,4 @@ from frappe.model.document import Document
 
 
 class CourseFolderInstructorShare(Document):
-    pass
+	pass

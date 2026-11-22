@@ -9,5 +9,5 @@ from seminary.install import seed_portal_messaging_rules
 
 
 def execute():
-    seed_portal_messaging_rules()
-    print("Ensured default Portal Messaging Rules exist.")
+	seed_portal_messaging_rules()
+	print("Ensured default Portal Messaging Rules exist.")

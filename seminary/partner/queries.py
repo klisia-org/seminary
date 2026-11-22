@@ -13,18 +13,18 @@ import frappe
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def org_contact_person_query(doctype, txt, searchfield, start, page_len, filters):
-    """Persons who are contacts of the given Partner Organization. Returns
-    nothing until an organization is chosen.
+	"""Persons who are contacts of the given Partner Organization. Returns
+	nothing until an organization is chosen.
 
-    filters: `partner_org`; `supervisors_only` (default on: a site supervisor
-    must be able to supervise); `active_only` (only Active contacts, e.g. an
-    organisation's giving contacts in koinonia)."""
-    filters = filters or {}
-    org = filters.get("partner_org")
-    if not org:
-        return []
-    return frappe.db.sql(
-        """
+	filters: `partner_org`; `supervisors_only` (default on: a site supervisor
+	must be able to supervise); `active_only` (only Active contacts, e.g. an
+	organisation's giving contacts in koinonia)."""
+	filters = filters or {}
+	org = filters.get("partner_org")
+	if not org:
+		return []
+	return frappe.db.sql(
+		"""
         SELECT p.name, p.full_name
         FROM `tabPerson` p
         WHERE p.name IN (
@@ -39,12 +39,12 @@ def org_contact_person_query(doctype, txt, searchfield, start, page_len, filters
         ORDER BY p.full_name
         LIMIT %(start)s, %(page_len)s
         """,
-        {
-            "org": org,
-            "supervisors_only": 1 if filters.get("supervisors_only", 1) else 0,
-            "active_only": 1 if filters.get("active_only") else 0,
-            "txt": f"%{txt}%",
-            "start": start,
-            "page_len": page_len,
-        },
-    )
+		{
+			"org": org,
+			"supervisors_only": 1 if filters.get("supervisors_only", 1) else 0,
+			"active_only": 1 if filters.get("active_only") else 0,
+			"txt": f"%{txt}%",
+			"start": start,
+			"page_len": page_len,
+		},
+	)

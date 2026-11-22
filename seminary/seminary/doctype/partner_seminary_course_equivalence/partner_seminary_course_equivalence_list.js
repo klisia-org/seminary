@@ -2,9 +2,8 @@ frappe.listview_settings["Partner Seminary Course Equivalence"] = {
 	onload(listview) {
 		if (!frappe.user.has_role("System Manager")) return;
 
-		const btn = listview.page.add_inner_button(
-			__("Create Legacy Integration"),
-			() => promptCreateLegacyIntegration(listview)
+		const btn = listview.page.add_inner_button(__("Create Legacy Integration"), () =>
+			promptCreateLegacyIntegration(listview)
 		);
 		btn.attr(
 			"title",
@@ -32,8 +31,7 @@ function promptCreateLegacyIntegration(listview) {
 		primary_action(values) {
 			d.hide();
 			frappe.call({
-				method:
-					"seminary.seminary.doctype.partner_seminary_course_equivalence.partner_seminary_course_equivalence.create_legacy_integration",
+				method: "seminary.seminary.doctype.partner_seminary_course_equivalence.partner_seminary_course_equivalence.create_legacy_integration",
 				args: { partner_seminary: values.partner_seminary },
 				freeze: true,
 				freeze_message: __("Creating legacy equivalences..."),
@@ -41,10 +39,10 @@ function promptCreateLegacyIntegration(listview) {
 					const res = r.message || {};
 					frappe.msgprint({
 						title: __("Legacy Integration"),
-						message: __(
-							"Created {0} equivalence(s); skipped {1} already in place.",
-							[res.created || 0, res.skipped || 0]
-						),
+						message: __("Created {0} equivalence(s); skipped {1} already in place.", [
+							res.created || 0,
+							res.skipped || 0,
+						]),
 					});
 					listview.refresh();
 				},

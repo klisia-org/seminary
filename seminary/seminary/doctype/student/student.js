@@ -1,8 +1,8 @@
 // Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Student', {
-	refresh: function(frm) {
+frappe.ui.form.on("Student", {
+	refresh: function (frm) {
 		frm.set_query("user", function (doc) {
 			return {
 				filters: {
@@ -13,18 +13,17 @@ frappe.ui.form.on('Student', {
 
 		// The Accounting Ledger (ERPNext General Ledger) is only meaningful when the
 		// oikonomos bridge is installed — that's what gives a Student a Customer.
-		if(!frm.is_new() && frm.doc.customer) {
-			frm.add_custom_button(__('Accounting Ledger'), function() {
-				frappe.set_route('query-report', 'General Ledger',
-					{party_type:'Customer', party:frm.doc.customer});
+		if (!frm.is_new() && frm.doc.customer) {
+			frm.add_custom_button(__("Accounting Ledger"), function () {
+				frappe.set_route("query-report", "General Ledger", {
+					party_type: "Customer",
+					party: frm.doc.customer,
+				});
 			});
-		};
+		}
 	},
 
-
-
-
-/* 	frm.add_custom_button('Get Program Enrollments', function() {
+	/* 	frm.add_custom_button('Get Program Enrollments', function() {
 
 		frappe.call({
 			method:"seminary.seminary.doctype.student.get_pgmenrollments",
@@ -51,37 +50,48 @@ frappe.ui.form.on('Student', {
 		});
 		}); */
 
-		onload: function(frm) {
-			if (frm.doc.enabled) {
-				frappe.call({
-					method: "seminary.seminary.api.get_pgmenrollments",
-					args: {
-						name: frm.doc.name
-					},
-					callback: function(r) {
-						if (r.message) {
-							var enrollments = r.message;
-							var table = "<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #0d3049; padding: 8px; text-align: left; } </style>";
-							table += "<table><thead><tr><th>Program</th><th>Active</th><th>Enrollment Date</th><th>Conclusion Date</th></tr></thead><tbody>";
-							for (var i = 0; i < enrollments.length; i++) {
-								var activeStatus = enrollments[i].pgmenrol_active ? "Yes" : "No";
-								var conclusionDate = enrollments[i].date_of_conclusion ? enrollments[i].date_of_conclusion : " ";
-								table += "<tr><td>" + enrollments[i].program + "</td><td>" + activeStatus + "</td><td>" + enrollments[i].enrollment_date + "</td><td>" + conclusionDate + "</td></tr>";
-							}
-							table += "</tbody></table>";
-							frm.set_df_property('pe_html', 'options', table);
-							frm.refresh_field('pe_html');
-						} else {
-							frm.set_df_property('pe_html', 'options', "No enrollments found");
-							frm.refresh_field('pe_html');
+	onload: function (frm) {
+		if (frm.doc.enabled) {
+			frappe.call({
+				method: "seminary.seminary.api.get_pgmenrollments",
+				args: {
+					name: frm.doc.name,
+				},
+				callback: function (r) {
+					if (r.message) {
+						var enrollments = r.message;
+						var table =
+							"<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #0d3049; padding: 8px; text-align: left; } </style>";
+						table +=
+							"<table><thead><tr><th>Program</th><th>Active</th><th>Enrollment Date</th><th>Conclusion Date</th></tr></thead><tbody>";
+						for (var i = 0; i < enrollments.length; i++) {
+							var activeStatus = enrollments[i].pgmenrol_active ? "Yes" : "No";
+							var conclusionDate = enrollments[i].date_of_conclusion
+								? enrollments[i].date_of_conclusion
+								: " ";
+							table +=
+								"<tr><td>" +
+								enrollments[i].program +
+								"</td><td>" +
+								activeStatus +
+								"</td><td>" +
+								enrollments[i].enrollment_date +
+								"</td><td>" +
+								conclusionDate +
+								"</td></tr>";
 						}
+						table += "</tbody></table>";
+						frm.set_df_property("pe_html", "options", table);
+						frm.refresh_field("pe_html");
+					} else {
+						frm.set_df_property("pe_html", "options", "No enrollments found");
+						frm.refresh_field("pe_html");
 					}
-				});
-			} else {
-				frm.set_df_property('pe_html', 'options', "No enrollments found");
-				frm.refresh_field('pe_html');
-			};
-		}},
-
-
-);
+				},
+			});
+		} else {
+			frm.set_df_property("pe_html", "options", "No enrollments found");
+			frm.refresh_field("pe_html");
+		}
+	},
+});

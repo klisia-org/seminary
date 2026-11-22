@@ -6,18 +6,18 @@ from frappe.model.document import Document
 
 
 class SeminaryLessonNote(Document):
-    def validate(self):
-        if not self.member:
-            self.member = frappe.session.user
+	def validate(self):
+		if not self.member:
+			self.member = frappe.session.user
 
 
 @frappe.whitelist()
 def get_note(lesson):
-    """Fetch the current user's note for a lesson."""
-    note = frappe.db.get_value(
-        "Seminary Lesson Note",
-        {"lesson": lesson, "member": frappe.session.user},
-        ["name", "note"],
-        as_dict=True,
-    )
-    return note
+	"""Fetch the current user's note for a lesson."""
+	note = frappe.db.get_value(
+		"Seminary Lesson Note",
+		{"lesson": lesson, "member": frappe.session.user},
+		["name", "note"],
+		as_dict=True,
+	)
+	return note

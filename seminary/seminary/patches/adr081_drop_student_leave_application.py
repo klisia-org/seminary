@@ -9,15 +9,9 @@ import frappe
 
 
 def execute():
-    if frappe.db.exists("DocType", "Student Leave Application"):
-        frappe.delete_doc(
-            "DocType", "Student Leave Application", force=True, ignore_missing=True
-        )
-    frappe.db.sql_ddl("DROP TABLE IF EXISTS `tabStudent Leave Application`")
-    # Ask the table, not has_column: its cache can outlive the column.
-    if frappe.db.sql(
-        "SHOW COLUMNS FROM `tabStudent Attendance` LIKE 'leave_application'"
-    ):
-        frappe.db.sql_ddl(
-            "ALTER TABLE `tabStudent Attendance` DROP COLUMN `leave_application`"
-        )
+	if frappe.db.exists("DocType", "Student Leave Application"):
+		frappe.delete_doc("DocType", "Student Leave Application", force=True, ignore_missing=True)
+	frappe.db.sql_ddl("DROP TABLE IF EXISTS `tabStudent Leave Application`")
+	# Ask the table, not has_column: its cache can outlive the column.
+	if frappe.db.sql("SHOW COLUMNS FROM `tabStudent Attendance` LIKE 'leave_application'"):
+		frappe.db.sql_ddl("ALTER TABLE `tabStudent Attendance` DROP COLUMN `leave_application`")

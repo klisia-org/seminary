@@ -4,7 +4,6 @@
 # import frappe
 from frappe.tests import IntegrationTestCase, UnitTestCase
 
-
 # On IntegrationTestCase, the doctype test records and all
 # link-field test record dependencies are recursively loaded
 # Use these module variables to add/remove to/from that list
@@ -13,18 +12,18 @@ IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
 class UnitTestOpenQuestion(UnitTestCase):
-    """
-    Unit tests for OpenQuestion.
-    Use this class for testing individual functions and methods.
-    """
+	"""
+	Unit tests for OpenQuestion.
+	Use this class for testing individual functions and methods.
+	"""
 
-    pass
+	pass
 
 
 class IntegrationTestOpenQuestion(IntegrationTestCase):
-    """
-    Integration tests for OpenQuestion.
-    Use this class for testing interactions between multiple components.
-    """
+	"""
+	Integration tests for OpenQuestion.
+	Use this class for testing interactions between multiple components.
+	"""
 
-    pass
+	pass

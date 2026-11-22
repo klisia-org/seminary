@@ -15,6 +15,6 @@ from seminary.install import seed_website_branding, seed_website_navigation
 
 
 def execute():
-    seed_website_branding()
-    seed_website_navigation()
-    print("Ensured Website Branding logo + public navigation are seeded (ADR 061).")
+	seed_website_branding()
+	seed_website_navigation()
+	print("Ensured Website Branding logo + public navigation are seeded (ADR 061).")

@@ -70,16 +70,16 @@ COUNTER_TTL = 14 * 24 * 60 * 60
 #: Dropped by *name*, before the value is formatted. Substring match, lowercased:
 #: `access_key`, `request_token`, `csrf_token` and `api_secret` all match.
 _SENSITIVE = (
-    "token",
-    "secret",
-    "password",
-    "passwd",
-    "sid",
-    "key",
-    "signature",
-    "cookie",
-    "authorization",
-    "payload",
+	"token",
+	"secret",
+	"password",
+	"passwd",
+	"sid",
+	"key",
+	"signature",
+	"cookie",
+	"authorization",
+	"payload",
 )
 
 _MAX_VALUE = 200
@@ -90,146 +90,140 @@ _FLAG = "seminary_denial_logged"
 
 
 def logger():
-    """The security logger, pinned to WARNING.
+	"""The security logger, pinned to WARNING.
 
-    Frappe's default level is `ERROR` off the dev server
-    (`frappe/utils/logger.py:11`), so without this pin every denial would be
-    written nowhere in production and be perfectly visible in development --
-    the exact inversion of what this module is for. Caught because the first
-    run of `test_p010_security_log` logged nothing at all.
-    """
-    log = frappe.logger(LOGGER_NAME, allow_site=True)
-    if log.level > logging.WARNING:
-        log.setLevel(logging.WARNING)
-    return log
+	Frappe's default level is `ERROR` off the dev server
+	(`frappe/utils/logger.py:11`), so without this pin every denial would be
+	written nowhere in production and be perfectly visible in development --
+	the exact inversion of what this module is for. Caught because the first
+	run of `test_p010_security_log` logged nothing at all.
+	"""
+	log = frappe.logger(LOGGER_NAME, allow_site=True)
+	if log.level > logging.WARNING:
+		log.setLevel(logging.WARNING)
+	return log
 
 
 def _is_sensitive(name: str) -> bool:
-    lowered = str(name).lower()
-    return any(marker in lowered for marker in _SENSITIVE)
+	lowered = str(name).lower()
+	return any(marker in lowered for marker in _SENSITIVE)
 
 
 def _safe_value(value):
-    if value is None or isinstance(value, (int, float, bool)):
-        return value
-    text = str(value)
-    return text if len(text) <= _MAX_VALUE else text[:_MAX_VALUE] + "..."
+	if value is None or isinstance(value, (int, float, bool)):
+		return value
+	text = str(value)
+	return text if len(text) <= _MAX_VALUE else text[:_MAX_VALUE] + "..."
 
 
 def _safe_context(context: dict) -> dict:
-    """Drop sensitive keys by name, truncate the rest. Never raises."""
-    out = {}
-    for name, value in (context or {}).items():
-        if _is_sensitive(name):
-            out[name] = "[redacted]"
-            continue
-        out[name] = _safe_value(value)
-    return out
+	"""Drop sensitive keys by name, truncate the rest. Never raises."""
+	out = {}
+	for name, value in (context or {}).items():
+		if _is_sensitive(name):
+			out[name] = "[redacted]"
+			continue
+		out[name] = _safe_value(value)
+	return out
 
 
 def _actor() -> str:
-    try:
-        return frappe.session.user or "Guest"
-    except Exception:
-        return "unknown"
+	try:
+		return frappe.session.user or "Guest"
+	except Exception:
+		return "unknown"
 
 
 def _site_prefix() -> str:
-    """What `RedisWrapper.make_key` prepends, applied by hand. See COUNTER_PREFIX."""
-    return "%s|" % (frappe.local.conf.get("db_name") or "unknown")
+	"""What `RedisWrapper.make_key` prepends, applied by hand. See COUNTER_PREFIX."""
+	return "%s|" % (frappe.local.conf.get("db_name") or "unknown")
 
 
 def _day_prefix(day: str | None = None) -> str:
-    from frappe.utils import today
+	from frappe.utils import today
 
-    return f"{_site_prefix()}{COUNTER_PREFIX}:{day or today()}:"
+	return f"{_site_prefix()}{COUNTER_PREFIX}:{day or today()}:"
 
 
 def _bump(kind: str) -> None:
-    try:
-        cache = frappe.cache()
-        key = _day_prefix() + kind
-        cache.incrby(key, 1)
-        cache.expire(key, COUNTER_TTL)
-    except Exception:  # nosec B110 -- the counter must never cost a response
-        # A counter must never cost a response. The log line still went out.
-        # (This `except` hid the wrapper mismatch above completely -- only the
-        # test that asserted the counter *moves* found it.)
-        pass
+	try:
+		cache = frappe.cache()
+		key = _day_prefix() + kind
+		cache.incrby(key, 1)
+		cache.expire(key, COUNTER_TTL)
+	except Exception:  # nosec B110 -- the counter must never cost a response
+		# A counter must never cost a response. The log line still went out.
+		# (This `except` hid the wrapper mismatch above completely -- only the
+		# test that asserted the counter *moves* found it.)
+		pass
 
 
 def record_denial(kind: str, **context) -> None:
-    """One structured line plus one counter tick. Never raises.
+	"""One structured line plus one counter tick. Never raises.
 
-    `kind` is a short stable slug (`permission`, `rate_limit`, `http_403`) --
-    stable because it is the counter's field name and an operator's grep anchor.
-    """
-    try:
-        if getattr(frappe.local, _FLAG, False):
-            return
-        setattr(frappe.local, _FLAG, True)
+	`kind` is a short stable slug (`permission`, `rate_limit`, `http_403`) --
+	stable because it is the counter's field name and an operator's grep anchor.
+	"""
+	try:
+		if getattr(frappe.local, _FLAG, False):
+			return
+		setattr(frappe.local, _FLAG, True)
 
-        entry = {"kind": kind, "actor": _actor()}
-        entry.update(_safe_context(context))
-        try:
-            entry["path"] = frappe.local.request.path
-        except (
-            Exception
-        ):  # nosec B110 -- no request context (background job, bench execute)
-            pass
-        logger().warning(json.dumps(entry, default=str, sort_keys=True))
-        _bump(kind)
-    except Exception:
-        try:
-            frappe.logger().error("security_log failed", exc_info=True)
-        except (
-            Exception
-        ):  # nosec B110 -- the fallback logger failed; there is nowhere left to go
-            pass
+		entry = {"kind": kind, "actor": _actor()}
+		entry.update(_safe_context(context))
+		try:
+			entry["path"] = frappe.local.request.path
+		except Exception:  # nosec B110 -- no request context (background job, bench execute)
+			pass
+		logger().warning(json.dumps(entry, default=str, sort_keys=True))
+		_bump(kind)
+	except Exception:
+		try:
+			frappe.logger().error("security_log failed", exc_info=True)
+		except Exception:  # nosec B110 -- the fallback logger failed; there is nowhere left to go
+			pass
 
 
 def denial_counts(day: str | None = None) -> dict:
-    """Today's counts by kind. For operators and for the phase's own tests."""
-    prefix = _day_prefix(day)
-    counts = {}
-    try:
-        cache = frappe.cache()
-        for key in cache.keys(prefix + "*"):
-            name = key.decode() if isinstance(key, bytes) else key
-            value = cache.get(name)
-            try:
-                counts[name[len(prefix) :]] = int(value)
-            except (TypeError, ValueError):
-                continue
-    except Exception:
-        return counts
-    return counts
+	"""Today's counts by kind. For operators and for the phase's own tests."""
+	prefix = _day_prefix(day)
+	counts = {}
+	try:
+		cache = frappe.cache()
+		for key in cache.keys(prefix + "*"):
+			name = key.decode() if isinstance(key, bytes) else key
+			value = cache.get(name)
+			try:
+				counts[name[len(prefix) :]] = int(value)
+			except (TypeError, ValueError):
+				continue
+	except Exception:
+		return counts
+	return counts
 
 
 def log_denied_response(response=None, request=None, **kwargs):
-    """`after_request` sibling of `http_headers.apply_security_headers`.
+	"""`after_request` sibling of `http_headers.apply_security_headers`.
 
-    Catches the denials that never pass through `guards` -- Frappe's own
-    `has_permission`, a `permission_query_conditions` refusal surfaced as 403,
-    a whitelist miss -- which is most of them. The `_FLAG` guard means a denial
-    that *did* come from `guards` is not counted twice.
+	Catches the denials that never pass through `guards` -- Frappe's own
+	`has_permission`, a `permission_query_conditions` refusal surfaced as 403,
+	a whitelist miss -- which is most of them. The `_FLAG` guard means a denial
+	that *did* come from `guards` is not counted twice.
 
-    Never raises: a log line must not cost a response.
-    """
-    if response is None:
-        return
-    try:
-        # 429 as well as 403/401: frappe's `rate_limit` raises
-        # `RateLimitExceededError` directly, so a throttled attacker is
-        # otherwise the one kind of denial this hook would miss (p010 H6).
-        if getattr(response, "status_code", 200) not in (401, 403, 429):
-            return
-        record_denial(
-            "http_%s" % getattr(response, "status_code", "403"),
-            endpoint=(frappe.form_dict or {}).get("cmd"),
-            method=getattr(request, "method", None),
-        )
-    except (
-        Exception
-    ):  # nosec B110 -- after_request: raising here turns a 403 into a 500
-        pass
+	Never raises: a log line must not cost a response.
+	"""
+	if response is None:
+		return
+	try:
+		# 429 as well as 403/401: frappe's `rate_limit` raises
+		# `RateLimitExceededError` directly, so a throttled attacker is
+		# otherwise the one kind of denial this hook would miss (p010 H6).
+		if getattr(response, "status_code", 200) not in (401, 403, 429):
+			return
+		record_denial(
+			"http_%s" % getattr(response, "status_code", "403"),
+			endpoint=(frappe.form_dict or {}).get("cmd"),
+			method=getattr(request, "method", None),
+		)
+	except Exception:  # nosec B110 -- after_request: raising here turns a 403 into a 500
+		pass

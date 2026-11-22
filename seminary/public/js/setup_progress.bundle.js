@@ -10,7 +10,11 @@ frappe.provide("seminary");
 seminary.SetupProgress = class SetupProgress {
 	constructor(wrapper, group, title) {
 		this.group = group;
-		this.page = frappe.ui.make_app_page({ parent: wrapper, title, single_column: true });
+		this.page = frappe.ui.make_app_page({
+			parent: wrapper,
+			title,
+			single_column: true,
+		});
 		this.page.set_secondary_action(__("Refresh"), () => this.load(), "refresh");
 		this.$body = $('<div class="setup-progress"></div>').appendTo(this.page.main);
 		this.load();
@@ -32,8 +36,12 @@ seminary.SetupProgress = class SetupProgress {
 				<div class="setup-tiles">${tier.tiles.map((t) => this.tile(t)).join("")}</div>
 				${
 					tier.steps.length
-						? `<div class="setup-steps">${tier.steps.map((s) => this.step(s)).join("")}</div>`
-						: `<p class="text-muted">${__("Nothing for {0} in this stage.", [esc(data.label)])}</p>`
+						? `<div class="setup-steps">${tier.steps
+								.map((s) => this.step(s))
+								.join("")}</div>`
+						: `<p class="text-muted">${__("Nothing for {0} in this stage.", [
+								esc(data.label),
+						  ])}</p>`
 				}
 			</section>`
 			)
@@ -49,7 +57,9 @@ seminary.SetupProgress = class SetupProgress {
 			<div class="setup-tile-label">${esc(t.label)}</div>
 			<div class="setup-tile-count">${__("{0} of {1} done", [t.done, t.total])}</div>
 			<div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>`;
-		const cls = `setup-tile ${mine ? "is-current" : ""} ${t.done === t.total ? "is-done" : ""}`;
+		const cls = `setup-tile ${mine ? "is-current" : ""} ${
+			t.done === t.total ? "is-done" : ""
+		}`;
 		return t.page && !mine
 			? `<a class="${cls}" href="/desk/${encodeURIComponent(t.page)}">${body}</a>`
 			: `<div class="${cls}">${body}</div>`;
@@ -60,18 +70,20 @@ seminary.SetupProgress = class SetupProgress {
 		const icon = s.done
 			? `<span class="setup-step-icon is-done">${frappe.utils.icon("check", "sm")}</span>`
 			: `<span class="setup-step-icon"></span>`;
-		const count = s.count ? `<span class="setup-step-count">${s.count[0]}/${s.count[1]}</span>` : "";
+		const count = s.count
+			? `<span class="setup-step-count">${s.count[0]}/${s.count[1]}</span>`
+			: "";
 		const flag = s.flag ? `<span class="indicator-pill orange">${esc(s.flag)}</span>` : "";
 		const failed = s.failed
 			? `<span class="indicator-pill red">${__("Could not check")}</span>`
 			: "";
-		const roles = (s.roles || []).map((r) => `<span class="setup-role">${esc(r)}</span>`).join("");
+		const roles = (s.roles || [])
+			.map((r) => `<span class="setup-role">${esc(r)}</span>`)
+			.join("");
 		const manual = s.manual
 			? `<a class="setup-manual" href="${esc(s.manual)}">${__("Manual")}</a>`
 			: "";
-		const title = s.route
-			? `<a href="${esc(s.route)}">${esc(s.title)}</a>`
-			: esc(s.title);
+		const title = s.route ? `<a href="${esc(s.route)}">${esc(s.title)}</a>` : esc(s.title);
 		return `
 			<div class="setup-step ${s.done ? "is-done" : ""}">
 				${icon}

@@ -23,14 +23,14 @@ import unicodedata
 
 
 def normalize(s: str) -> str:
-    """Lowercase, strip diacritics, strip whitespace and dots.
+	"""Lowercase, strip diacritics, strip whitespace and dots.
 
-    "João" → "joao", "1 Cor." → "1cor", "I JOÃO" → "ijoao".
-    """
-    s = unicodedata.normalize("NFKD", s)
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    s = s.lower()
-    return re.sub(r"[\s.]+", "", s)
+	"João" → "joao", "1 Cor." → "1cor", "I JOÃO" → "ijoao".
+	"""
+	s = unicodedata.normalize("NFKD", s)
+	s = "".join(c for c in s if not unicodedata.combining(c))
+	s = s.lower()
+	return re.sub(r"[\s.]+", "", s)
 
 
 # (OSIS code, [aliases — written in their natural form; normalization happens at build time])
@@ -38,329 +38,327 @@ def normalize(s: str) -> str:
 # then ES names and Reina-Valera abbreviations. ES names that match a PT name once accents are
 # stripped (Génesis, Éxodo, Josué, Isaías…) are not repeated.
 _BOOKS = [
-    # === Old Testament ===
-    ("GEN", ["Genesis", "Gen", "Gn", "Ge", "Gênesis"]),
-    ("EXO", ["Exodus", "Exo", "Exod", "Ex", "Êxodo", "Exodo"]),
-    ("LEV", ["Leviticus", "Lev", "Lv", "Levítico", "Levitico"]),
-    ("NUM", ["Numbers", "Num", "Nm", "Nu", "Números", "Numeros"]),
-    ("DEU", ["Deuteronomy", "Deut", "Deu", "Dt", "Deuteronômio", "Deuteronomio"]),
-    ("JOS", ["Joshua", "Josh", "Jos", "Js", "Josué", "Josue"]),
-    ("JDG", ["Judges", "Judg", "Jdg", "Jg", "Juízes", "Juizes", "Jz", "Jueces", "Jue"]),
-    ("RUT", ["Ruth", "Rut", "Ru", "Rute", "Rt"]),
-    ("1SA", ["1 Samuel", "1Samuel", "1 Sam", "1Sam", "1Sa", "1Sm", "I Samuel", "1 S"]),
-    ("2SA", ["2 Samuel", "2Samuel", "2 Sam", "2Sam", "2Sa", "2Sm", "II Samuel", "2 S"]),
-    (
-        "1KI",
-        [
-            "1 Kings",
-            "1Kings",
-            "1 Kgs",
-            "1Kgs",
-            "1Ki",
-            "1Reis",
-            "1 Reis",
-            "1Rs",
-            "1 Reyes",
-            "1Reyes",
-            "1 R",
-        ],
-    ),
-    (
-        "2KI",
-        [
-            "2 Kings",
-            "2Kings",
-            "2 Kgs",
-            "2Kgs",
-            "2Ki",
-            "2Reis",
-            "2 Reis",
-            "2Rs",
-            "2 Reyes",
-            "2Reyes",
-            "2 R",
-        ],
-    ),
-    (
-        "1CH",
-        [
-            "1 Chronicles",
-            "1Chronicles",
-            "1 Chron",
-            "1Chr",
-            "1Ch",
-            "1 Crônicas",
-            "1Cronicas",
-            "1Cr",
-        ],
-    ),
-    (
-        "2CH",
-        [
-            "2 Chronicles",
-            "2Chronicles",
-            "2 Chron",
-            "2Chr",
-            "2Ch",
-            "2 Crônicas",
-            "2Cronicas",
-            "2Cr",
-        ],
-    ),
-    ("EZR", ["Ezra", "Ezr", "Esdras", "Ed", "Esd"]),
-    ("NEH", ["Nehemiah", "Neh", "Ne", "Neemias", "Nehemías", "Nehemias"]),
-    ("EST", ["Esther", "Est", "Et", "Ester"]),
-    (
-        "JOB",
-        ["Job", "Jb"],
-    ),  # "Jó" excluded — collides with "Jo" (João) after diacritic strip
-    (
-        "PSA",
-        ["Psalms", "Psalm", "Pss", "Ps", "Psa", "Pslm", "Salmos", "Salmo", "Sl", "Sal"],
-    ),
-    ("PRO", ["Proverbs", "Prov", "Pro", "Pr", "Provérbios", "Proverbios", "Pv"]),
-    ("ECC", ["Ecclesiastes", "Eccl", "Ecc", "Ec", "Eclesiastes"]),
-    (
-        "SNG",
-        [
-            "Song of Solomon",
-            "Song of Songs",
-            "Song",
-            "SoS",
-            "Sng",
-            "Cantares",
-            "Cantico",
-            "Cânticos",
-            "Canticos",
-            "Ct",
-            "Cantar de los Cantares",
-            "Cnt",
-        ],
-    ),
-    ("ISA", ["Isaiah", "Isa", "Is", "Isaías", "Isaias"]),
-    ("JER", ["Jeremiah", "Jer", "Jr", "Jeremias"]),
-    (
-        "LAM",
-        ["Lamentations", "Lam", "Lm", "Lamentações", "Lamentacoes", "Lamentaciones"],
-    ),
-    ("EZK", ["Ezekiel", "Ezek", "Ezk", "Eze", "Ez", "Ezequiel"]),
-    ("DAN", ["Daniel", "Dan", "Dn", "Da"]),
-    ("HOS", ["Hosea", "Hos", "Ho", "Os", "Oséias", "Oseias", "Oseas"]),
-    ("JOL", ["Joel", "Jl"]),
-    ("AMO", ["Amos", "Am", "Amó", "Amós"]),
-    ("OBA", ["Obadiah", "Obad", "Oba", "Ob", "Obadias", "Abdías", "Abdias", "Abd"]),
-    ("JON", ["Jonah", "Jon", "Jnh", "Jonas"]),
-    ("MIC", ["Micah", "Mic", "Mi", "Miquéias", "Miqueias", "Mq", "Miqueas"]),
-    ("NAM", ["Nahum", "Nah", "Na", "Naum"]),
-    (
-        "HAB",
-        ["Habakkuk", "Hab", "Hc", "Habacuque", "Habacuc"],
-    ),  # "Hb" reserved for Hebreus (HEB)
-    ("ZEP", ["Zephaniah", "Zeph", "Zep", "Zph", "Sofonias", "Sf", "Sof"]),
-    ("HAG", ["Haggai", "Hag", "Hg", "Ag", "Ageu", "Hageo"]),
-    ("ZEC", ["Zechariah", "Zech", "Zec", "Zac", "Zc", "Zacarias"]),
-    ("MAL", ["Malachi", "Mal", "Ml", "Malaquias"]),
-    # === New Testament ===
-    ("MAT", ["Matthew", "Matt", "Mat", "Mt", "Mateus", "Mateo"]),
-    ("MRK", ["Mark", "Mrk", "Mk", "Mc", "Marcos", "Mr"]),
-    ("LUK", ["Luke", "Luk", "Lk", "Lu", "Lc", "Lucas"]),
-    (
-        "JHN",
-        ["John", "Jhn", "Jn", "João", "Joao", "Juan"],
-    ),  # "Jo" excluded — see disambiguation note
-    ("ACT", ["Acts", "Act", "Ac", "At", "Atos", "Hechos", "Hch"]),
-    ("ROM", ["Romans", "Rom", "Ro", "Rm", "Romanos"]),
-    (
-        "1CO",
-        [
-            "1 Corinthians",
-            "1Corinthians",
-            "1 Cor",
-            "1Cor",
-            "1Co",
-            "1 Coríntios",
-            "1Corintios",
-        ],
-    ),
-    (
-        "2CO",
-        [
-            "2 Corinthians",
-            "2Corinthians",
-            "2 Cor",
-            "2Cor",
-            "2Co",
-            "2 Coríntios",
-            "2Corintios",
-        ],
-    ),
-    ("GAL", ["Galatians", "Gal", "Ga", "Gl", "Gálatas", "Galatas"]),
-    ("EPH", ["Ephesians", "Eph", "Ep", "Ef", "Efésios", "Efesios"]),
-    ("PHP", ["Philippians", "Phil", "Php", "Phlp", "Fp", "Filipenses", "Fil"]),
-    ("COL", ["Colossians", "Col", "Cl", "Colossenses", "Colosenses"]),
-    (
-        "1TH",
-        [
-            "1 Thessalonians",
-            "1Thessalonians",
-            "1 Thess",
-            "1Thess",
-            "1Th",
-            "1 Tessalonicenses",
-            "1Tessalonicenses",
-            "1Ts",
-        ],
-    ),
-    (
-        "2TH",
-        [
-            "2 Thessalonians",
-            "2Thessalonians",
-            "2 Thess",
-            "2Thess",
-            "2Th",
-            "2 Tessalonicenses",
-            "2Tessalonicenses",
-            "2Ts",
-        ],
-    ),
-    (
-        "1TI",
-        [
-            "1 Timothy",
-            "1Timothy",
-            "1 Tim",
-            "1Tim",
-            "1Ti",
-            "1Tm",
-            "1 Timóteo",
-            "1Timoteo",
-        ],
-    ),
-    (
-        "2TI",
-        [
-            "2 Timothy",
-            "2Timothy",
-            "2 Tim",
-            "2Tim",
-            "2Ti",
-            "2Tm",
-            "2 Timóteo",
-            "2Timoteo",
-        ],
-    ),
-    ("TIT", ["Titus", "Tit", "Ti", "Tt", "Tito"]),
-    ("PHM", ["Philemon", "Philem", "Phm", "Pm", "Fm", "Filemom", "Filemon", "Flm"]),
-    ("HEB", ["Hebrews", "Heb", "He", "Hb", "Hebreus", "Hebreos"]),
-    ("JAS", ["James", "Jas", "Jm", "Tg", "Tiago", "Santiago", "Stg"]),
-    (
-        "1PE",
-        [
-            "1 Peter",
-            "1Peter",
-            "1 Pet",
-            "1Pet",
-            "1Pe",
-            "1Pt",
-            "1 Pedro",
-            "1Pedro",
-            "1 P",
-        ],
-    ),
-    (
-        "2PE",
-        [
-            "2 Peter",
-            "2Peter",
-            "2 Pet",
-            "2Pet",
-            "2Pe",
-            "2Pt",
-            "2 Pedro",
-            "2Pedro",
-            "2 P",
-        ],
-    ),
-    (
-        "1JN",
-        [
-            "1 John",
-            "1John",
-            "1 Jn",
-            "1Jn",
-            "1Jhn",
-            "1 João",
-            "1Joao",
-            "1Jo",
-            "1 Juan",
-            "1Juan",
-        ],
-    ),
-    (
-        "2JN",
-        [
-            "2 John",
-            "2John",
-            "2 Jn",
-            "2Jn",
-            "2Jhn",
-            "2 João",
-            "2Joao",
-            "2Jo",
-            "2 Juan",
-            "2Juan",
-        ],
-    ),
-    (
-        "3JN",
-        [
-            "3 John",
-            "3John",
-            "3 Jn",
-            "3Jn",
-            "3Jhn",
-            "3 João",
-            "3Joao",
-            "3Jo",
-            "3 Juan",
-            "3Juan",
-        ],
-    ),
-    ("JUD", ["Jude", "Jud", "Jd", "Judas"]),
-    ("REV", ["Revelation", "Rev", "Re", "Ap", "Apocalipse", "Apocalipsis"]),
+	# === Old Testament ===
+	("GEN", ["Genesis", "Gen", "Gn", "Ge", "Gênesis"]),
+	("EXO", ["Exodus", "Exo", "Exod", "Ex", "Êxodo", "Exodo"]),
+	("LEV", ["Leviticus", "Lev", "Lv", "Levítico", "Levitico"]),
+	("NUM", ["Numbers", "Num", "Nm", "Nu", "Números", "Numeros"]),
+	("DEU", ["Deuteronomy", "Deut", "Deu", "Dt", "Deuteronômio", "Deuteronomio"]),
+	("JOS", ["Joshua", "Josh", "Jos", "Js", "Josué", "Josue"]),
+	("JDG", ["Judges", "Judg", "Jdg", "Jg", "Juízes", "Juizes", "Jz", "Jueces", "Jue"]),
+	("RUT", ["Ruth", "Rut", "Ru", "Rute", "Rt"]),
+	("1SA", ["1 Samuel", "1Samuel", "1 Sam", "1Sam", "1Sa", "1Sm", "I Samuel", "1 S"]),
+	("2SA", ["2 Samuel", "2Samuel", "2 Sam", "2Sam", "2Sa", "2Sm", "II Samuel", "2 S"]),
+	(
+		"1KI",
+		[
+			"1 Kings",
+			"1Kings",
+			"1 Kgs",
+			"1Kgs",
+			"1Ki",
+			"1Reis",
+			"1 Reis",
+			"1Rs",
+			"1 Reyes",
+			"1Reyes",
+			"1 R",
+		],
+	),
+	(
+		"2KI",
+		[
+			"2 Kings",
+			"2Kings",
+			"2 Kgs",
+			"2Kgs",
+			"2Ki",
+			"2Reis",
+			"2 Reis",
+			"2Rs",
+			"2 Reyes",
+			"2Reyes",
+			"2 R",
+		],
+	),
+	(
+		"1CH",
+		[
+			"1 Chronicles",
+			"1Chronicles",
+			"1 Chron",
+			"1Chr",
+			"1Ch",
+			"1 Crônicas",
+			"1Cronicas",
+			"1Cr",
+		],
+	),
+	(
+		"2CH",
+		[
+			"2 Chronicles",
+			"2Chronicles",
+			"2 Chron",
+			"2Chr",
+			"2Ch",
+			"2 Crônicas",
+			"2Cronicas",
+			"2Cr",
+		],
+	),
+	("EZR", ["Ezra", "Ezr", "Esdras", "Ed", "Esd"]),
+	("NEH", ["Nehemiah", "Neh", "Ne", "Neemias", "Nehemías", "Nehemias"]),
+	("EST", ["Esther", "Est", "Et", "Ester"]),
+	(
+		"JOB",
+		["Job", "Jb"],
+	),  # "Jó" excluded — collides with "Jo" (João) after diacritic strip
+	(
+		"PSA",
+		["Psalms", "Psalm", "Pss", "Ps", "Psa", "Pslm", "Salmos", "Salmo", "Sl", "Sal"],
+	),
+	("PRO", ["Proverbs", "Prov", "Pro", "Pr", "Provérbios", "Proverbios", "Pv"]),
+	("ECC", ["Ecclesiastes", "Eccl", "Ecc", "Ec", "Eclesiastes"]),
+	(
+		"SNG",
+		[
+			"Song of Solomon",
+			"Song of Songs",
+			"Song",
+			"SoS",
+			"Sng",
+			"Cantares",
+			"Cantico",
+			"Cânticos",
+			"Canticos",
+			"Ct",
+			"Cantar de los Cantares",
+			"Cnt",
+		],
+	),
+	("ISA", ["Isaiah", "Isa", "Is", "Isaías", "Isaias"]),
+	("JER", ["Jeremiah", "Jer", "Jr", "Jeremias"]),
+	(
+		"LAM",
+		["Lamentations", "Lam", "Lm", "Lamentações", "Lamentacoes", "Lamentaciones"],
+	),
+	("EZK", ["Ezekiel", "Ezek", "Ezk", "Eze", "Ez", "Ezequiel"]),
+	("DAN", ["Daniel", "Dan", "Dn", "Da"]),
+	("HOS", ["Hosea", "Hos", "Ho", "Os", "Oséias", "Oseias", "Oseas"]),
+	("JOL", ["Joel", "Jl"]),
+	("AMO", ["Amos", "Am", "Amó", "Amós"]),
+	("OBA", ["Obadiah", "Obad", "Oba", "Ob", "Obadias", "Abdías", "Abdias", "Abd"]),
+	("JON", ["Jonah", "Jon", "Jnh", "Jonas"]),
+	("MIC", ["Micah", "Mic", "Mi", "Miquéias", "Miqueias", "Mq", "Miqueas"]),
+	("NAM", ["Nahum", "Nah", "Na", "Naum"]),
+	(
+		"HAB",
+		["Habakkuk", "Hab", "Hc", "Habacuque", "Habacuc"],
+	),  # "Hb" reserved for Hebreus (HEB)
+	("ZEP", ["Zephaniah", "Zeph", "Zep", "Zph", "Sofonias", "Sf", "Sof"]),
+	("HAG", ["Haggai", "Hag", "Hg", "Ag", "Ageu", "Hageo"]),
+	("ZEC", ["Zechariah", "Zech", "Zec", "Zac", "Zc", "Zacarias"]),
+	("MAL", ["Malachi", "Mal", "Ml", "Malaquias"]),
+	# === New Testament ===
+	("MAT", ["Matthew", "Matt", "Mat", "Mt", "Mateus", "Mateo"]),
+	("MRK", ["Mark", "Mrk", "Mk", "Mc", "Marcos", "Mr"]),
+	("LUK", ["Luke", "Luk", "Lk", "Lu", "Lc", "Lucas"]),
+	(
+		"JHN",
+		["John", "Jhn", "Jn", "João", "Joao", "Juan"],
+	),  # "Jo" excluded — see disambiguation note
+	("ACT", ["Acts", "Act", "Ac", "At", "Atos", "Hechos", "Hch"]),
+	("ROM", ["Romans", "Rom", "Ro", "Rm", "Romanos"]),
+	(
+		"1CO",
+		[
+			"1 Corinthians",
+			"1Corinthians",
+			"1 Cor",
+			"1Cor",
+			"1Co",
+			"1 Coríntios",
+			"1Corintios",
+		],
+	),
+	(
+		"2CO",
+		[
+			"2 Corinthians",
+			"2Corinthians",
+			"2 Cor",
+			"2Cor",
+			"2Co",
+			"2 Coríntios",
+			"2Corintios",
+		],
+	),
+	("GAL", ["Galatians", "Gal", "Ga", "Gl", "Gálatas", "Galatas"]),
+	("EPH", ["Ephesians", "Eph", "Ep", "Ef", "Efésios", "Efesios"]),
+	("PHP", ["Philippians", "Phil", "Php", "Phlp", "Fp", "Filipenses", "Fil"]),
+	("COL", ["Colossians", "Col", "Cl", "Colossenses", "Colosenses"]),
+	(
+		"1TH",
+		[
+			"1 Thessalonians",
+			"1Thessalonians",
+			"1 Thess",
+			"1Thess",
+			"1Th",
+			"1 Tessalonicenses",
+			"1Tessalonicenses",
+			"1Ts",
+		],
+	),
+	(
+		"2TH",
+		[
+			"2 Thessalonians",
+			"2Thessalonians",
+			"2 Thess",
+			"2Thess",
+			"2Th",
+			"2 Tessalonicenses",
+			"2Tessalonicenses",
+			"2Ts",
+		],
+	),
+	(
+		"1TI",
+		[
+			"1 Timothy",
+			"1Timothy",
+			"1 Tim",
+			"1Tim",
+			"1Ti",
+			"1Tm",
+			"1 Timóteo",
+			"1Timoteo",
+		],
+	),
+	(
+		"2TI",
+		[
+			"2 Timothy",
+			"2Timothy",
+			"2 Tim",
+			"2Tim",
+			"2Ti",
+			"2Tm",
+			"2 Timóteo",
+			"2Timoteo",
+		],
+	),
+	("TIT", ["Titus", "Tit", "Ti", "Tt", "Tito"]),
+	("PHM", ["Philemon", "Philem", "Phm", "Pm", "Fm", "Filemom", "Filemon", "Flm"]),
+	("HEB", ["Hebrews", "Heb", "He", "Hb", "Hebreus", "Hebreos"]),
+	("JAS", ["James", "Jas", "Jm", "Tg", "Tiago", "Santiago", "Stg"]),
+	(
+		"1PE",
+		[
+			"1 Peter",
+			"1Peter",
+			"1 Pet",
+			"1Pet",
+			"1Pe",
+			"1Pt",
+			"1 Pedro",
+			"1Pedro",
+			"1 P",
+		],
+	),
+	(
+		"2PE",
+		[
+			"2 Peter",
+			"2Peter",
+			"2 Pet",
+			"2Pet",
+			"2Pe",
+			"2Pt",
+			"2 Pedro",
+			"2Pedro",
+			"2 P",
+		],
+	),
+	(
+		"1JN",
+		[
+			"1 John",
+			"1John",
+			"1 Jn",
+			"1Jn",
+			"1Jhn",
+			"1 João",
+			"1Joao",
+			"1Jo",
+			"1 Juan",
+			"1Juan",
+		],
+	),
+	(
+		"2JN",
+		[
+			"2 John",
+			"2John",
+			"2 Jn",
+			"2Jn",
+			"2Jhn",
+			"2 João",
+			"2Joao",
+			"2Jo",
+			"2 Juan",
+			"2Juan",
+		],
+	),
+	(
+		"3JN",
+		[
+			"3 John",
+			"3John",
+			"3 Jn",
+			"3Jn",
+			"3Jhn",
+			"3 João",
+			"3Joao",
+			"3Jo",
+			"3 Juan",
+			"3Juan",
+		],
+	),
+	("JUD", ["Jude", "Jud", "Jd", "Judas"]),
+	("REV", ["Revelation", "Rev", "Re", "Ap", "Apocalipse", "Apocalipsis"]),
 ]
 
 
 # Pre-built lookup: normalized alias → OSIS code.
 BOOK_ALIASES: dict[str, str] = {}
 for _osis, _aliases in _BOOKS:
-    for _alias in _aliases:
-        _key = normalize(_alias)
-        # First write wins for collisions (order in _BOOKS matters).
-        # The "jo" alias under JHN intentionally wins over any Job aliasing —
-        # see the disambiguation note in the module docstring.
-        BOOK_ALIASES.setdefault(_key, _osis)
+	for _alias in _aliases:
+		_key = normalize(_alias)
+		# First write wins for collisions (order in _BOOKS matters).
+		# The "jo" alias under JHN intentionally wins over any Job aliasing —
+		# see the disambiguation note in the module docstring.
+		BOOK_ALIASES.setdefault(_key, _osis)
 
 
 # Canonical book position (1..66), derived from the Protestant-canon order of
 # _BOOKS above. Used to build monotonic verse ordinals for range queries.
-BOOK_ORDER: dict[str, int] = {
-    osis: i for i, (osis, _aliases) in enumerate(_BOOKS, start=1)
-}
+BOOK_ORDER: dict[str, int] = {osis: i for i, (osis, _aliases) in enumerate(_BOOKS, start=1)}
 
 
 def verse_ordinal(osis: str, chapter: int, verse: int) -> int:
-    """A canonical, strictly-monotonic integer for a book/chapter/verse.
+	"""A canonical, strictly-monotonic integer for a book/chapter/verse.
 
-    ordinal = book_index * 1_000_000 + chapter * 1_000 + verse
+	ordinal = book_index * 1_000_000 + chapter * 1_000 + verse
 
-    Chapters and verses are always < 1000, so the ordinal increases through the
-    whole canon. Ordinals are *non-contiguous* (there are gaps between chapters
-    and books), which is fine: they are only ever compared for ordering and
-    range-overlap, never counted between.
-    """
-    return BOOK_ORDER[osis] * 1_000_000 + chapter * 1_000 + verse
+	Chapters and verses are always < 1000, so the ordinal increases through the
+	whole canon. Ordinals are *non-contiguous* (there are gaps between chapters
+	and books), which is fine: they are only ever compared for ordering and
+	range-overlap, never counted between.
+	"""
+	return BOOK_ORDER[osis] * 1_000_000 + chapter * 1_000 + verse
 
 
 # Canonical display name per book (the first, full-form alias), and the reverse
@@ -370,7 +368,7 @@ OSIS_BY_ORDER: dict[int, str] = {i: osis for osis, i in BOOK_ORDER.items()}
 
 
 def decode_ordinal(value: int) -> tuple[int, int, int]:
-    """Inverse of verse_ordinal → (book_index, chapter, verse)."""
-    book_index = value // 1_000_000
-    rem = value % 1_000_000
-    return book_index, rem // 1_000, rem % 1_000
+	"""Inverse of verse_ordinal → (book_index, chapter, verse)."""
+	book_index = value // 1_000_000
+	rem = value % 1_000_000
+	return book_index, rem // 1_000, rem % 1_000

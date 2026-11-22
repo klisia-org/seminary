@@ -13,14 +13,12 @@ import frappe
 
 
 def execute():
-    if not frappe.db.has_column("Course", "coursecode"):
-        return
-    for name in frappe.get_all(
-        "Course", filters={"coursecode": ["in", ["", None]]}, pluck="name"
-    ):
-        base = frappe.scrub(name).upper()[:60] or "COURSE"
-        code, n = base, 2
-        while frappe.db.exists("Course", {"coursecode": code}):
-            code = f"{base}-{n}"
-            n += 1
-        frappe.db.set_value("Course", name, "coursecode", code, update_modified=False)
+	if not frappe.db.has_column("Course", "coursecode"):
+		return
+	for name in frappe.get_all("Course", filters={"coursecode": ["in", ["", None]]}, pluck="name"):
+		base = frappe.scrub(name).upper()[:60] or "COURSE"
+		code, n = base, 2
+		while frappe.db.exists("Course", {"coursecode": code}):
+			code = f"{base}-{n}"
+			n += 1
+		frappe.db.set_value("Course", name, "coursecode", code, update_modified=False)

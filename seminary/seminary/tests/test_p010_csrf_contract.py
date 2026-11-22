@@ -31,15 +31,15 @@ PORTAL = ROOT / "portal-shell" / "src"
 #: One reader PER PACKAGE. portal-shell is built on its own and consumed
 #: through `link:../portal-shell`, so it cannot import from `frontend/src`.
 PACKAGES = {
-    "frontend": (SRC, "utils/csrf.js"),
-    "portal-shell": (PORTAL, "csrf.js"),
+	"frontend": (SRC, "utils/csrf.js"),
+	"portal-shell": (PORTAL, "csrf.js"),
 }
 
 #: Ways the token has been read. Any of these outside HELPER is a new copy.
 READS = (
-    re.compile(r"window\.csrf_token"),
-    re.compile(r"window\.frappe\?\.csrf_token"),
-    re.compile(r"""meta\[name=["']csrf-token["']\]"""),
+	re.compile(r"window\.csrf_token"),
+	re.compile(r"window\.frappe\?\.csrf_token"),
+	re.compile(r"""meta\[name=["']csrf-token["']\]"""),
 )
 
 DEFINITION = re.compile(r"(?:const|function)\s+getCsrfToken\s*(?:=|\()")
@@ -47,77 +47,75 @@ DEFINITION = re.compile(r"(?:const|function)\s+getCsrfToken\s*(?:=|\()")
 #: Sites that send the header, each keeping its own transport. Listed so that
 #: adding one is a decision somebody writes down.
 SENDERS = {
-    "components/FolderPlugin.vue": "XHR upload_file (progress) + fetch delete_file",
-    "components/SmartFileUploader.vue": "XHR upload_file (progress)",
-    "components/Modals/CourseAssessmentModal.vue": "fetch insert_cs_assessment",
-    "utils/directUpload.js": "fetch, direct-to-object-storage handshake",
-    "utils/foldertool.js": "fetch Course Folder + create_subfolder",
-    "pages/RecommenderForm.vue": "fetch upload_attachment -- GUEST flow",
-    "pages/CourseAssessment.vue": "fetch save_course_assessment",
-    "pages/StudentAttendanceCS.vue": "fetch self check-in",
-    "pages/CourseForm.vue": "fetch course save",
-    # Oral assessment (decisions/100): multipart bodies frappe-ui's call() cannot send.
-    "components/OralActivity.vue": "fetch upload_recording (a recorded file)",
-    "components/OralRecorder.vue": "fetch upload_chunk (recording in pieces, retried)",
+	"components/FolderPlugin.vue": "XHR upload_file (progress) + fetch delete_file",
+	"components/SmartFileUploader.vue": "XHR upload_file (progress)",
+	"components/Modals/CourseAssessmentModal.vue": "fetch insert_cs_assessment",
+	"utils/directUpload.js": "fetch, direct-to-object-storage handshake",
+	"utils/foldertool.js": "fetch Course Folder + create_subfolder",
+	"pages/RecommenderForm.vue": "fetch upload_attachment -- GUEST flow",
+	"pages/CourseAssessment.vue": "fetch save_course_assessment",
+	"pages/StudentAttendanceCS.vue": "fetch self check-in",
+	"pages/CourseForm.vue": "fetch course save",
+	# Oral assessment (decisions/100): multipart bodies frappe-ui's call() cannot send.
+	"components/OralActivity.vue": "fetch upload_recording (a recorded file)",
+	"components/OralRecorder.vue": "fetch upload_chunk (recording in pieces, retried)",
 }
 
 HEADER = "X-Frappe-CSRF-Token"
 
 
 def _sources(base):
-    if not base.exists():
-        return []
-    return [p for p in base.rglob("*") if p.suffix in (".js", ".ts", ".vue")]
+	if not base.exists():
+		return []
+	return [p for p in base.rglob("*") if p.suffix in (".js", ".ts", ".vue")]
 
 
 class TestP010CsrfContract(unittest.TestCase):
-    def test_each_package_has_exactly_one_definition(self):
-        for label, (base, rel) in PACKAGES.items():
-            helper = base / rel
-            self.assertTrue(helper.exists(), f"{label}: {rel} is the single reader")
-            offenders = [
-                str(p.relative_to(base))
-                for p in _sources(base)
-                if p != helper and DEFINITION.search(p.read_text())
-            ]
-            self.assertEqual(
-                offenders, [], f"{label}: import getCsrfToken, do not redefine it"
-            )
+	def test_each_package_has_exactly_one_definition(self):
+		for label, (base, rel) in PACKAGES.items():
+			helper = base / rel
+			self.assertTrue(helper.exists(), f"{label}: {rel} is the single reader")
+			offenders = [
+				str(p.relative_to(base))
+				for p in _sources(base)
+				if p != helper and DEFINITION.search(p.read_text())
+			]
+			self.assertEqual(offenders, [], f"{label}: import getCsrfToken, do not redefine it")
 
-    def test_nothing_else_reads_the_token_out_of_the_page(self):
-        helpers = {base / rel for base, rel in PACKAGES.values()}
-        offenders = []
-        for base, _rel in PACKAGES.values():
-            for p in _sources(base):
-                if p in helpers:
-                    continue
-                if any(r.search(p.read_text()) for r in READS):
-                    offenders.append(str(p))
-        self.assertEqual(offenders, [], "read the token via getCsrfToken()")
+	def test_nothing_else_reads_the_token_out_of_the_page(self):
+		helpers = {base / rel for base, rel in PACKAGES.values()}
+		offenders = []
+		for base, _rel in PACKAGES.values():
+			for p in _sources(base):
+				if p in helpers:
+					continue
+				if any(r.search(p.read_text()) for r in READS):
+					offenders.append(str(p))
+		self.assertEqual(offenders, [], "read the token via getCsrfToken()")
 
-    def test_every_sender_is_declared_and_imports_the_helper(self):
-        found = {
-            str(p.relative_to(SRC))
-            for p in _sources(SRC)
-            if HEADER in p.read_text() and p != SRC / PACKAGES["frontend"][1]
-        }
-        self.assertEqual(
-            found,
-            set(SENDERS),
-            "a new site sending the CSRF header must be listed in SENDERS",
-        )
-        for rel in sorted(found):
-            self.assertIn(
-                "getCsrfToken",
-                (SRC / rel).read_text(),
-                f"{rel} sends the header without the shared reader",
-            )
+	def test_every_sender_is_declared_and_imports_the_helper(self):
+		found = {
+			str(p.relative_to(SRC))
+			for p in _sources(SRC)
+			if HEADER in p.read_text() and p != SRC / PACKAGES["frontend"][1]
+		}
+		self.assertEqual(
+			found,
+			set(SENDERS),
+			"a new site sending the CSRF header must be listed in SENDERS",
+		)
+		for rel in sorted(found):
+			self.assertIn(
+				"getCsrfToken",
+				(SRC / rel).read_text(),
+				f"{rel} sends the header without the shared reader",
+			)
 
-    def test_portal_shell_sends_through_its_own_reader(self):
-        cfg = PORTAL / "config.js"
-        self.assertIn(HEADER, cfg.read_text())
-        self.assertIn("getCsrfToken", cfg.read_text())
+	def test_portal_shell_sends_through_its_own_reader(self):
+		cfg = PORTAL / "config.js"
+		self.assertIn(HEADER, cfg.read_text())
+		self.assertIn("getCsrfToken", cfg.read_text())
 
-    def test_the_declared_senders_all_still_exist(self):
-        missing = [rel for rel in SENDERS if not (SRC / rel).exists()]
-        self.assertEqual(missing, [], "stale SENDERS entries")
+	def test_the_declared_senders_all_still_exist(self):
+		missing = [rel for rel in SENDERS if not (SRC / rel).exists()]
+		self.assertEqual(missing, [], "stale SENDERS entries")

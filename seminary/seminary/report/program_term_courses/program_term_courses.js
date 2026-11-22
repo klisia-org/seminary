@@ -1,11 +1,11 @@
 frappe.query_reports["Program Term Courses"] = {
-	"filters": [
+	filters: [
 		{
-			"fieldname": "program",
-			"label": __("Program"),
-			"fieldtype": "Link",
-			"options": "Program",
-			"reqd": 1
-		}
-	]
+			fieldname: "program",
+			label: __("Program"),
+			fieldtype: "Link",
+			options: "Program",
+			reqd: 1,
+		},
+	],
 };

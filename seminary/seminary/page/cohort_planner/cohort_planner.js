@@ -122,7 +122,9 @@ class CohortPlanner {
 		this.scope_value = "all";
 		this.$plan.empty();
 		frappe
-			.call("seminary.seminary.discipleship.planner.planner_setup", { cohort_type })
+			.call("seminary.seminary.discipleship.planner.planner_setup", {
+				cohort_type,
+			})
 			.then((r) => {
 				this.setup = r.message;
 				this.renderSetup();
@@ -157,9 +159,9 @@ class CohortPlanner {
 		]
 			.map(
 				([value, label]) =>
-					`<option value="${value}" ${value === this.scope() ? "selected" : ""}>${label} (${
-						this.setup.scopes[value] || 0
-					})</option>`
+					`<option value="${value}" ${
+						value === this.scope() ? "selected" : ""
+					}>${label} (${this.setup.scopes[value] || 0})</option>`
 			)
 			.join("");
 
@@ -222,9 +224,7 @@ class CohortPlanner {
 					${this.excluded.has(m.instructor) ? "" : "checked"}>
 				${frappe.utils.escape_html(m.full_name || m.instructor)}
 				<span class="cp-muted">${
-					m.remaining === null
-						? __("no ceiling")
-						: __("{0} free", [m.remaining])
+					m.remaining === null ? __("no ceiling") : __("{0} free", [m.remaining])
 				}</span>
 			</label>`
 			)
@@ -249,7 +249,12 @@ class CohortPlanner {
 			</div>
 			<div class="cp-card">
 				<h5>${__("Mentors")}</h5>
-				<div>${mentorRows || `<span class="cp-muted">${__("Nobody in this unit is wired to mentor cohorts with capacity to spare.")}</span>`}</div>
+				<div>${
+					mentorRows ||
+					`<span class="cp-muted">${__(
+						"Nobody in this unit is wired to mentor cohorts with capacity to spare."
+					)}</span>`
+				}</div>
 			</div>
 			${this.readinessHtml()}
 		`);
@@ -414,7 +419,9 @@ class CohortPlanner {
 		// accident, so it is confirmed once anything has been moved.
 		if (this.plan && this.touched) {
 			frappe.confirm(
-				__("Matching again will discard the changes you have made to this plan. Continue?"),
+				__(
+					"Matching again will discard the changes you have made to this plan. Continue?"
+				),
 				run
 			);
 		} else {
@@ -468,7 +475,10 @@ class CohortPlanner {
 			];
 			const km = this.distance(member.person, group.key);
 			if (km !== null) {
-				notes.push({ text: __("{0} away.", [this.formatDistance(km)]), warn: false });
+				notes.push({
+					text: __("{0} away.", [this.formatDistance(km)]),
+					warn: false,
+				});
 			}
 			return notes;
 		}
@@ -555,7 +565,9 @@ class CohortPlanner {
 		const spare = this.spareMentors();
 		if (!spare.length) {
 			frappe.msgprint(
-				__("Every mentor with capacity in this unit is already leading one of these cohorts.")
+				__(
+					"Every mentor with capacity in this unit is already leading one of these cohorts."
+				)
 			);
 			return;
 		}
@@ -578,7 +590,9 @@ class CohortPlanner {
 					fieldname: "cohort_name",
 					fieldtype: "Data",
 					label: __("Name"),
-					description: __("Students will see this. Left empty, it is named after the mentor."),
+					description: __(
+						"Students will see this. Left empty, it is named after the mentor."
+					),
 				},
 			],
 			primary_action_label: __("Add"),
@@ -638,7 +652,9 @@ class CohortPlanner {
 					${
 						plan.unplaced
 							.map(
-								(u) => `<li class="cp-member" data-person="${frappe.utils.escape_html(
+								(
+									u
+								) => `<li class="cp-member" data-person="${frappe.utils.escape_html(
 									u.person
 								)}">
 									<span class="cp-name">${frappe.utils.escape_html(u.student_name || u.person)}</span>
@@ -657,9 +673,7 @@ class CohortPlanner {
 				<div class="cp-muted">${__(
 					"Nothing has been created yet. Drag students between cohorts, rename them, then press Create Cohorts."
 				)}</div>
-				<button class="btn btn-default btn-xs mt-2 cp-add">${__(
-					"Add a Cohort"
-				)}</button>
+				<button class="btn btn-default btn-xs mt-2 cp-add">${__("Add a Cohort")}</button>
 				<span class="cp-muted ml-2">${__(
 					"Open one under a mentor the rules did not pick, and drag students in. An empty one is simply not created."
 				)}</span>
@@ -684,8 +698,7 @@ class CohortPlanner {
 		const max = this.plan.max_size;
 		const over = max && g.members.length > max;
 		const under = min && g.members.length && g.members.length < min;
-		const overCapacity =
-			g.remaining !== null && g.members.length > g.remaining;
+		const overCapacity = g.remaining !== null && g.members.length > g.remaining;
 
 		const badges = [];
 		if (under)
@@ -697,10 +710,10 @@ class CohortPlanner {
 			);
 		if (over)
 			badges.push(
-				`<span class="badge badge-warning cp-badge">${__("Over the size limit ({0} of {1})", [
-					g.members.length,
-					max,
-				])}</span>`
+				`<span class="badge badge-warning cp-badge">${__(
+					"Over the size limit ({0} of {1})",
+					[g.members.length, max]
+				)}</span>`
 			);
 		if (overCapacity)
 			badges.push(
@@ -714,9 +727,9 @@ class CohortPlanner {
 				const notes = this.notesFor(m, g)
 					.map(
 						(n) =>
-							`<span class="cp-note ${n.warn ? "cp-note-warn" : ""}">${frappe.utils.escape_html(
-								n.text
-							)}</span>`
+							`<span class="cp-note ${
+								n.warn ? "cp-note-warn" : ""
+							}">${frappe.utils.escape_html(n.text)}</span>`
 					)
 					.join("");
 				return `<li class="cp-member" data-person="${frappe.utils.escape_html(m.person)}">
@@ -733,8 +746,8 @@ class CohortPlanner {
 					value="${frappe.utils.escape_html(g.suggested_name || "")}">
 				<div class="cp-muted">${frappe.utils.escape_html(g.mentor_name || g.mentor)} —
 					${__("{0} students", [g.members.length])}${
-						g.remaining === null ? "" : __(", {0} free", [g.remaining])
-					}</div>
+			g.remaining === null ? "" : __(", {0} free", [g.remaining])
+		}</div>
 				<div class="mt-1">${badges.join(" ")}</div>
 			</div>
 			<ul class="cp-members" data-group="${frappe.utils.escape_html(g.key)}">
@@ -780,10 +793,7 @@ class CohortPlanner {
 		// A drag that breaks a Filter warns and proceeds: overriding the
 		// school's rule in one case is exactly the control being retained. What
 		// it must not do is keep claiming a rule chose this.
-		if (
-			to.key !== UNPLACED &&
-			!(this.plan.shortlists[person] || []).includes(to.key)
-		) {
+		if (to.key !== UNPLACED && !(this.plan.shortlists[person] || []).includes(to.key)) {
 			frappe.show_alert({
 				message: __("{0} does not match {1} under the rules you chose.", [
 					member.student_name || person,
@@ -824,10 +834,10 @@ class CohortPlanner {
 		const students = groups.reduce((n, g) => n + g.members.length, 0);
 
 		frappe.confirm(
-			__("Create {0} cohorts and place {1} students? Members are added straight away, not invited.", [
-				groups.length,
-				students,
-			]),
+			__(
+				"Create {0} cohorts and place {1} students? Members are added straight away, not invited.",
+				[groups.length, students]
+			),
 			() => {
 				frappe
 					.call({
@@ -853,7 +863,9 @@ class CohortPlanner {
 		if (over.length) {
 			message +=
 				"<br><br>" +
-				__("These mentors are now past the capacity recorded for them. Confirm the exception with each of them, or raise their capacity in the Academic Unit:") +
+				__(
+					"These mentors are now past the capacity recorded for them. Confirm the exception with each of them, or raise their capacity in the Academic Unit:"
+				) +
 				"<ul>" +
 				over
 					.map(
@@ -866,7 +878,11 @@ class CohortPlanner {
 					.join("") +
 				"</ul>";
 		}
-		frappe.msgprint({ title: __("Cohorts Created"), message, indicator: "green" });
+		frappe.msgprint({
+			title: __("Cohorts Created"),
+			message,
+			indicator: "green",
+		});
 		this.plan = null;
 		this.$plan.empty();
 		this.loadSetup(this.setup.cohort_type);

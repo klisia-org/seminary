@@ -39,6 +39,7 @@ repos:
                 seminary/public/dist/.*|
                 seminary/public/js/lib/.*|
                 seminary/public/frontend/.*|
+                seminary/public/.*/assets/.*|
                 seminary/templates/includes/.*|
                 .*node_modules.*|
                 .*boilerplate.*|

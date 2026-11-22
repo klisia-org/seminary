@@ -19,21 +19,19 @@ import frappe
 
 
 def execute():
-    if not frappe.db.has_column("Cohort Type", "automation_rule"):
-        return
+	if not frappe.db.has_column("Cohort Type", "automation_rule"):
+		return
 
-    rows = frappe.db.sql(
-        """
+	rows = frappe.db.sql(
+		"""
         SELECT name FROM `tabCohort Type`
         WHERE automation_rule IS NOT NULL AND automation_rule != ''
         """,
-        as_dict=True,
-    )
-    for row in rows:
-        # db.set_value, not a save: the controller now refuses a plannable type
-        # with no mentor_unit, and no such unit exists yet on a site being
-        # migrated. The chair picks one the first time they open the planner --
-        # which is a setting to complete, not a record to repair.
-        frappe.db.set_value(
-            "Cohort Type", row.name, "plannable", 1, update_modified=False
-        )
+		as_dict=True,
+	)
+	for row in rows:
+		# db.set_value, not a save: the controller now refuses a plannable type
+		# with no mentor_unit, and no such unit exists yet on a site being
+		# migrated. The chair picks one the first time they open the planner --
+		# which is a setting to complete, not a record to repair.
+		frappe.db.set_value("Cohort Type", row.name, "plannable", 1, update_modified=False)

@@ -35,7 +35,10 @@ function refresh_symbol_options(frm, scale_fieldname, row_fieldname) {
 		const intervals = (doc.intervals || [])
 			.slice()
 			.sort((a, b) => (b.threshold || 0) - (a.threshold || 0));
-		const options = intervals.map((r) => r.grade_code).filter(Boolean).join("\n");
+		const options = intervals
+			.map((r) => r.grade_code)
+			.filter(Boolean)
+			.join("\n");
 		set_grid_field_options(grid, row_fieldname, options);
 	});
 }

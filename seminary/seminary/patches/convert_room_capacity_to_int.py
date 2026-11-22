@@ -15,15 +15,13 @@ import frappe
 
 
 def execute():
-    if not frappe.db.has_column("Room", "seating_capacity"):
-        return
-    rows = frappe.db.sql("SELECT name, seating_capacity FROM `tabRoom`", as_dict=True)
-    for row in rows:
-        raw = row.seating_capacity
-        digits = "" if raw is None else re.sub(r"[^0-9]", "", str(raw))
-        cleaned = digits or "0"
-        if raw is None or cleaned != str(raw):
-            frappe.db.set_value(
-                "Room", row.name, "seating_capacity", cleaned, update_modified=False
-            )
-    frappe.db.commit()
+	if not frappe.db.has_column("Room", "seating_capacity"):
+		return
+	rows = frappe.db.sql("SELECT name, seating_capacity FROM `tabRoom`", as_dict=True)
+	for row in rows:
+		raw = row.seating_capacity
+		digits = "" if raw is None else re.sub(r"[^0-9]", "", str(raw))
+		cleaned = digits or "0"
+		if raw is None or cleaned != str(raw):
+			frappe.db.set_value("Room", row.name, "seating_capacity", cleaned, update_modified=False)
+	frappe.db.commit()

@@ -53,98 +53,92 @@ MB = 1024 * 1024
 
 
 def _policy_schema_present() -> bool:
-    """True once this site has migrated far enough to hold an upload policy.
+	"""True once this site has migrated far enough to hold an upload policy.
 
-    Guards against the window where new code is deployed but `bench migrate` has
-    not run — `bench update` pulls code first and migrates afterwards, so the
-    window is real on every deployment, not just a forgotten step.
-    """
-    try:
-        if not frappe.db.exists("DocType", "Upload Limit"):
-            return False
-        return frappe.get_meta("Seminary Settings").has_field("default_max_upload_mb")
-    except Exception:
-        # Table missing entirely (a very old site, or mid-install).
-        return False
+	Guards against the window where new code is deployed but `bench migrate` has
+	not run — `bench update` pulls code first and migrates afterwards, so the
+	window is real on every deployment, not just a forgotten step.
+	"""
+	try:
+		if not frappe.db.exists("DocType", "Upload Limit"):
+			return False
+		return frappe.get_meta("Seminary Settings").has_field("default_max_upload_mb")
+	except Exception:
+		# Table missing entirely (a very old site, or mid-install).
+		return False
 
 
 def _policy() -> dict:
-    """The configured policy as `{"default": bytes|None, "roles": {role: bytes}}`.
+	"""The configured policy as `{"default": bytes|None, "roles": {role: bytes}}`.
 
-    Cached, and fetched as one unit, because this is consulted on every single
-    upload and on `get_upload_limits()` for every page that mounts an uploader.
-    """
+	Cached, and fetched as one unit, because this is consulted on every single
+	upload and on `get_upload_limits()` for every page that mounts an uploader.
+	"""
 
-    def _load():
-        # Both the field and the child doctype arrive with a migration, and this
-        # runs on *every* File validate. On a site that has the new code but has
-        # not migrated yet, `get_single_value` throws InvalidColumnName
-        # (`frappe/database/database.py:918`) and would take every upload down
-        # with it. An unmigrated site simply has no policy configured.
-        if not _policy_schema_present():
-            return {"default": None, "roles": {}}
+	def _load():
+		# Both the field and the child doctype arrive with a migration, and this
+		# runs on *every* File validate. On a site that has the new code but has
+		# not migrated yet, `get_single_value` throws InvalidColumnName
+		# (`frappe/database/database.py:918`) and would take every upload down
+		# with it. An unmigrated site simply has no policy configured.
+		if not _policy_schema_present():
+			return {"default": None, "roles": {}}
 
-        default_mb = frappe.db.get_single_value(
-            "Seminary Settings", "default_max_upload_mb"
-        )
-        rows = frappe.get_all(
-            "Upload Limit",
-            filters={"parenttype": "Seminary Settings"},
-            fields=["role", "max_file_size_mb"],
-        )
-        return {
-            "default": (
-                int(default_mb) * MB if default_mb and int(default_mb) > 0 else None
-            ),
-            "roles": {
-                row.role: int(row.max_file_size_mb) * MB
-                for row in rows
-                if row.role and row.max_file_size_mb and int(row.max_file_size_mb) > 0
-            },
-        }
+		default_mb = frappe.db.get_single_value("Seminary Settings", "default_max_upload_mb")
+		rows = frappe.get_all(
+			"Upload Limit",
+			filters={"parenttype": "Seminary Settings"},
+			fields=["role", "max_file_size_mb"],
+		)
+		return {
+			"default": (int(default_mb) * MB if default_mb and int(default_mb) > 0 else None),
+			"roles": {
+				row.role: int(row.max_file_size_mb) * MB
+				for row in rows
+				if row.role and row.max_file_size_mb and int(row.max_file_size_mb) > 0
+			},
+		}
 
-    return frappe.cache.get_value("seminary_upload_limits", _load)
+	return frappe.cache.get_value("seminary_upload_limits", _load)
 
 
 def role_limits() -> dict[str, int]:
-    """The per-role exceptions table, as `{role: max bytes}`."""
-    return _policy()["roles"]
+	"""The per-role exceptions table, as `{role: max bytes}`."""
+	return _policy()["roles"]
 
 
 def default_limit() -> int | None:
-    """The catch-all cap in bytes, or None when unset."""
-    return _policy()["default"]
+	"""The catch-all cap in bytes, or None when unset."""
+	return _policy()["default"]
 
 
 def clear_cache():
-    """Drop the cached table. Called from Seminary Settings `on_update`."""
-    frappe.cache.delete_value("seminary_upload_limits")
+	"""Drop the cached table. Called from Seminary Settings `on_update`."""
+	frappe.cache.delete_value("seminary_upload_limits")
 
 
 def limit_for_user(user: str | None = None) -> int | None:
-    """Effective seminary upload cap in bytes, or None when unlimited.
+	"""Effective seminary upload cap in bytes, or None when unlimited.
 
-    None means "no seminary-level limit" — Frappe's global `max_file_size` still
-    applies on top, and always did.
-    """
-    user = user or frappe.session.user
+	None means "no seminary-level limit" — Frappe's global `max_file_size` still
+	applies on top, and always did.
+	"""
+	user = user or frappe.session.user
 
-    if user == "Administrator":
-        return None
+	if user == "Administrator":
+		return None
 
-    policy = _policy()
-    exceptions = policy["roles"]
+	policy = _policy()
+	exceptions = policy["roles"]
 
-    if exceptions:
-        applicable = [
-            exceptions[role] for role in frappe.get_roles(user) if role in exceptions
-        ]
-        if applicable:
-            # Most permissive of the user's listed roles, and it overrides the
-            # default outright — see the module docstring.
-            return max(applicable)
+	if exceptions:
+		applicable = [exceptions[role] for role in frappe.get_roles(user) if role in exceptions]
+		if applicable:
+			# Most permissive of the user's listed roles, and it overrides the
+			# default outright — see the module docstring.
+			return max(applicable)
 
-    return policy["default"]
+	return policy["default"]
 
 
 #: Ceiling for a direct browser upload when no per-role cap is configured. This is
@@ -156,93 +150,91 @@ DEFAULT_MAX_DIRECT_BYTES = 2 * 1024 * 1024 * 1024
 
 
 def direct_limit_for_user(user: str | None = None) -> int:
-    """Ceiling in bytes for a direct-to-object-storage upload.
+	"""Ceiling in bytes for a direct-to-object-storage upload.
 
-    Deliberately *not* bounded by `global_max_bytes()`: escaping Frappe's global
-    ceiling — and nginx's `client_max_body_size` — is the entire point of the
-    direct path. Per-role policy still governs, so an instructor capped at 400 MB
-    is capped at 400 MB here too; the fallback only applies where no role policy
-    exists at all.
-    """
-    ceiling = int(
-        frappe.conf.get("storage_max_direct_bytes") or DEFAULT_MAX_DIRECT_BYTES
-    )
-    role_cap = limit_for_user(user)
-    return min(role_cap, ceiling) if role_cap else ceiling
+	Deliberately *not* bounded by `global_max_bytes()`: escaping Frappe's global
+	ceiling — and nginx's `client_max_body_size` — is the entire point of the
+	direct path. Per-role policy still governs, so an instructor capped at 400 MB
+	is capped at 400 MB here too; the fallback only applies where no role policy
+	exists at all.
+	"""
+	ceiling = int(frappe.conf.get("storage_max_direct_bytes") or DEFAULT_MAX_DIRECT_BYTES)
+	role_cap = limit_for_user(user)
+	return min(role_cap, ceiling) if role_cap else ceiling
 
 
 def global_max_bytes() -> int:
-    """The size Frappe itself will accept for a browser upload.
+	"""The size Frappe itself will accept for a browser upload.
 
-    Frappe ships two unrelated `get_max_file_size()` functions and which one
-    applies depends on how a file was created:
+	Frappe ships two unrelated `get_max_file_size()` functions and which one
+	applies depends on how a file was created:
 
-    - `frappe.core.api.file.get_max_file_size` — used by `File.check_max_file_size`
-      on the document path. **System Settings → Max File Size (MB)** → `conf` →
-      25 MB. This is the one an administrator can set from Desk.
-    - `frappe.utils.file_manager.get_max_file_size` — used by the legacy
-      `save_file()` path. `conf.max_file_size` only → 10 MB, ignoring System
-      Settings completely.
+	- `frappe.core.api.file.get_max_file_size` — used by `File.check_max_file_size`
+	  on the document path. **System Settings → Max File Size (MB)** → `conf` →
+	  25 MB. This is the one an administrator can set from Desk.
+	- `frappe.utils.file_manager.get_max_file_size` — used by the legacy
+	  `save_file()` path. `conf.max_file_size` only → 10 MB, ignoring System
+	  Settings completely.
 
-    Seminary used to reach the legacy one from `api/folder_upload.py` and
-    `course_pack/import_.py`, which meant a site that raised System Settings to
-    100 MB still had its instructor materials rejected at 10 MB, with a message
-    naming a limit nobody had configured. Both now create File documents instead,
-    so every path a user can upload through answers to the Desk setting and this
-    reports it directly. Keep it that way: reintroducing `file_manager.save_file`
-    on an upload path silently reinstates the 10 MB cap *and* makes this hint
-    over-promise, which ADR 040 forbids.
+	Seminary used to reach the legacy one from `api/folder_upload.py` and
+	`course_pack/import_.py`, which meant a site that raised System Settings to
+	100 MB still had its instructor materials rejected at 10 MB, with a message
+	naming a limit nobody had configured. Both now create File documents instead,
+	so every path a user can upload through answers to the Desk setting and this
+	reports it directly. Keep it that way: reintroducing `file_manager.save_file`
+	on an upload path silently reinstates the 10 MB cap *and* makes this hint
+	over-promise, which ADR 040 forbids.
 
-    The matching ceiling on the request *body* comes from `frappe/app.py:198` and
-    is only the Desk-aware one for paths beginning `/api/method/upload_file` —
-    which is why the folder tool posts there with a `method=` callback rather than
-    to its own endpoint.
-    """
-    from frappe.core.api.file import get_max_file_size as doc_path_max
+	The matching ceiling on the request *body* comes from `frappe/app.py:198` and
+	is only the Desk-aware one for paths beginning `/api/method/upload_file` —
+	which is why the folder tool posts there with a `method=` callback rather than
+	to its own endpoint.
+	"""
+	from frappe.core.api.file import get_max_file_size as doc_path_max
 
-    return doc_path_max()
+	return doc_path_max()
 
 
 def enforce_upload_limits(doc, method=None):
-    """Reject an upload above the uploader's per-role cap (`File` validate hook).
+	"""Reject an upload above the uploader's per-role cap (`File` validate hook).
 
-    Only on insert: a cap governs *uploading*, so tightening policy must not make
-    existing files unsaveable. Frappe's global cap has already been applied by
-    `check_max_file_size` inside `save_file`, so anything reaching here is within
-    it and only the tighter role cap can still bite.
-    """
-    if getattr(doc, "is_folder", 0) or not doc.is_new():
-        return
+	Only on insert: a cap governs *uploading*, so tightening policy must not make
+	existing files unsaveable. Frappe's global cap has already been applied by
+	`check_max_file_size` inside `save_file`, so anything reaching here is within
+	it and only the tighter role cap can still bite.
+	"""
+	if getattr(doc, "is_folder", 0) or not doc.is_new():
+		return
 
-    if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_patch:
-        return
+	if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_patch:
+		return
 
-    cap = limit_for_user()
-    if not cap:
-        return
+	cap = limit_for_user()
+	if not cap:
+		return
 
-    size = doc.file_size or 0
-    if size <= cap:
-        return
+	size = doc.file_size or 0
+	if size <= cap:
+		return
 
-    frappe.throw(
-        frappe._(
-            "This file is too large ({0} MB). Your account may upload files up to {1} MB."
-        ).format(round(size / MB), round(cap / MB)),
-        title=frappe._("File too large"),
-    )
+	frappe.throw(
+		frappe._("This file is too large ({0} MB). Your account may upload files up to {1} MB.").format(
+			round(size / MB), round(cap / MB)
+		),
+		title=frappe._("File too large"),
+	)
 
 
 def effective_limit(user: str | None = None) -> tuple[int, str | None]:
-    """Return `(max_bytes, source)` actually enforced for `user`.
+	"""Return `(max_bytes, source)` actually enforced for `user`.
 
-    `source` is "role" when a seminary per-role cap is the binding constraint and
-    None when the global cap is, which lets callers phrase an accurate message
-    instead of blaming the wrong setting.
-    """
-    global_bytes = global_max_bytes()
-    role_bytes = limit_for_user(user)
+	`source` is "role" when a seminary per-role cap is the binding constraint and
+	None when the global cap is, which lets callers phrase an accurate message
+	instead of blaming the wrong setting.
+	"""
+	global_bytes = global_max_bytes()
+	role_bytes = limit_for_user(user)
 
-    if role_bytes is None or role_bytes >= global_bytes:
-        return global_bytes, None
-    return role_bytes, "role"
+	if role_bytes is None or role_bytes >= global_bytes:
+		return global_bytes, None
+	return role_bytes, "role"

@@ -17,59 +17,53 @@ from seminary.seminary import cbe
 
 
 class AssessmentGradingMatrix(Document):
-    def validate(self):
-        self.set_context()
-        self.validate_dimension()
-        self.validate_unique()
+	def validate(self):
+		self.set_context()
+		self.validate_dimension()
+		self.validate_unique()
 
-    def set_context(self):
-        """Denormalise from the assessment, so a report can filter by section."""
-        row = frappe.db.get_value(
-            "Scheduled Course Assess Criteria",
-            self.assess_criteria,
-            ["parent", "course_competency"],
-            as_dict=True,
-        )
-        if not row:
-            frappe.throw(
-                _("Assessment {0} does not exist.").format(self.assess_criteria)
-            )
-        self.course_schedule = row.parent
-        self.course_competency = row.course_competency
+	def set_context(self):
+		"""Denormalise from the assessment, so a report can filter by section."""
+		row = frappe.db.get_value(
+			"Scheduled Course Assess Criteria",
+			self.assess_criteria,
+			["parent", "course_competency"],
+			as_dict=True,
+		)
+		if not row:
+			frappe.throw(_("Assessment {0} does not exist.").format(self.assess_criteria))
+		self.course_schedule = row.parent
+		self.course_competency = row.course_competency
 
-    def validate_dimension(self):
-        """The dimension must be one the section's scale defines."""
-        scale = frappe.db.get_value(
-            "Course Schedule", self.course_schedule, "gradesc_cs"
-        )
-        allowed = cbe.scale_dimensions(scale) if scale else {}
-        # Refreshed on every save so a renamed dimension leaves no stale label.
-        self.dimension = cbe.assert_known_dimension(
-            allowed, self.dimension_code, scale=scale
-        )
+	def validate_dimension(self):
+		"""The dimension must be one the section's scale defines."""
+		scale = frappe.db.get_value("Course Schedule", self.course_schedule, "gradesc_cs")
+		allowed = cbe.scale_dimensions(scale) if scale else {}
+		# Refreshed on every save so a renamed dimension leaves no stale label.
+		self.dimension = cbe.assert_known_dimension(allowed, self.dimension_code, scale=scale)
 
-    def validate_unique(self):
-        """One cell per assessment, evaluator type and dimension.
+	def validate_unique(self):
+		"""One cell per assessment, evaluator type and dimension.
 
-        Compared after the fact rather than filtered on `name != self.name`:
-        autoname has already stamped a new doc, so that filter would exclude the
-        very record being looked for and let the duplicate through.
-        """
-        duplicate = frappe.db.get_value(
-            "Assessment Grading Matrix",
-            {
-                "assess_criteria": self.assess_criteria,
-                "instructor_category": self.instructor_category,
-                "dimension_code": self.dimension_code,
-            },
-            "name",
-        )
-        if duplicate and (self.is_new() or duplicate != self.name):
-            frappe.throw(
-                _("{0} already has a cell for {1} / {2} ({3}).").format(
-                    self.assess_criteria,
-                    self.instructor_category,
-                    self.dimension_code,
-                    duplicate,
-                )
-            )
+		Compared after the fact rather than filtered on `name != self.name`:
+		autoname has already stamped a new doc, so that filter would exclude the
+		very record being looked for and let the duplicate through.
+		"""
+		duplicate = frappe.db.get_value(
+			"Assessment Grading Matrix",
+			{
+				"assess_criteria": self.assess_criteria,
+				"instructor_category": self.instructor_category,
+				"dimension_code": self.dimension_code,
+			},
+			"name",
+		)
+		if duplicate and (self.is_new() or duplicate != self.name):
+			frappe.throw(
+				_("{0} already has a cell for {1} / {2} ({3}).").format(
+					self.assess_criteria,
+					self.instructor_category,
+					self.dimension_code,
+					duplicate,
+				)
+			)

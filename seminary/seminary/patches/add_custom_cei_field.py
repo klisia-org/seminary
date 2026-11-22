@@ -7,4 +7,4 @@ Kept as a no-op so existing sites that list this patch in patches.txt don't erro
 
 
 def execute():
-    pass
+	pass

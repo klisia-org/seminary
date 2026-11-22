@@ -23,31 +23,27 @@ TABLE = "tabStudent Applicant"
 
 
 def execute():
-    if not frappe.db.table_exists("Student Applicant"):
-        return
-    columns = {c.get("Field") or c.get("column_name") for c in _describe()}
-    if "social_security_number" not in columns:
-        return
-    if "tax_id" in columns:
-        # sync_all got here first (a patch re-run after a failed migrate, or a
-        # site that pulled the JSON before the patch). Keep whichever value a
-        # human typed, then leave the orphan for trim-tables — dropping it here
-        # would discard the only copy if this patch is the thing that just
-        # failed.
-        frappe.db.sql(
-            "update `%s` set tax_id = social_security_number "
-            "where (tax_id is null or tax_id = '') "
-            "and social_security_number is not null"
-            % TABLE  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
-        )
-        print("  copied Student Applicant.social_security_number into tax_id")
-        return
-    frappe.db.sql_ddl(
-        "alter table `%s` change column `social_security_number` `tax_id` varchar(140)"
-        % TABLE
-    )
-    print("  renamed Student Applicant.social_security_number to tax_id")
+	if not frappe.db.table_exists("Student Applicant"):
+		return
+	columns = {c.get("Field") or c.get("column_name") for c in _describe()}
+	if "social_security_number" not in columns:
+		return
+	if "tax_id" in columns:
+		# sync_all got here first (a patch re-run after a failed migrate, or a
+		# site that pulled the JSON before the patch). Keep whichever value a
+		# human typed, then leave the orphan for trim-tables — dropping it here
+		# would discard the only copy if this patch is the thing that just
+		# failed.
+		frappe.db.sql(
+			"update `%s` set tax_id = social_security_number "
+			"where (tax_id is null or tax_id = '') "
+			"and social_security_number is not null" % TABLE  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
+		)
+		print("  copied Student Applicant.social_security_number into tax_id")
+		return
+	frappe.db.sql_ddl("alter table `%s` change column `social_security_number` `tax_id` varchar(140)" % TABLE)
+	print("  renamed Student Applicant.social_security_number to tax_id")
 
 
 def _describe():
-    return frappe.db.sql("describe `%s`" % TABLE, as_dict=True)
+	return frappe.db.sql("describe `%s`" % TABLE, as_dict=True)

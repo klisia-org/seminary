@@ -8,7 +8,7 @@ frappe.ui.form.on("Quiz", {
 
 frappe.ui.form.on("Quiz Question", {
 	points: function (frm) {
-		total_points = 0;
+		let total_points = 0;
 		frm.doc.questions.forEach((question) => {
 			total_points += question.points;
 		});

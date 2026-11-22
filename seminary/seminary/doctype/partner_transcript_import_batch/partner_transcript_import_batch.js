@@ -40,9 +40,7 @@ function add_workflow_buttons(frm) {
 			});
 			frm.reload_doc();
 		});
-	}).addClass(
-		frm.doc.batch_status === "Dry-Run Clean" ? "btn-default" : "btn-primary"
-	);
+	}).addClass(frm.doc.batch_status === "Dry-Run Clean" ? "btn-default" : "btn-primary");
 }
 
 async function refresh_row_autocompletes(frm) {
@@ -66,8 +64,7 @@ function set_grid_options(grid, fieldname, options) {
 	grid.update_docfield_property(fieldname, "options", options);
 	(grid.grid_rows || []).forEach((row) => {
 		if (!row) return;
-		const df =
-			row.docfields && row.docfields.find((d) => d.fieldname === fieldname);
+		const df = row.docfields && row.docfields.find((d) => d.fieldname === fieldname);
 		if (df) df.options = options;
 		if (row.refresh_field) row.refresh_field(fieldname);
 	});

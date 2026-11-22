@@ -7,15 +7,15 @@ from frappe.model.document import Document
 
 
 class ReadingPlanProgress(Document):
-    def validate(self):
-        # One mark per member and step; `mark_step` relies on it.
-        if frappe.db.exists(
-            "Reading Plan Progress",
-            {
-                "cohort_reading_plan": self.cohort_reading_plan,
-                "person": self.person,
-                "step": self.step,
-                "name": ["!=", self.name],
-            },
-        ):
-            frappe.throw(_("This step is already marked as read."))
+	def validate(self):
+		# One mark per member and step; `mark_step` relies on it.
+		if frappe.db.exists(
+			"Reading Plan Progress",
+			{
+				"cohort_reading_plan": self.cohort_reading_plan,
+				"person": self.person,
+				"step": self.step,
+				"name": ["!=", self.name],
+			},
+		):
+			frappe.throw(_("This step is already marked as read."))

@@ -1,6 +1,5 @@
 frappe.ui.form.on("Course Schedule", {
-
-	setup: function(frm) {
+	setup: function (frm) {
 		// Best-fit-first room picker: ordered by free/busy, feature fit, then
 		// capacity, with a muted description line. See api.room_search.
 		const room_filters = () => ({
@@ -16,38 +15,62 @@ frappe.ui.form.on("Course Schedule", {
 		frm.set_query("cs_room", "cs_meetinfo", room_filters);
 	},
 
-	refresh: function(frm) {
+	refresh: function (frm) {
 		frm.add_web_link(`/seminary/courses/${frm.doc.name}`, "See on Website");
 		frm.trigger("render_days");
 
 		// Change Room (with a reason captured into the room change log).
-		const canSchedule = ["Registrar", "Program Chair", "Seminary Manager", "System Manager"]
-			.some(r => frappe.user_roles.includes(r));
+		const canSchedule = [
+			"Registrar",
+			"Program Chair",
+			"Seminary Manager",
+			"System Manager",
+		].some((r) => frappe.user_roles.includes(r));
 		if (!frm.doc.__islocal && canSchedule) {
-			frm.add_custom_button(__('Change Room'), function() {
+			frm.add_custom_button(__("Change Room"), function () {
 				const d = new frappe.ui.Dialog({
-					title: __('Change Room'),
+					title: __("Change Room"),
 					fields: [
-						{ fieldname: 'room', fieldtype: 'Link', options: 'Room',
-						  label: __('New Room'), reqd: 1,
-						  get_query: () => ({
-							query: "seminary.seminary.api.room_search",
-							filters: { course: frm.doc.course, modality: frm.doc.modality,
-							           course_schedule: frm.doc.name },
-						  }) },
-						{ fieldname: 'reason', fieldtype: 'Small Text',
-						  label: __('Reason'), reqd: 1 },
-						{ fieldname: 'note_html', fieldtype: 'HTML',
-						  options: `<div class="text-muted small" style="margin-top: 8px;">
-							${__("This changes the section's default room (logged in the room-change history). To put a single meeting in a different room, set its Room on the Meeting Dates grid instead — per-meeting overrides aren't recorded in that log.")}
-						  </div>` },
+						{
+							fieldname: "room",
+							fieldtype: "Link",
+							options: "Room",
+							label: __("New Room"),
+							reqd: 1,
+							get_query: () => ({
+								query: "seminary.seminary.api.room_search",
+								filters: {
+									course: frm.doc.course,
+									modality: frm.doc.modality,
+									course_schedule: frm.doc.name,
+								},
+							}),
+						},
+						{
+							fieldname: "reason",
+							fieldtype: "Small Text",
+							label: __("Reason"),
+							reqd: 1,
+						},
+						{
+							fieldname: "note_html",
+							fieldtype: "HTML",
+							options: `<div class="text-muted small" style="margin-top: 8px;">
+							${__(
+								"This changes the section's default room (logged in the room-change history). To put a single meeting in a different room, set its Room on the Meeting Dates grid instead — per-meeting overrides aren't recorded in that log."
+							)}
+						  </div>`,
+						},
 					],
-					primary_action_label: __('Change'),
+					primary_action_label: __("Change"),
 					primary_action(values) {
 						frappe.dom.freeze(__("Changing room..."));
-						frm.call('change_room', { room: values.room, reason: values.reason })
+						frm.call("change_room", { room: values.room, reason: values.reason })
 							.always(() => frappe.dom.unfreeze())
-							.then(() => { d.hide(); frm.reload_doc(); });
+							.then(() => {
+								d.hide();
+								frm.reload_doc();
+							});
 					},
 				});
 				d.show();
@@ -56,52 +79,68 @@ frappe.ui.form.on("Course Schedule", {
 
 		// Attendance policy is registrar / Program Chair governed (the server
 		// enforces it too in course_schedule.py). Instructors see it read-only.
-		const canEditPolicy = ["Registrar", "Program Chair", "Seminary Manager", "System Manager"]
-			.some(r => frappe.user_roles.includes(r));
-		["attendance_policy", "max_absences_custom"].forEach(f =>
-			frm.set_df_property(f, "read_only", canEditPolicy ? 0 : 1));
+		const canEditPolicy = [
+			"Registrar",
+			"Program Chair",
+			"Seminary Manager",
+			"System Manager",
+		].some((r) => frappe.user_roles.includes(r));
+		["attendance_policy", "max_absences_custom"].forEach((f) =>
+			frm.set_df_property(f, "read_only", canEditPolicy ? 0 : 1)
+		);
 		if (frm.doc.hasmtgdate === 0) {
-			frm.add_custom_button(__('Add Meeting Dates'), function() {
+			frm.add_custom_button(__("Add Meeting Dates"), function () {
 				// Button functionality here
 
-			const selectedDays = [];
-  			if (frm.doc.monday) {
-    			selectedDays.push("Monday")};
-			if (frm.doc.tuesday) {
-				selectedDays.push("Tuesday")};
-			if (frm.doc.wednesday) {
-				selectedDays.push("Wednesday")};
-			if (frm.doc.thursday) {
-				selectedDays.push("Thursday")};
-			if (frm.doc.friday) {
-				selectedDays.push("Friday")};
-			if (frm.doc.saturday) {
-				selectedDays.push("Saturday")};
-			if (frm.doc.sunday) {
-				selectedDays.push("Sunday")};
+				const selectedDays = [];
+				if (frm.doc.monday) {
+					selectedDays.push("Monday");
+				}
+				if (frm.doc.tuesday) {
+					selectedDays.push("Tuesday");
+				}
+				if (frm.doc.wednesday) {
+					selectedDays.push("Wednesday");
+				}
+				if (frm.doc.thursday) {
+					selectedDays.push("Thursday");
+				}
+				if (frm.doc.friday) {
+					selectedDays.push("Friday");
+				}
+				if (frm.doc.saturday) {
+					selectedDays.push("Saturday");
+				}
+				if (frm.doc.sunday) {
+					selectedDays.push("Sunday");
+				}
 
-			frappe.dom.freeze(__("Scheduling..."));
-			frm.call('schedule_dates', { days: selectedDays })
-				.fail(() => {
-					frappe.dom.unfreeze();
-					frappe.msgprint(__("Course Scheduling Failed"));
-				})
-				.then(r => {
-					frappe.dom.unfreeze();
-					if (!r.message) {
-						frappe.throw(__('There were errors creating Course Schedule'));
-					}
-					const { meeting_dates} = r.message;
-					if (meeting_dates) {
-						const meeting_dates_html = meeting_dates.map(c => `
+				frappe.dom.freeze(__("Scheduling..."));
+				frm.call("schedule_dates", { days: selectedDays })
+					.fail(() => {
+						frappe.dom.unfreeze();
+						frappe.msgprint(__("Course Scheduling Failed"));
+					})
+					.then((r) => {
+						frappe.dom.unfreeze();
+						if (!r.message) {
+							frappe.throw(__("There were errors creating Course Schedule"));
+						}
+						const { meeting_dates } = r.message;
+						if (meeting_dates) {
+							const meeting_dates_html = meeting_dates
+								.map(
+									(c) => `
 							<tr>
 								<td>${c.cs_meetdate}</td>
 							</tr>
-						`).join('');
+						`
+								)
+								.join("");
 
-						const html = `
+							const html = `
 							<table class="table table-bordered">
-								<caption>${__('Following meeting dates were created')}</caption>
+								<caption>${__("Following meeting dates were created")}</caption>
 								<thead><tr><th>${__("Date")}</th></tr></thead>
 								<tbody>
 									${meeting_dates_html}
@@ -109,179 +148,228 @@ frappe.ui.form.on("Course Schedule", {
 							</table>
 						`;
 
-						frappe.msgprint(html);
-						frm.set_value('hasmtgdate',  1);
-
-
-					}
-				});
-			// 	frappe.call({
-			// 		method: "seminary.seminary.api.course_event",
-			// 		args: {
-			// 			name: frm.doc.name
-			// 		},
-			// 		callback: function(r) {
-			// 			if (r.message) {
-			// 				frm.msgprint("Calendar created successfully");
-			// 			}}
-			// });
-
-
-		});
-	};
-
-	if (frm.doc.calendar_token) {
-		frm.add_custom_button(__('Regenerate Calendar Token (This will invalidate existing calendar subscriptions)'), function() {
-			frappe.confirm(
-				__('Are you sure? All students and professors will need to re-subscribe to the course calendar.'),
-				function() {
-					frm.call('regenerate_token')
-					.then(() => {
-						// The token is deliberately not returned (p005a A04-3);
-						// subscribers pick it up from the course calendar page.
-						frappe.msgprint(__('Calendar token regenerated. Existing subscriptions are now invalid.'));
-					});
-				},
-				function() {
-					frappe.msgprint(__('Action cancelled.'));
-				}
-			);
-		});
-	}
-
-	const can_send_grades = frappe.user.has_role('Instructor') || frappe.user.has_role('Program Chair');
-	if (!frm.is_new() && frm.doc.workflow_state === 'Grading' && can_send_grades) {
-		frm.add_custom_button(__('Send Grades'), function() {
-			frappe.confirm(
-				__('Send all grades and close the course? This finalizes grades on the transcript and cannot be undone from Desk.'),
-				function() {
-					frappe.dom.freeze(__('Sending grades…'));
-					frappe.call({
-						method: 'seminary.seminary.api.send_grades',
-						args: { doc: JSON.stringify({ name: frm.doc.name }) }
-					})
-						.then(() => {
-							frappe.dom.unfreeze();
-							frappe.show_alert({ message: __('Grades sent.'), indicator: 'green' });
-							frm.reload_doc();
-						})
-						.catch(() => {
-							frappe.dom.unfreeze();
-						});
-				}
-			);
-		}, __('Status'));
-	}
-
-	const importable = ['Draft', 'Open for Enrollment'].includes(frm.doc.workflow_state);
-	const can_import = frappe.user.has_role('Program Chair')
-		|| frappe.user.has_role('Seminary Manager')
-		|| frappe.user.has_role('Registrar');
-	const no_chapters = !frm.doc.chapters || frm.doc.chapters.length === 0
-		|| frm.doc.__onload?.untouched_scaffold;
-	if (!frm.is_new() && importable && can_import && no_chapters) {
-		frm.add_custom_button(__('Import Course Template'), function() {
-			frappe.db.get_value('Course', frm.doc.course, 'default_cs_template').then(r => {
-				const default_template = (r && r.message && r.message.default_cs_template) || null;
-				frappe.prompt(
-					[
-						{
-							fieldname: 'source_cs',
-							fieldtype: 'Link',
-							options: 'Course Schedule',
-							label: __('Source Course Schedule'),
-							reqd: 1,
-							default: default_template,
-							get_query: () => ({
-								filters: { course: frm.doc.course, name: ['!=', frm.doc.name] }
-							})
-						},
-						{
-							fieldname: 'warning_html',
-							fieldtype: 'HTML',
-							options: `<div class="text-muted small" style="margin-top: 8px;">
-								${__('Copies chapters, lessons, and assessment criteria from the source schedule. Roster, grades, dates, and enrollment counts are not copied. Existing assessment criteria on this schedule will be replaced.')}
-							</div>`
+							frappe.msgprint(html);
+							frm.set_value("hasmtgdate", 1);
 						}
-					],
-					(values) => {
-						frappe.dom.freeze(__('Importing template…'));
-						frm.call('import_template', { source_cs: values.source_cs })
-							.then(r => {
-								frappe.dom.unfreeze();
-								if (r && r.message) {
-									const { chapters, lessons, scac } = r.message;
-									frappe.show_alert({
-										message: __('Imported {0} chapters, {1} lessons, {2} assessment criteria.', [chapters, lessons, scac]),
-										indicator: 'green'
-									});
-								}
-								frm.reload_doc();
-							})
-							.catch(() => {
-								frappe.dom.unfreeze();
-							});
-					},
-					__('Import Course Template'),
-					__('Import')
-				);
+					});
+				// 	frappe.call({
+				// 		method: "seminary.seminary.api.course_event",
+				// 		args: {
+				// 			name: frm.doc.name
+				// 		},
+				// 		callback: function(r) {
+				// 			if (r.message) {
+				// 				frm.msgprint("Calendar created successfully");
+				// 			}}
+				// });
 			});
-		}, __('Actions'));
-	}
+		}
 
-	// Export this schedule's full authored content as a portable Course Pack.
-	const has_content = frm.doc.chapters && frm.doc.chapters.length > 0;
-	if (!frm.is_new() && can_import && has_content) {
-		frm.add_custom_button(__('Export Course Pack'), function () {
-			const url = '/api/method/seminary.seminary.course_pack.export.export_course_pack'
-				+ '?course_schedule=' + encodeURIComponent(frm.doc.name);
-			window.open(url, '_blank');
-		}, __('Actions'));
-	}
+		if (frm.doc.calendar_token) {
+			frm.add_custom_button(
+				__(
+					"Regenerate Calendar Token (This will invalidate existing calendar subscriptions)"
+				),
+				function () {
+					frappe.confirm(
+						__(
+							"Are you sure? All students and professors will need to re-subscribe to the course calendar."
+						),
+						function () {
+							frm.call("regenerate_token").then(() => {
+								// The token is deliberately not returned (p005a A04-3);
+								// subscribers pick it up from the course calendar page.
+								frappe.msgprint(
+									__(
+										"Calendar token regenerated. Existing subscriptions are now invalid."
+									)
+								);
+							});
+						},
+						function () {
+							frappe.msgprint(__("Action cancelled."));
+						}
+					);
+				}
+			);
+		}
 
-	const cancellable = ['Open for Enrollment', 'Enrollment Closed'].includes(frm.doc.workflow_state);
-	const can_cancel = frappe.user.has_role('Registrar') || frappe.user.has_role('Seminary Manager');
-	if (!frm.is_new() && cancellable && can_cancel) {
-		frm.add_custom_button(__('Cancel Course'), function() {
-			frappe.prompt(
-				[
-					{
-						fieldname: 'reason',
-						fieldtype: 'Link',
-						options: 'Course Cancellation Reason',
-						label: __('Cancellation Reason'),
-						reqd: 1,
-						get_query: () => ({ filters: { is_active: 1 } })
-					},
-					{
-						fieldname: 'warning_html',
-						fieldtype: 'HTML',
-						options: `<div class="text-muted small" style="margin-top: 8px;">
-							${__('Cancellation cannot be undone. Enrolled students will be notified and their Program Enrollment Course rows for this course will be removed.')}
-						</div>`
-					}
-				],
-				(values) => {
-					frappe.dom.freeze(__('Cancelling course…'));
-					frm.call('cancel_course', { reason: values.reason })
-						.then(() => {
-							frappe.dom.unfreeze();
-							frappe.show_alert({ message: __('Course cancelled.'), indicator: 'orange' });
-							frm.reload_doc();
-						})
-						.catch(() => {
-							frappe.dom.unfreeze();
+		const can_send_grades =
+			frappe.user.has_role("Instructor") || frappe.user.has_role("Program Chair");
+		if (!frm.is_new() && frm.doc.workflow_state === "Grading" && can_send_grades) {
+			frm.add_custom_button(
+				__("Send Grades"),
+				function () {
+					frappe.confirm(
+						__(
+							"Send all grades and close the course? This finalizes grades on the transcript and cannot be undone from Desk."
+						),
+						function () {
+							frappe.dom.freeze(__("Sending grades…"));
+							frappe
+								.call({
+									method: "seminary.seminary.api.send_grades",
+									args: { doc: JSON.stringify({ name: frm.doc.name }) },
+								})
+								.then(() => {
+									frappe.dom.unfreeze();
+									frappe.show_alert({
+										message: __("Grades sent."),
+										indicator: "green",
+									});
+									frm.reload_doc();
+								})
+								.catch(() => {
+									frappe.dom.unfreeze();
+								});
+						}
+					);
+				},
+				__("Status")
+			);
+		}
+
+		const importable = ["Draft", "Open for Enrollment"].includes(frm.doc.workflow_state);
+		const can_import =
+			frappe.user.has_role("Program Chair") ||
+			frappe.user.has_role("Seminary Manager") ||
+			frappe.user.has_role("Registrar");
+		const no_chapters =
+			!frm.doc.chapters ||
+			frm.doc.chapters.length === 0 ||
+			frm.doc.__onload?.untouched_scaffold;
+		if (!frm.is_new() && importable && can_import && no_chapters) {
+			frm.add_custom_button(
+				__("Import Course Template"),
+				function () {
+					frappe.db
+						.get_value("Course", frm.doc.course, "default_cs_template")
+						.then((r) => {
+							const default_template =
+								(r && r.message && r.message.default_cs_template) || null;
+							frappe.prompt(
+								[
+									{
+										fieldname: "source_cs",
+										fieldtype: "Link",
+										options: "Course Schedule",
+										label: __("Source Course Schedule"),
+										reqd: 1,
+										default: default_template,
+										get_query: () => ({
+											filters: {
+												course: frm.doc.course,
+												name: ["!=", frm.doc.name],
+											},
+										}),
+									},
+									{
+										fieldname: "warning_html",
+										fieldtype: "HTML",
+										options: `<div class="text-muted small" style="margin-top: 8px;">
+								${__(
+									"Copies chapters, lessons, and assessment criteria from the source schedule. Roster, grades, dates, and enrollment counts are not copied. Existing assessment criteria on this schedule will be replaced."
+								)}
+							</div>`,
+									},
+								],
+								(values) => {
+									frappe.dom.freeze(__("Importing template…"));
+									frm.call("import_template", { source_cs: values.source_cs })
+										.then((r) => {
+											frappe.dom.unfreeze();
+											if (r && r.message) {
+												const { chapters, lessons, scac } = r.message;
+												frappe.show_alert({
+													message: __(
+														"Imported {0} chapters, {1} lessons, {2} assessment criteria.",
+														[chapters, lessons, scac]
+													),
+													indicator: "green",
+												});
+											}
+											frm.reload_doc();
+										})
+										.catch(() => {
+											frappe.dom.unfreeze();
+										});
+								},
+								__("Import Course Template"),
+								__("Import")
+							);
 						});
 				},
-				__('Cancel Course'),
-				__('Cancel Course')
+				__("Actions")
 			);
-		}, __('Status'));
-	}
+		}
 
+		// Export this schedule's full authored content as a portable Course Pack.
+		const has_content = frm.doc.chapters && frm.doc.chapters.length > 0;
+		if (!frm.is_new() && can_import && has_content) {
+			frm.add_custom_button(
+				__("Export Course Pack"),
+				function () {
+					const url =
+						"/api/method/seminary.seminary.course_pack.export.export_course_pack" +
+						"?course_schedule=" +
+						encodeURIComponent(frm.doc.name);
+					window.open(url, "_blank");
+				},
+				__("Actions")
+			);
+		}
 
-
-
+		const cancellable = ["Open for Enrollment", "Enrollment Closed"].includes(
+			frm.doc.workflow_state
+		);
+		const can_cancel =
+			frappe.user.has_role("Registrar") || frappe.user.has_role("Seminary Manager");
+		if (!frm.is_new() && cancellable && can_cancel) {
+			frm.add_custom_button(
+				__("Cancel Course"),
+				function () {
+					frappe.prompt(
+						[
+							{
+								fieldname: "reason",
+								fieldtype: "Link",
+								options: "Course Cancellation Reason",
+								label: __("Cancellation Reason"),
+								reqd: 1,
+								get_query: () => ({ filters: { is_active: 1 } }),
+							},
+							{
+								fieldname: "warning_html",
+								fieldtype: "HTML",
+								options: `<div class="text-muted small" style="margin-top: 8px;">
+							${__(
+								"Cancellation cannot be undone. Enrolled students will be notified and their Program Enrollment Course rows for this course will be removed."
+							)}
+						</div>`,
+							},
+						],
+						(values) => {
+							frappe.dom.freeze(__("Cancelling course…"));
+							frm.call("cancel_course", { reason: values.reason })
+								.then(() => {
+									frappe.dom.unfreeze();
+									frappe.show_alert({
+										message: __("Course cancelled."),
+										indicator: "orange",
+									});
+									frm.reload_doc();
+								})
+								.catch(() => {
+									frappe.dom.unfreeze();
+								});
+						},
+						__("Cancel Course"),
+						__("Cancel Course")
+					);
+				},
+				__("Status")
+			);
+		}
 
 		// if (!frm.doc.__islocal) {
 		// 		frm.add_custom_button(__("Mark Attendance"), function() {
@@ -293,7 +381,7 @@ frappe.ui.form.on("Course Schedule", {
 		// 		});
 
 		// 	};
-/* 		if (!frm.doc.__islocal) {
+		/* 		if (!frm.doc.__islocal) {
 				frm.add_custom_button(__("Add Calendar"), function() {
 					frappe.call({
 						method: "seminary.seminary.api.course_event",
@@ -308,129 +396,162 @@ frappe.ui.form.on("Course Schedule", {
 			});
 
 		}; */
-
 	},
-			validate: function(frm) {
-				// Non-virtual, multi-day sections need at least one meeting day so
-				// meeting dates can be generated. Use frappe.throw: it shows a
-				// persistent message AND aborts the save. The old `validated = false`
-				// assigned an undeclared global Frappe ignores, so the save went
-				// through anyway and the post-save refresh cleared the message,
-				// leaving an empty "Message" box. (The old else-branch frm.call
-				// was a redundant second validate — the server validate already
-				// runs on every save.)
-				if (frm.doc.modality !== "Virtual" && frm.doc.c_datestart !== frm.doc.c_dateend) {
-					if (!frm.doc.monday && !frm.doc.tuesday && !frm.doc.wednesday && !frm.doc.thursday && !frm.doc.friday && !frm.doc.saturday && !frm.doc.sunday) {
-						frappe.throw(__('Please select at least one day of the week.'));
-					}
-				}
-			},
+	validate: function (frm) {
+		// Non-virtual, multi-day sections need at least one meeting day so
+		// meeting dates can be generated. Use frappe.throw: it shows a
+		// persistent message AND aborts the save. The old `validated = false`
+		// assigned an undeclared global Frappe ignores, so the save went
+		// through anyway and the post-save refresh cleared the message,
+		// leaving an empty "Message" box. (The old else-branch frm.call
+		// was a redundant second validate — the server validate already
+		// runs on every save.)
+		if (frm.doc.modality !== "Virtual" && frm.doc.c_datestart !== frm.doc.c_dateend) {
+			if (
+				!frm.doc.monday &&
+				!frm.doc.tuesday &&
+				!frm.doc.wednesday &&
+				!frm.doc.thursday &&
+				!frm.doc.friday &&
+				!frm.doc.saturday &&
+				!frm.doc.sunday
+			) {
+				frappe.throw(__("Please select at least one day of the week."));
+			}
+		}
+	},
 
-	coursecode_cs: async function(frm) {
-		const code = (frm.doc.coursecode_cs || '').trim();
+	coursecode_cs: async function (frm) {
+		const code = (frm.doc.coursecode_cs || "").trim();
 		if (!code) return;
 
 		// fetch_from echoes the code back after a course is picked; skip the lookup in that case.
 		if (frm.doc.course) {
-			const r = await frappe.db.get_value('Course', frm.doc.course, 'coursecode');
+			const r = await frappe.db.get_value("Course", frm.doc.course, "coursecode");
 			if (r.message && r.message.coursecode === code) return;
 		}
 
-		const matches = await frappe.db.get_list('Course', {
+		const matches = await frappe.db.get_list("Course", {
 			filters: { coursecode: code, disabled: 0 },
-			fields: ['name', 'course_name'],
-			limit: 20
+			fields: ["name", "course_name"],
+			limit: 20,
 		});
 
 		if (!matches.length) {
 			frappe.show_alert({
-				message: __('No course found with code {0}', [code]),
-				indicator: 'orange'
+				message: __("No course found with code {0}", [code]),
+				indicator: "orange",
 			});
 			return;
 		}
 		if (matches.length === 1) {
-			frm.set_value('course', matches[0].name);
+			frm.set_value("course", matches[0].name);
 			return;
 		}
 		frappe.prompt(
-			[{
-				fieldname: 'course',
-				fieldtype: 'Select',
-				label: __('Multiple courses match code {0}', [code]),
-				options: matches.map(c => c.name).join('\n'),
-				reqd: 1
-			}],
-			v => frm.set_value('course', v.course),
-			__('Choose Course'),
-			__('Select')
+			[
+				{
+					fieldname: "course",
+					fieldtype: "Select",
+					label: __("Multiple courses match code {0}", [code]),
+					options: matches.map((c) => c.name).join("\n"),
+					reqd: 1,
+				},
+			],
+			(v) => frm.set_value("course", v.course),
+			__("Choose Course"),
+			__("Select")
 		);
 	},
 
-
-
-	onload: (frm) => {
-		frm.set_query('instructor', () => {
-			if (frm.instructors.length) {
-				return {
-					'filters':{
-						'instructor_name': ["in", frm.instructors]
-			},
-				};
-			}
-			else
-				return;
-
-		})
-
-	},
-	onload: function(frm) {
+	onload: function (frm) {
 		if (!frm.doc.__islocal) {
 			frappe.call({
 				method: "seminary.seminary.api.get_course_rosters",
 				args: {
-					name: frm.doc.name
+					name: frm.doc.name,
 				},
-				callback: function(r) {
-
+				callback: function (r) {
 					if (r.message) {
 						var enrollments = r.message;
-						var table = "<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #0d3049; padding: 8px; text-align: left; } </style>";
-						table += "<table><thead><tr><th>Photo</th><th>Student ID</th><th>Student Name</th><th>Student Email</th><th>Audit</th><th>Active</th><th>Program</th><th>Course Grade</th><th>Grade</th></tr></thead><tbody>";
+						var table =
+							"<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #0d3049; padding: 8px; text-align: left; } </style>";
+						table +=
+							"<table><thead><tr><th>Photo</th><th>Student ID</th><th>Student Name</th><th>Student Email</th><th>Audit</th><th>Active</th><th>Program</th><th>Course Grade</th><th>Grade</th></tr></thead><tbody>";
 						for (var i = 0; i < enrollments.length; i++) {
 							var activeStatus = enrollments[i].active ? "Yes" : "No";
 							var auditStatus = enrollments[i].audit_bool ? "Yes" : "No";
-							var image = enrollments[i].stuimage ? "<img src='" + enrollments[i].stuimage + "' width='100' height='100'>" : "";
+							var image = enrollments[i].stuimage
+								? "<img src='" +
+								  enrollments[i].stuimage +
+								  "' width='100' height='100'>"
+								: "";
 							// Handle null values in table cells
-							var grade = "<a href='/desk/scheduled-course-roster/" + enrollments[i].course_sc + "-" + enrollments[i].student + "' style='color: #44b2f7;'>" + "Grades"  + "</a>";
-							var student = "<a href='/desk/student/" + enrollments[i].student + "'>" + enrollments[i].student + "</a>";
+							var grade =
+								"<a href='/desk/scheduled-course-roster/" +
+								enrollments[i].course_sc +
+								"-" +
+								enrollments[i].student +
+								"' style='color: #44b2f7;'>" +
+								"Grades" +
+								"</a>";
+							var student =
+								"<a href='/desk/student/" +
+								enrollments[i].student +
+								"'>" +
+								enrollments[i].student +
+								"</a>";
 							var stuname_roster = enrollments[i].stuname_roster || "";
 							var stuemail_rc = enrollments[i].stuemail_rc || "";
 							var program_std_scr = enrollments[i].program_std_scr || "";
 							// The gradebook's course grade (decisions/096a): current until sent.
 							var cg = enrollments[i].course_grade;
 							var course_grade = cg
-								? frappe.utils.escape_html(cg.score + (cg.grade ? " · " + cg.grade : ""))
-									+ "<br><small>" + (cg.final ? __("Sent") : __("Current")) + "</small>"
+								? frappe.utils.escape_html(
+										cg.score + (cg.grade ? " · " + cg.grade : "")
+								  ) +
+								  "<br><small>" +
+								  (cg.final ? __("Sent") : __("Current")) +
+								  "</small>"
 								: "";
 
-							table += "<tr><td>" + image + "</td><td>" + student + "</td><td>" + stuname_roster + "</td><td>" + stuemail_rc + "</td><td>" + auditStatus + "</td><td>" + activeStatus + "</td><td>" + program_std_scr + "</td><td>" + course_grade + "</td><td>" + grade + "</td></tr>";
+							table +=
+								"<tr><td>" +
+								image +
+								"</td><td>" +
+								student +
+								"</td><td>" +
+								stuname_roster +
+								"</td><td>" +
+								stuemail_rc +
+								"</td><td>" +
+								auditStatus +
+								"</td><td>" +
+								activeStatus +
+								"</td><td>" +
+								program_std_scr +
+								"</td><td>" +
+								course_grade +
+								"</td><td>" +
+								grade +
+								"</td></tr>";
 						}
 						table += "</tbody></table>";
-						frm.set_df_property('csroster_html', 'options', table);
-						frm.refresh_field('csroster_html');
+						frm.set_df_property("csroster_html", "options", table);
+						frm.refresh_field("csroster_html");
 					} else {
-						frm.set_df_property('csroster_html', 'options', __('No student enrolled so far'));
-						frm.refresh_field('csroster_html');
+						frm.set_df_property(
+							"csroster_html",
+							"options",
+							__("No student enrolled so far")
+						);
+						frm.refresh_field("csroster_html");
 					}
-				}
+				},
 			});
 		} else {
-					frm.set_df_property('csroster_html', 'options', __('No student enrolled so far'));
-					frm.refresh_field('csroster_html');
-				};
-
-
-			},
-
-	})
+			frm.set_df_property("csroster_html", "options", __("No student enrolled so far"));
+			frm.refresh_field("csroster_html");
+		}
+	},
+});

@@ -48,7 +48,9 @@ frappe.ui.form.on("Program Graduation Requirement", {
 
 		grid.wrapper.off("click.pgrOpenForm");
 		grid.wrapper.on("click.pgrOpenForm", ".grid-row .data-row .col", function (e) {
-			if ($(e.target).closest("input, select, textarea, button, a, .grid-row-check").length) {
+			if (
+				$(e.target).closest("input, select, textarea, button, a, .grid-row-check").length
+			) {
 				return;
 			}
 			const $row = $(this).closest(".grid-row");
@@ -79,7 +81,11 @@ frappe.ui.form.on("Program Grad Req Items", {
 		const row = locals[cdt][cdn];
 		if (!row || !row.grad_requirement_item) return;
 		frappe.db
-			.get_value("Graduation Requirement Item", row.grad_requirement_item, "requirement_type")
+			.get_value(
+				"Graduation Requirement Item",
+				row.grad_requirement_item,
+				"requirement_type"
+			)
 			.then((res) => {
 				const value = res && res.message && res.message.requirement_type;
 				if (value) {

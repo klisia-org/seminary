@@ -1,0 +1,2 @@
+# Jinja templates written as JS: no JS parser can read them.
+seminary/public/js/student_applicant_webform.js

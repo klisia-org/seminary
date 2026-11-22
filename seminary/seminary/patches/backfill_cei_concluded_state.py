@@ -26,8 +26,8 @@ import frappe
 
 
 def execute():
-    rows = frappe.db.sql(
-        """
+	rows = frappe.db.sql(
+		"""
         SELECT cei.name
         FROM `tabCourse Enrollment Individual` cei
         JOIN `tabCourse Schedule` cs ON cs.name = cei.coursesc_ce
@@ -35,20 +35,20 @@ def execute():
           AND cei.workflow_state = 'Submitted'
           AND cs.workflow_state = 'Closed'
         """,
-        as_dict=True,
-    )
-    if not rows:
-        print("No Course Enrollment Individual rows to conclude.")
-        return
+		as_dict=True,
+	)
+	if not rows:
+		print("No Course Enrollment Individual rows to conclude.")
+		return
 
-    for row in rows:
-        frappe.db.set_value(
-            "Course Enrollment Individual",
-            row.name,
-            "workflow_state",
-            "Concluded",
-            update_modified=False,
-        )
+	for row in rows:
+		frappe.db.set_value(
+			"Course Enrollment Individual",
+			row.name,
+			"workflow_state",
+			"Concluded",
+			update_modified=False,
+		)
 
-    frappe.db.commit()
-    print(f"Concluded {len(rows)} historical Course Enrollment Individual row(s).")
+	frappe.db.commit()
+	print(f"Concluded {len(rows)} historical Course Enrollment Individual row(s).")

@@ -21,54 +21,54 @@ from seminary.seminary import file_policy
 
 
 def _log(title):
-    frappe.log_error(frappe.get_traceback(), f"p007_private_files: {title}")
+	frappe.log_error(frappe.get_traceback(), f"p007_private_files: {title}")
 
 
 def execute():
-    for doctype in file_policy.EMBEDDED_FILE_FIELDS:
-        if not frappe.db.exists("DocType", doctype):
-            continue
-        for name in frappe.get_all(doctype, pluck="name"):
-            try:
-                file_policy.adopt_embedded(frappe.get_doc(doctype, name))
-            except Exception:
-                _log(f"adopt {doctype} {name}")
+	for doctype in file_policy.EMBEDDED_FILE_FIELDS:
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		for name in frappe.get_all(doctype, pluck="name"):
+			try:
+				file_policy.adopt_embedded(frappe.get_doc(doctype, name))
+			except Exception:
+				_log(f"adopt {doctype} {name}")
 
-    for row in frappe.get_all(
-        "File",
-        filters={
-            "is_private": 0,
-            "is_folder": 0,
-            "attached_to_doctype": ["is", "set"],
-            "attached_to_name": ["is", "set"],
-        },
-        fields=["name", "file_url"],
-    ):
-        try:
-            doc = frappe.get_doc("File", row.name)
-            if cint_private(doc) or file_policy.may_be_public_for_host(doc):
-                continue
-            file_policy.set_privacy(
-                doc.file_url,
-                public=False,
-                host=(doc.attached_to_doctype, doc.attached_to_name),
-            )
-        except Exception:
-            _log(f"privatise {row.name}")
+	for row in frappe.get_all(
+		"File",
+		filters={
+			"is_private": 0,
+			"is_folder": 0,
+			"attached_to_doctype": ["is", "set"],
+			"attached_to_name": ["is", "set"],
+		},
+		fields=["name", "file_url"],
+	):
+		try:
+			doc = frappe.get_doc("File", row.name)
+			if cint_private(doc) or file_policy.may_be_public_for_host(doc):
+				continue
+			file_policy.set_privacy(
+				doc.file_url,
+				public=False,
+				host=(doc.attached_to_doctype, doc.attached_to_name),
+			)
+		except Exception:
+			_log(f"privatise {row.name}")
 
-    for doctype in sorted({dt for dt, _f in file_policy.PUBLIC_FILE_FIELDS}):
-        if not frappe.db.exists("DocType", doctype):
-            continue
-        if frappe.get_meta(doctype).issingle:
-            names = [doctype]
-        else:
-            names = frappe.get_all(doctype, pluck="name")
-        for name in names:
-            try:
-                file_policy.sync_public_state(doctype, name)
-            except Exception:
-                _log(f"sync {doctype} {name}")
+	for doctype in sorted({dt for dt, _f in file_policy.PUBLIC_FILE_FIELDS}):
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		if frappe.get_meta(doctype).issingle:
+			names = [doctype]
+		else:
+			names = frappe.get_all(doctype, pluck="name")
+		for name in names:
+			try:
+				file_policy.sync_public_state(doctype, name)
+			except Exception:
+				_log(f"sync {doctype} {name}")
 
 
 def cint_private(doc):
-    return bool(frappe.utils.cint(doc.is_private))
+	return bool(frappe.utils.cint(doc.is_private))

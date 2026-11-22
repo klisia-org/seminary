@@ -6,4 +6,4 @@ from seminary.install import seed_public_website_defaults
 
 
 def execute():
-    seed_public_website_defaults()
+	seed_public_website_defaults()

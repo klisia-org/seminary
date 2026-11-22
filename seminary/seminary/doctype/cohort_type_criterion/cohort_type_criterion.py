@@ -11,4 +11,4 @@ from frappe.model.document import Document
 
 
 class CohortTypeCriterion(Document):
-    pass
+	pass

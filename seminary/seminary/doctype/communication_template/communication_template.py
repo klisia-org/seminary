@@ -9,28 +9,28 @@ from seminary.language import language_candidates
 
 
 class CommunicationTemplate(Document):
-    def validate(self):
-        seen = set()
-        for row in self.versions:
-            key = (row.channel, row.language or "")
-            if key in seen:
-                frappe.throw(
-                    _("Duplicate version for channel {0} / language {1}.").format(
-                        row.channel, row.language or _("(any)")
-                    )
-                )
-            seen.add(key)
+	def validate(self):
+		seen = set()
+		for row in self.versions:
+			key = (row.channel, row.language or "")
+			if key in seen:
+				frappe.throw(
+					_("Duplicate version for channel {0} / language {1}.").format(
+						row.channel, row.language or _("(any)")
+					)
+				)
+			seen.add(key)
 
-    def get_version(self, channel, language=None):
-        """Fallback chain: (channel, language) -> (channel, parent language,
-        e.g. pt for pt-BR) -> (channel, blank) -> first version for the channel.
-        Returns the child row or None."""
-        rows = [r for r in self.versions if r.channel == channel]
-        for lang in language_candidates(language):
-            match = next((r for r in rows if r.language == lang), None)
-            if match:
-                return match
-        blank = next((r for r in rows if not r.language), None)
-        if blank:
-            return blank
-        return rows[0] if rows else None
+	def get_version(self, channel, language=None):
+		"""Fallback chain: (channel, language) -> (channel, parent language,
+		e.g. pt for pt-BR) -> (channel, blank) -> first version for the channel.
+		Returns the child row or None."""
+		rows = [r for r in self.versions if r.channel == channel]
+		for lang in language_candidates(language):
+			match = next((r for r in rows if r.language == lang), None)
+			if match:
+				return match
+		blank = next((r for r in rows if not r.language), None)
+		if blank:
+			return blank
+		return rows[0] if rows else None

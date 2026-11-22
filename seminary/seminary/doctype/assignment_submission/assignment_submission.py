@@ -3,251 +3,243 @@
 
 import frappe
 from frappe import _
+from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
+from frappe.email.doctype.email_template.email_template import get_email_template
 from frappe.model.document import Document
-from frappe.utils import validate_email_address, sanitize_html
+from frappe.utils import sanitize_html, validate_email_address
 
 from seminary.seminary import rubrics
-from seminary.seminary.url_policy import WEB_SCHEMES, is_safe_url
-from frappe.email.doctype.email_template.email_template import get_email_template
-from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 from seminary.seminary.guards import is_grader, require_course_staff, require_grader
+from seminary.seminary.url_policy import WEB_SCHEMES, is_safe_url
 
 
 class AssignmentSubmission(Document):
-    def validate(self):
-        from seminary.seminary.utils import (
-            backfill_submission_course_if_missing,
-            stamp_first_grading,
-        )
+	def validate(self):
+		from seminary.seminary.utils import (
+			backfill_submission_course_if_missing,
+			stamp_first_grading,
+		)
 
-        backfill_submission_course_if_missing(self)
-        stamp_first_grading(self)
-        self.sanitize_rich_text()
-        self.validate_duplicates()
-        self.validate_url()
-        self.validate_status()
-        self.populate()
-        rubrics.apply_grade(self)
-        self.sync_percentage_from_grade()
+		backfill_submission_course_if_missing(self)
+		stamp_first_grading(self)
+		self.sanitize_rich_text()
+		self.validate_duplicates()
+		self.validate_url()
+		self.validate_status()
+		self.populate()
+		rubrics.apply_grade(self)
+		self.sync_percentage_from_grade()
 
-    def sanitize_rich_text(self):
-        """p006 F13: the SPA writes submissions through ``frappe.client.insert``,
-        so this hook is the only server-side gate for student-authored HTML.
-        A URL answer is a bare string, not HTML; ``&`` in a query string must
-        survive, so it is left to ``validate_url``."""
-        if self.answer and self.type != "URL":
-            self.answer = sanitize_html(self.answer, always_sanitize=True)
-        if self.comments:
-            self.comments = sanitize_html(self.comments, always_sanitize=True)
+	def sanitize_rich_text(self):
+		"""p006 F13: the SPA writes submissions through ``frappe.client.insert``,
+		so this hook is the only server-side gate for student-authored HTML.
+		A URL answer is a bare string, not HTML; ``&`` in a query string must
+		survive, so it is left to ``validate_url``."""
+		if self.answer and self.type != "URL":
+			self.answer = sanitize_html(self.answer, always_sanitize=True)
+		if self.comments:
+			self.comments = sanitize_html(self.comments, always_sanitize=True)
 
-    def sync_percentage_from_grade(self):
-        """Mirror grade → percentage so quizresult_to_card can propagate the
-        score to the gradebook. The Assignment Submission UI only sets `grade`
-        but the bridge to Course Assess Results Detail reads `percentage`
-        (kept consistent with Exam/Quiz/Discussion submissions, which
-        compute percentage on their own)."""
-        if self.grade is not None:
-            self.percentage = self.grade
+	def sync_percentage_from_grade(self):
+		"""Mirror grade → percentage so quizresult_to_card can propagate the
+		score to the gradebook. The Assignment Submission UI only sets `grade`
+		but the bridge to Course Assess Results Detail reads `percentage`
+		(kept consistent with Exam/Quiz/Discussion submissions, which
+		compute percentage on their own)."""
+		if self.grade is not None:
+			self.percentage = self.grade
 
-    # def after_insert(self):
-    #     if not frappe.flags.in_test:
-    #         outgoing_email_account = frappe.get_cached_value(
-    #             "Email Account", {"default_outgoing": 1, "enable_outgoing": 1}, "name"
-    #         )
-    #         if outgoing_email_account or frappe.conf.get("mail_login"):
-    #             self.send_mail()
+	# def after_insert(self):
+	#     if not frappe.flags.in_test:
+	#         outgoing_email_account = frappe.get_cached_value(
+	#             "Email Account", {"default_outgoing": 1, "enable_outgoing": 1}, "name"
+	#         )
+	#         if outgoing_email_account or frappe.conf.get("mail_login"):
+	#             self.send_mail()
 
-    def validate_duplicates(self):
-        if frappe.db.exists(
-            "Assignment Submission",
-            {
-                "assignment": self.assignment,
-                "member": self.member,
-                "name": ["!=", self.name],
-            },
-        ):
-            lesson_title = frappe.db.get_value("Course Lesson", self.lesson, "title")
-            frappe.throw(
-                _("Assignment for Lesson {0} by {1} already exists.").format(
-                    lesson_title, self.member_name
-                )
-            )
+	def validate_duplicates(self):
+		if frappe.db.exists(
+			"Assignment Submission",
+			{
+				"assignment": self.assignment,
+				"member": self.member,
+				"name": ["!=", self.name],
+			},
+		):
+			lesson_title = frappe.db.get_value("Course Lesson", self.lesson, "title")
+			frappe.throw(
+				_("Assignment for Lesson {0} by {1} already exists.").format(lesson_title, self.member_name)
+			)
 
-    def validate_url(self):
-        # `frappe.utils.validate_url` accepts `javascript:` unless it is told
-        # which schemes are valid, and no caller here told it (p008 F7, p005a
-        # A05-11). A student submits this and a *grader* clicks it, rendered as
-        # a link by AssignmentViewers/UrlCard.vue.
-        if self.type == "URL" and not is_safe_url(
-            self.answer, schemes=WEB_SCHEMES, allow_relative=False
-        ):
-            frappe.throw(_("Please enter a valid URL (https://…)."))
+	def validate_url(self):
+		# `frappe.utils.validate_url` accepts `javascript:` unless it is told
+		# which schemes are valid, and no caller here told it (p008 F7, p005a
+		# A05-11). A student submits this and a *grader* clicks it, rendered as
+		# a link by AssignmentViewers/UrlCard.vue.
+		if self.type == "URL" and not is_safe_url(self.answer, schemes=WEB_SCHEMES, allow_relative=False):
+			frappe.throw(_("Please enter a valid URL (https://…)."))
 
-    def populate(self):
-        self.student = frappe.db.get_value("Student", {"user": self.member})
-        self.course_assess = frappe.db.get_value(
-            "Scheduled Course Assess Criteria",
-            {"assignment": self.assignment, "parent": self.course},
-            "name",
-        )
-        self.extra_credit = frappe.db.get_value(
-            "Scheduled Course Assess Criteria",
-            {"assignment": self.assignment, "parent": self.course},
-            "extracredit_scac",
-        )
+	def populate(self):
+		self.student = frappe.db.get_value("Student", {"user": self.member})
+		self.course_assess = frappe.db.get_value(
+			"Scheduled Course Assess Criteria",
+			{"assignment": self.assignment, "parent": self.course},
+			"name",
+		)
+		self.extra_credit = frappe.db.get_value(
+			"Scheduled Course Assess Criteria",
+			{"assignment": self.assignment, "parent": self.course},
+			"extracredit_scac",
+		)
 
-    # def send_mail(self):
-    #     subject = _("New Assignment Submission")
-    #     template = "assignment_submission"
+	# def send_mail(self):
+	#     subject = _("New Assignment Submission")
+	#     template = "assignment_submission"
 
-    #     args = {
-    #         "member_name": self.member_name,
-    #         "assignment_name": self.assignment,
-    #         "assignment_title": self.assignment_title,
-    #         "submission_name": self.name,
-    #     }
+	#     args = {
+	#         "member_name": self.member_name,
+	#         "assignment_name": self.assignment,
+	#         "assignment_title": self.assignment_title,
+	#         "submission_name": self.name,
+	#     }
 
-    #     moderators = frappe.get_all("Has Role", {"role": "Moderator"}, pluck="parent")
-    #     for moderator in moderators:
-    #         if not validate_email_address(moderator):
-    #             moderators.remove(moderator)
+	#     moderators = frappe.get_all("Has Role", {"role": "Moderator"}, pluck="parent")
+	#     for moderator in moderators:
+	#         if not validate_email_address(moderator):
+	#             moderators.remove(moderator)
 
-    #     frappe.sendmail(
-    #         recipients=moderators,
-    #         subject=subject,
-    #         template=template if not custom_template else None,
-    #         content=content if custom_template else None,
-    #         args=args,
-    #         header=[subject, "green"],
-    #     )
+	#     frappe.sendmail(
+	#         recipients=moderators,
+	#         subject=subject,
+	#         template=template if not custom_template else None,
+	#         content=content if custom_template else None,
+	#         args=args,
+	#         header=[subject, "green"],
+	#     )
 
-    def validate_status(self):
-        if not self.is_new():
-            doc_before_save = self.get_doc_before_save()
-            if (
-                doc_before_save.status != self.status
-                or doc_before_save.comments != self.comments
-                or doc_before_save.comment_attach != self.comment_attach
-            ):
-                self.trigger_update_notification()
+	def validate_status(self):
+		if not self.is_new():
+			doc_before_save = self.get_doc_before_save()
+			if (
+				doc_before_save.status != self.status
+				or doc_before_save.comments != self.comments
+				or doc_before_save.comment_attach != self.comment_attach
+			):
+				self.trigger_update_notification()
 
-    def trigger_update_notification(self):
-        notification = frappe._dict(
-            {
-                "subject": _(
-                    "There has been an update on your submission for assignment {0}"
-                ).format(self.assignment_title),
-                "email_content": self.comments,
-                "document_type": self.doctype,
-                "document_name": self.name,
-                "for_user": self.owner,
-                "from_user": self.evaluator,
-                "type": "Alert",
-                "link": f"/assignment-submission/{self.assignment}/{self.name}",
-            }
-        )
-        make_notification_logs(notification, [self.member])
+	def trigger_update_notification(self):
+		notification = frappe._dict(
+			{
+				"subject": _("There has been an update on your submission for assignment {0}").format(
+					self.assignment_title
+				),
+				"email_content": self.comments,
+				"document_type": self.doctype,
+				"document_name": self.name,
+				"for_user": self.owner,
+				"from_user": self.evaluator,
+				"type": "Alert",
+				"link": f"/assignment-submission/{self.assignment}/{self.name}",
+			}
+		)
+		make_notification_logs(notification, [self.member])
 
 
 @frappe.whitelist()
 def upload_assignment(
-    assignment_attachment=None,
-    answer=None,
-    assignment=None,
-    lesson=None,
-    status="Not Graded",
-    comments=None,
-    submission=None,
+	assignment_attachment=None,
+	answer=None,
+	assignment=None,
+	lesson=None,
+	status="Not Graded",
+	comments=None,
+	submission=None,
 ):
-    if frappe.session.user == "Guest":
-        return
+	if frappe.session.user == "Guest":
+		return
 
-    grader = is_grader()
-    if submission:
-        # p006 F7: only the owner (or a grader) may rewrite a submission.
-        doc = frappe.get_doc("Assignment Submission", submission)
-        if doc.member != frappe.session.user and not grader:
-            frappe.throw(
-                _("You can only update your own assignment submission."),
-                frappe.PermissionError,
-            )
-    else:
-        doc = frappe.get_doc(
-            {
-                "doctype": "Assignment Submission",
-                "assignment": assignment,
-                "lesson": lesson,
-                "member": frappe.session.user,
-            }
-        )
-    if not grader:
-        # Students never set their own grading status.
-        status = "Not Graded"
+	grader = is_grader()
+	if submission:
+		# p006 F7: only the owner (or a grader) may rewrite a submission.
+		doc = frappe.get_doc("Assignment Submission", submission)
+		if doc.member != frappe.session.user and not grader:
+			frappe.throw(
+				_("You can only update your own assignment submission."),
+				frappe.PermissionError,
+			)
+	else:
+		doc = frappe.get_doc(
+			{
+				"doctype": "Assignment Submission",
+				"assignment": assignment,
+				"lesson": lesson,
+				"member": frappe.session.user,
+			}
+		)
+	if not grader:
+		# Students never set their own grading status.
+		status = "Not Graded"
 
-    assignment_details = frappe.db.get_value(
-        "Assignment Activity", assignment, ["type", "grade_assignment"], as_dict=1
-    )
-    assignment_type = assignment_details.type
+	assignment_details = frappe.db.get_value(
+		"Assignment Activity", assignment, ["type", "grade_assignment"], as_dict=1
+	)
+	assignment_type = assignment_details.type
 
-    if assignment_type in ["URL", "Text"] and not answer:
-        frappe.throw(_("Please enter the URL for assignment submission."))
+	if assignment_type in ["URL", "Text"] and not answer:
+		frappe.throw(_("Please enter the URL for assignment submission."))
 
-    if assignment_type == "File" and not assignment_attachment:
-        frappe.throw(_("Please upload the assignment file."))
+	if assignment_type == "File" and not assignment_attachment:
+		frappe.throw(_("Please upload the assignment file."))
 
-    if assignment_type == "URL" and not is_safe_url(
-        answer, schemes=WEB_SCHEMES, allow_relative=False
-    ):
-        frappe.throw(_("Please enter a valid URL (https://…)."))
+	if assignment_type == "URL" and not is_safe_url(answer, schemes=WEB_SCHEMES, allow_relative=False):
+		frappe.throw(_("Please enter a valid URL (https://…)."))
 
-    if doc.is_new():
-        doc.type = assignment_type
+	if doc.is_new():
+		doc.type = assignment_type
 
-    doc.update(
-        {
-            "assignment_attachment": assignment_attachment,
-            "status": (
-                "Not Applicable"
-                if assignment_type == "Text" and not assignment_details.grade_assignment
-                else status
-            ),
-            "comments": comments,
-            "answer": answer,
-        }
-    )
-    # ignore_permissions stays OFF: `status` and `comments` are permlevel 1
-    # (p007 F3) and the grading roles hold that write row.
-    doc.save()
-    return doc.name
+	doc.update(
+		{
+			"assignment_attachment": assignment_attachment,
+			"status": (
+				"Not Applicable"
+				if assignment_type == "Text" and not assignment_details.grade_assignment
+				else status
+			),
+			"comments": comments,
+			"answer": answer,
+		}
+	)
+	# ignore_permissions stays OFF: `status` and `comments` are permlevel 1
+	# (p007 F3) and the grading roles hold that write row.
+	doc.save()
+	return doc.name
 
 
 @frappe.whitelist()
 def get_assignment(lesson):
-    assignment = frappe.db.get_value(
-        "Assignment Submission",
-        {"lesson": lesson, "member": frappe.session.user},
-        ["name", "lesson", "member", "assignment_attachment", "comments", "status"],
-        as_dict=True,
-    )
-    assignment.file_name = frappe.db.get_value(
-        "File", {"file_url": assignment.assignment_attachment}, "file_name"
-    )
-    return assignment
+	assignment = frappe.db.get_value(
+		"Assignment Submission",
+		{"lesson": lesson, "member": frappe.session.user},
+		["name", "lesson", "member", "assignment_attachment", "comments", "status"],
+		as_dict=True,
+	)
+	assignment.file_name = frappe.db.get_value(
+		"File", {"file_url": assignment.assignment_attachment}, "file_name"
+	)
+	return assignment
 
 
 @frappe.whitelist()
 def grade_assignment(name, result, comments):
-    """Save a grade on an Assignment Submission.
+	"""Save a grade on an Assignment Submission.
 
-    Section-scoped as well as role-gated: ``require_grader()`` alone would let a
-    grader on one section grade every submission in the school, because the
-    Instructor role includes the section tier (p005a A01-12).
-    """
-    require_grader()
-    doc = frappe.get_doc("Assignment Submission", name)
-    require_course_staff(doc.course)
-    doc.status = result
-    doc.comments = (
-        sanitize_html(comments, always_sanitize=True) if comments else comments
-    )
-    doc.save(ignore_permissions=True)
+	Section-scoped as well as role-gated: ``require_grader()`` alone would let a
+	grader on one section grade every submission in the school, because the
+	Instructor role includes the section tier (p005a A01-12).
+	"""
+	require_grader()
+	doc = frappe.get_doc("Assignment Submission", name)
+	require_course_staff(doc.course)
+	doc.status = result
+	doc.comments = sanitize_html(comments, always_sanitize=True) if comments else comments
+	doc.save(ignore_permissions=True)

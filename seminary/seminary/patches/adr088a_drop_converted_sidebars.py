@@ -13,10 +13,8 @@ NAMES = ("Seminary", "Partner", "Alumni")
 
 
 def execute():
-    for name in NAMES:
-        row = frappe.db.get_value(
-            "Sidebar", name, ["app", "standard", "creation", "modified"], as_dict=True
-        )
-        if not row or row.app or row.standard or row.modified > row.creation:
-            continue
-        frappe.delete_doc("Sidebar", name, ignore_permissions=True, force=True)
+	for name in NAMES:
+		row = frappe.db.get_value("Sidebar", name, ["app", "standard", "creation", "modified"], as_dict=True)
+		if not row or row.app or row.standard or row.modified > row.creation:
+			continue
+		frappe.delete_doc("Sidebar", name, ignore_permissions=True, force=True)

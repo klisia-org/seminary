@@ -11,22 +11,22 @@ from frappe.model.document import Document
 
 
 class ChapelAttendance(Document):
-    def validate(self):
-        self._guard_duplicate()
+	def validate(self):
+		self._guard_duplicate()
 
-    def _guard_duplicate(self):
-        if not (self.chapel and self.student):
-            return
-        existing = frappe.db.exists(
-            "Chapel Attendance",
-            {
-                "chapel": self.chapel,
-                "student": self.student,
-                "name": ("!=", self.name or ""),
-            },
-        )
-        if existing:
-            frappe.throw(
-                _("{0} has already checked in to this chapel.").format(self.student),
-                frappe.DuplicateEntryError,
-            )
+	def _guard_duplicate(self):
+		if not (self.chapel and self.student):
+			return
+		existing = frappe.db.exists(
+			"Chapel Attendance",
+			{
+				"chapel": self.chapel,
+				"student": self.student,
+				"name": ("!=", self.name or ""),
+			},
+		)
+		if existing:
+			frappe.throw(
+				_("{0} has already checked in to this chapel.").format(self.student),
+				frappe.DuplicateEntryError,
+			)

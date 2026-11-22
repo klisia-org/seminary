@@ -157,6 +157,10 @@
 		});
 
 		input.addEventListener("blur", () => setTimeout(close, 150));
-		window.addEventListener("scroll", () => list.style.display !== "none" && place(list, input), true);
+		window.addEventListener(
+			"scroll",
+			() => list.style.display !== "none" && place(list, input),
+			true
+		);
 	};
 })();

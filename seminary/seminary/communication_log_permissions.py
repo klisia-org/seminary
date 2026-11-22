@@ -23,39 +23,36 @@ STAFF_BYPASS = {"Seminary Manager", "Registrar", "Program Chair", "System Manage
 
 
 def _should_restrict(user):
-    if not user or user == "Administrator":
-        return False
-    roles = set(frappe.get_roles(user))
-    if roles & STAFF_BYPASS:
-        return False
-    return bool(roles & PORTAL_ROLES)
+	if not user or user == "Administrator":
+		return False
+	roles = set(frappe.get_roles(user))
+	if roles & STAFF_BYPASS:
+		return False
+	return bool(roles & PORTAL_ROLES)
 
 
 def has_permission(doc, ptype=None, user=None):
-    """Deny-only single-doc gate (also drives the private-file download check
-    via File.has_permission -> ref_doc.has_permission('read'))."""
-    if not user:
-        user = frappe.session.user
-    if not _should_restrict(user):
-        return True
-    if getattr(doc, "triggered_by", None) == user:
-        return True
-    person = find_person(user=user)
-    return bool(person) and getattr(doc, "person", None) == person
+	"""Deny-only single-doc gate (also drives the private-file download check
+	via File.has_permission -> ref_doc.has_permission('read'))."""
+	if not user:
+		user = frappe.session.user
+	if not _should_restrict(user):
+		return True
+	if getattr(doc, "triggered_by", None) == user:
+		return True
+	person = find_person(user=user)
+	return bool(person) and getattr(doc, "person", None) == person
 
 
 def get_permission_query_conditions(user=None):
-    if not user:
-        user = frappe.session.user
-    if not _should_restrict(user):
-        return ""
-    u = frappe.db.escape(user)
-    person = find_person(user=user)
-    if not person:
-        # Never empty for a restricted user — fall back to the Sent box only.
-        return f"(`tabCommunication Log`.triggered_by = {u})"
-    p = frappe.db.escape(person)
-    return (
-        f"(`tabCommunication Log`.person = {p} "
-        f"OR `tabCommunication Log`.triggered_by = {u})"
-    )
+	if not user:
+		user = frappe.session.user
+	if not _should_restrict(user):
+		return ""
+	u = frappe.db.escape(user)
+	person = find_person(user=user)
+	if not person:
+		# Never empty for a restricted user — fall back to the Sent box only.
+		return f"(`tabCommunication Log`.triggered_by = {u})"
+	p = frappe.db.escape(person)
+	return f"(`tabCommunication Log`.person = {p} OR `tabCommunication Log`.triggered_by = {u})"
