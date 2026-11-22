@@ -10,104 +10,104 @@ from frappe.model.document import Document
 
 
 class Instructor(Document):
-    def validate(self):
-        self._resolve_person()
-        self._warn_on_deactivation()
-        self._warn_on_missing_user()
+	def validate(self):
+		self._resolve_person()
+		self._warn_on_deactivation()
+		self._warn_on_missing_user()
 
-    def _warn_on_missing_user(self):
-        """Every course gate resolves the session to an Instructor through
-        `user` (p007 §2.12); an active record without it cannot grade, edit or
-        take attendance in the portal."""
-        if self.status == "Active" and not self.user and not frappe.flags.in_migrate:
-            frappe.msgprint(
-                _(
-                    "This instructor has no User linked. Until one is set they "
-                    "cannot grade, edit outlines or record attendance in the portal."
-                ),
-                indicator="orange",
-                alert=True,
-            )
+	def _warn_on_missing_user(self):
+		"""Every course gate resolves the session to an Instructor through
+		`user` (p007 §2.12); an active record without it cannot grade, edit or
+		take attendance in the portal."""
+		if self.status == "Active" and not self.user and not frappe.flags.in_migrate:
+			frappe.msgprint(
+				_(
+					"This instructor has no User linked. Until one is set they "
+					"cannot grade, edit outlines or record attendance in the portal."
+				),
+				indicator="orange",
+				alert=True,
+			)
 
-    def _warn_on_deactivation(self):
-        """Marking someone inactive says what is still theirs (ADR 066 §7.1)."""
-        from seminary.seminary.instructor_load import warn_on_deactivation
+	def _warn_on_deactivation(self):
+		"""Marking someone inactive says what is still theirs (ADR 066 §7.1)."""
+		from seminary.seminary.instructor_load import warn_on_deactivation
 
-        warn_on_deactivation(self)
+		warn_on_deactivation(self)
 
-    def _resolve_person(self):
-        """The spine is the source, not the seed.
+	def _resolve_person(self):
+		"""The spine is the source, not the seed.
 
-        An Instructor is created against an existing Person
-        (`seminary.seminary.intake.make_instructor`) and `person` is reqd, so
-        there is nothing to resolve here. Every identity field is a
-        `fetch_from person.*` mirror (ADR 068 phase 4) — including `gender`,
-        which used to fetch from erpnext's `Employee`, a doctype this app does
-        not require, so on a bench without erpnext the field was simply dead.
+		An Instructor is created against an existing Person
+		(`seminary.seminary.intake.make_instructor`) and `person` is reqd, so
+		there is nothing to resolve here. Every identity field is a
+		`fetch_from person.*` mirror (ADR 068 phase 4) — including `gender`,
+		which used to fetch from erpnext's `Employee`, a doctype this app does
+		not require, so on a bench without erpnext the field was simply dead.
 
-        What remains is the check that the mirrors have something to mirror:
-        `prof_email` is no longer `reqd` (a mandatory mirror of a nullable
-        source is unsaveable), so the requirement moved to the spine."""
-        from seminary.seminary import person_fields
+		What remains is the check that the mirrors have something to mirror:
+		`prof_email` is no longer `reqd` (a mandatory mirror of a nullable
+		source is unsaveable), so the requirement moved to the spine."""
+		from seminary.seminary import person_fields
 
-        if self.person:
-            person_fields.assert_reachable(frappe.get_doc("Person", self.person))
+		if self.person:
+			person_fields.assert_reachable(frappe.get_doc("Person", self.person))
 
 
 def get_roles_with_write_permission():
-    """Get all roles that have write permission on Instructors DocType."""
-    writable_roles = frappe.get_all(
-        "DocPerm",
-        filters={
-            "parent": "Instructor",
-            "write": 1,
-            "permlevel": 0,
-        },
-        pluck="role",
-    )
-    return writable_roles
+	"""Get all roles that have write permission on Instructors DocType."""
+	writable_roles = frappe.get_all(
+		"DocPerm",
+		filters={
+			"parent": "Instructor",
+			"write": 1,
+			"permlevel": 0,
+		},
+		pluck="role",
+	)
+	return writable_roles
 
 
 def user_has_only_instructor_role(user):
-    """
-    Check if 'Instructor' is the ONLY role granting write access
-    to this DocType for this user. If they have other write-capable
-    roles, don't restrict them.
-    """
-    user_roles = frappe.get_roles(user)
-    write_roles = get_roles_with_write_permission()
+	"""
+	Check if 'Instructor' is the ONLY role granting write access
+	to this DocType for this user. If they have other write-capable
+	roles, don't restrict them.
+	"""
+	user_roles = frappe.get_roles(user)
+	write_roles = get_roles_with_write_permission()
 
-    user_write_roles = set(user_roles) & set(write_roles)
+	user_write_roles = set(user_roles) & set(write_roles)
 
-    instructor_role = "Instructor"
-    return user_write_roles == {instructor_role}
+	instructor_role = "Instructor"
+	return user_write_roles == {instructor_role}
 
 
 def has_permission(doc, ptype, user):
-    if not user:
-        user = frappe.session.user
+	if not user:
+		user = frappe.session.user
 
-    if not user_has_only_instructor_role(user):
-        return True
+	if not user_has_only_instructor_role(user):
+		return True
 
-    return doc.user == user
+	return doc.user == user
 
 
 def get_permission_query_conditions(user):
-    if not user:
-        user = frappe.session.user
+	if not user:
+		user = frappe.session.user
 
-    if not user_has_only_instructor_role(user):
-        return ""
+	if not user_has_only_instructor_role(user):
+		return ""
 
-    return f"(`tabInstructor`.user = {frappe.db.escape(user)})"
+	return f"(`tabInstructor`.user = {frappe.db.escape(user)})"
 
 
 def get_timeline_data(doctype, name):
-    """Return timeline for course schedule meeting dates"""
-    timeline_data = dict(
-        frappe.db.sql(
-            """
+	"""Return timeline for course schedule meeting dates"""
+	timeline_data = dict(
+		frappe.db.sql(
+			"""
 			SELECT unix_timestamp(mt.cs_meetdate), count(mt.name)
 			FROM `tabCourse Schedule Meeting Dates` mt
 			JOIN `tabCourse Schedule` cs ON cs.name = mt.parent
@@ -115,74 +115,74 @@ def get_timeline_data(doctype, name):
 			WHERE csi.instructor = %s
 			GROUP BY mt.cs_meetdate
 			""",
-            name,
-        )
-    )
-    if not timeline_data:
-        timeline_data = {int(time.time()): 0}
-    return timeline_data
+			name,
+		)
+	)
+	if not timeline_data:
+		timeline_data = {int(time.time()): 0}
+	return timeline_data
 
 
 @frappe.whitelist()
 def update_instructorlog(doc):
-    """Update Instructor Log from Course Schedule Instructors + Scheduled Course Roster.
+	"""Update Instructor Log from Course Schedule Instructors + Scheduled Course Roster.
 
-    A Desk form button. It had no check at all: the child-row ``save`` resolves
-    against the Instructor record, which is ``if_owner`` for the Instructor role,
-    so another instructor's log was not writable -- but the refusal came after
-    two unfiltered queries across every section and roster, and the loop commits
-    as it goes, so a later failure does not roll the earlier rows back (p008a
-    G6). Say who this is for, up front."""
-    frappe.only_for(
-        (
-            "Instructor",
-            "Program Chair",
-            "Registrar",
-            "Seminary Manager",
-            "System Manager",
-        )
-    )
-    inst = frappe.get_doc("Instructor", doc)
-    instructor = inst.name
+	A Desk form button. It had no check at all: the child-row ``save`` resolves
+	against the Instructor record, which is ``if_owner`` for the Instructor role,
+	so another instructor's log was not writable -- but the refusal came after
+	two unfiltered queries across every section and roster, and the loop commits
+	as it goes, so a later failure does not roll the earlier rows back (p008a
+	G6). Say who this is for, up front."""
+	frappe.only_for(
+		(
+			"Instructor",
+			"Program Chair",
+			"Registrar",
+			"Seminary Manager",
+			"System Manager",
+		)
+	)
+	inst = frappe.get_doc("Instructor", doc)
+	instructor = inst.name
 
-    current_instructor_log = frappe.db.sql(
-        """
+	current_instructor_log = frappe.db.sql(
+		"""
 		select course, academic_term, instructor_category, n_students
 		from `tabInstructor Log`
 		where parent = %s
 		""",
-        instructor,
-        as_list=1,
-    )
-    full_instructor_log = frappe.db.sql(
-        """
+		instructor,
+		as_list=1,
+	)
+	full_instructor_log = frappe.db.sql(
+		"""
 		select cs.name, cs.academic_term, csi.instructor_category, count(r.name) as students
 		from `tabCourse Schedule Instructors` csi, `tabCourse Schedule` cs, `tabScheduled Course Roster` r
 		where csi.parent = cs.name and cs.name = r.course_sc and csi.instructor = %s
 		group by cs.name, cs.academic_term, csi.instructor_category
 		""",
-        instructor,
-        as_list=1,
-    )
-    instructor_log = []
-    for log in full_instructor_log:
-        if current_instructor_log:
-            if log not in current_instructor_log:
-                instructor_log.append(log)
-        else:
-            instructor_log.append(log)
+		instructor,
+		as_list=1,
+	)
+	instructor_log = []
+	for log in full_instructor_log:
+		if current_instructor_log:
+			if log not in current_instructor_log:
+				instructor_log.append(log)
+		else:
+			instructor_log.append(log)
 
-    if not instructor_log:
-        return
+	if not instructor_log:
+		return
 
-    for log in instructor_log:
-        row = frappe.new_doc("Instructor Log")
-        row.course = log[0]
-        row.academic_term = log[1]
-        row.instructor_category = log[2]
-        row.n_students = log[3]
-        row.parent = instructor
-        row.parentfield = "instructor_log"
-        row.parenttype = "Instructor"
-        row.save()
-        frappe.db.commit()
+	for log in instructor_log:
+		row = frappe.new_doc("Instructor Log")
+		row.course = log[0]
+		row.academic_term = log[1]
+		row.instructor_category = log[2]
+		row.n_students = log[3]
+		row.parent = instructor
+		row.parentfield = "instructor_log"
+		row.parenttype = "Instructor"
+		row.save()
+		frappe.db.commit()

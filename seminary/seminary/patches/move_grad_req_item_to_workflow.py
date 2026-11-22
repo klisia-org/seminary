@@ -18,25 +18,23 @@ import frappe
 
 
 def execute():
-    if not frappe.db.table_exists("Graduation Requirement Item"):
-        return
+	if not frappe.db.table_exists("Graduation Requirement Item"):
+		return
 
-    # Legacy cancellations become Retired (and drop to draft docstatus).
-    frappe.db.sql(
-        """UPDATE `tabGraduation Requirement Item`
+	# Legacy cancellations become Retired (and drop to draft docstatus).
+	frappe.db.sql(
+		"""UPDATE `tabGraduation Requirement Item`
            SET docstatus = 0, workflow_state = 'Retired'
            WHERE docstatus = 2"""
-    )
-    # Submitted rows drop back to draft — submit/cancel no longer exist.
-    frappe.db.sql(
-        "UPDATE `tabGraduation Requirement Item` SET docstatus = 0 WHERE docstatus = 1"
-    )
-    # Default everything still unset to Active (leaves Retired rows untouched).
-    frappe.db.sql(
-        """UPDATE `tabGraduation Requirement Item`
+	)
+	# Submitted rows drop back to draft — submit/cancel no longer exist.
+	frappe.db.sql("UPDATE `tabGraduation Requirement Item` SET docstatus = 0 WHERE docstatus = 1")
+	# Default everything still unset to Active (leaves Retired rows untouched).
+	frappe.db.sql(
+		"""UPDATE `tabGraduation Requirement Item`
            SET workflow_state = 'Active'
            WHERE workflow_state IS NULL OR workflow_state = ''"""
-    )
-    frappe.db.commit()
-    frappe.cache().delete_value("_seminary_grad_link_doctypes")
-    print("Graduation Requirement Item: reset to draft and defaulted workflow_state.")
+	)
+	frappe.db.commit()
+	frappe.cache().delete_value("_seminary_grad_link_doctypes")
+	print("Graduation Requirement Item: reset to draft and defaulted workflow_state.")

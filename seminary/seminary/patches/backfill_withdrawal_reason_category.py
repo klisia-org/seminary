@@ -9,10 +9,10 @@ import frappe
 
 
 def execute():
-    updated = frappe.db.sql(
-        """UPDATE `tabWithdrawal Reasons`
+	updated = frappe.db.sql(
+		"""UPDATE `tabWithdrawal Reasons`
            SET category = 'Voluntary'
            WHERE category IS NULL OR category = ''"""
-    )
-    frappe.db.commit()
-    print(f"Backfilled category on Withdrawal Reasons (rows touched: {updated}).")
+	)
+	frappe.db.commit()
+	print(f"Backfilled category on Withdrawal Reasons (rows touched: {updated}).")

@@ -24,47 +24,47 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, getdate, now_datetime, today, validate_email_address
 
+from seminary.seminary import tax_ids
 from seminary.seminary.financial.backend import get_financial_backend
 from seminary.seminary.integrations.giving import link_donor
-from seminary.seminary import tax_ids
 from seminary.seminary.person import ensure_person, find_person, normalize_email
 
 # CSV column contract — also the template header order.
 CSV_COLUMNS = [
-    "primary_email",
-    "first_name",
-    "middle_name",
-    "last_name",
-    "primary_mobile",
-    "gender",
-    "country",
-    # Nationality comes with the tax ID rather than on its own: `country` above
-    # is the messaging-routing one, and it is `nationality` (then the mailing
-    # country) that decides which tax-ID format applies (ADR 071). Importing a
-    # tax ID with no nationality would store every one of them unchecked, which
-    # is the feature quietly off for the one path that creates people in bulk.
-    "nationality",
-    "tax_id",
-    "language",
-    "image_filename",
-    "address_line_1",
-    "address_line_2",
-    "city",
-    "state",
-    "pincode",
-    "date_of_birth",
-    "program_completed",
-    "class_year",
-    # The school's own student number from before Aretenic: kept on the
-    # Student, and how the ledger's older customers are matched (050 §2).
-    "previous_student_id",
-    "is_student",
-    "is_instructor",
-    "is_alumni",
-    "is_donor",
-    "is_registrar",
-    "is_programchair",
-    "is_seminarymanager",
+	"primary_email",
+	"first_name",
+	"middle_name",
+	"last_name",
+	"primary_mobile",
+	"gender",
+	"country",
+	# Nationality comes with the tax ID rather than on its own: `country` above
+	# is the messaging-routing one, and it is `nationality` (then the mailing
+	# country) that decides which tax-ID format applies (ADR 071). Importing a
+	# tax ID with no nationality would store every one of them unchecked, which
+	# is the feature quietly off for the one path that creates people in bulk.
+	"nationality",
+	"tax_id",
+	"language",
+	"image_filename",
+	"address_line_1",
+	"address_line_2",
+	"city",
+	"state",
+	"pincode",
+	"date_of_birth",
+	"program_completed",
+	"class_year",
+	# The school's own student number from before Aretenic: kept on the
+	# Student, and how the ledger's older customers are matched (050 §2).
+	"previous_student_id",
+	"is_student",
+	"is_instructor",
+	"is_alumni",
+	"is_donor",
+	"is_registrar",
+	"is_programchair",
+	"is_seminarymanager",
 ]
 CHECK_COLUMNS = [c for c in CSV_COLUMNS if c.startswith("is_")]
 
@@ -72,23 +72,23 @@ CHECK_COLUMNS = [c for c in CSV_COLUMNS if c.startswith("is_")]
 # is_programchair maps to "Program Chair" (there is no "Academic User" role —
 # it was replaced by Program Chair in seminary/install.py).
 PERMISSION_ROLE_MAP = {
-    "is_registrar": "Registrar",
-    "is_programchair": "Program Chair",
-    "is_seminarymanager": "Seminary Manager",
+	"is_registrar": "Registrar",
+	"is_programchair": "Program Chair",
+	"is_seminarymanager": "Seminary Manager",
 }
 
 TRUTHY = {"1", "true", "yes", "y", "x", "on", "checked", "t"}
 
 # What _commit_row records on a row; cleared again when that row fails.
 ROW_RESULT_FIELDS = (
-    "created_user",
-    "created_person",
-    "created_student",
-    "created_customer",
-    "created_instructor",
-    "created_alumni",
-    "created_donor",
-    "assigned_roles",
+	"created_user",
+	"created_person",
+	"created_student",
+	"created_customer",
+	"created_instructor",
+	"created_alumni",
+	"created_donor",
+	"assigned_roles",
 )
 
 # Above this row count the commit runs in a background job.
@@ -96,625 +96,584 @@ ENQUEUE_THRESHOLD = 50
 
 
 class PersonImportBatch(Document):
-    # -- lifecycle ---------------------------------------------------------
-    def validate(self):
-        # Any edit to a draft invalidates a prior clean dry-run, forcing a
-        # re-validation before submit. The dry_run save sets in_dry_run so it
-        # doesn't clobber its own result; submit runs at docstatus 1 (guarded).
-        if self.docstatus == 0 and not self.flags.get("in_dry_run"):
-            if self.batch_status != "Draft":
-                self.batch_status = "Draft"
+	# -- lifecycle ---------------------------------------------------------
+	def validate(self):
+		# Any edit to a draft invalidates a prior clean dry-run, forcing a
+		# re-validation before submit. The dry_run save sets in_dry_run so it
+		# doesn't clobber its own result; submit runs at docstatus 1 (guarded).
+		if self.docstatus == 0 and not self.flags.get("in_dry_run"):
+			if self.batch_status != "Draft":
+				self.batch_status = "Draft"
 
-    def before_submit(self):
-        if not self.rows:
-            frappe.throw(_("Nothing to import — add rows first."))
-        if self.batch_status != "Dry-Run Clean":
-            frappe.throw(
-                _("Run a clean Dry-Run before submitting. Current status: {0}.").format(
-                    self.batch_status
-                )
-            )
-        errored = [r for r in self.rows if r.row_status == "Error"]
-        if errored:
-            frappe.throw(
-                _(
-                    "{0} row(s) still have errors. Fix the data and re-run Dry-Run."
-                ).format(len(errored))
-            )
-        unresolved = [
-            r for r in self.rows if r.row_status == "Warning" and not r.override_note
-        ]
-        if unresolved:
-            frappe.throw(
-                _(
-                    "{0} row(s) have unresolved warnings. Add an Override Note or "
-                    "correct the data and re-run Dry-Run."
-                ).format(len(unresolved))
-            )
+	def before_submit(self):
+		if not self.rows:
+			frappe.throw(_("Nothing to import — add rows first."))
+		if self.batch_status != "Dry-Run Clean":
+			frappe.throw(
+				_("Run a clean Dry-Run before submitting. Current status: {0}.").format(self.batch_status)
+			)
+		errored = [r for r in self.rows if r.row_status == "Error"]
+		if errored:
+			frappe.throw(
+				_("{0} row(s) still have errors. Fix the data and re-run Dry-Run.").format(len(errored))
+			)
+		unresolved = [r for r in self.rows if r.row_status == "Warning" and not r.override_note]
+		if unresolved:
+			frappe.throw(
+				_(
+					"{0} row(s) have unresolved warnings. Add an Override Note or "
+					"correct the data and re-run Dry-Run."
+				).format(len(unresolved))
+			)
 
-    def on_submit(self):
-        if len(self.rows) <= ENQUEUE_THRESHOLD:
-            self._commit_rows()
-            summary = self._store_summary()
-            self._mark_committed()
-            failed = any(r.row_status != "Committed" for r in self.rows)
-            frappe.msgprint(
-                summary,
-                title=_("Import Complete"),
-                indicator="orange" if failed else "green",
-            )
-        else:
-            self.db_set("batch_status", "Committing", update_modified=False)
-            frappe.msgprint(
-                _(
-                    "Importing {0} rows in the background — you'll get a summary "
-                    "when it finishes."
-                ).format(len(self.rows)),
-                indicator="blue",
-                alert=True,
-            )
-            frappe.enqueue(
-                "seminary.seminary.doctype.person_import_batch."
-                "person_import_batch.commit_batch_async",
-                queue="long",
-                timeout=1500,
-                enqueue_after_commit=True,
-                batch_name=self.name,
-            )
+	def on_submit(self):
+		if len(self.rows) <= ENQUEUE_THRESHOLD:
+			self._commit_rows()
+			summary = self._store_summary()
+			self._mark_committed()
+			failed = any(r.row_status != "Committed" for r in self.rows)
+			frappe.msgprint(
+				summary,
+				title=_("Import Complete"),
+				indicator="orange" if failed else "green",
+			)
+		else:
+			self.db_set("batch_status", "Committing", update_modified=False)
+			frappe.msgprint(
+				_("Importing {0} rows in the background — you'll get a summary when it finishes.").format(
+					len(self.rows)
+				),
+				indicator="blue",
+				alert=True,
+			)
+			frappe.enqueue(
+				"seminary.seminary.doctype.person_import_batch.person_import_batch.commit_batch_async",
+				queue="long",
+				timeout=1500,
+				enqueue_after_commit=True,
+				batch_name=self.name,
+			)
 
-    def before_cancel(self):
-        # Creation is not automatically reversible; cancelling only voids the
-        # batch record. Warn loudly rather than block, so amend still works.
-        frappe.msgprint(
-            _(
-                "Cancelling does NOT delete the Persons, Users, Students, or other "
-                "records this batch created — it only voids the batch. Remove those "
-                "manually if needed (supervised operation)."
-            ),
-            indicator="orange",
-            alert=True,
-        )
+	def before_cancel(self):
+		# Creation is not automatically reversible; cancelling only voids the
+		# batch record. Warn loudly rather than block, so amend still works.
+		frappe.msgprint(
+			_(
+				"Cancelling does NOT delete the Persons, Users, Students, or other "
+				"records this batch created — it only voids the batch. Remove those "
+				"manually if needed (supervised operation)."
+			),
+			indicator="orange",
+			alert=True,
+		)
 
-    def _mark_committed(self):
-        self.db_set("batch_status", "Committed", update_modified=False)
-        self.db_set("committed_on", now_datetime(), update_modified=False)
-        self.db_set("committed_by", frappe.session.user, update_modified=False)
+	def _mark_committed(self):
+		self.db_set("batch_status", "Committed", update_modified=False)
+		self.db_set("committed_on", now_datetime(), update_modified=False)
+		self.db_set("committed_by", frappe.session.user, update_modified=False)
 
-    def _store_summary(self):
-        text = self._build_summary()
-        self.db_set("import_summary", text, update_modified=False)
-        return text
+	def _store_summary(self):
+		text = self._build_summary()
+		self.db_set("import_summary", text, update_modified=False)
+		return text
 
-    def _build_summary(self):
-        failed = [r for r in self.rows if r.row_status != "Committed"]
-        persons = sum(1 for r in self.rows if r.created_person)
-        students = sum(1 for r in self.rows if r.created_student)
-        instructors = sum(1 for r in self.rows if r.created_instructor)
-        alumni = sum(1 for r in self.rows if r.created_alumni)
-        donors = sum(1 for r in self.rows if r.created_donor)
-        parts = [
-            _("{0} persons imported").format(persons),
-            _("{0} students").format(students),
-            _("{0} instructors").format(instructors),
-            _("{0} alumni").format(alumni),
-        ]
-        if donors:
-            parts.append(_("{0} donors").format(donors))
-        parts.append(_("{0} errors").format(len(failed)))
-        return " · ".join(parts)
+	def _build_summary(self):
+		failed = [r for r in self.rows if r.row_status != "Committed"]
+		persons = sum(1 for r in self.rows if r.created_person)
+		students = sum(1 for r in self.rows if r.created_student)
+		instructors = sum(1 for r in self.rows if r.created_instructor)
+		alumni = sum(1 for r in self.rows if r.created_alumni)
+		donors = sum(1 for r in self.rows if r.created_donor)
+		parts = [
+			_("{0} persons imported").format(persons),
+			_("{0} students").format(students),
+			_("{0} instructors").format(instructors),
+			_("{0} alumni").format(alumni),
+		]
+		if donors:
+			parts.append(_("{0} donors").format(donors))
+		parts.append(_("{0} errors").format(len(failed)))
+		return " · ".join(parts)
 
-    # -- helpers -----------------------------------------------------------
-    def attached_image_map(self):
-        """{lower(file_name): file_url} for images dragged onto this batch."""
-        files = frappe.get_all(
-            "File",
-            filters={
-                "attached_to_doctype": self.doctype,
-                "attached_to_name": self.name,
-            },
-            fields=["file_name", "file_url"],
-        )
-        return {f.file_name.lower(): f.file_url for f in files if f.file_name}
+	# -- helpers -----------------------------------------------------------
+	def attached_image_map(self):
+		"""{lower(file_name): file_url} for images dragged onto this batch."""
+		files = frappe.get_all(
+			"File",
+			filters={
+				"attached_to_doctype": self.doctype,
+				"attached_to_name": self.name,
+			},
+			fields=["file_name", "file_url"],
+		)
+		return {f.file_name.lower(): f.file_url for f in files if f.file_name}
 
-    # -- whitelisted -------------------------------------------------------
-    @frappe.whitelist()
-    def download_template(self):
-        """Return the canonical CSV header line for the import template."""
-        return ",".join(CSV_COLUMNS) + "\n"
+	# -- whitelisted -------------------------------------------------------
+	@frappe.whitelist()
+	def download_template(self):
+		"""Return the canonical CSV header line for the import template."""
+		return ",".join(CSV_COLUMNS) + "\n"
 
-    @frappe.whitelist()
-    def load_from_csv(self):
-        """Parse the attached Source CSV into rows, replacing any existing ones."""
-        from frappe.utils.csvutils import read_csv_content
-        from frappe.utils.file_manager import get_file
+	@frappe.whitelist()
+	def load_from_csv(self):
+		"""Parse the attached Source CSV into rows, replacing any existing ones."""
+		from frappe.utils.csvutils import read_csv_content
+		from frappe.utils.file_manager import get_file
 
-        if not self.source_file:
-            frappe.throw(_("Attach a Source CSV first."))
+		if not self.source_file:
+			frappe.throw(_("Attach a Source CSV first."))
 
-        _fname, content = get_file(self.source_file)
-        content = _decode_csv(content)
-        if "�" in content:
-            # The replacement character is in the file itself: whatever saved it
-            # already lost the accents, and no decoding can bring them back.
-            frappe.msgprint(
-                _(
-                    "Some characters in this file are already broken (shown as �). "
-                    'Save the spreadsheet again as "CSV UTF-8" and re-attach it.'
-                ),
-                indicator="orange",
-            )
-        data = read_csv_content(content)
-        if not data:
-            frappe.throw(_("The CSV appears to be empty."))
+		_fname, content = get_file(self.source_file)
+		content = _decode_csv(content)
+		if "�" in content:
+			# The replacement character is in the file itself: whatever saved it
+			# already lost the accents, and no decoding can bring them back.
+			frappe.msgprint(
+				_(
+					"Some characters in this file are already broken (shown as �). "
+					'Save the spreadsheet again as "CSV UTF-8" and re-attach it.'
+				),
+				indicator="orange",
+			)
+		data = read_csv_content(content)
+		if not data:
+			frappe.throw(_("The CSV appears to be empty."))
 
-        header = [(h or "").strip().lower() for h in data[0]]
-        known = {col: header.index(col) for col in CSV_COLUMNS if col in header}
-        unknown = [h for h in header if h and h not in CSV_COLUMNS]
+		header = [(h or "").strip().lower() for h in data[0]]
+		known = {col: header.index(col) for col in CSV_COLUMNS if col in header}
+		unknown = [h for h in header if h and h not in CSV_COLUMNS]
 
-        self.set("rows", [])
-        added = 0
-        for raw in data[1:]:
-            if not any((cell or "").strip() for cell in raw):
-                continue  # skip blank lines
-            values = {}
-            for col, idx in known.items():
-                cell = raw[idx] if idx < len(raw) else ""
-                if col in CHECK_COLUMNS:
-                    values[col] = _truthy(cell)
-                else:
-                    values[col] = (cell or "").strip() or None
-            values["row_status"] = "Pending"
-            self.append("rows", values)
-            added += 1
+		self.set("rows", [])
+		added = 0
+		for raw in data[1:]:
+			if not any((cell or "").strip() for cell in raw):
+				continue  # skip blank lines
+			values = {}
+			for col, idx in known.items():
+				cell = raw[idx] if idx < len(raw) else ""
+				if col in CHECK_COLUMNS:
+					values[col] = _truthy(cell)
+				else:
+					values[col] = (cell or "").strip() or None
+			values["row_status"] = "Pending"
+			self.append("rows", values)
+			added += 1
 
-        self.batch_status = "Draft"
-        self.save()
-        if unknown:
-            frappe.msgprint(
-                _("Ignored unrecognised column(s): {0}").format(", ".join(unknown))
-            )
-        return {"rows": added, "ignored_columns": unknown}
+		self.batch_status = "Draft"
+		self.save()
+		if unknown:
+			frappe.msgprint(_("Ignored unrecognised column(s): {0}").format(", ".join(unknown)))
+		return {"rows": added, "ignored_columns": unknown}
 
-    @frappe.whitelist()
-    def dry_run(self):
-        """Validate every row without writing anything. Sets per-row status and
-        the batch gate. Returns a summary the form uses for its alert."""
-        if not self.rows:
-            frappe.throw(_("Add rows before running a Dry-Run."))
+	@frappe.whitelist()
+	def dry_run(self):
+		"""Validate every row without writing anything. Sets per-row status and
+		the batch gate. Returns a summary the form uses for its alert."""
+		if not self.rows:
+			frappe.throw(_("Add rows before running a Dry-Run."))
 
-        batch_errors = []
-        if self.send_welcome_emails and not frappe.db.exists(
-            "Email Account", {"enable_outgoing": 1}
-        ):
-            batch_errors.append("no_outgoing_email")
+		batch_errors = []
+		if self.send_welcome_emails and not frappe.db.exists("Email Account", {"enable_outgoing": 1}):
+			batch_errors.append("no_outgoing_email")
 
-        img_map = self.attached_image_map()
-        seen_emails = set()
-        seen_previous_ids = set()
-        has_billing = get_financial_backend().has_financials()
-        errors_total = 0
-        warnings_total = 0
-        # Only the details this import form can actually carry: a school may
-        # require something an import row has no column for, and warning about a
-        # blank nobody could have filled would be noise.
-        mandated = _mandated_columns()
+		img_map = self.attached_image_map()
+		seen_emails = set()
+		seen_previous_ids = set()
+		has_billing = get_financial_backend().has_financials()
+		errors_total = 0
+		warnings_total = 0
+		# Only the details this import form can actually carry: a school may
+		# require something an import row has no column for, and warning about a
+		# blank nobody could have filled would be noise.
+		mandated = _mandated_columns()
 
-        for row in self.rows:
-            errs = []
-            warns = []
-            email = normalize_email(row.primary_email)
+		for row in self.rows:
+			errs = []
+			warns = []
+			email = normalize_email(row.primary_email)
 
-            if not email:
-                errs.append("missing_email")
-            elif not validate_email_address(email, throw=False):
-                errs.append("bad_email:%s" % row.primary_email)
+			if not email:
+				errs.append("missing_email")
+			elif not validate_email_address(email, throw=False):
+				errs.append("bad_email:%s" % row.primary_email)
 
-            if email:
-                if email in seen_emails:
-                    warns.append("duplicate_in_file")
-                else:
-                    seen_emails.add(email)
+			if email:
+				if email in seen_emails:
+					warns.append("duplicate_in_file")
+				else:
+					seen_emails.add(email)
 
-            needs_user = _needs_user(row)
-            if email and not errs:
-                conflict = _detect_user_conflict(email, needs_user)
-                if conflict:
-                    errs.append(conflict)
+			needs_user = _needs_user(row)
+			if email and not errs:
+				conflict = _detect_user_conflict(email, needs_user)
+				if conflict:
+					errs.append(conflict)
 
-            if not any(row.get(k) for k in CHECK_COLUMNS):
-                warns.append("no_role_selected")
+			if not any(row.get(k) for k in CHECK_COLUMNS):
+				warns.append("no_role_selected")
 
-            if (row.is_instructor or row.is_alumni) and not _full_name(row):
-                # Not fatal — we fall back to the email local part — but flag it
-                # so an ugly auto-name (e.g. the instructor named "jdoe") is a
-                # deliberate choice.
-                warns.append("name_missing_using_email")
+			if (row.is_instructor or row.is_alumni) and not _full_name(row):
+				# Not fatal — we fall back to the email local part — but flag it
+				# so an ugly auto-name (e.g. the instructor named "jdoe") is a
+				# deliberate choice.
+				warns.append("name_missing_using_email")
 
-            if row.is_donor and not frappe.db.exists("DocType", "Donor"):
-                warns.append("giving_not_installed")
+			if row.is_donor and not frappe.db.exists("DocType", "Donor"):
+				warns.append("giving_not_installed")
 
-            previous_id = (row.previous_student_id or "").strip()
-            if previous_id:
-                if not row.is_student:
-                    warns.append("previous_student_id_needs_student")
-                elif previous_id in seen_previous_ids:
-                    errs.append("duplicate_previous_student_id:%s" % previous_id)
-                else:
-                    seen_previous_ids.add(previous_id)
-                    other = frappe.db.get_value(
-                        "Student", {"previous_student_id": previous_id}, "person"
-                    )
-                    if other and other != find_person(email=email):
-                        errs.append("previous_student_id_taken:%s" % previous_id)
+			previous_id = (row.previous_student_id or "").strip()
+			if previous_id:
+				if not row.is_student:
+					warns.append("previous_student_id_needs_student")
+				elif previous_id in seen_previous_ids:
+					errs.append("duplicate_previous_student_id:%s" % previous_id)
+				else:
+					seen_previous_ids.add(previous_id)
+					other = frappe.db.get_value("Student", {"previous_student_id": previous_id}, "person")
+					if other and other != find_person(email=email):
+						errs.append("previous_student_id_taken:%s" % previous_id)
 
-            for fld, dt in (
-                ("gender", "Gender"),
-                ("country", "Country"),
-                ("nationality", "Country"),
-                ("language", "Language"),
-            ):
-                val = row.get(fld)
-                if val and not frappe.db.exists(dt, val):
-                    warns.append("unknown_%s:%s" % (fld, val))
+			for fld, dt in (
+				("gender", "Gender"),
+				("country", "Country"),
+				("nationality", "Country"),
+				("language", "Language"),
+			):
+				val = row.get(fld)
+				if val and not frappe.db.exists(dt, val):
+					warns.append("unknown_%s:%s" % (fld, val))
 
-            # Checked now the way Person.validate checks it at commit (ADR 071),
-            # so a mistyped CPF is a row to fix rather than a failed commit.
-            if row.tax_id and tax_ids.problem_with(
-                row.tax_id, _tax_country(row, email), tax_ids.PERSON
-            ):
-                errs.append("bad_tax_id:%s" % row.tax_id)
+			# Checked now the way Person.validate checks it at commit (ADR 071),
+			# so a mistyped CPF is a row to fix rather than a failed commit.
+			if row.tax_id and tax_ids.problem_with(row.tax_id, _tax_country(row, email), tax_ids.PERSON):
+				errs.append("bad_tax_id:%s" % row.tax_id)
 
-            for key, role in PERMISSION_ROLE_MAP.items():
-                if row.get(key) and not frappe.db.exists("Role", role):
-                    errs.append("role_missing:%s" % role)
+			for key, role in PERMISSION_ROLE_MAP.items():
+				if row.get(key) and not frappe.db.exists("Role", role):
+					errs.append("role_missing:%s" % role)
 
-            filename = (row.image_filename or "").strip()
-            if filename and filename.lower() not in img_map:
-                errs.append("image_missing:%s" % filename)
+			filename = (row.image_filename or "").strip()
+			if filename and filename.lower() not in img_map:
+				errs.append("image_missing:%s" % filename)
 
-            if row.date_of_birth:
-                try:
-                    dob = getdate(row.date_of_birth)
-                except Exception:
-                    errs.append("bad_dob:%s" % row.date_of_birth)
-                else:
-                    if dob >= getdate(today()):
-                        # Student.validate_dates would reject this at commit.
-                        errs.append("dob_not_in_past:%s" % row.date_of_birth)
-                    # A DOB on a non-student row used to warn `dob_needs_student`
-                    # because the date only existed on the Student record. It
-                    # lives on Person now (ADR 068), so any row can carry one.
+			if row.date_of_birth:
+				try:
+					dob = getdate(row.date_of_birth)
+				except Exception:
+					errs.append("bad_dob:%s" % row.date_of_birth)
+				else:
+					if dob >= getdate(today()):
+						# Student.validate_dates would reject this at commit.
+						errs.append("dob_not_in_past:%s" % row.date_of_birth)
+					# A DOB on a non-student row used to warn `dob_needs_student`
+					# because the date only existed on the Student record. It
+					# lives on Person now (ADR 068), so any row can carry one.
 
-            if row.program_completed:
-                if not frappe.db.exists("Program", row.program_completed):
-                    errs.append("unknown_program:%s" % row.program_completed)
-                if not row.is_alumni:
-                    warns.append("program_completed_needs_alumni")
+			if row.program_completed:
+				if not frappe.db.exists("Program", row.program_completed):
+					errs.append("unknown_program:%s" % row.program_completed)
+				if not row.is_alumni:
+					warns.append("program_completed_needs_alumni")
 
-            if row.class_year:
-                if not str(row.class_year).strip().isdigit():
-                    warns.append("bad_class_year:%s" % row.class_year)
-                if not row.is_alumni:
-                    warns.append("class_year_needs_alumni")
+			if row.class_year:
+				if not str(row.class_year).strip().isdigit():
+					warns.append("bad_class_year:%s" % row.class_year)
+				if not row.is_alumni:
+					warns.append("class_year_needs_alumni")
 
-            # A detail the school insists on (ADR 067 §9) warns rather than
-            # errors here. Importing four hundred alumni who will never mentor
-            # anybody should not be hard-blocked by a mentor-matching rule, and
-            # the override note is the record of that judgement.
-            for person_field in mandated:
-                if not (row.get(person_field) or "").strip():
-                    warns.append("required_detail_missing:%s" % person_field)
+			# A detail the school insists on (ADR 067 §9) warns rather than
+			# errors here. Importing four hundred alumni who will never mentor
+			# anybody should not be hard-blocked by a mentor-matching rule, and
+			# the override note is the record of that judgement.
+			for person_field in mandated:
+				if not (row.get(person_field) or "").strip():
+					warns.append("required_detail_missing:%s" % person_field)
 
-            if errs:
-                row.row_status = "Error"
-            elif warns:
-                row.row_status = "Warning"
-            else:
-                row.row_status = "Valid"
-            row.messages = "; ".join(errs + warns)
-            errors_total += len(errs)
-            warnings_total += len(warns)
+			if errs:
+				row.row_status = "Error"
+			elif warns:
+				row.row_status = "Warning"
+			else:
+				row.row_status = "Valid"
+			row.messages = "; ".join(errs + warns)
+			errors_total += len(errs)
+			warnings_total += len(warns)
 
-        clean = (
-            errors_total == 0
-            and not batch_errors
-            and all(
-                not (r.row_status == "Warning" and not r.override_note)
-                for r in self.rows
-            )
-        )
-        self.batch_status = "Dry-Run Clean" if clean else "Draft"
-        self.flags.in_dry_run = True
-        self.save()
+		clean = (
+			errors_total == 0
+			and not batch_errors
+			and all(not (r.row_status == "Warning" and not r.override_note) for r in self.rows)
+		)
+		self.batch_status = "Dry-Run Clean" if clean else "Draft"
+		self.flags.in_dry_run = True
+		self.save()
 
-        # A fact about the site, not about any row: one notice, nothing to override.
-        academic_only = not has_billing and any(r.is_student for r in self.rows)
-        if academic_only:
-            frappe.msgprint(
-                _(
-                    "No billing app is active, so students are imported without "
-                    "billing records. Nothing to fix; billing can be added later."
-                ),
-                indicator="blue",
-            )
+		# A fact about the site, not about any row: one notice, nothing to override.
+		academic_only = not has_billing and any(r.is_student for r in self.rows)
+		if academic_only:
+			frappe.msgprint(
+				_(
+					"No billing app is active, so students are imported without "
+					"billing records. Nothing to fix; billing can be added later."
+				),
+				indicator="blue",
+			)
 
-        if batch_errors:
-            frappe.msgprint(
-                _("Batch-level issue(s): {0}").format(", ".join(batch_errors)),
-                indicator="red",
-            )
-        return {
-            "clean": clean,
-            "errors": errors_total,
-            "warnings": warnings_total,
-            "batch_errors": batch_errors,
-            "academic_only": academic_only,
-        }
+		if batch_errors:
+			frappe.msgprint(
+				_("Batch-level issue(s): {0}").format(", ".join(batch_errors)),
+				indicator="red",
+			)
+		return {
+			"clean": clean,
+			"errors": errors_total,
+			"warnings": warnings_total,
+			"batch_errors": batch_errors,
+			"academic_only": academic_only,
+		}
 
-    # -- commit ------------------------------------------------------------
-    def _commit_rows(self, commit_each=False):
-        """Commit every pending row. One row's failure is rolled back to its own
-        savepoint and recorded on that row; the rest of the batch carries on.
+	# -- commit ------------------------------------------------------------
+	def _commit_rows(self, commit_each=False):
+		"""Commit every pending row. One row's failure is rolled back to its own
+		savepoint and recorded on that row; the rest of the batch carries on.
 
-        commit_each (the background job) makes each row durable as it lands, so
-        a large import never holds one giant transaction and a crash keeps what
-        was already done. The in-request path leaves the commit to the request.
-        """
-        img_map = self.attached_image_map()
-        for row in self.rows:
-            if row.row_status == "Committed":
-                continue  # idempotent re-run safety
-            messages = list(frappe.local.message_log)
-            frappe.db.savepoint("person_import_row")
-            try:
-                self._commit_row(row, img_map)
-            except Exception as e:
-                frappe.db.rollback(save_point="person_import_row")
-                self._fail_row(row, e)
-            frappe.local.message_log = messages  # drop per-row alerts and errors
-            if commit_each:
-                frappe.db.commit()
+		commit_each (the background job) makes each row durable as it lands, so
+		a large import never holds one giant transaction and a crash keeps what
+		was already done. The in-request path leaves the commit to the request.
+		"""
+		img_map = self.attached_image_map()
+		for row in self.rows:
+			if row.row_status == "Committed":
+				continue  # idempotent re-run safety
+			messages = list(frappe.local.message_log)
+			frappe.db.savepoint("person_import_row")
+			try:
+				self._commit_row(row, img_map)
+			except Exception as e:
+				frappe.db.rollback(save_point="person_import_row")
+				self._fail_row(row, e)
+			frappe.local.message_log = messages  # drop per-row alerts and errors
+			if commit_each:
+				frappe.db.commit()
 
-    def _fail_row(self, row, exc):
-        log = frappe.log_error(
-            title=_("Person import row {0} failed").format(row.idx),
-            reference_doctype=self.doctype,
-            reference_name=self.name,
-        )
-        detail = frappe.utils.strip_html(str(exc)) or type(exc).__name__
-        note = _("Commit failed: {0} (Error Log {1})").format(detail, log.name)
-        # The savepoint rollback undid the row's own db_set calls; match it in
-        # memory so the summary doesn't count records that no longer exist.
-        for field in ROW_RESULT_FIELDS:
-            row.set(field, None)
-        row.row_status = "Error"
-        row.messages = "; ".join(filter(None, [row.messages, note]))
-        row.db_set(
-            {"row_status": row.row_status, "messages": row.messages},
-            update_modified=False,
-        )
+	def _fail_row(self, row, exc):
+		log = frappe.log_error(
+			title=_("Person import row {0} failed").format(row.idx),
+			reference_doctype=self.doctype,
+			reference_name=self.name,
+		)
+		detail = frappe.utils.strip_html(str(exc)) or type(exc).__name__
+		note = _("Commit failed: {0} (Error Log {1})").format(detail, log.name)
+		# The savepoint rollback undid the row's own db_set calls; match it in
+		# memory so the summary doesn't count records that no longer exist.
+		for field in ROW_RESULT_FIELDS:
+			row.set(field, None)
+		row.row_status = "Error"
+		row.messages = "; ".join(filter(None, [row.messages, note]))
+		row.db_set(
+			{"row_status": row.row_status, "messages": row.messages},
+			update_modified=False,
+		)
 
-    def _commit_row(self, row, img_map):
-        email = normalize_email(row.primary_email)
-        first, mid, last = row.first_name, row.middle_name, row.last_name
-        full = _full_name(row) or (email.split("@")[0] if email else None)
-        granted = []
+	def _commit_row(self, row, img_map):
+		email = normalize_email(row.primary_email)
+		first, mid, last = row.first_name, row.middle_name, row.last_name
+		full = _full_name(row) or (email.split("@")[0] if email else None)
+		granted = []
 
-        # 1. User first — needed by Instructor, Alumni, and all permission roles.
-        #    Pre-creating it (welcome suppressed unless opted in) before the
-        #    Student also stops Student.validate_user sending its own welcome.
-        needs_desk = _needs_desk(row)
-        user = None
-        if _needs_user(row):
-            user = _ensure_user(
-                email,
-                first,
-                last,
-                row.gender,
-                "System User" if needs_desk else "Website User",
-                bool(self.send_welcome_emails),
-            )
-            row.db_set("created_user", user, update_modified=False)
+		# 1. User first — needed by Instructor, Alumni, and all permission roles.
+		#    Pre-creating it (welcome suppressed unless opted in) before the
+		#    Student also stops Student.validate_user sending its own welcome.
+		needs_desk = _needs_desk(row)
+		user = None
+		if _needs_user(row):
+			user = _ensure_user(
+				email,
+				first,
+				last,
+				row.gender,
+				"System User" if needs_desk else "Website User",
+				bool(self.send_welcome_emails),
+			)
+			row.db_set("created_user", user, update_modified=False)
 
-        # 2. Person — the single mutation point (ADR 042).
-        image_url = (
-            img_map.get((row.image_filename or "").strip().lower())
-            if row.image_filename
-            else None
-        )
-        person = ensure_person(
-            email,
-            user=user,
-            first_name=first,
-            middle_name=mid,
-            last_name=last,
-            mobile=row.primary_mobile,
-            language=row.language or self.default_language,
-            country=row.country or self.default_country,
-            nationality=row.nationality,
-            tax_id=row.tax_id,
-            image=image_url,
-            gender=row.gender,
-            # Person owns the date of birth now (ADR 068), so it no longer
-            # depends on the row also creating a Student.
-            # `dry_run` has already rejected an unparseable date, and a clean
-            # dry-run is required before submit, so getdate is safe here — the
-            # same assumption `_get_or_create_student` makes.
-            date_of_birth=getdate(row.date_of_birth) if row.date_of_birth else None,
-            address_line_1=row.address_line_1,
-            address_line_2=row.address_line_2,
-            city=row.city,
-            state=row.state,
-            pincode=row.pincode,
-        )
-        row.db_set("created_person", person, update_modified=False)
+		# 2. Person — the single mutation point (ADR 042).
+		image_url = img_map.get((row.image_filename or "").strip().lower()) if row.image_filename else None
+		person = ensure_person(
+			email,
+			user=user,
+			first_name=first,
+			middle_name=mid,
+			last_name=last,
+			mobile=row.primary_mobile,
+			language=row.language or self.default_language,
+			country=row.country or self.default_country,
+			nationality=row.nationality,
+			tax_id=row.tax_id,
+			image=image_url,
+			gender=row.gender,
+			# Person owns the date of birth now (ADR 068), so it no longer
+			# depends on the row also creating a Student.
+			# `dry_run` has already rejected an unparseable date, and a clean
+			# dry-run is required before submit, so getdate is safe here — the
+			# same assumption `_get_or_create_student` makes.
+			date_of_birth=getdate(row.date_of_birth) if row.date_of_birth else None,
+			address_line_1=row.address_line_1,
+			address_line_2=row.address_line_2,
+			city=row.city,
+			state=row.state,
+			pincode=row.pincode,
+		)
+		row.db_set("created_person", person, update_modified=False)
 
-        # 3. Student — its on_update fires the oikonomos Customer bridge.
-        if row.is_student:
-            student = _get_or_create_student(
-                person, email, first, mid, last, row, image_url
-            )
-            row.db_set("created_student", student, update_modified=False)
-            granted.append("Student")
-            _keep_previous_id(student, row.previous_student_id)
-            if _customer_billing() and frappe.db.has_column("Student", "customer"):
-                customer = frappe.db.get_value("Student", student, "customer")
-                if customer:
-                    row.db_set("created_customer", customer, update_modified=False)
+		# 3. Student — its on_update fires the oikonomos Customer bridge.
+		if row.is_student:
+			student = _get_or_create_student(person, email, first, mid, last, row, image_url)
+			row.db_set("created_student", student, update_modified=False)
+			granted.append("Student")
+			_keep_previous_id(student, row.previous_student_id)
+			if _customer_billing() and frappe.db.has_column("Student", "customer"):
+				customer = frappe.db.get_value("Student", student, "customer")
+				if customer:
+					row.db_set("created_customer", customer, update_modified=False)
 
-        # 4. Instructor — requires the User from step 1.
-        if row.is_instructor:
-            instructor = _get_or_create_instructor(
-                person, user, email, full, row.gender
-            )
-            row.db_set("created_instructor", instructor, update_modified=False)
-            if user and frappe.db.exists("Role", "Instructor"):
-                _add_role(user, "Instructor")
-                granted.append("Instructor")
+		# 4. Instructor — requires the User from step 1.
+		if row.is_instructor:
+			instructor = _get_or_create_instructor(person, user, email, full, row.gender)
+			row.db_set("created_instructor", instructor, update_modified=False)
+			if user and frappe.db.exists("Role", "Instructor"):
+				_add_role(user, "Instructor")
+				granted.append("Instructor")
 
-        # 5. Alumni Profile — requires User + full_name.
-        if row.is_alumni:
-            alumni = _get_or_create_alumni(person, user, email, full, row)
-            row.db_set("created_alumni", alumni, update_modified=False)
+		# 5. Alumni Profile — requires User + full_name.
+		if row.is_alumni:
+			alumni = _get_or_create_alumni(person, user, email, full, row)
+			row.db_set("created_alumni", alumni, update_modified=False)
 
-        # 6. Donor — optional koinonia.
-        if row.is_donor and frappe.db.exists("DocType", "Donor"):
-            donor = _get_or_create_donor(person, email, full)
-            link_donor(person, donor)
-            row.db_set("created_donor", donor, update_modified=False)
+		# 6. Donor — optional koinonia.
+		if row.is_donor and frappe.db.exists("DocType", "Donor"):
+			donor = _get_or_create_donor(person, email, full)
+			link_donor(person, donor)
+			row.db_set("created_donor", donor, update_modified=False)
 
-        # 7. Permission roles.
-        if user:
-            for key, role in PERMISSION_ROLE_MAP.items():
-                if row.get(key) and frappe.db.exists("Role", role):
-                    _add_role(user, role)
-                    granted.append(role)
+		# 7. Permission roles.
+		if user:
+			for key, role in PERMISSION_ROLE_MAP.items():
+				if row.get(key) and frappe.db.exists("Role", role):
+					_add_role(user, role)
+					granted.append(role)
 
-        row.db_set(
-            "assigned_roles", ", ".join(dict.fromkeys(granted)), update_modified=False
-        )
-        row.db_set("row_status", "Committed", update_modified=False)
+		row.db_set("assigned_roles", ", ".join(dict.fromkeys(granted)), update_modified=False)
+		row.db_set("row_status", "Committed", update_modified=False)
 
 
 # -- module-level helpers --------------------------------------------------
 def _decode_csv(content):
-    """UTF-8 first; otherwise the Windows-1252 that Excel's plain "CSV" and
-    LibreOffice's "Western" save. Frappe's own fallback tries windows-1250
-    first, which reads Ã as Ă. latin-1 decodes any byte, so it never fails.
+	"""UTF-8 first; otherwise the Windows-1252 that Excel's plain "CSV" and
+	LibreOffice's "Western" save. Frappe's own fallback tries windows-1250
+	first, which reads Ã as Ă. latin-1 decodes any byte, so it never fails.
 
-    get_file hands back valid UTF-8 already decoded as plain "utf-8", which
-    keeps the BOM Excel's "CSV UTF-8" writes; left in, it hides the first
-    header (primary_email) and every row fails as missing its email."""
-    if isinstance(content, str):
-        return content.removeprefix("﻿")
-    for encoding in ("utf-8-sig", "cp1252", "latin-1"):
-        try:
-            return content.decode(encoding)
-        except UnicodeDecodeError:
-            continue
+	get_file hands back valid UTF-8 already decoded as plain "utf-8", which
+	keeps the BOM Excel's "CSV UTF-8" writes; left in, it hides the first
+	header (primary_email) and every row fails as missing its email."""
+	if isinstance(content, str):
+		return content.removeprefix("﻿")
+	for encoding in ("utf-8-sig", "cp1252", "latin-1"):
+		try:
+			return content.decode(encoding)
+		except UnicodeDecodeError:
+			continue
 
 
 def _keep_previous_id(student, previous_id):
-    """Fill the Student's previous ID; one already recorded is never replaced."""
-    previous_id = (previous_id or "").strip()
-    if previous_id and not frappe.db.get_value(
-        "Student", student, "previous_student_id"
-    ):
-        frappe.db.set_value(
-            "Student",
-            student,
-            "previous_student_id",
-            previous_id,
-            update_modified=False,
-        )
+	"""Fill the Student's previous ID; one already recorded is never replaced."""
+	previous_id = (previous_id or "").strip()
+	if previous_id and not frappe.db.get_value("Student", student, "previous_student_id"):
+		frappe.db.set_value(
+			"Student",
+			student,
+			"previous_student_id",
+			previous_id,
+			update_modified=False,
+		)
 
 
 def _tax_country(row, email):
-    """The country the tax ID will be checked against once committed.
-    `ensure_person` only fills blanks, so an existing Person's own nationality
-    wins over the row's."""
-    existing = find_person(email=email) if email else None
-    person = (
-        frappe.db.get_value(
-            "Person", existing, ["nationality", "mailing_country"], as_dict=True
-        )
-        if existing
-        else None
-    ) or frappe._dict()
-    return person.nationality or row.nationality or person.mailing_country
+	"""The country the tax ID will be checked against once committed.
+	`ensure_person` only fills blanks, so an existing Person's own nationality
+	wins over the row's."""
+	existing = find_person(email=email) if email else None
+	person = (
+		frappe.db.get_value("Person", existing, ["nationality", "mailing_country"], as_dict=True)
+		if existing
+		else None
+	) or frappe._dict()
+	return person.nationality or row.nationality or person.mailing_country
 
 
 def _customer_billing():
-    """True when the active billing app is the one that makes a Customer for
-    each Student on save (oikonomos). tamias makes Billing Parties later."""
-    backend = get_financial_backend()
-    return backend.has_financials() and type(backend).__module__.startswith("oikonomos")
+	"""True when the active billing app is the one that makes a Customer for
+	each Student on save (oikonomos). tamias makes Billing Parties later."""
+	backend = get_financial_backend()
+	return backend.has_financials() and type(backend).__module__.startswith("oikonomos")
 
 
 def _truthy(value):
-    return 1 if str(value or "").strip().lower() in TRUTHY else 0
+	return 1 if str(value or "").strip().lower() in TRUTHY else 0
 
 
 def _full_name(row):
-    return (
-        " ".join(filter(None, [row.first_name, row.middle_name, row.last_name])).strip()
-        or None
-    )
+	return " ".join(filter(None, [row.first_name, row.middle_name, row.last_name])).strip() or None
 
 
 def _needs_desk(row):
-    return bool(
-        row.is_instructor
-        or row.is_registrar
-        or row.is_programchair
-        or row.is_seminarymanager
-    )
+	return bool(row.is_instructor or row.is_registrar or row.is_programchair or row.is_seminarymanager)
 
 
 def _needs_user(row):
-    # Everyone with a role except a pure Donor (and a bare Person) needs a User.
-    return bool(_needs_desk(row) or row.is_student or row.is_alumni)
+	# Everyone with a role except a pure Donor (and a bare Person) needs a User.
+	return bool(_needs_desk(row) or row.is_student or row.is_alumni)
 
 
 def _detect_user_conflict(email, needs_user):
-    """Surface the identity conflict ensure_person would throw on: an existing
-    Person for this email already linked to a *different* User."""
-    if not needs_user:
-        return None
-    existing_person = find_person(email=email)
-    if not existing_person:
-        return None
-    person_user = frappe.db.get_value("Person", existing_person, "user")
-    if person_user and person_user != email:
-        return "person_user_conflict:%s->%s" % (existing_person, person_user)
-    return None
+	"""Surface the identity conflict ensure_person would throw on: an existing
+	Person for this email already linked to a *different* User."""
+	if not needs_user:
+		return None
+	existing_person = find_person(email=email)
+	if not existing_person:
+		return None
+	person_user = frappe.db.get_value("Person", existing_person, "user")
+	if person_user and person_user != email:
+		return "person_user_conflict:%s->%s" % (existing_person, person_user)
+	return None
 
 
 def _add_role(user, role):
-    frappe.get_doc("User", user).add_roles(role)  # idempotent, saves internally
+	frappe.get_doc("User", user).add_roles(role)  # idempotent, saves internally
 
 
 def _ensure_user(email, first_name, last_name, gender, user_type, send_welcome):
-    if frappe.db.exists("User", email):
-        return email
-    user = frappe.new_doc("User")
-    user.email = email
-    user.first_name = first_name or email.split("@")[0]
-    user.last_name = last_name
-    if gender and frappe.db.exists("Gender", gender):
-        user.gender = gender
-    user.user_type = user_type
-    user.send_welcome_email = 1 if send_welcome else 0
-    # Bypass the per-hour user-creation throttle (frappe.core...user.
-    # throttle_user_creation) — this is a bulk importer, exactly the case that
-    # flag is meant for, matching Frappe's own Data Import.
-    prev_in_import = frappe.flags.in_import
-    frappe.flags.in_import = True
-    try:
-        user.insert(ignore_permissions=True)
-    finally:
-        frappe.flags.in_import = prev_in_import
-    return user.name
+	if frappe.db.exists("User", email):
+		return email
+	user = frappe.new_doc("User")
+	user.email = email
+	user.first_name = first_name or email.split("@")[0]
+	user.last_name = last_name
+	if gender and frappe.db.exists("Gender", gender):
+		user.gender = gender
+	user.user_type = user_type
+	user.send_welcome_email = 1 if send_welcome else 0
+	# Bypass the per-hour user-creation throttle (frappe.core...user.
+	# throttle_user_creation) — this is a bulk importer, exactly the case that
+	# flag is meant for, matching Frappe's own Data Import.
+	prev_in_import = frappe.flags.in_import
+	frappe.flags.in_import = True
+	try:
+		user.insert(ignore_permissions=True)
+	finally:
+		frappe.flags.in_import = prev_in_import
+	return user.name
 
 
 # `_apply_person_address` is gone. It wrote the address with `db.set_value`,
@@ -725,140 +684,138 @@ def _ensure_user(email, first_name, last_name, gender, user_type, send_welcome):
 
 
 def _get_or_create_student(person, email, first, mid, last, row, image):
-    existing = frappe.db.get_value("Student", {"person": person}) or (
-        frappe.db.get_value("Student", {"student_email_id": email}) if email else None
-    )
-    if existing:
-        return existing
-    student = frappe.new_doc("Student")
-    student.person = person
-    student.first_name = first or (email.split("@")[0] if email else "Student")
-    student.middle_name = mid
-    student.last_name = last
-    student.student_email_id = email
-    student.student_mobile_number = row.primary_mobile
-    if row.gender and frappe.db.exists("Gender", row.gender):
-        student.gender = row.gender
-    if row.country and frappe.db.exists("Country", row.country):
-        student.country = row.country
-    student.image = image
-    if row.date_of_birth:
-        student.date_of_birth = getdate(row.date_of_birth)
-    for f in ("address_line_1", "address_line_2", "city", "state", "pincode"):
-        val = row.get(f)
-        if val:
-            student.set(f, val)
-    student.joining_date = today()
-    student.previous_student_id = (row.previous_student_id or "").strip() or None
-    student.insert(ignore_permissions=True)
-    return student.name
+	existing = frappe.db.get_value("Student", {"person": person}) or (
+		frappe.db.get_value("Student", {"student_email_id": email}) if email else None
+	)
+	if existing:
+		return existing
+	student = frappe.new_doc("Student")
+	student.person = person
+	student.first_name = first or (email.split("@")[0] if email else "Student")
+	student.middle_name = mid
+	student.last_name = last
+	student.student_email_id = email
+	student.student_mobile_number = row.primary_mobile
+	if row.gender and frappe.db.exists("Gender", row.gender):
+		student.gender = row.gender
+	if row.country and frappe.db.exists("Country", row.country):
+		student.country = row.country
+	student.image = image
+	if row.date_of_birth:
+		student.date_of_birth = getdate(row.date_of_birth)
+	for f in ("address_line_1", "address_line_2", "city", "state", "pincode"):
+		val = row.get(f)
+		if val:
+			student.set(f, val)
+	student.joining_date = today()
+	student.previous_student_id = (row.previous_student_id or "").strip() or None
+	student.insert(ignore_permissions=True)
+	return student.name
 
 
 def _get_or_create_instructor(person, user, email, full_name, gender):
-    existing = frappe.db.get_value("Instructor", {"person": person}) or (
-        frappe.db.get_value("Instructor", {"user": user}) if user else None
-    )
-    if existing:
-        return existing
-    instructor = frappe.new_doc("Instructor")
-    instructor.instructor_name = full_name or email
-    instructor.user = user
-    instructor.prof_email = email
-    instructor.person = person
-    if gender and frappe.db.exists("Gender", gender):
-        instructor.gender = gender
-    # instructor_type left blank on purpose — setting a non-Volunteer type
-    # without an Employee throws (validate_payroll_link).
-    instructor.insert(ignore_permissions=True)
-    return instructor.name
+	existing = frappe.db.get_value("Instructor", {"person": person}) or (
+		frappe.db.get_value("Instructor", {"user": user}) if user else None
+	)
+	if existing:
+		return existing
+	instructor = frappe.new_doc("Instructor")
+	instructor.instructor_name = full_name or email
+	instructor.user = user
+	instructor.prof_email = email
+	instructor.person = person
+	if gender and frappe.db.exists("Gender", gender):
+		instructor.gender = gender
+	# instructor_type left blank on purpose — setting a non-Volunteer type
+	# without an Employee throws (validate_payroll_link).
+	instructor.insert(ignore_permissions=True)
+	return instructor.name
 
 
 def _get_or_create_alumni(person, user, email, full_name, row):
-    # Keyed on `person` first, then on the email as a *field*. This used to
-    # short-circuit on `exists("Alumni Profile", email)` because the docname
-    # was the email (ADR 068 phase 3 made it opaque) — after the rename that
-    # lookup silently never matches, and re-running an import would create
-    # duplicate profiles for anyone whose Person link predated the row.
-    existing = frappe.db.get_value("Alumni Profile", {"person": person})
-    if existing:
-        return existing
-    if email:
-        existing = frappe.db.get_value("Alumni Profile", {"email": email})
-        if existing:
-            return existing
-    alumni = frappe.new_doc("Alumni Profile")
-    alumni.user = user
-    alumni.email = email
-    alumni.full_name = full_name or (email.split("@")[0] if email else None)
-    alumni.person = person
-    # Completed programs are rows on the profile (ADR 069), so an imported
-    # alumnus starts with one. There is no enrollment behind it — they
-    # graduated before this system, or elsewhere.
-    if row.program_completed and frappe.db.exists("Program", row.program_completed):
-        alumni.append(
-            "graduations",
-            {
-                "program": row.program_completed,
-                "class_year": cint(row.class_year) if row.class_year else None,
-            },
-        )
-    alumni.insert(ignore_permissions=True)
-    return alumni.name
+	# Keyed on `person` first, then on the email as a *field*. This used to
+	# short-circuit on `exists("Alumni Profile", email)` because the docname
+	# was the email (ADR 068 phase 3 made it opaque) — after the rename that
+	# lookup silently never matches, and re-running an import would create
+	# duplicate profiles for anyone whose Person link predated the row.
+	existing = frappe.db.get_value("Alumni Profile", {"person": person})
+	if existing:
+		return existing
+	if email:
+		existing = frappe.db.get_value("Alumni Profile", {"email": email})
+		if existing:
+			return existing
+	alumni = frappe.new_doc("Alumni Profile")
+	alumni.user = user
+	alumni.email = email
+	alumni.full_name = full_name or (email.split("@")[0] if email else None)
+	alumni.person = person
+	# Completed programs are rows on the profile (ADR 069), so an imported
+	# alumnus starts with one. There is no enrollment behind it — they
+	# graduated before this system, or elsewhere.
+	if row.program_completed and frappe.db.exists("Program", row.program_completed):
+		alumni.append(
+			"graduations",
+			{
+				"program": row.program_completed,
+				"class_year": cint(row.class_year) if row.class_year else None,
+			},
+		)
+	alumni.insert(ignore_permissions=True)
+	return alumni.name
 
 
 def _get_or_create_donor(person, email, donor_name):
-    """The Donor for this Person. koinonia derives the Donor's name, email,
-    type and status from the Person (koinonia 0007a), so only the captured
-    values and the link are set here."""
-    meta = frappe.get_meta("Donor")
-    if person and meta.has_field("person"):
-        existing = frappe.db.get_value("Donor", {"person": person})
-        if existing:
-            return existing
-    existing = frappe.db.get_value("Donor", {"email": email}) if email else None
-    if existing:
-        return existing
-    donor = frappe.new_doc("Donor")
-    donor.donor_name = donor_name or (email.split("@")[0] if email else "Donor")
-    donor.email = email
-    if person and meta.has_field("person"):
-        donor.person = person
-    donor.insert(ignore_permissions=True)
-    return donor.name
+	"""The Donor for this Person. koinonia derives the Donor's name, email,
+	type and status from the Person (koinonia 0007a), so only the captured
+	values and the link are set here."""
+	meta = frappe.get_meta("Donor")
+	if person and meta.has_field("person"):
+		existing = frappe.db.get_value("Donor", {"person": person})
+		if existing:
+			return existing
+	existing = frappe.db.get_value("Donor", {"email": email}) if email else None
+	if existing:
+		return existing
+	donor = frappe.new_doc("Donor")
+	donor.donor_name = donor_name or (email.split("@")[0] if email else "Donor")
+	donor.email = email
+	if person and meta.has_field("person"):
+		donor.person = person
+	donor.insert(ignore_permissions=True)
+	return donor.name
 
 
 def commit_batch_async(batch_name):
-    """Background commit for large batches (see on_submit)."""
-    batch = frappe.get_doc("Person Import Batch", batch_name)
-    batch._commit_rows(commit_each=True)
-    summary = batch._store_summary()
-    batch._mark_committed()
-    frappe.db.commit()
-    frappe.publish_realtime(
-        "person_import_complete",
-        {
-            "batch": batch.name,
-            "summary": summary,
-            "failed": sum(1 for r in batch.rows if r.row_status != "Committed"),
-        },
-        user=batch.committed_by or batch.owner,
-    )
+	"""Background commit for large batches (see on_submit)."""
+	batch = frappe.get_doc("Person Import Batch", batch_name)
+	batch._commit_rows(commit_each=True)
+	summary = batch._store_summary()
+	batch._mark_committed()
+	frappe.db.commit()
+	frappe.publish_realtime(
+		"person_import_complete",
+		{
+			"batch": batch.name,
+			"summary": summary,
+			"failed": sum(1 for r in batch.rows if r.row_status != "Committed"),
+		},
+		user=batch.committed_by or batch.owner,
+	)
 
 
 def _mandated_columns():
-    """Details the school requires that an import row can actually carry.
+	"""Details the school requires that an import row can actually carry.
 
-    A `Person Import Row` is its own flat form, not a mirror of Person, so the
-    two sets only partly overlap. Warning about a detail the row has no column
-    for would be a warning nobody could clear.
-    """
-    if not frappe.db.table_exists("Mandatory Personal Field"):
-        return ()
-    from seminary.seminary.doctype.mandatory_personal_field import (
-        mandatory_personal_field as mpf,
-    )
+	A `Person Import Row` is its own flat form, not a mirror of Person, so the
+	two sets only partly overlap. Warning about a detail the row has no column
+	for would be a warning nobody could clear.
+	"""
+	if not frappe.db.table_exists("Mandatory Personal Field"):
+		return ()
+	from seminary.seminary.doctype.mandatory_personal_field import (
+		mandatory_personal_field as mpf,
+	)
 
-    meta = frappe.get_meta("Person Import Row")
-    return tuple(
-        field for field in sorted(mpf.required_fields()) if meta.get_field(field)
-    )
+	meta = frappe.get_meta("Person Import Row")
+	return tuple(field for field in sorted(mpf.required_fields()) if meta.get_field(field))

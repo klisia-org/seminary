@@ -13,12 +13,12 @@ from seminary.seminary.waitlist import recount
 
 
 def execute():
-    for name in frappe.get_all("Course Schedule", pluck="name"):
-        try:
-            recount(name)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"backfill_course_schedule_seat_caches failed: {name}",
-            )
-    frappe.db.commit()
+	for name in frappe.get_all("Course Schedule", pluck="name"):
+		try:
+			recount(name)
+		except Exception:
+			frappe.log_error(
+				frappe.get_traceback(),
+				f"backfill_course_schedule_seat_caches failed: {name}",
+			)
+	frappe.db.commit()

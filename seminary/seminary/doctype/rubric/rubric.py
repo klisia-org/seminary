@@ -14,87 +14,73 @@ from seminary.seminary import rubrics
 
 
 class Rubric(Document):
-    def validate(self):
-        self.set_context()
-        self.validate_scale()
-        self.validate_criteria()
-        self.validate_cells()
-        self.validate_locked()
+	def validate(self):
+		self.set_context()
+		self.validate_scale()
+		self.validate_criteria()
+		self.validate_cells()
+		self.validate_locked()
 
-    def set_context(self):
-        title_field = rubrics.ACTIVITIES.get(self.activity_doctype)
-        if not title_field:
-            frappe.throw(
-                _("Rubrics are only for assignments, discussions and oral activities.")
-            )
-        values = frappe.db.get_value(
-            self.activity_doctype, self.activity, [title_field, "course"], as_dict=True
-        )
-        if not values:
-            frappe.throw(
-                _("{0} {1} does not exist.").format(
-                    _(self.activity_doctype), self.activity
-                )
-            )
-        version = f" (v{self.version})" if (self.version or 1) > 1 else ""
-        self.activity_title = f"{values.get(title_field) or self.activity}{version}"
-        self.course = values.course
+	def set_context(self):
+		title_field = rubrics.ACTIVITIES.get(self.activity_doctype)
+		if not title_field:
+			frappe.throw(_("Rubrics are only for assignments, discussions and oral activities."))
+		values = frappe.db.get_value(
+			self.activity_doctype, self.activity, [title_field, "course"], as_dict=True
+		)
+		if not values:
+			frappe.throw(_("{0} {1} does not exist.").format(_(self.activity_doctype), self.activity))
+		version = f" (v{self.version})" if (self.version or 1) > 1 else ""
+		self.activity_title = f"{values.get(title_field) or self.activity}{version}"
+		self.course = values.course
 
-    def validate_scale(self):
-        if self.is_new() or self.has_value_changed("scale"):
-            if not frappe.db.get_value("Rubric Scale", self.scale, "enabled"):
-                frappe.throw(_("Rubric Scale {0} is disabled.").format(self.scale))
+	def validate_scale(self):
+		if self.is_new() or self.has_value_changed("scale"):
+			if not frappe.db.get_value("Rubric Scale", self.scale, "enabled"):
+				frappe.throw(_("Rubric Scale {0} is disabled.").format(self.scale))
 
-    def validate_criteria(self):
-        if not self.criteria:
-            frappe.throw(_("Add at least one criterion."))
-        seen = set()
-        for c in self.criteria:
-            if not (c.title or "").strip():
-                frappe.throw(_("Criterion {0} needs a title.").format(c.idx))
-            code = rubrics.slug(c.criterion_code or c.title)
-            base, n = code, 2
-            while code in seen:
-                code, n = f"{base}-{n}", n + 1
-            c.criterion_code = code
-            seen.add(code)
-            if flt(c.weight) < 0:
-                frappe.throw(
-                    _("Criterion {0}: a weight cannot be negative.").format(c.title)
-                )
-        fixed = sum(flt(c.weight) for c in self.criteria if flt(c.weight) > 0)
-        if fixed >= 100 and any(flt(c.weight) <= 0 for c in self.criteria):
-            frappe.throw(
-                _(
-                    "The fixed weights add up to {0}%, which leaves nothing for the criteria left blank. Lower one of them or clear it."
-                ).format(round(fixed, 2))
-            )
+	def validate_criteria(self):
+		if not self.criteria:
+			frappe.throw(_("Add at least one criterion."))
+		seen = set()
+		for c in self.criteria:
+			if not (c.title or "").strip():
+				frappe.throw(_("Criterion {0} needs a title.").format(c.idx))
+			code = rubrics.slug(c.criterion_code or c.title)
+			base, n = code, 2
+			while code in seen:
+				code, n = f"{base}-{n}", n + 1
+			c.criterion_code = code
+			seen.add(code)
+			if flt(c.weight) < 0:
+				frappe.throw(_("Criterion {0}: a weight cannot be negative.").format(c.title))
+		fixed = sum(flt(c.weight) for c in self.criteria if flt(c.weight) > 0)
+		if fixed >= 100 and any(flt(c.weight) <= 0 for c in self.criteria):
+			frappe.throw(
+				_(
+					"The fixed weights add up to {0}%, which leaves nothing for the criteria left blank. Lower one of them or clear it."
+				).format(round(fixed, 2))
+			)
 
-    def validate_cells(self):
-        codes = {c.criterion_code for c in self.criteria}
-        levels = {lv.label for lv in rubrics.scale_levels(self.scale)}
-        keep, seen = [], set()
-        for cell in self.cells:
-            key = (cell.criterion_code, cell.level)
-            if (
-                cell.criterion_code in codes
-                and cell.level in levels
-                and key not in seen
-            ):
-                keep.append(cell)
-                seen.add(key)
-        self.set("cells", keep)
+	def validate_cells(self):
+		codes = {c.criterion_code for c in self.criteria}
+		levels = {lv.label for lv in rubrics.scale_levels(self.scale)}
+		keep, seen = [], set()
+		for cell in self.cells:
+			key = (cell.criterion_code, cell.level)
+			if cell.criterion_code in codes and cell.level in levels and key not in seen:
+				keep.append(cell)
+				seen.add(key)
+		self.set("cells", keep)
 
-    def validate_locked(self):
-        if not self.is_new() and rubrics.is_locked(self.name):
-            frappe.throw(
-                _(
-                    "Students have been graded on this rubric, so it cannot change. Edit it from the activity to create a new version."
-                )
-            )
+	def validate_locked(self):
+		if not self.is_new() and rubrics.is_locked(self.name):
+			frappe.throw(
+				_(
+					"Students have been graded on this rubric, so it cannot change. Edit it from the activity to create a new version."
+				)
+			)
 
-    def on_trash(self):
-        if rubrics.is_locked(self.name):
-            frappe.throw(
-                _("Students have been graded on this rubric, so it cannot be deleted.")
-            )
+	def on_trash(self):
+		if rubrics.is_locked(self.name):
+			frappe.throw(_("Students have been graded on this rubric, so it cannot be deleted."))

@@ -20,205 +20,199 @@ PREFIX = "zzt.p006"
 
 
 def _make_user(role, tag):
-    email = "%s.%s.%s@example.test" % (PREFIX, tag, frappe.generate_hash(length=6))
-    doc = frappe.get_doc(
-        {
-            "doctype": "User",
-            "email": email,
-            "first_name": "P006",
-            "last_name": tag,
-            "send_welcome_email": 0,
-        }
-    )
-    doc.flags.no_welcome_mail = True
-    doc.insert(ignore_permissions=True)
-    if not frappe.db.exists("Role", role):
-        frappe.get_doc({"doctype": "Role", "role_name": role}).insert(
-            ignore_permissions=True
-        )
-    doc.add_roles(role)
-    return doc.name
+	email = "%s.%s.%s@example.test" % (PREFIX, tag, frappe.generate_hash(length=6))
+	doc = frappe.get_doc(
+		{
+			"doctype": "User",
+			"email": email,
+			"first_name": "P006",
+			"last_name": tag,
+			"send_welcome_email": 0,
+		}
+	)
+	doc.flags.no_welcome_mail = True
+	doc.insert(ignore_permissions=True)
+	if not frappe.db.exists("Role", role):
+		frappe.get_doc({"doctype": "Role", "role_name": role}).insert(ignore_permissions=True)
+	doc.add_roles(role)
+	return doc.name
 
 
 class TestP006ApiGates(IdentityCleanup, FrappeTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.student = _make_user("Student", "student")
-        cls.instructor = _make_user("Instructor", "instructor")
-        # p007: gates are course-scoped, so the "staff passes" half of every
-        # check runs as a Program Chair (a school role) rather than an
-        # Instructor with no sections.
-        cls.chair = _make_user("Program Chair", "chair")
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.student = _make_user("Student", "student")
+		cls.instructor = _make_user("Instructor", "instructor")
+		# p007: gates are course-scoped, so the "staff passes" half of every
+		# check runs as a Program Chair (a school role) rather than an
+		# Instructor with no sections.
+		cls.chair = _make_user("Program Chair", "chair")
 
-    def setUp(self):
-        frappe.set_user("Administrator")
+	def setUp(self):
+		frappe.set_user("Administrator")
 
-    def tearDown(self):
-        frappe.set_user("Administrator")
+	def tearDown(self):
+		frappe.set_user("Administrator")
 
-    # ------------------------------------------------------------ helpers
+	# ------------------------------------------------------------ helpers
 
-    def assert_gated(self, fn, *args, **kwargs):
-        """Student -> PermissionError; Instructor -> anything but."""
-        frappe.set_user(self.student)
-        with self.assertRaises(frappe.PermissionError):
-            fn(*args, **kwargs)
+	def assert_gated(self, fn, *args, **kwargs):
+		"""Student -> PermissionError; Instructor -> anything but."""
+		frappe.set_user(self.student)
+		with self.assertRaises(frappe.PermissionError):
+			fn(*args, **kwargs)
 
-        frappe.set_user(self.chair)
-        try:
-            fn(*args, **kwargs)
-        except frappe.PermissionError as e:
-            self.fail("Program Chair was refused by the gate: %s" % e)
-        except Exception:
-            # Missing fixtures are fine; only the gate is under test.
-            return
+		frappe.set_user(self.chair)
+		try:
+			fn(*args, **kwargs)
+		except frappe.PermissionError as e:
+			self.fail("Program Chair was refused by the gate: %s" % e)
+		except Exception:
+			# Missing fixtures are fine; only the gate is under test.
+			return
 
-    # ------------------------------------------------------------ F1 §2.1
+	# ------------------------------------------------------------ F1 §2.1
 
-    def test_delete_chapter_requires_outline_editor(self):
-        self.assert_gated(api.delete_chapter, "ZZT-no-such-chapter")
+	def test_delete_chapter_requires_outline_editor(self):
+		self.assert_gated(api.delete_chapter, "ZZT-no-such-chapter")
 
-    def test_delete_lesson_requires_outline_editor(self):
-        self.assert_gated(api.delete_lesson, "ZZT-no-such-lesson", "ZZT-no-such")
+	def test_delete_lesson_requires_outline_editor(self):
+		self.assert_gated(api.delete_lesson, "ZZT-no-such-lesson", "ZZT-no-such")
 
-    def test_update_lesson_index_requires_outline_editor(self):
-        self.assert_gated(
-            api.update_lesson_index, "ZZT-no-such-lesson", "ZZT-a", "ZZT-b", 1
-        )
+	def test_update_lesson_index_requires_outline_editor(self):
+		self.assert_gated(api.update_lesson_index, "ZZT-no-such-lesson", "ZZT-a", "ZZT-b", 1)
 
-    def test_the_disk_cleanup_path_is_gone(self):
-        # F1 hardened `delete_scorm_package`'s containment check against a
-        # chapter title that climbed out of public/scorm. p008 F8 removed the
-        # extraction that created such trees, its teardown patch deleted the
-        # trees themselves, and p009 S1 removed the cleanup and the three path
-        # fields it cross-checked against. Nothing builds a filesystem path from
-        # a chapter any more, which is the state F1 was defending.
-        self.assertFalse(hasattr(api, "delete_scorm_package"))
-        self.assertFalse(hasattr(api, "extract_package"))
+	def test_the_disk_cleanup_path_is_gone(self):
+		# F1 hardened `delete_scorm_package`'s containment check against a
+		# chapter title that climbed out of public/scorm. p008 F8 removed the
+		# extraction that created such trees, its teardown patch deleted the
+		# trees themselves, and p009 S1 removed the cleanup and the three path
+		# fields it cross-checked against. Nothing builds a filesystem path from
+		# a chapter any more, which is the state F1 was defending.
+		self.assertFalse(hasattr(api, "delete_scorm_package"))
+		self.assertFalse(hasattr(api, "extract_package"))
 
-    def test_scorm_fields_are_read_only(self):
-        meta = frappe.get_meta("Course Schedule Chapter")
-        self.assertEqual(meta.get_field("is_scorm_package").read_only, 1)
-        # The ref is written by the explode job, never by a request (p009 §2.3).
-        self.assertEqual(meta.get_field("scorm_package_ref").read_only, 1)
+	def test_scorm_fields_are_read_only(self):
+		meta = frappe.get_meta("Course Schedule Chapter")
+		self.assertEqual(meta.get_field("is_scorm_package").read_only, 1)
+		# The ref is written by the explode job, never by a request (p009 §2.3).
+		self.assertEqual(meta.get_field("scorm_package_ref").read_only, 1)
 
-    def test_the_dead_path_fields_are_gone(self):
-        meta = frappe.get_meta("Course Schedule Chapter")
-        for field in ("scorm_package_path", "manifest_file", "launch_file"):
-            self.assertIsNone(meta.get_field(field), field)
+	def test_the_dead_path_fields_are_gone(self):
+		meta = frappe.get_meta("Course Schedule Chapter")
+		for field in ("scorm_package_path", "manifest_file", "launch_file"):
+			self.assertIsNone(meta.get_field(field), field)
 
-    # ------------------------------------------------------------ F3 §2.3
+	# ------------------------------------------------------------ F3 §2.3
 
-    def test_enroll_in_section_not_whitelisted(self):
-        # Its submit_blocked flag skips the registrar's approval, so it must
-        # never be reachable over the wire (ADR 083 §2).
-        self.assertFalse(getattr(api.enroll_in_section, "is_whitelisted", False))
-        self.assertNotIn(api.enroll_in_section, frappe.whitelisted)
+	def test_enroll_in_section_not_whitelisted(self):
+		# Its submit_blocked flag skips the registrar's approval, so it must
+		# never be reachable over the wire (ADR 083 §2).
+		self.assertFalse(getattr(api.enroll_in_section, "is_whitelisted", False))
+		self.assertNotIn(api.enroll_in_section, frappe.whitelisted)
 
-    # ------------------------------------------------------------ F4 §2.4
+	# ------------------------------------------------------------ F4 §2.4
 
-    def test_mark_attendance_requires_grader(self):
-        self.assert_gated(
-            api.mark_attendance, "[]", "[]", course_schedule="ZZT-no-such-cs"
-        )
+	def test_mark_attendance_requires_grader(self):
+		self.assert_gated(api.mark_attendance, "[]", "[]", course_schedule="ZZT-no-such-cs")
 
-    # ------------------------------------------------------------ F7 §2.7
+	# ------------------------------------------------------------ F7 §2.7
 
-    def test_save_discussion_submission_grade_requires_grader(self):
-        self.assert_gated(api.save_discussion_submission_grade, "ZZT-no-such", 1)
+	def test_save_discussion_submission_grade_requires_grader(self):
+		self.assert_gated(api.save_discussion_submission_grade, "ZZT-no-such", 1)
 
-    def test_grade_thisstudent_requires_grader(self):
-        self.assert_gated(api.grade_thisstudent, "ZZT-no-such-roster")
+	def test_grade_thisstudent_requires_grader(self):
+		self.assert_gated(api.grade_thisstudent, "ZZT-no-such-roster")
 
-    def test_fgrade_this_std_requires_grader(self):
-        self.assert_gated(api.fgrade_this_std, "ZZT-no-such-roster")
+	def test_fgrade_this_std_requires_grader(self):
+		self.assert_gated(api.fgrade_this_std, "ZZT-no-such-roster")
 
-    def test_internal_grade_functions_exist_and_are_not_whitelisted(self):
-        self.assertTrue(callable(api._grade_thisstudent))
-        self.assertTrue(callable(api._fgrade_this_std))
-        self.assertNotIn(api._grade_thisstudent, frappe.whitelisted)
-        self.assertNotIn(api._fgrade_this_std, frappe.whitelisted)
+	def test_internal_grade_functions_exist_and_are_not_whitelisted(self):
+		self.assertTrue(callable(api._grade_thisstudent))
+		self.assertTrue(callable(api._fgrade_this_std))
+		self.assertNotIn(api._grade_thisstudent, frappe.whitelisted)
+		self.assertNotIn(api._fgrade_this_std, frappe.whitelisted)
 
-    def test_save_course_assessment_requires_outline_editor(self):
-        self.assert_gated(api.save_course_assessment, "ZZT-no-such-cs", "[]")
+	def test_save_course_assessment_requires_outline_editor(self):
+		self.assert_gated(api.save_course_assessment, "ZZT-no-such-cs", "[]")
 
-    def test_insert_cs_assessment_requires_outline_editor(self):
-        self.assert_gated(api.insert_cs_assessment, {"title": "x"})
+	def test_insert_cs_assessment_requires_outline_editor(self):
+		self.assert_gated(api.insert_cs_assessment, {"title": "x"})
 
-    # ------------------------------------------------------------ F9 §2.9
+	# ------------------------------------------------------------ F9 §2.9
 
-    def test_get_gradebook_requires_grader(self):
-        self.assert_gated(utils.get_gradebook, "ZZT-no-such-cs")
+	def test_get_gradebook_requires_grader(self):
+		self.assert_gated(utils.get_gradebook, "ZZT-no-such-cs")
 
-    def test_get_all_questions_details_is_parameterised(self):
-        frappe.set_user(self.instructor)
-        self.assertEqual(utils.get_all_questions_details(["x') OR 1=1 -- "]), [])
-        self.assertEqual(utils.get_all_questions_details([]), [])
-        self.assertEqual(utils.get_all_questions_details('["x\') OR 1=1 -- "]'), [])
+	def test_get_all_questions_details_is_parameterised(self):
+		frappe.set_user(self.instructor)
+		self.assertEqual(utils.get_all_questions_details(["x') OR 1=1 -- "]), [])
+		self.assertEqual(utils.get_all_questions_details([]), [])
+		self.assertEqual(utils.get_all_questions_details('["x\') OR 1=1 -- "]'), [])
 
-    # ------------------------------------------------------------ F11 §2.11
+	# ------------------------------------------------------------ F11 §2.11
 
-    def test_utils_endpoints_no_longer_allow_guest(self):
-        # p007 §2.7: the has_*_role helpers are server-side only now.
-        for fn in (
-            utils.has_student_role,
-            utils.has_course_moderator_role,
-            utils.has_course_instructor_role,
-            utils.has_course_evaluator_role,
-        ):
-            self.assertNotIn(fn, frappe.whitelisted, fn.__name__)
-        for fn in (
-            utils.get_courses_for_student,
-            utils.get_course_details,
-            utils.get_courses,
-            utils.get_course_outline,
-            utils.get_course_title,
-            utils.get_instructors,
-            utils.get_instructor,
-        ):
-            self.assertIn(fn, frappe.whitelisted, fn.__name__)
-            self.assertNotIn(fn, frappe.guest_methods, fn.__name__)
+	def test_utils_endpoints_no_longer_allow_guest(self):
+		# p007 §2.7: the has_*_role helpers are server-side only now.
+		for fn in (
+			utils.has_student_role,
+			utils.has_course_moderator_role,
+			utils.has_course_instructor_role,
+			utils.has_course_evaluator_role,
+		):
+			self.assertNotIn(fn, frappe.whitelisted, fn.__name__)
+		for fn in (
+			utils.get_courses_for_student,
+			utils.get_course_details,
+			utils.get_courses,
+			utils.get_course_outline,
+			utils.get_course_title,
+			utils.get_instructors,
+			utils.get_instructor,
+		):
+			self.assertIn(fn, frappe.whitelisted, fn.__name__)
+			self.assertNotIn(fn, frappe.guest_methods, fn.__name__)
 
-    def test_has_role_ignores_member_for_non_staff(self):
-        # A student asking about the instructor's roles gets their own answer.
-        frappe.set_user(self.student)
-        self.assertFalse(utils.has_course_evaluator_role(member=self.instructor))
-        self.assertTrue(utils.has_student_role(member=self.instructor))
-        # Staff may still ask about another user (a school role; an Instructor
-        # with no sections is section tier and reads as a student, p007 §2.8).
-        frappe.set_user(self.chair)
-        self.assertTrue(utils.has_student_role(member=self.student))
+	def test_has_role_ignores_member_for_non_staff(self):
+		# A student asking about the instructor's roles gets their own answer.
+		frappe.set_user(self.student)
+		self.assertFalse(utils.has_course_evaluator_role(member=self.instructor))
+		self.assertTrue(utils.has_student_role(member=self.instructor))
+		# Staff may still ask about another user (a school role; an Instructor
+		# with no sections is section tier and reads as a student, p007 §2.8).
+		frappe.set_user(self.chair)
+		self.assertTrue(utils.has_student_role(member=self.student))
 
-    def test_get_courses_for_student_forces_session_user(self):
-        frappe.set_user(self.student)
-        # Asking for someone else's list must not raise and must be scoped to
-        # the caller; with no enrollments it is simply empty.
-        self.assertEqual(utils.get_courses_for_student(self.instructor), [])
+	def test_get_courses_for_student_forces_session_user(self):
+		frappe.set_user(self.student)
+		# Asking for someone else's list must not raise and must be scoped to
+		# the caller; with no enrollments it is simply empty.
+		self.assertEqual(utils.get_courses_for_student(self.instructor), [])
 
-    def test_get_courses_forces_published_for_non_staff(self):
-        frappe.set_user(self.student)
-        # Would list unpublished sections before p006; now yields published only.
-        rows = utils.get_courses(filters={"published": 0}, page_length=5)
-        self.assertTrue(all(r.get("published", 1) for r in rows))
+	def test_get_courses_forces_published_for_non_staff(self):
+		frappe.set_user(self.student)
+		# Would list unpublished sections before p006; now yields published only.
+		rows = utils.get_courses(filters={"published": 0}, page_length=5)
+		self.assertTrue(all(r.get("published", 1) for r in rows))
 
-    def test_get_application_payment_url_requires_key_for_non_staff(self):
-        frappe.set_user(self.student)
-        with self.assertRaises(frappe.PermissionError):
-            api.get_application_payment_url("ZZT-no-such-applicant", key=None)
+	def test_get_application_payment_url_requires_key_for_non_staff(self):
+		frappe.set_user(self.student)
+		with self.assertRaises(frappe.PermissionError):
+			api.get_application_payment_url("ZZT-no-such-applicant", key=None)
 
-    # ------------------------------------------------------------ F14 §2.14
+	# ------------------------------------------------------------ F14 §2.14
 
-    def test_course_enroll_refuses_other_students_enrollment(self):
-        frappe.set_user(self.student)
-        with self.assertRaises(frappe.PermissionError):
-            api.course_enroll("ZZT-no-such-pe", "ZZT-no-such-cs")
+	def test_course_enroll_refuses_other_students_enrollment(self):
+		frappe.set_user(self.student)
+		with self.assertRaises(frappe.PermissionError):
+			api.course_enroll("ZZT-no-such-pe", "ZZT-no-such-cs")
 
-    def test_course_enroll_staff_passes_gate(self):
-        frappe.set_user(self.chair)
-        try:
-            api.course_enroll("ZZT-no-such-pe", "ZZT-no-such-cs")
-        except frappe.PermissionError as e:
-            self.fail("Program Chair was refused by the gate: %s" % e)
-        except Exception:
-            return  # missing fixtures are fine; only the gate is under test
+	def test_course_enroll_staff_passes_gate(self):
+		frappe.set_user(self.chair)
+		try:
+			api.course_enroll("ZZT-no-such-pe", "ZZT-no-such-cs")
+		except frappe.PermissionError as e:
+			self.fail("Program Chair was refused by the gate: %s" % e)
+		except Exception:
+			return  # missing fixtures are fine; only the gate is under test

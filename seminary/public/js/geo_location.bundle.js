@@ -46,7 +46,9 @@
 				// A rooftop and a city centroid are not the same answer, and a
 				// distance ranking built on the latter is noise.
 				d.geocode_precision
-					? `<span class="text-muted small" style="margin-left:8px">${esc(d.geocode_precision)}</span>`
+					? `<span class="text-muted small" style="margin-left:8px">${esc(
+							d.geocode_precision
+					  )}</span>`
 					: ""
 			);
 		} else if (d.geo_status === "Unresolvable") {
@@ -65,7 +67,9 @@
 
 		if (when) {
 			parts.push(
-				`<div class="text-muted small" style="margin-top:6px">${__("Last checked")}: ${esc(when)}</div>`
+				`<div class="text-muted small" style="margin-top:6px">${__("Last checked")}: ${esc(
+					when
+				)}</div>`
 			);
 		}
 

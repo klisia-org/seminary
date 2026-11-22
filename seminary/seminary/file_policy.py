@@ -38,10 +38,10 @@ from frappe import _
 from frappe.utils import cint
 
 from seminary.storage.backend import (
-    FILE_URL_RE,
-    URL_PREFIX,
-    is_offloaded,
-    normalize_file_url,
+	FILE_URL_RE,
+	URL_PREFIX,
+	is_offloaded,
+	normalize_file_url,
 )
 
 PUBLISHER_ROLES = {"System Manager", "Website Manager"}
@@ -51,17 +51,17 @@ PUBLISHER_ROLES = {"System Manager", "Website Manager"}
 
 
 def _program_published(name) -> bool:
-    return bool(frappe.db.get_value("Program", name, "published"))
+	return bool(frappe.db.get_value("Program", name, "published"))
 
 
 def person_photo_is_public(person) -> bool:
-    """The "Our Team" rule (ADR 061, `faculty.get_unit_roster(public=True)`):
-    not blocked from the web, and an active member of a unit that publishes."""
-    if not person or frappe.db.get_value("Person", person, "block_from_web"):
-        return False
-    return bool(
-        frappe.db.sql(
-            """
+	"""The "Our Team" rule (ADR 061, `faculty.get_unit_roster(public=True)`):
+	not blocked from the web, and an active member of a unit that publishes."""
+	if not person or frappe.db.get_value("Person", person, "block_from_web"):
+		return False
+	return bool(
+		frappe.db.sql(
+			"""
             select 1
             from `tabAcademic Unit Membership` m
             join `tabAcademic Unit` u on u.name = m.unit
@@ -69,137 +69,132 @@ def person_photo_is_public(person) -> bool:
               and u.publish_on_web = 1 and u.is_active = 1
             limit 1
             """,
-            person,
-        )
-    )
+			person,
+		)
+	)
 
 
 def _instructor_photo_is_public(instructor) -> bool:
-    return person_photo_is_public(
-        frappe.db.get_value("Instructor", instructor, "person")
-    )
+	return person_photo_is_public(frappe.db.get_value("Instructor", instructor, "person"))
 
 
 # ---------------------------------------------------------------------- registries
 
 #: (doctype, fieldname) -> None | predicate(host docname). See the module docstring.
 PUBLIC_FILE_FIELDS = {
-    # Named, never `(doctype, "*")` -- p008 F15 / p005a A02-6. A wildcard row
-    # combined with `_attached_field`'s fallback to the *client-supplied*
-    # `attached_to_field` made these a publish primitive: `upload_file` with
-    # `is_private=0, doctype=Seminary Settings, fieldname=anything` matched the
-    # wildcard and landed world-readable in /files/. nginx forces an attachment
-    # for .html and .svg, so the sharp edge was .xhtml, .svgz and .mhtml, which
-    # it does not cover.
-    ("Website Branding", "website_logo"): None,
-    ("Website Branding", "favicon"): None,
-    ("Website Branding", "hero_image"): None,
-    ("Seminary Settings", "logo_portal"): None,
-    ("Seminary Settings", "logo_dark"): None,
-    ("Seminary Settings", "website_logo"): None,
-    ("Seminary Settings", "alternative_payment_instructions"): None,
-    ("Seminary Settings", "calendar_instructions"): None,
-    ("Letter Head", "image"): None,
-    ("Letter Head", "footer_image"): None,
-    ("Letter Head", "content"): None,
-    ("Letter Head", "footer"): None,
-    ("Partner Organization", "image"): None,
-    ("Program", "hero_image"): _program_published,
-    ("Program", "image_blurb"): _program_published,
-    # Rich text shown on /programs: images pasted into it follow the program.
-    ("Program", "blurb"): _program_published,
-    ("Program", "program_description"): _program_published,
-    ("Program", "program_requirements"): _program_published,
-    ("Program", "duration_txt"): _program_published,
-    ("Person", "image"): person_photo_is_public,
-    ("Instructor", "profileimage"): _instructor_photo_is_public,
+	# Named, never `(doctype, "*")` -- p008 F15 / p005a A02-6. A wildcard row
+	# combined with `_attached_field`'s fallback to the *client-supplied*
+	# `attached_to_field` made these a publish primitive: `upload_file` with
+	# `is_private=0, doctype=Seminary Settings, fieldname=anything` matched the
+	# wildcard and landed world-readable in /files/. nginx forces an attachment
+	# for .html and .svg, so the sharp edge was .xhtml, .svgz and .mhtml, which
+	# it does not cover.
+	("Website Branding", "website_logo"): None,
+	("Website Branding", "favicon"): None,
+	("Website Branding", "hero_image"): None,
+	("Seminary Settings", "logo_portal"): None,
+	("Seminary Settings", "logo_dark"): None,
+	("Seminary Settings", "website_logo"): None,
+	("Seminary Settings", "alternative_payment_instructions"): None,
+	("Seminary Settings", "calendar_instructions"): None,
+	("Letter Head", "image"): None,
+	("Letter Head", "footer_image"): None,
+	("Letter Head", "content"): None,
+	("Letter Head", "footer"): None,
+	("Partner Organization", "image"): None,
+	("Program", "hero_image"): _program_published,
+	("Program", "image_blurb"): _program_published,
+	# Rich text shown on /programs: images pasted into it follow the program.
+	("Program", "blurb"): _program_published,
+	("Program", "program_description"): _program_published,
+	("Program", "program_requirements"): _program_published,
+	("Program", "duration_txt"): _program_published,
+	("Person", "image"): person_photo_is_public,
+	("Instructor", "profileimage"): _instructor_photo_is_public,
 }
 
 #: Private, but any signed-in user may read them: an avatar is shown to every
 #: classmate, and a classmate cannot read the Person it hangs on.
 INTRANET_FILE_FIELDS = {
-    ("Person", "image"),
-    ("Student", "image"),
-    ("Instructor", "profileimage"),
-    ("Alumni Profile", "image"),
-    ("User", "user_image"),
+	("Person", "image"),
+	("Student", "image"),
+	("Instructor", "profileimage"),
+	("Alumni Profile", "image"),
+	("User", "user_image"),
 }
 
 #: Fields that carry a copy of another field's URL. A privacy flip renames a disk
 #: file (`/files/x` <-> `/private/files/x`); Frappe rewrites the host field only.
 URL_MIRRORS = (
-    ("Person", "image"),
-    ("Student", "image"),
-    ("Instructor", "profileimage"),
-    ("Alumni Profile", "image"),
-    ("User", "user_image"),
+	("Person", "image"),
+	("Student", "image"),
+	("Instructor", "profileimage"),
+	("Alumni Profile", "image"),
+	("User", "user_image"),
 )
 
 
 def _self_host(doc):
-    return doc.doctype, doc.name
+	return doc.doctype, doc.name
 
 
 #: Doctypes whose *content* embeds file URLs, and the document those files
 #: should borrow their read permission from.
 EMBEDDED_FILE_FIELDS = {
-    "Course Lesson": {
-        "fields": ("content", "body", "instructor_content", "instructor_notes"),
-        "children": (),
-        "host": lambda doc: ("Course Schedule", doc.get("course_sc")),
-    },
-    # A graded discussion is read by the whole section, attachments included,
-    # while the submission itself is readable by its author and the staff only.
-    "Discussion Submission": {
-        "fields": ("original_post", "original_attachment"),
-        "children": (("replies", "reply"), ("replies", "reply_attach")),
-        "host": lambda doc: ("Course Schedule", doc.get("coursesc")),
-    },
-    "Exam Submission": {
-        "fields": (),
-        "children": (("result", "answer"),),
-        "host": _self_host,
-    },
-    "Quiz Submission": {
-        "fields": (),
-        "children": (("result", "answer"),),
-        "host": _self_host,
-    },
+	"Course Lesson": {
+		"fields": ("content", "body", "instructor_content", "instructor_notes"),
+		"children": (),
+		"host": lambda doc: ("Course Schedule", doc.get("course_sc")),
+	},
+	# A graded discussion is read by the whole section, attachments included,
+	# while the submission itself is readable by its author and the staff only.
+	"Discussion Submission": {
+		"fields": ("original_post", "original_attachment"),
+		"children": (("replies", "reply"), ("replies", "reply_attach")),
+		"host": lambda doc: ("Course Schedule", doc.get("coursesc")),
+	},
+	"Exam Submission": {
+		"fields": (),
+		"children": (("result", "answer"),),
+		"host": _self_host,
+	},
+	"Quiz Submission": {
+		"fields": (),
+		"children": (("result", "answer"),),
+		"host": _self_host,
+	},
 }
 
 
 def _membership_targets(doc):
-    out = []
-    if doc.get("person"):
-        out.append(("Person", doc.person))
-    if doc.get("instructor"):
-        out.append(("Instructor", doc.instructor))
-    return out
+	out = []
+	if doc.get("person"):
+		out.append(("Person", doc.person))
+	if doc.get("instructor"):
+		out.append(("Instructor", doc.instructor))
+	return out
 
 
 def _unit_targets(doc):
-    out = []
-    for m in frappe.get_all(
-        "Academic Unit Membership",
-        filters={"unit": doc.name},
-        fields=["person", "instructor"],
-    ):
-        out.extend(_membership_targets(m))
-    return out
+	out = []
+	for m in frappe.get_all(
+		"Academic Unit Membership",
+		filters={"unit": doc.name},
+		fields=["person", "instructor"],
+	):
+		out.extend(_membership_targets(m))
+	return out
 
 
 def _person_targets(doc):
-    return [
-        ("Instructor", n)
-        for n in frappe.get_all("Instructor", {"person": doc.name}, pluck="name")
-    ]
+	return [("Instructor", n) for n in frappe.get_all("Instructor", {"person": doc.name}, pluck="name")]
 
 
 #: A save of the key doctype can change the predicate of other hosts.
 DEPENDENTS = {
-    "Academic Unit": _unit_targets,
-    "Academic Unit Membership": _membership_targets,
-    "Person": _person_targets,
+	"Academic Unit": _unit_targets,
+	"Academic Unit Membership": _membership_targets,
+	"Person": _person_targets,
 }
 
 
@@ -207,342 +202,334 @@ DEPENDENTS = {
 
 
 def _host_doctypes() -> set:
-    return {dt for dt, _f in PUBLIC_FILE_FIELDS}
+	return {dt for dt, _f in PUBLIC_FILE_FIELDS}
 
 
 def _registered(doctype, fieldname):
-    """(found, predicate) for a File attached to doctype.fieldname.
+	"""(found, predicate) for a File attached to doctype.fieldname.
 
-    Exact fieldnames only. The `(doctype, "*")` form is gone (p008 F15): with
-    `_attached_field` falling back to a client-supplied value, a wildcard row
-    meant "any field anybody names on this doctype", which is not a policy.
-    """
-    if not fieldname:
-        return False, None
-    key = (doctype, fieldname)
-    if key in PUBLIC_FILE_FIELDS:
-        return True, PUBLIC_FILE_FIELDS[key]
-    return False, None
+	Exact fieldnames only. The `(doctype, "*")` form is gone (p008 F15): with
+	`_attached_field` falling back to a client-supplied value, a wildcard row
+	meant "any field anybody names on this doctype", which is not a policy.
+	"""
+	if not fieldname:
+		return False, None
+	key = (doctype, fieldname)
+	if key in PUBLIC_FILE_FIELDS:
+		return True, PUBLIC_FILE_FIELDS[key]
+	return False, None
 
 
 def _is_seminary_doctype(doctype) -> bool:
-    def _lookup():
-        module = frappe.db.get_value("DocType", doctype, "module")
-        return (
-            bool(module)
-            and frappe.db.get_value("Module Def", module, "app_name") == "seminary"
-        )
+	def _lookup():
+		module = frappe.db.get_value("DocType", doctype, "module")
+		return bool(module) and frappe.db.get_value("Module Def", module, "app_name") == "seminary"
 
-    return frappe.cache.hget("seminary_file_policy_app", doctype, _lookup)
+	return frappe.cache.hget("seminary_file_policy_app", doctype, _lookup)
 
 
 def _attached_field(file_doc):
-    """The host field a File sits on, **confirmed against the host document**.
+	"""The host field a File sits on, **confirmed against the host document**.
 
-    `attached_to_field` is supplied by the uploader and is never checked by
-    Frappe against what the host field actually holds, so it cannot be trusted
-    on its own (p008 F15). It is accepted only when it is a field this registry
-    knows AND the host really does hold this URL there; otherwise the field is
-    resolved by looking for the URL among the registered fields, and a File that
-    matches none of them has no registered field at all.
+	`attached_to_field` is supplied by the uploader and is never checked by
+	Frappe against what the host field actually holds, so it cannot be trusted
+	on its own (p008 F15). It is accepted only when it is a field this registry
+	knows AND the host really does hold this URL there; otherwise the field is
+	resolved by looking for the URL among the registered fields, and a File that
+	matches none of them has no registered field at all.
 
-    At `before_insert` the host provably cannot hold the URL yet -- the File row
-    is what produces it -- so the claim is unverifiable at that moment and
-    `may_be_public` refuses. `sync_public_state` runs on the host's `on_update`,
-    after the field holds the value, and publishes it then.
-    """
-    dt, dn = file_doc.attached_to_doctype, file_doc.attached_to_name
-    if not (dt and dn and file_doc.file_url):
-        return None
-    claimed = file_doc.attached_to_field
-    if claimed and (dt, claimed) in PUBLIC_FILE_FIELDS:
-        try:
-            if _field_holds_url(dt, dn, claimed, file_doc.file_url):
-                return claimed
-        except Exception:
-            frappe.clear_last_message()
-    for field in [f for d, f in PUBLIC_FILE_FIELDS if d == dt]:
-        try:
-            if _field_holds_url(dt, dn, field, file_doc.file_url):
-                return field
-        except Exception:
-            frappe.clear_last_message()
-    return None
+	At `before_insert` the host provably cannot hold the URL yet -- the File row
+	is what produces it -- so the claim is unverifiable at that moment and
+	`may_be_public` refuses. `sync_public_state` runs on the host's `on_update`,
+	after the field holds the value, and publishes it then.
+	"""
+	dt, dn = file_doc.attached_to_doctype, file_doc.attached_to_name
+	if not (dt and dn and file_doc.file_url):
+		return None
+	claimed = file_doc.attached_to_field
+	if claimed and (dt, claimed) in PUBLIC_FILE_FIELDS:
+		try:
+			if _field_holds_url(dt, dn, claimed, file_doc.file_url):
+				return claimed
+		except Exception:
+			frappe.clear_last_message()
+	for field in [f for d, f in PUBLIC_FILE_FIELDS if d == dt]:
+		try:
+			if _field_holds_url(dt, dn, field, file_doc.file_url):
+				return field
+		except Exception:
+			frappe.clear_last_message()
+	return None
 
 
 def _field_holds_url(doctype, docname, fieldname, url) -> bool:
-    """True when the host field really carries this URL -- as the whole value
-    (an Attach field) or embedded in it (rich text with a pasted image)."""
-    value = frappe.db.get_value(doctype, docname, fieldname)
-    if not value:
-        return False
-    if value == url:
-        return True
-    return isinstance(value, str) and url in value
+	"""True when the host field really carries this URL -- as the whole value
+	(an Attach field) or embedded in it (rich text with a pasted image)."""
+	value = frappe.db.get_value(doctype, docname, fieldname)
+	if not value:
+		return False
+	if value == url:
+		return True
+	return isinstance(value, str) and url in value
 
 
 def may_be_public(file_doc) -> bool:
-    if frappe.flags.seminary_public_file:
-        return True
-    dt, dn = file_doc.attached_to_doctype, file_doc.attached_to_name
-    if dt and dn:
-        found, predicate = _registered(dt, _attached_field(file_doc))
-        if found:
-            return predicate is None or bool(predicate(dn))
-        # A host this registry knows, but a field it could not confirm: refuse.
-        # `Letter Head` is a Frappe doctype, so without this it fell through to
-        # the uploader's role and the claimed fieldname was enough (p008 F15).
-        # At `before_insert` nothing is confirmable -- the host cannot hold a URL
-        # the File row has not produced yet -- so the upload lands private and
-        # `sync_public_state` publishes it on the host's next save.
-        if dt in _host_doctypes() or _is_seminary_doctype(dt):
-            return False
-    return bool(PUBLISHER_ROLES & set(frappe.get_roles()))
+	if frappe.flags.seminary_public_file:
+		return True
+	dt, dn = file_doc.attached_to_doctype, file_doc.attached_to_name
+	if dt and dn:
+		found, predicate = _registered(dt, _attached_field(file_doc))
+		if found:
+			return predicate is None or bool(predicate(dn))
+		# A host this registry knows, but a field it could not confirm: refuse.
+		# `Letter Head` is a Frappe doctype, so without this it fell through to
+		# the uploader's role and the claimed fieldname was enough (p008 F15).
+		# At `before_insert` nothing is confirmable -- the host cannot hold a URL
+		# the File row has not produced yet -- so the upload lands private and
+		# `sync_public_state` publishes it on the host's next save.
+		if dt in _host_doctypes() or _is_seminary_doctype(dt):
+			return False
+	return bool(PUBLISHER_ROLES & set(frappe.get_roles()))
 
 
 def may_be_public_for_host(file_doc) -> bool:
-    """`may_be_public` without the uploader's role: what the *host* allows. A
-    file on a seminary document is public only through the registry; a file on
-    anything else (a Web Page, a Blog Post) is none of this policy's business."""
-    dt, dn = file_doc.attached_to_doctype, file_doc.attached_to_name
-    if not (dt and dn):
-        return True
-    found, predicate = _registered(dt, _attached_field(file_doc))
-    if found:
-        return predicate is None or bool(predicate(dn))
-    return not _is_seminary_doctype(dt)
+	"""`may_be_public` without the uploader's role: what the *host* allows. A
+	file on a seminary document is public only through the registry; a file on
+	anything else (a Web Page, a Blog Post) is none of this policy's business."""
+	dt, dn = file_doc.attached_to_doctype, file_doc.attached_to_name
+	if not (dt and dn):
+		return True
+	found, predicate = _registered(dt, _attached_field(file_doc))
+	if found:
+		return predicate is None or bool(predicate(dn))
+	return not _is_seminary_doctype(dt)
 
 
 def apply_on_insert(file_doc):
-    """`SeminaryFile.before_insert`, ahead of Frappe writing the bytes: an
-    upload that may not be public is stored private. Silent on purpose — every
-    uploader in the SPA and on Desk keeps working, the file just lands where
-    only its readers reach it."""
-    if file_doc.is_folder or cint(file_doc.is_private):
-        return
-    if (file_doc.file_url or "").startswith(("http://", "https://")):
-        return  # a link, not an upload
-    if file_doc.file_url and not file_doc.get("content"):
-        # A new row for bytes already stored (Frappe adds one when a record's
-        # Attach field names an existing file): the URL already says where they
-        # are, and marking the row private would only fail Frappe's path check.
-        return
-    if not may_be_public(file_doc):
-        file_doc.is_private = 1
+	"""`SeminaryFile.before_insert`, ahead of Frappe writing the bytes: an
+	upload that may not be public is stored private. Silent on purpose — every
+	uploader in the SPA and on Desk keeps working, the file just lands where
+	only its readers reach it."""
+	if file_doc.is_folder or cint(file_doc.is_private):
+		return
+	if (file_doc.file_url or "").startswith(("http://", "https://")):
+		return  # a link, not an upload
+	if file_doc.file_url and not file_doc.get("content"):
+		# A new row for bytes already stored (Frappe adds one when a record's
+		# Attach field names an existing file): the URL already says where they
+		# are, and marking the row private would only fail Frappe's path check.
+		return
+	if not may_be_public(file_doc):
+		file_doc.is_private = 1
 
 
 def check_on_save(file_doc):
-    """`SeminaryFile.validate`, ahead of Frappe moving the bytes: an existing
-    private file is made public only by someone who may."""
-    if file_doc.is_new() or file_doc.is_folder or cint(file_doc.is_private):
-        return
-    if not file_doc.has_value_changed("is_private"):
-        return
-    if not may_be_public(file_doc):
-        frappe.throw(
-            _(
-                "This file cannot be made public. Public files are readable by "
-                "anyone on the internet; ask a Website Manager."
-            ),
-            frappe.PermissionError,
-        )
+	"""`SeminaryFile.validate`, ahead of Frappe moving the bytes: an existing
+	private file is made public only by someone who may."""
+	if file_doc.is_new() or file_doc.is_folder or cint(file_doc.is_private):
+		return
+	if not file_doc.has_value_changed("is_private"):
+		return
+	if not may_be_public(file_doc):
+		frappe.throw(
+			_(
+				"This file cannot be made public. Public files are readable by "
+				"anyone on the internet; ask a Website Manager."
+			),
+			frappe.PermissionError,
+		)
 
 
 def intranet_readable(file_doc, user=None) -> bool:
-    user = user or frappe.session.user
-    if user == "Guest":
-        return False
-    dt = file_doc.attached_to_doctype
-    if not dt:
-        return False
-    field = file_doc.attached_to_field
-    if field:
-        return (dt, field) in INTRANET_FILE_FIELDS
-    # Row without a fieldname: an image attached to one of the avatar hosts.
-    for d, f in INTRANET_FILE_FIELDS:
-        if d != dt:
-            continue
-        try:
-            value = frappe.db.get_value(dt, file_doc.attached_to_name, f)
-        except Exception:
-            frappe.clear_last_message()
-            continue
-        if value and value == file_doc.file_url:
-            return True
-    return False
+	user = user or frappe.session.user
+	if user == "Guest":
+		return False
+	dt = file_doc.attached_to_doctype
+	if not dt:
+		return False
+	field = file_doc.attached_to_field
+	if field:
+		return (dt, field) in INTRANET_FILE_FIELDS
+	# Row without a fieldname: an image attached to one of the avatar hosts.
+	for d, f in INTRANET_FILE_FIELDS:
+		if d != dt:
+			continue
+		try:
+			value = frappe.db.get_value(dt, file_doc.attached_to_name, f)
+		except Exception:
+			frappe.clear_last_message()
+			continue
+		if value and value == file_doc.file_url:
+			return True
+	return False
 
 
 # ------------------------------------------------------------------ privacy flips
 
 
 def _rows_for(url):
-    return frappe.get_all(
-        "File",
-        filters={"file_url": url, "is_folder": 0},
-        fields=[
-            "name",
-            "is_private",
-            "owner",
-            "attached_to_doctype",
-            "attached_to_name",
-            "attached_to_field",
-        ],
-    )
+	return frappe.get_all(
+		"File",
+		filters={"file_url": url, "is_folder": 0},
+		fields=[
+			"name",
+			"is_private",
+			"owner",
+			"attached_to_doctype",
+			"attached_to_name",
+			"attached_to_field",
+		],
+	)
 
 
 def _replace_in_mirrors(old, new):
-    for doctype, field in URL_MIRRORS:
-        if not frappe.db.has_column(doctype, field):
-            continue
-        for name in frappe.get_all(doctype, filters={field: old}, pluck="name"):
-            frappe.db.set_value(doctype, name, field, new, update_modified=False)
+	for doctype, field in URL_MIRRORS:
+		if not frappe.db.has_column(doctype, field):
+			continue
+		for name in frappe.get_all(doctype, filters={field: old}, pluck="name"):
+			frappe.db.set_value(doctype, name, field, new, update_modified=False)
 
 
 def _replace_in_content(old, new):
-    for doctype, cfg in EMBEDDED_FILE_FIELDS.items():
-        targets = [(doctype, f) for f in cfg["fields"]]
-        for table_field, column in cfg["children"]:
-            child = frappe.get_meta(doctype).get_field(table_field)
-            if child:
-                targets.append((child.options, column))
-        spellings = {(old, new), (quote(old), quote(new))}
-        for dt, column in targets:
-            if not frappe.db.has_column(dt, column):
-                continue
-            for old_s, new_s in spellings:
-                # `%` in a percent-encoded spelling only widens the LIKE
-                # pre-filter; `replace()` itself is exact.
-                frappe.db.sql(
-                    f"update `tab{dt}` set `{column}` = replace(`{column}`, %s, %s) "  # nosec B608
-                    f"where `{column}` like %s",
-                    (old_s, new_s, f"%{old_s}%"),
-                )
+	for doctype, cfg in EMBEDDED_FILE_FIELDS.items():
+		targets = [(doctype, f) for f in cfg["fields"]]
+		for table_field, column in cfg["children"]:
+			child = frappe.get_meta(doctype).get_field(table_field)
+			if child:
+				targets.append((child.options, column))
+		spellings = {(old, new), (quote(old), quote(new))}
+		for dt, column in targets:
+			if not frappe.db.has_column(dt, column):
+				continue
+			for old_s, new_s in spellings:
+				# `%` in a percent-encoded spelling only widens the LIKE
+				# pre-filter; `replace()` itself is exact.
+				frappe.db.sql(
+					f"update `tab{dt}` set `{column}` = replace(`{column}`, %s, %s) "  # nosec B608
+					f"where `{column}` like %s",
+					(old_s, new_s, f"%{old_s}%"),
+				)
 
 
 def set_privacy(url, public, host=None):
-    """Make every File row behind `url` public or private. Returns the URL the
-    file answers to afterwards (a disk file is renamed by the flip)."""
-    if (url or "").startswith(("http://", "https://")):
-        return url  # a link to somebody else's server, not a file of ours
-    rows = _rows_for(url)
-    want = 0 if public else 1
-    if not rows or all(cint(r.is_private) == want for r in rows):
-        return url
-    row = rows[0]
-    if host:
-        for r in rows:
-            if (r.attached_to_doctype, r.attached_to_name) == tuple(host[:2]):
-                row = r
-                break
-    doc = frappe.get_doc("File", row.name)
-    doc.is_private = want
-    previous = frappe.flags.seminary_public_file
-    frappe.flags.seminary_public_file = True
-    try:
-        doc.save(ignore_permissions=True)
-    finally:
-        frappe.flags.seminary_public_file = previous
-    new = doc.file_url
-    if new != url:
-        if host and len(host) == 3:
-            dt, dn, field = host
-            if frappe.get_meta(dt).issingle:
-                frappe.db.set_single_value(dt, field, new)
-            else:
-                frappe.db.set_value(dt, dn, field, new, update_modified=False)
-        _replace_in_mirrors(url, new)
-        _replace_in_content(url, new)
-    return new
+	"""Make every File row behind `url` public or private. Returns the URL the
+	file answers to afterwards (a disk file is renamed by the flip)."""
+	if (url or "").startswith(("http://", "https://")):
+		return url  # a link to somebody else's server, not a file of ours
+	rows = _rows_for(url)
+	want = 0 if public else 1
+	if not rows or all(cint(r.is_private) == want for r in rows):
+		return url
+	row = rows[0]
+	if host:
+		for r in rows:
+			if (r.attached_to_doctype, r.attached_to_name) == tuple(host[:2]):
+				row = r
+				break
+	doc = frappe.get_doc("File", row.name)
+	doc.is_private = want
+	previous = frappe.flags.seminary_public_file
+	frappe.flags.seminary_public_file = True
+	try:
+		doc.save(ignore_permissions=True)
+	finally:
+		frappe.flags.seminary_public_file = previous
+	new = doc.file_url
+	if new != url:
+		if host and len(host) == 3:
+			dt, dn, field = host
+			if frappe.get_meta(dt).issingle:
+				frappe.db.set_single_value(dt, field, new)
+			else:
+				frappe.db.set_value(dt, dn, field, new, update_modified=False)
+		_replace_in_mirrors(url, new)
+		_replace_in_content(url, new)
+	return new
 
 
 def _is_file_url(value) -> bool:
-    return bool(value) and bool(FILE_URL_RE.match(value))
+	return bool(value) and bool(FILE_URL_RE.match(value))
 
 
 def _other_address(url):
-    if url.startswith("/private/files/"):
-        return url[len("/private") :]
-    if url.startswith("/files/"):
-        return "/private" + url
-    return None
+	if url.startswith("/private/files/"):
+		return url[len("/private") :]
+	if url.startswith("/files/"):
+		return "/private" + url
+	return None
 
 
 RICH_TEXT_FIELDTYPES = ("Text Editor", "HTML Editor", "Markdown Editor")
 
 
 def _sync_rich_text(doctype, name, field, value, public):
-    """A registered rich-text field: the images pasted into it follow the host.
+	"""A registered rich-text field: the images pasted into it follow the host.
 
-    Only Files attached to this very document are touched. Frappe attaches a
-    pasted image to the document it was pasted into, so that is exactly the set
-    the editor put there; a URL somebody typed by hand, pointing at a file that
-    hangs elsewhere, is not published by being mentioned on a public page."""
-    if not value or not isinstance(value, str):
-        return
-    content = value
-    for match in find_urls(value):
-        url = _lookup_url(match)
-        rows = [
-            r
-            for r in _rows_for(url)
-            if (r.attached_to_doctype, r.attached_to_name) == (doctype, name)
-        ]
-        if not rows:
-            # A stale URL: the file was flipped after this HTML was loaded into
-            # a form, and the form saved the old address back. Point it at
-            # where the file lives now.
-            twin = _other_address(url)
-            if twin and any(
-                (r.attached_to_doctype, r.attached_to_name) == (doctype, name)
-                for r in _rows_for(twin)
-            ):
-                content = content.replace(match, set_privacy(twin, public))
-            continue
-        new = set_privacy(url, public, host=(doctype, name))
-        if new != url:
-            # `match` still carries Frappe's `?fid=` suffix on a private URL.
-            content = content.replace(match, new)
-    if content != value:
-        if frappe.get_meta(doctype).issingle:
-            frappe.db.set_single_value(doctype, field, content)
-        else:
-            frappe.db.set_value(doctype, name, field, content, update_modified=False)
+	Only Files attached to this very document are touched. Frappe attaches a
+	pasted image to the document it was pasted into, so that is exactly the set
+	the editor put there; a URL somebody typed by hand, pointing at a file that
+	hangs elsewhere, is not published by being mentioned on a public page."""
+	if not value or not isinstance(value, str):
+		return
+	content = value
+	for match in find_urls(value):
+		url = _lookup_url(match)
+		rows = [r for r in _rows_for(url) if (r.attached_to_doctype, r.attached_to_name) == (doctype, name)]
+		if not rows:
+			# A stale URL: the file was flipped after this HTML was loaded into
+			# a form, and the form saved the old address back. Point it at
+			# where the file lives now.
+			twin = _other_address(url)
+			if twin and any(
+				(r.attached_to_doctype, r.attached_to_name) == (doctype, name) for r in _rows_for(twin)
+			):
+				content = content.replace(match, set_privacy(twin, public))
+			continue
+		new = set_privacy(url, public, host=(doctype, name))
+		if new != url:
+			# `match` still carries Frappe's `?fid=` suffix on a private URL.
+			content = content.replace(match, new)
+	if content != value:
+		if frappe.get_meta(doctype).issingle:
+			frappe.db.set_single_value(doctype, field, content)
+		else:
+			frappe.db.set_value(doctype, name, field, content, update_modified=False)
 
 
 def sync_public_state(doctype, name):
-    """Bring the Files on a host's registered fields in line with the registry:
-    public while the predicate holds, private when it stops holding."""
-    meta = frappe.get_meta(doctype)
-    for (dt, field), predicate in PUBLIC_FILE_FIELDS.items():
-        if dt != doctype:
-            continue
-        for f in [field]:
-            if not meta.has_field(f):
-                continue
-            value = (
-                frappe.db.get_single_value(doctype, f)
-                if meta.issingle
-                else frappe.db.get_value(doctype, name, f)
-            )
-            public = predicate is None or bool(predicate(name))
-            if meta.get_field(f).fieldtype in RICH_TEXT_FIELDTYPES:
-                try:
-                    _sync_rich_text(doctype, name, f, value, public)
-                except Exception:
-                    frappe.log_error(
-                        frappe.get_traceback(),
-                        f"file_policy: could not sync {doctype} {name}.{f}",
-                    )
-                continue
-            if not _is_file_url(value):
-                continue
-            try:
-                set_privacy(value, public, host=(doctype, name, f))
-            except Exception:
-                frappe.log_error(
-                    frappe.get_traceback(),
-                    f"file_policy: could not sync {doctype} {name}.{f}",
-                )
+	"""Bring the Files on a host's registered fields in line with the registry:
+	public while the predicate holds, private when it stops holding."""
+	meta = frappe.get_meta(doctype)
+	for (dt, field), predicate in PUBLIC_FILE_FIELDS.items():
+		if dt != doctype:
+			continue
+		for f in [field]:
+			if not meta.has_field(f):
+				continue
+			value = (
+				frappe.db.get_single_value(doctype, f)
+				if meta.issingle
+				else frappe.db.get_value(doctype, name, f)
+			)
+			public = predicate is None or bool(predicate(name))
+			if meta.get_field(f).fieldtype in RICH_TEXT_FIELDTYPES:
+				try:
+					_sync_rich_text(doctype, name, f, value, public)
+				except Exception:
+					frappe.log_error(
+						frappe.get_traceback(),
+						f"file_policy: could not sync {doctype} {name}.{f}",
+					)
+				continue
+			if not _is_file_url(value):
+				continue
+			try:
+				set_privacy(value, public, host=(doctype, name, f))
+			except Exception:
+				frappe.log_error(
+					frappe.get_traceback(),
+					f"file_policy: could not sync {doctype} {name}.{f}",
+				)
 
 
 # ------------------------------------------------------------ embedded-file hosts
@@ -555,285 +542,272 @@ _MACRO_RE = re.compile(r"""\(\s*["'](/[^"']+)["']\s*\)""")
 
 
 def _is_file_address(value) -> bool:
-    return isinstance(value, str) and value.startswith(_FILE_PREFIXES)
+	return isinstance(value, str) and value.startswith(_FILE_PREFIXES)
 
 
 def find_urls(text) -> set:
-    """Every file address written in `text`, exactly as written.
+	"""Every file address written in `text`, exactly as written.
 
-    A bare pattern scan (`FILE_URL_RE`) stops at whitespace, and uploaded files
-    are routinely called "Syllabus Fall 2026.pdf". So read the structure first:
-    EditorJS JSON values, HTML attributes, Markdown links and the legacy
-    `{{ Video("…") }}` macros all delimit the address themselves. The pattern
-    scan only picks up what is left."""
-    found = set()
-    if not text or not isinstance(text, str):
-        return found
-    if _is_file_address(text.strip()) and "<" not in text and "\n" not in text:
-        return {text.strip()}  # the value of an Attach field
+	A bare pattern scan (`FILE_URL_RE`) stops at whitespace, and uploaded files
+	are routinely called "Syllabus Fall 2026.pdf". So read the structure first:
+	EditorJS JSON values, HTML attributes, Markdown links and the legacy
+	`{{ Video("…") }}` macros all delimit the address themselves. The pattern
+	scan only picks up what is left."""
+	found = set()
+	if not text or not isinstance(text, str):
+		return found
+	if _is_file_address(text.strip()) and "<" not in text and "\n" not in text:
+		return {text.strip()}  # the value of an Attach field
 
-    def walk(node):
-        if isinstance(node, dict):
-            for v in node.values():
-                walk(v)
-        elif isinstance(node, list):
-            for v in node:
-                walk(v)
-        elif isinstance(node, str):
-            if _is_file_address(node) and "<" not in node:
-                found.add(node)
-            else:
-                scan(node)
+	def walk(node):
+		if isinstance(node, dict):
+			for v in node.values():
+				walk(v)
+		elif isinstance(node, list):
+			for v in node:
+				walk(v)
+		elif isinstance(node, str):
+			if _is_file_address(node) and "<" not in node:
+				found.add(node)
+			else:
+				scan(node)
 
-    def scan(chunk):
-        for rx in (_ATTR_RE, _MD_RE, _MACRO_RE):
-            for m in rx.findall(chunk):
-                value = next((g for g in m if g), "") if isinstance(m, tuple) else m
-                if _is_file_address(value):
-                    found.add(value)
-        for m in FILE_URL_RE.findall(chunk):
-            if not any(f.startswith(m) for f in found):
-                found.add(m)
+	def scan(chunk):
+		for rx in (_ATTR_RE, _MD_RE, _MACRO_RE):
+			for m in rx.findall(chunk):
+				value = next((g for g in m if g), "") if isinstance(m, tuple) else m
+				if _is_file_address(value):
+					found.add(value)
+		for m in FILE_URL_RE.findall(chunk):
+			if not any(f.startswith(m) for f in found):
+				found.add(m)
 
-    stripped = text.lstrip()
-    if stripped[:1] in "{[":
-        try:
-            walk(json.loads(text))
-            return found
-        except ValueError:
-            pass
-    scan(text)
-    return found
+	stripped = text.lstrip()
+	if stripped[:1] in "{[":
+		try:
+			walk(json.loads(text))
+			return found
+		except ValueError:
+			pass
+	scan(text)
+	return found
 
 
 def _lookup_url(raw) -> str:
-    """The `File.file_url` a written address refers to."""
-    return unquote(normalize_file_url(html.unescape(raw))).rstrip("\\")
+	"""The `File.file_url` a written address refers to."""
+	return unquote(normalize_file_url(html.unescape(raw))).rstrip("\\")
 
 
 def _embedded_urls(doc, cfg) -> set:
-    chunks = [doc.get(f) or "" for f in cfg["fields"]]
-    for table_field, column in cfg["children"]:
-        chunks.extend((row.get(column) or "") for row in (doc.get(table_field) or []))
-    urls = set()
-    for chunk in chunks:
-        urls.update(_lookup_url(raw) for raw in find_urls(chunk))
-    return urls
+	chunks = [doc.get(f) or "" for f in cfg["fields"]]
+	for table_field, column in cfg["children"]:
+		chunks.extend((row.get(column) or "") for row in (doc.get(table_field) or []))
+	urls = set()
+	for chunk in chunks:
+		urls.update(_lookup_url(raw) for raw in find_urls(chunk))
+	return urls
 
 
 def _may_adopt(rows, source_host) -> bool:
-    """Naming a URL in content must not be a way to read someone else's file:
-    the saver has to be able to read it already. A template import is the one
-    exception, for files that belong to the section being copied."""
-    user = frappe.session.user
-    if user == "Administrator":
-        return True
-    if source_host and any(
-        (r.attached_to_doctype, r.attached_to_name) == tuple(source_host) for r in rows
-    ):
-        return True
-    for r in rows:
-        if r.owner == user or not cint(r.is_private):
-            return True
-        if frappe.get_doc("File", r.name).is_downloadable():
-            return True
-    return False
+	"""Naming a URL in content must not be a way to read someone else's file:
+	the saver has to be able to read it already. A template import is the one
+	exception, for files that belong to the section being copied."""
+	user = frappe.session.user
+	if user == "Administrator":
+		return True
+	if source_host and any((r.attached_to_doctype, r.attached_to_name) == tuple(source_host) for r in rows):
+		return True
+	for r in rows:
+		if r.owner == user or not cint(r.is_private):
+			return True
+		if frappe.get_doc("File", r.name).is_downloadable():
+			return True
+	return False
 
 
 def adopt(url, host, source_host=None):
-    """Attach the file behind `url` to `host` (doctype, name) as a private File,
-    so the host's readers can open it. Returns the URL to use from now on."""
-    host_dt, host_dn = host
-    if not (host_dt and host_dn):
-        return url
-    rows = _rows_for(url)
-    if not rows:
-        return url
-    mine = [
-        r
-        for r in rows
-        if (r.attached_to_doctype, r.attached_to_name) == (host_dt, host_dn)
-    ]
-    loose = [r for r in rows if not r.attached_to_doctype]
-    if not mine:
-        if not _may_adopt(rows, source_host):
-            return url
-        if loose:
-            frappe.db.set_value(
-                "File",
-                loose[0].name,
-                {"attached_to_doctype": host_dt, "attached_to_name": host_dn},
-                update_modified=False,
-            )
-            mine = [loose[0]]
-        elif all(not cint(r.is_private) for r in rows):
-            return url  # somebody else's public file (a logo, say): leave it
-        else:
-            src = frappe.get_doc("File", rows[0].name)
-            twin = frappe.new_doc("File")
-            twin.update(
-                {
-                    "file_name": src.file_name,
-                    "file_url": src.file_url,
-                    "file_size": src.file_size,
-                    "file_type": src.file_type,
-                    "content_hash": src.content_hash,
-                    "is_private": 1,
-                    "folder": src.folder or "Home/Attachments",
-                    "attached_to_doctype": host_dt,
-                    "attached_to_name": host_dn,
-                }
-            )
-            # A second row over the same bytes. `db_insert` on purpose: the
-            # File lifecycle would re-check that the *saver* can read the
-            # source, which `_may_adopt` has already decided.
-            twin.name = frappe.generate_hash(length=10)
-            twin.db_insert()
-            return url
-    if not cint(mine[0].is_private):
-        return set_privacy(url, public=False, host=host)
-    return url
+	"""Attach the file behind `url` to `host` (doctype, name) as a private File,
+	so the host's readers can open it. Returns the URL to use from now on."""
+	host_dt, host_dn = host
+	if not (host_dt and host_dn):
+		return url
+	rows = _rows_for(url)
+	if not rows:
+		return url
+	mine = [r for r in rows if (r.attached_to_doctype, r.attached_to_name) == (host_dt, host_dn)]
+	loose = [r for r in rows if not r.attached_to_doctype]
+	if not mine:
+		if not _may_adopt(rows, source_host):
+			return url
+		if loose:
+			frappe.db.set_value(
+				"File",
+				loose[0].name,
+				{"attached_to_doctype": host_dt, "attached_to_name": host_dn},
+				update_modified=False,
+			)
+			mine = [loose[0]]
+		elif all(not cint(r.is_private) for r in rows):
+			return url  # somebody else's public file (a logo, say): leave it
+		else:
+			src = frappe.get_doc("File", rows[0].name)
+			twin = frappe.new_doc("File")
+			twin.update(
+				{
+					"file_name": src.file_name,
+					"file_url": src.file_url,
+					"file_size": src.file_size,
+					"file_type": src.file_type,
+					"content_hash": src.content_hash,
+					"is_private": 1,
+					"folder": src.folder or "Home/Attachments",
+					"attached_to_doctype": host_dt,
+					"attached_to_name": host_dn,
+				}
+			)
+			# A second row over the same bytes. `db_insert` on purpose: the
+			# File lifecycle would re-check that the *saver* can read the
+			# source, which `_may_adopt` has already decided.
+			twin.name = frappe.generate_hash(length=10)
+			twin.db_insert()
+			return url
+	if not cint(mine[0].is_private):
+		return set_privacy(url, public=False, host=host)
+	return url
 
 
 def adopt_embedded(doc, source_host=None):
-    cfg = EMBEDDED_FILE_FIELDS.get(doc.doctype)
-    if not cfg:
-        return
-    host = cfg["host"](doc)
-    for url in _embedded_urls(doc, cfg):
-        try:
-            adopt(url, host, source_host=source_host)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(), f"file_policy: could not adopt {url}"
-            )
+	cfg = EMBEDDED_FILE_FIELDS.get(doc.doctype)
+	if not cfg:
+		return
+	host = cfg["host"](doc)
+	for url in _embedded_urls(doc, cfg):
+		try:
+			adopt(url, host, source_host=source_host)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"file_policy: could not adopt {url}")
 
 
 # --------------------------------------------------------------------------- hooks
 
 
 def _refresh_registered_fields(doc):
-    """A flip renames the file, so the value just saved may be out of date.
-    Put the stored value back on the document: the save response is what the
-    Desk form shows next, and what it would save back."""
-    meta = doc.meta
-    for dt, field in PUBLIC_FILE_FIELDS:
-        if dt != doc.doctype or not meta.has_field(field):
-            continue
-        stored = (
-            frappe.db.get_single_value(dt, field)
-            if meta.issingle
-            else frappe.db.get_value(dt, doc.name, field)
-        )
-        if stored != doc.get(field):
-            doc.set(field, stored)
-    # Frappe's own flip writes the new URL onto the host with a fresh
-    # `modified`, which would make the form the user is looking at stale
-    # ("modified after you have opened it") on their very next save.
-    if not meta.issingle and doc.get("modified"):
-        frappe.db.set_value(
-            doc.doctype, doc.name, "modified", doc.modified, update_modified=False
-        )
+	"""A flip renames the file, so the value just saved may be out of date.
+	Put the stored value back on the document: the save response is what the
+	Desk form shows next, and what it would save back."""
+	meta = doc.meta
+	for dt, field in PUBLIC_FILE_FIELDS:
+		if dt != doc.doctype or not meta.has_field(field):
+			continue
+		stored = (
+			frappe.db.get_single_value(dt, field)
+			if meta.issingle
+			else frappe.db.get_value(dt, doc.name, field)
+		)
+		if stored != doc.get(field):
+			doc.set(field, stored)
+	# Frappe's own flip writes the new URL onto the host with a fresh
+	# `modified`, which would make the form the user is looking at stale
+	# ("modified after you have opened it") on their very next save.
+	if not meta.issingle and doc.get("modified"):
+		frappe.db.set_value(doc.doctype, doc.name, "modified", doc.modified, update_modified=False)
 
 
 def on_host_update(doc, method=None):
-    """Wildcard `on_update`. Three dict misses for every other doctype."""
-    doctype = doc.doctype
-    if doctype in EMBEDDED_FILE_FIELDS:
-        adopt_embedded(doc, source_host=frappe.flags.seminary_adopt_from)
-    if doctype in _host_doctypes():
-        sync_public_state(doctype, doc.name)
-        _refresh_registered_fields(doc)
-    attach_offloaded_files(doc)
-    targets = DEPENDENTS.get(doctype)
-    if targets:
-        for dt, dn in targets(doc):
-            sync_public_state(dt, dn)
+	"""Wildcard `on_update`. Three dict misses for every other doctype."""
+	doctype = doc.doctype
+	if doctype in EMBEDDED_FILE_FIELDS:
+		adopt_embedded(doc, source_host=frappe.flags.seminary_adopt_from)
+	if doctype in _host_doctypes():
+		sync_public_state(doctype, doc.name)
+		_refresh_registered_fields(doc)
+	attach_offloaded_files(doc)
+	targets = DEPENDENTS.get(doctype)
+	if targets:
+		for dt, dn in targets(doc):
+			sync_public_state(dt, dn)
 
 
 def on_membership_gone(doc, method=None):
-    """`after_delete` of an Academic Unit Membership: the person may have left
-    their last published unit."""
-    for dt, dn in _membership_targets(doc):
-        sync_public_state(dt, dn)
+	"""`after_delete` of an Academic Unit Membership: the person may have left
+	their last published unit."""
+	for dt, dn in _membership_targets(doc):
+		sync_public_state(dt, dn)
 
 
 ATTACH_FIELDTYPES = ("Attach", "Attach Image")
 
 
 def _attach_fields(doc):
-    return doc.meta.get("fields", {"fieldtype": ["in", list(ATTACH_FIELDTYPES)]})
+	return doc.meta.get("fields", {"fieldtype": ["in", list(ATTACH_FIELDTYPES)]})
 
 
 def guard_attach_fields(doc, method=None):
-    """Refuse an Attach value naming a file the saver cannot read (p008 F16).
+	"""Refuse an Attach value naming a file the saver cannot read (p008 F16).
 
-    p007 §8.3 left Attach fields to Frappe's `attach_files_to_document`
-    (`frappe/core/doctype/file/utils.py:312`), which has no `_may_adopt`
-    equivalent: it finds an **unattached** File matching the URL and attaches it
-    to the caller's document with a bare `frappe.db.set_value`. Since p007 made
-    loose private uploads the norm, the pool of such files is large -- so a
-    student calling `upload_assignment(assignment_attachment="/private/files/<guessed>")`
-    attached somebody else's file to their own submission and thereby gained
-    read on it, because the file policy reads through the host.
+	p007 §8.3 left Attach fields to Frappe's `attach_files_to_document`
+	(`frappe/core/doctype/file/utils.py:312`), which has no `_may_adopt`
+	equivalent: it finds an **unattached** File matching the URL and attaches it
+	to the caller's document with a bare `frappe.db.set_value`. Since p007 made
+	loose private uploads the norm, the pool of such files is large -- so a
+	student calling `upload_assignment(assignment_attachment="/private/files/<guessed>")`
+	attached somebody else's file to their own submission and thereby gained
+	read on it, because the file policy reads through the host.
 
-    Stopped at `validate`, before Frappe's `on_update` step runs, because that is
-    the only place the association can be refused rather than undone. The rule is
-    the one `adopt` already uses: you may name a file you can already read.
+	Stopped at `validate`, before Frappe's `on_update` step runs, because that is
+	the only place the association can be refused rather than undone. The rule is
+	the one `adopt` already uses: you may name a file you can already read.
 
-    Only changed values on an existing document, for the same reason as
-    `url_policy.validate_urls` -- a value stored before this rule cannot be
-    allowed to make an unrelated edit impossible.
-    """
-    if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_patch:
-        return
-    if frappe.session.user == "Administrator":
-        return
-    is_new = doc.is_new()
-    for df in _attach_fields(doc):
-        value = doc.get(df.fieldname)
-        if not _is_file_url(value):
-            continue
-        if not is_new and not doc.has_value_changed(df.fieldname):
-            continue
-        rows = _rows_for(normalize_file_url(value))
-        if not rows:
-            continue  # nothing to hijack; Frappe will create the row
-        if _may_adopt(rows, None):
-            continue
-        frappe.throw(
-            _("You cannot attach a file you do not have access to."),
-            frappe.PermissionError,
-        )
+	Only changed values on an existing document, for the same reason as
+	`url_policy.validate_urls` -- a value stored before this rule cannot be
+	allowed to make an unrelated edit impossible.
+	"""
+	if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_patch:
+		return
+	if frappe.session.user == "Administrator":
+		return
+	is_new = doc.is_new()
+	for df in _attach_fields(doc):
+		value = doc.get(df.fieldname)
+		if not _is_file_url(value):
+			continue
+		if not is_new and not doc.has_value_changed(df.fieldname):
+			continue
+		rows = _rows_for(normalize_file_url(value))
+		if not rows:
+			continue  # nothing to hijack; Frappe will create the row
+		if _may_adopt(rows, None):
+			continue
+		frappe.throw(
+			_("You cannot attach a file you do not have access to."),
+			frappe.PermissionError,
+		)
 
 
 def attach_offloaded_files(doc, method=None):
-    """Attach Attach-field files that Frappe's own step skips (p008 F16).
+	"""Attach Attach-field files that Frappe's own step skips (p008 F16).
 
-    `attach_files_to_document` only considers values starting `/files` or
-    `/private/files`. An offloaded file's URL is
-    `/api/method/seminary.storage.api.download_file?key=...`, so on a site with
-    object storage configured **every Attach field holding an offloaded file was
-    never attached at all** -- the File stayed owner-only and the grader opening
-    the submission got a 403.
+	`attach_files_to_document` only considers values starting `/files` or
+	`/private/files`. An offloaded file's URL is
+	`/api/method/seminary.storage.api.download_file?key=...`, so on a site with
+	object storage configured **every Attach field holding an offloaded file was
+	never attached at all** -- the File stayed owner-only and the grader opening
+	the submission got a 403.
 
-    `adopt` applies `_may_adopt` itself, so this cannot be used to reach a file
-    the saver could not already read.
-    """
-    for df in _attach_fields(doc):
-        value = doc.get(df.fieldname)
-        if not value or not is_offloaded(value):
-            continue
-        rows = _rows_for(value)
-        if any(
-            (r.attached_to_doctype, r.attached_to_name) == (doc.doctype, doc.name)
-            for r in rows
-        ):
-            continue
-        try:
-            adopt(value, (doc.doctype, doc.name))
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"file_policy: could not attach {doc.doctype} {doc.name}.{df.fieldname}",
-            )
+	`adopt` applies `_may_adopt` itself, so this cannot be used to reach a file
+	the saver could not already read.
+	"""
+	for df in _attach_fields(doc):
+		value = doc.get(df.fieldname)
+		if not value or not is_offloaded(value):
+			continue
+		rows = _rows_for(value)
+		if any((r.attached_to_doctype, r.attached_to_name) == (doc.doctype, doc.name) for r in rows):
+			continue
+		try:
+			adopt(value, (doc.doctype, doc.name))
+		except Exception:
+			frappe.log_error(
+				frappe.get_traceback(),
+				f"file_policy: could not attach {doc.doctype} {doc.name}.{df.fieldname}",
+			)

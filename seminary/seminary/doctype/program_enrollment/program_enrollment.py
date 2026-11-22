@@ -11,470 +11,450 @@ from frappe.utils import comma_and, get_link_to_form, getdate
 
 
 class ProgramEnrollment(Document):
-    def validate(self):
-        if frappe.flags.in_demo_install:
-            return
-        from seminary.seminary import history
+	def validate(self):
+		if frappe.flags.in_demo_install:
+			return
+		from seminary.seminary import history
 
-        if self.is_new() and history.importing():
-            history.settle_enrollment(self)
-        history.check_attendance(self.courses)
-        self.set_student_name()
-        self.validate_duplication()
-        self.validate_reenrollment_holds()
-        self.validate_academic_term()
-        self.validate_emphases()
-        self.set_expected_graduation_date()
+		if self.is_new() and history.importing():
+			history.settle_enrollment(self)
+		history.check_attendance(self.courses)
+		self.set_student_name()
+		self.validate_duplication()
+		self.validate_reenrollment_holds()
+		self.validate_academic_term()
+		self.validate_emphases()
+		self.set_expected_graduation_date()
 
-    def set_student_name(self):
-        if not self.student_name:
-            self.student_name = frappe.db.get_value(
-                "Student", self.student, "student_name"
-            )
+	def set_student_name(self):
+		if not self.student_name:
+			self.student_name = frappe.db.get_value("Student", self.student, "student_name")
 
-    def before_submit(self):
-        self.snapshot_graduation_requirements()
-        self.snapshot_required_on_enroll_courses()
+	def before_submit(self):
+		self.snapshot_graduation_requirements()
+		self.snapshot_required_on_enroll_courses()
 
-    def on_submit(self):
-        self.update_student_joining_date()
-        self.set_max_graduation_date()
-        from seminary.seminary import history
+	def on_submit(self):
+		self.update_student_joining_date()
+		self.set_max_graduation_date()
+		from seminary.seminary import history
 
-        if history.importing():
-            history.record_leaving(self)
+		if history.importing():
+			history.record_leaving(self)
 
-    def before_update_after_submit(self):
-        # validate() doesn't run on update-after-submit saves, so resolve
-        # graduation-requirement choices (umbrella morph / project-type pick)
-        # here — covers both desk grid edits and the portal choose actions.
-        from seminary.seminary.graduation import (
-            apply_sgr_choices,
-            ensure_emphasis_scoped_requirements,
-        )
-        from seminary.seminary.history import check_attendance
-        from seminary.seminary.leveling import resolve_rows_hook
+	def before_update_after_submit(self):
+		# validate() doesn't run on update-after-submit saves, so resolve
+		# graduation-requirement choices (umbrella morph / project-type pick)
+		# here — covers both desk grid edits and the portal choose actions.
+		from seminary.seminary.graduation import (
+			apply_sgr_choices,
+			ensure_emphasis_scoped_requirements,
+		)
+		from seminary.seminary.history import check_attendance
+		from seminary.seminary.leveling import resolve_rows_hook
 
-        check_attendance(self.courses)
-        # ADR 056: an emphasis change is frozen once a Graduation Request exists;
-        # otherwise materialize any newly-applicable emphasis-scoped requirements
-        # (e.g. an emphasis declared after enrollment).
-        self._guard_emphasis_change_after_grad_request()
-        ensure_emphasis_scoped_requirements(self)
-        apply_sgr_choices(self)
-        # ADR 058: keep leveling resolutions in sync with current exam scores on
-        # every save (side effects — Exempt rows, waivers — run at explicit points).
-        resolve_rows_hook(self)
+		check_attendance(self.courses)
+		# ADR 056: an emphasis change is frozen once a Graduation Request exists;
+		# otherwise materialize any newly-applicable emphasis-scoped requirements
+		# (e.g. an emphasis declared after enrollment).
+		self._guard_emphasis_change_after_grad_request()
+		ensure_emphasis_scoped_requirements(self)
+		apply_sgr_choices(self)
+		# ADR 058: keep leveling resolutions in sync with current exam scores on
+		# every save (side effects — Exempt rows, waivers — run at explicit points).
+		resolve_rows_hook(self)
 
-    def _guard_emphasis_change_after_grad_request(self):
-        """Block user-initiated emphasis changes once a non-cancelled Graduation
-        Request exists for this enrollment (ADR 056). The system auto-grant path
-        bypasses via flags.ignore_emphasis_freeze."""
-        if self.flags.get("ignore_emphasis_freeze"):
-            return
-        before = getattr(self, "_doc_before_save", None)
-        if not before:
-            return
+	def _guard_emphasis_change_after_grad_request(self):
+		"""Block user-initiated emphasis changes once a non-cancelled Graduation
+		Request exists for this enrollment (ADR 056). The system auto-grant path
+		bypasses via flags.ignore_emphasis_freeze."""
+		if self.flags.get("ignore_emphasis_freeze"):
+			return
+		before = getattr(self, "_doc_before_save", None)
+		if not before:
+			return
 
-        def _key(doc):
-            return sorted(
-                (e.emphasis_track, e.status) for e in (doc.get("emphases") or [])
-            )
+		def _key(doc):
+			return sorted((e.emphasis_track, e.status) for e in (doc.get("emphases") or []))
 
-        if _key(self) == _key(before):
-            return
-        if frappe.db.exists(
-            "Graduation Request",
-            {
-                "program_enrollment": self.name,
-                "workflow_state": ("!=", "Cancelled"),
-                "docstatus": ("!=", 2),
-            },
-        ):
-            frappe.throw(
-                _(
-                    "This enrollment has a Graduation Request. Delete or cancel "
-                    "the graduation request first, then change the emphasis."
-                )
-            )
+		if _key(self) == _key(before):
+			return
+		if frappe.db.exists(
+			"Graduation Request",
+			{
+				"program_enrollment": self.name,
+				"workflow_state": ("!=", "Cancelled"),
+				"docstatus": ("!=", 2),
+			},
+		):
+			frappe.throw(
+				_(
+					"This enrollment has a Graduation Request. Delete or cancel "
+					"the graduation request first, then change the emphasis."
+				)
+			)
 
-    def on_update_after_submit(self):
-        self._backlink_spawned_choices()
-        from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+	def on_update_after_submit(self):
+		self._backlink_spawned_choices()
+		from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
 
-        # Status transitions are canonically driven by set_program_status
-        # (seminary.seminary.program_status), which uses db_set and therefore
-        # bypasses this hook — it runs the grad-request cascade itself. This
-        # branch remains only as a fallback for a manual/amend save that flips
-        # pgmenrol_active 1->0 outside the spine.
-        before = getattr(self, "_doc_before_save", None)
-        was_active = bool(before.pgmenrol_active) if before else True
-        if was_active and not self.pgmenrol_active:
-            from seminary.seminary.graduation_request_lifecycle import (
-                cascade_cancel_graduation_requests,
-            )
+		# Status transitions are canonically driven by set_program_status
+		# (seminary.seminary.program_status), which uses db_set and therefore
+		# bypasses this hook — it runs the grad-request cascade itself. This
+		# branch remains only as a fallback for a manual/amend save that flips
+		# pgmenrol_active 1->0 outside the spine.
+		before = getattr(self, "_doc_before_save", None)
+		was_active = bool(before.pgmenrol_active) if before else True
+		if was_active and not self.pgmenrol_active:
+			from seminary.seminary.graduation_request_lifecycle import (
+				cascade_cancel_graduation_requests,
+			)
 
-            cascade_cancel_graduation_requests(self.name)
+			cascade_cancel_graduation_requests(self.name)
 
-        evaluate_candidacy_safe(self.name)
+		evaluate_candidacy_safe(self.name)
 
-    def _backlink_spawned_choices(self):
-        """Populate each umbrella row's `spawned_sgr` with the child row it
-        created (names are only assigned once the parent has saved). Direct DB
-        write — no re-save, no recursion."""
-        spawned_by_parent = {
-            row.parent_choice: row.name
-            for row in (self.graduation_requirements or [])
-            if row.parent_choice
-        }
-        for row in self.graduation_requirements or []:
-            if row.requirement_type != "Choose Option" or not row.chosen_option:
-                continue
-            target = spawned_by_parent.get(row.name)
-            if target and row.spawned_sgr != target:
-                frappe.db.set_value(
-                    "Student Graduation Requirement",
-                    row.name,
-                    "spawned_sgr",
-                    target,
-                    update_modified=False,
-                )
+	def _backlink_spawned_choices(self):
+		"""Populate each umbrella row's `spawned_sgr` with the child row it
+		created (names are only assigned once the parent has saved). Direct DB
+		write — no re-save, no recursion."""
+		spawned_by_parent = {
+			row.parent_choice: row.name for row in (self.graduation_requirements or []) if row.parent_choice
+		}
+		for row in self.graduation_requirements or []:
+			if row.requirement_type != "Choose Option" or not row.chosen_option:
+				continue
+			target = spawned_by_parent.get(row.name)
+			if target and row.spawned_sgr != target:
+				frappe.db.set_value(
+					"Student Graduation Requirement",
+					row.name,
+					"spawned_sgr",
+					target,
+					update_modified=False,
+				)
 
-    def set_max_graduation_date(self):
-        """Auto-populate max_graduation_date from enrollment_date + Program.max_time_enrolled.
+	def set_max_graduation_date(self):
+		"""Auto-populate max_graduation_date from enrollment_date + Program.max_time_enrolled.
 
-        No-op when:
-          - max_graduation_date already set (registrar override / amendment)
-          - program is ongoing (no graduation concept)
-          - max_time_enrolled is 0 or unset (no time limit)
-        """
-        if self.max_graduation_date:
-            return
-        program = frappe.db.get_value(
-            "Program",
-            self.program,
-            ["max_time_enrolled", "is_ongoing"],
-            as_dict=True,
-        )
-        if not program or program.is_ongoing:
-            return
-        years = float(program.max_time_enrolled or 0)
-        if years <= 0 or not self.enrollment_date:
-            return
-        from frappe.utils import add_days
+		No-op when:
+		  - max_graduation_date already set (registrar override / amendment)
+		  - program is ongoing (no graduation concept)
+		  - max_time_enrolled is 0 or unset (no time limit)
+		"""
+		if self.max_graduation_date:
+			return
+		program = frappe.db.get_value(
+			"Program",
+			self.program,
+			["max_time_enrolled", "is_ongoing"],
+			as_dict=True,
+		)
+		if not program or program.is_ongoing:
+			return
+		years = float(program.max_time_enrolled or 0)
+		if years <= 0 or not self.enrollment_date:
+			return
+		from frappe.utils import add_days
 
-        days = int(round(years * 365.25))
-        max_date = add_days(self.enrollment_date, days)
-        self.db_set("max_graduation_date", max_date, update_modified=False)
+		days = round(years * 365.25)
+		max_date = add_days(self.enrollment_date, days)
+		self.db_set("max_graduation_date", max_date, update_modified=False)
 
-    def set_expected_graduation_date(self):
-        if self.expected_graduation_date:
-            return
-        from seminary.seminary.graduation import compute_expected_graduation_date
+	def set_expected_graduation_date(self):
+		if self.expected_graduation_date:
+			return
+		from seminary.seminary.graduation import compute_expected_graduation_date
 
-        default = compute_expected_graduation_date(self)
-        if default:
-            self.expected_graduation_date = default
+		default = compute_expected_graduation_date(self)
+		if default:
+			self.expected_graduation_date = default
 
-    def snapshot_graduation_requirements(self):
-        from seminary.seminary.graduation import (
-            snapshot_graduation_requirements as _snapshot,
-        )
+	def snapshot_graduation_requirements(self):
+		from seminary.seminary.graduation import (
+			snapshot_graduation_requirements as _snapshot,
+		)
 
-        if self.graduation_requirements:
-            return
-        _snapshot(self)
+		if self.graduation_requirements:
+			return
+		_snapshot(self)
 
-    def snapshot_required_on_enroll_courses(self):
-        """Freeze the set of courses flagged `pgm_course_reqonenroll` on the
-        Program at submit time. Deferred auto-enrollment matches this frozen
-        list (not the live Program flag), so toggling the flag later does not
-        retroactively enroll already-enrolled students. Mirrors
-        snapshot_graduation_requirements. See ADR 035."""
-        if self.required_on_enroll_courses:
-            return
-        rows = frappe.get_all(
-            "Program Course",
-            filters={
-                "parent": self.program,
-                "pgm_course_reqonenroll": 1,
-                "disabled": 0,
-            },
-            pluck="course",
-        )
-        for course in rows:
-            self.append("required_on_enroll_courses", {"course": course})
+	def snapshot_required_on_enroll_courses(self):
+		"""Freeze the set of courses flagged `pgm_course_reqonenroll` on the
+		Program at submit time. Deferred auto-enrollment matches this frozen
+		list (not the live Program flag), so toggling the flag later does not
+		retroactively enroll already-enrolled students. Mirrors
+		snapshot_graduation_requirements. See ADR 035."""
+		if self.required_on_enroll_courses:
+			return
+		rows = frappe.get_all(
+			"Program Course",
+			filters={
+				"parent": self.program,
+				"pgm_course_reqonenroll": 1,
+				"disabled": 0,
+			},
+			pluck="course",
+		)
+		for course in rows:
+			self.append("required_on_enroll_courses", {"course": course})
 
-    def validate_academic_term(self):
-        # validate() runs before the mandatory check, so a missing term arrives
-        # here as None and the unpack raised `TypeError: cannot unpack
-        # non-iterable NoneType` — a stack trace where the reader should have
-        # got "Academic Term is required". Guard each operand on its own.
-        dates = (
-            frappe.db.get_value(
-                "Academic Term",
-                self.academic_term,
-                ["term_start_date", "term_end_date"],
-            )
-            if self.academic_term
-            else None
-        )
-        if not dates:
-            return
-        _start_date, end_date = dates
-        if not self.enrollment_date:
-            return
+	def validate_academic_term(self):
+		# validate() runs before the mandatory check, so a missing term arrives
+		# here as None and the unpack raised `TypeError: cannot unpack
+		# non-iterable NoneType` — a stack trace where the reader should have
+		# got "Academic Term is required". Guard each operand on its own.
+		dates = (
+			frappe.db.get_value(
+				"Academic Term",
+				self.academic_term,
+				["term_start_date", "term_end_date"],
+			)
+			if self.academic_term
+			else None
+		)
+		if not dates:
+			return
+		_start_date, end_date = dates
+		if not self.enrollment_date:
+			return
 
-        enrollment_date = getdate(self.enrollment_date)
-        # Only guard against a past start date when the enrollment is first
-        # created. Editing or re-saving an existing record (e.g. a draft created
-        # on an earlier day) must not fail this check retroactively. Imported
-        # history is in the past by definition (ADR 094 §2).
-        if self.is_new() and enrollment_date < getdate() and not frappe.flags.in_import:
-            frappe.throw(_("Enrollment Date cannot be before today."))
+		enrollment_date = getdate(self.enrollment_date)
+		# Only guard against a past start date when the enrollment is first
+		# created. Editing or re-saving an existing record (e.g. a draft created
+		# on an earlier day) must not fail this check retroactively. Imported
+		# history is in the past by definition (ADR 094 §2).
+		if self.is_new() and enrollment_date < getdate() and not frappe.flags.in_import:
+			frappe.throw(_("Enrollment Date cannot be before today."))
 
-        if end_date and enrollment_date > getdate(end_date):
-            frappe.throw(
-                _(
-                    "Enrollment Date cannot be after the End Date of the Academic Term {0}"
-                ).format(get_link_to_form("Academic Term", self.academic_term))
-            )
+		if end_date and enrollment_date > getdate(end_date):
+			frappe.throw(
+				_("Enrollment Date cannot be after the End Date of the Academic Term {0}").format(
+					get_link_to_form("Academic Term", self.academic_term)
+				)
+			)
 
-    def validate_duplication(self):
-        # A docstatus-only check wrongly bars a separated student from ever
-        # re-enrolling, because Withdrawn / Dismissed / Graduated / Transferred
-        # all keep docstatus=1. Only statuses the student left *without
-        # completing* (REENROLLABLE_STATUSES) permit a fresh enrollment; every
-        # other status still blocks — Active / Leave of Absence (still enrolled)
-        # and Graduated (already completed this program).
-        from seminary.seminary.program_status import REENROLLABLE_STATUSES
+	def validate_duplication(self):
+		# A docstatus-only check wrongly bars a separated student from ever
+		# re-enrolling, because Withdrawn / Dismissed / Graduated / Transferred
+		# all keep docstatus=1. Only statuses the student left *without
+		# completing* (REENROLLABLE_STATUSES) permit a fresh enrollment; every
+		# other status still blocks — Active / Leave of Absence (still enrolled)
+		# and Graduated (already completed this program).
+		from seminary.seminary.program_status import REENROLLABLE_STATUSES
 
-        existing = frappe.db.get_all(
-            "Program Enrollment",
-            filters={
-                "student": self.student,
-                "program": self.program,
-                "docstatus": ("<", 2),
-                "status": ("not in", list(REENROLLABLE_STATUSES)),
-                "name": ("!=", self.name or ""),
-            },
-            pluck="name",
-            limit=1,
-        )
-        if existing:
-            frappe.throw(
-                _("Student is already enrolled in {0} ({1}).").format(
-                    self.program, get_link_to_form("Program Enrollment", existing[0])
-                )
-            )
+		existing = frappe.db.get_all(
+			"Program Enrollment",
+			filters={
+				"student": self.student,
+				"program": self.program,
+				"docstatus": ("<", 2),
+				"status": ("not in", list(REENROLLABLE_STATUSES)),
+				"name": ("!=", self.name or ""),
+			},
+			pluck="name",
+			limit=1,
+		)
+		if existing:
+			frappe.throw(
+				_("Student is already enrolled in {0} ({1}).").format(
+					self.program, get_link_to_form("Program Enrollment", existing[0])
+				)
+			)
 
-    def validate_reenrollment_holds(self):
-        """Block a NEW enrollment for a student with an active re-enrollment
-        hold (e.g. a disciplinary dismissal). Registrar / Seminary Manager may
-        override; the override is surfaced as a warning. See ADR 033."""
-        if not self.is_new() or not self.student:
-            return
+	def validate_reenrollment_holds(self):
+		"""Block a NEW enrollment for a student with an active re-enrollment
+		hold (e.g. a disciplinary dismissal). Registrar / Seminary Manager may
+		override; the override is surfaced as a warning. See ADR 033."""
+		if not self.is_new() or not self.student:
+			return
 
-        holds = frappe.get_all(
-            "Student Hold",
-            filters={
-                "parent": self.student,
-                "parentfield": "student_holds",
-                "is_active": 1,
-                "blocks_reenrollment": 1,
-            },
-            pluck="hold_type",
-        )
-        if not holds:
-            return
+		holds = frappe.get_all(
+			"Student Hold",
+			filters={
+				"parent": self.student,
+				"parentfield": "student_holds",
+				"is_active": 1,
+				"blocks_reenrollment": 1,
+			},
+			pluck="hold_type",
+		)
+		if not holds:
+			return
 
-        summary = ", ".join(sorted(set(holds)))
-        override_roles = {"Registrar", "Seminary Manager", "System Manager"}
-        if override_roles & set(frappe.get_roles()):
-            msgprint(
-                _(
-                    "Student has active re-enrollment hold(s): {0}. Proceeding under your override."
-                ).format(summary),
-                indicator="orange",
-                alert=True,
-            )
-            return
+		summary = ", ".join(sorted(set(holds)))
+		override_roles = {"Registrar", "Seminary Manager", "System Manager"}
+		if override_roles & set(frappe.get_roles()):
+			msgprint(
+				_("Student has active re-enrollment hold(s): {0}. Proceeding under your override.").format(
+					summary
+				),
+				indicator="orange",
+				alert=True,
+			)
+			return
 
-        frappe.throw(
-            _(
-                "Student has active hold(s) blocking re-enrollment: {0}. "
-                "A Registrar or Seminary Manager must override."
-            ).format(summary)
-        )
+		frappe.throw(
+			_(
+				"Student has active hold(s) blocking re-enrollment: {0}. "
+				"A Registrar or Seminary Manager must override."
+			).format(summary)
+		)
 
-    def validate_emphases(self):
-        if not self.emphases:
-            return
+	def validate_emphases(self):
+		if not self.emphases:
+			return
 
-        program = frappe.get_cached_doc("Program", self.program)
-        allow_multiple = program.allow_multiple_emphases
+		program = frappe.get_cached_doc("Program", self.program)
+		allow_multiple = program.allow_multiple_emphases
 
-        active_emphases = [e for e in self.emphases if e.status == "Active"]
+		active_emphases = [e for e in self.emphases if e.status == "Active"]
 
-        if not allow_multiple and len(active_emphases) > 1:
-            frappe.throw(
-                _(
-                    "Program {0} does not allow multiple emphases. Only one active emphasis is permitted."
-                ).format(self.program)
-            )
+		if not allow_multiple and len(active_emphases) > 1:
+			frappe.throw(
+				_(
+					"Program {0} does not allow multiple emphases. Only one active emphasis is permitted."
+				).format(self.program)
+			)
 
-        # Validate each emphasis row
-        for emphasis in self.emphases:
-            track = frappe.db.get_value(
-                "Program Track",
-                emphasis.emphasis_track,
-                [
-                    "is_emphasis",
-                    "emphasis_declaration",
-                    "min_credits_to_declare",
-                    "parent",
-                ],
-                as_dict=True,
-            )
-            if not track:
-                frappe.throw(
-                    _("Emphasis track {0} not found.").format(emphasis.emphasis_track)
-                )
+		# Validate each emphasis row
+		for emphasis in self.emphases:
+			track = frappe.db.get_value(
+				"Program Track",
+				emphasis.emphasis_track,
+				[
+					"is_emphasis",
+					"emphasis_declaration",
+					"min_credits_to_declare",
+					"parent",
+				],
+				as_dict=True,
+			)
+			if not track:
+				frappe.throw(_("Emphasis track {0} not found.").format(emphasis.emphasis_track))
 
-            if track.parent != self.program:
-                frappe.throw(
-                    _("Track {0} does not belong to program {1}.").format(
-                        emphasis.emphasis_track, self.program
-                    )
-                )
+			if track.parent != self.program:
+				frappe.throw(
+					_("Track {0} does not belong to program {1}.").format(
+						emphasis.emphasis_track, self.program
+					)
+				)
 
-            if not track.is_emphasis:
-                frappe.throw(
-                    _("Track {0} is not marked as an emphasis.").format(
-                        emphasis.emphasis_track
-                    )
-                )
+			if not track.is_emphasis:
+				frappe.throw(_("Track {0} is not marked as an emphasis.").format(emphasis.emphasis_track))
 
-            # Check declaration timing
-            if (
-                emphasis.status == "Active"
-                and track.emphasis_declaration == "At Enrollment"
-            ):
-                if self.docstatus == 1:
-                    frappe.throw(
-                        _(
-                            "Emphasis {0} can only be declared at enrollment time (before submission)."
-                        ).format(emphasis.emphasis_track)
-                    )
+			# Check declaration timing
+			if emphasis.status == "Active" and track.emphasis_declaration == "At Enrollment":
+				if self.docstatus == 1:
+					frappe.throw(
+						_("Emphasis {0} can only be declared at enrollment time (before submission).").format(
+							emphasis.emphasis_track
+						)
+					)
 
-            # Check minimum credits for declaration
-            if (
-                emphasis.status == "Active"
-                and track.min_credits_to_declare
-                and (self.totalcredits or 0) < track.min_credits_to_declare
-            ):
-                frappe.throw(
-                    _(
-                        "Student needs at least {0} credits before declaring emphasis {1}. Current credits: {2}"
-                    ).format(
-                        track.min_credits_to_declare,
-                        emphasis.emphasis_track,
-                        self.totalcredits or 0,
-                    )
-                )
+			# Check minimum credits for declaration
+			if (
+				emphasis.status == "Active"
+				and track.min_credits_to_declare
+				and (self.totalcredits or 0) < track.min_credits_to_declare
+			):
+				frappe.throw(
+					_(
+						"Student needs at least {0} credits before declaring emphasis {1}. Current credits: {2}"
+					).format(
+						track.min_credits_to_declare,
+						emphasis.emphasis_track,
+						self.totalcredits or 0,
+					)
+				)
 
-            # Check auto-grant tracks cannot be manually added as Active
-            if (
-                emphasis.status == "Active"
-                and track.emphasis_declaration == "Auto-grant"
-            ):
-                frappe.throw(
-                    _(
-                        "Emphasis {0} is set to Auto-grant and cannot be manually declared. It will be assigned automatically when requirements are met."
-                    ).format(emphasis.emphasis_track)
-                )
+			# Check auto-grant tracks cannot be manually added as Active
+			if emphasis.status == "Active" and track.emphasis_declaration == "Auto-grant":
+				frappe.throw(
+					_(
+						"Emphasis {0} is set to Auto-grant and cannot be manually declared. It will be assigned automatically when requirements are met."
+					).format(emphasis.emphasis_track)
+				)
 
-            # Set dropped_date when status changes to Dropped
-            if emphasis.status == "Dropped" and not emphasis.dropped_date:
-                emphasis.dropped_date = getdate()
+			# Set dropped_date when status changes to Dropped
+			if emphasis.status == "Dropped" and not emphasis.dropped_date:
+				emphasis.dropped_date = getdate()
 
-        # Check for duplicate active emphases on the same track
-        active_tracks = [e.emphasis_track for e in active_emphases]
-        if len(active_tracks) != len(set(active_tracks)):
-            frappe.throw(_("Cannot have duplicate active emphases on the same track."))
+		# Check for duplicate active emphases on the same track
+		active_tracks = [e.emphasis_track for e in active_emphases]
+		if len(active_tracks) != len(set(active_tracks)):
+			frappe.throw(_("Cannot have duplicate active emphases on the same track."))
 
-    def update_student_joining_date(self):
-        table = frappe.qb.DocType("Program Enrollment")
-        date = (
-            frappe.qb.from_(table)
-            .select(Min(table.enrollment_date).as_("enrollment_date"))
-            .where(table.student == self.student)
-        ).run(as_dict=True)
+	def update_student_joining_date(self):
+		table = frappe.qb.DocType("Program Enrollment")
+		date = (
+			frappe.qb.from_(table)
+			.select(Min(table.enrollment_date).as_("enrollment_date"))
+			.where(table.student == self.student)
+		).run(as_dict=True)
 
-        if date:
-            frappe.db.set_value(
-                "Student", self.student, "joining_date", date[0].enrollment_date
-            )
+		if date:
+			frappe.db.set_value("Student", self.student, "joining_date", date[0].enrollment_date)
 
-    @frappe.whitelist()
-    def get_payers(self):
-        """Re-sync this enrollment's billing payer snapshot from the program's
-        current fees. Called by the PE form's on_save (see program_enrollment.js,
-        gated on the oikonomos bridge). Delegates to the financial backend, so a
-        Frappe-only seminary no-ops — it has no payer rows."""
-        from seminary.seminary.financial.backend import get_financial_backend
+	@frappe.whitelist()
+	def get_payers(self):
+		"""Re-sync this enrollment's billing payer snapshot from the program's
+		current fees. Called by the PE form's on_save (see program_enrollment.js,
+		gated on the oikonomos bridge). Delegates to the financial backend, so a
+		Frappe-only seminary no-ops — it has no payer rows."""
+		from seminary.seminary.financial.backend import get_financial_backend
 
-        get_financial_backend().sync_enrollment_payers(self.name)
+		get_financial_backend().sync_enrollment_payers(self.name)
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def get_program_courses(doctype, txt, searchfield, start, page_len, filters):
-    if not filters.get("program"):
-        frappe.msgprint(_("Please select a Program first."))
-        return []
+	if not filters.get("program"):
+		frappe.msgprint(_("Please select a Program first."))
+		return []
 
-    doctype = "Program Course"
-    return frappe.db.sql(
-        """select course, course_name from `tabProgram Course`
+	doctype = "Program Course"
+	return frappe.db.sql(
+		"""select course, course_name from `tabProgram Course`
 		where  parent = %(program)s and disabled = 0 and course like %(txt)s {match_cond}
 		order by
 			if(locate(%(_txt)s, course), locate(%(_txt)s, course), 99999),
 			idx desc,
 			`tabProgram Course`.course asc
 		limit {start}, {page_len}""".format(  # nosec B608 -- interpolates a clause built from constants in this function
-            match_cond=get_match_cond(doctype), start=start, page_len=page_len
-        ),
-        {
-            "txt": "%{0}%".format(txt),
-            "_txt": txt.replace("%", ""),
-            "program": filters["program"],
-        },
-    )
+			match_cond=get_match_cond(doctype), start=start, page_len=page_len
+		),
+		{
+			"txt": "%{0}%".format(txt),
+			"_txt": txt.replace("%", ""),
+			"program": filters["program"],
+		},
+	)
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def get_emphasis(doctype, txt, searchfield, start, page_len, filters):
-    if not filters.get("program"):
-        frappe.msgprint(_("Please select a Program first."))
-        return []
+	if not filters.get("program"):
+		frappe.msgprint(_("Please select a Program first."))
+		return []
 
-    return frappe.db.sql(
-        """SELECT name, track_name
+	return frappe.db.sql(
+		"""SELECT name, track_name
         FROM `tabProgram Track`
         WHERE parent = %(program)s
             AND is_emphasis = 1
             AND (name LIKE %(txt)s OR track_name LIKE %(txt)s)
         ORDER BY track_name
         LIMIT %(start)s, %(page_len)s""",
-        {
-            "program": filters["program"],
-            "txt": "%{0}%".format(txt),
-            "start": start,
-            "page_len": page_len,
-        },
-    )
+		{
+			"program": filters["program"],
+			"txt": "%{0}%".format(txt),
+			"start": start,
+			"page_len": page_len,
+		},
+	)
 
 
 # `get_students` lived here: a whitelisted Link-picker query offering students

@@ -22,20 +22,20 @@ doctype is unaffected by anything here.
 import frappe
 
 from seminary.seminary.guards import (
-    COURSE_FIELD,
-    _memo,
-    _roles,
-    course_of,
-    current_student,
-    student_sections,
-    instructor_tier,
-    is_course_staff,
-    is_read_ptype,
-    is_school_role,
-    mentored_sections,
-    own_course_schedules,
-    readable_course_schedules,
-    section_mentees,
+	COURSE_FIELD,
+	_memo,
+	_roles,
+	course_of,
+	current_student,
+	instructor_tier,
+	is_course_staff,
+	is_read_ptype,
+	is_school_role,
+	mentored_sections,
+	own_course_schedules,
+	readable_course_schedules,
+	section_mentees,
+	student_sections,
 )
 
 # doctype -> (student rule, instructor rule)
@@ -44,34 +44,34 @@ from seminary.seminary.guards import (
 #   instructor rule: "course" (scoped by the section in COURSE_FIELD)
 #                 | "students" (Student rows via the roster) | "any" | None
 CONFIG = {
-    "Student": (("name", "student"), "students"),
-    "Scheduled Course Roster": (("stuemail_rc", "user"), "course"),
-    "Course Enrollment Individual": (("student_ce", "student"), "course"),
-    "Exam Submission": (("member", "user"), "course"),
-    "Assignment Submission": (("member", "user"), "course"),
-    "Discussion Submission": (("member", "user"), "course"),
-    "Oral Activity Submission": (("member", "user"), "course"),
-    "Quiz Submission": (("member", "user"), "course"),
-    "Course Schedule Progress": (("member", "user"), "course"),
-    # Same shape as the progress row it sits beside: a student sees their own
-    # attempts, an instructor their sections' (p009 §2.11).
-    "SCORM Attempt": (("member", "user"), "course"),
-    "Withdrawal Request": (("student", "student"), None),
-    "Graduation Request": (("student", "student"), None),
-    "Recommendation Letter": (("student", "student"), None),
-    "Culminating Project": (("student", "student"), "any"),
-    "Chapel Attendance": (("student", "student"), None),
-    "Course Schedule": ("student_sections", "course"),
-    "Course Schedule Chapter": ("student_sections_of", "course"),
-    "Course Lesson": ("student_sections_of", "course"),
-    "Student Attendance": (None, "course"),
-    # A student reads their own extensions; staff their sections' (decisions/082).
-    "Student Due Date Override": (("student", "student"), "course"),
-    # Moments and the instructor-only step results are the section staff's
-    # (decisions/100 §6). Oral Recording itself has its own rule in oral.py:
-    # it belongs to every student on it, not to one field.
-    "Oral Moment": (None, "course"),
-    "Oral Step Result": (None, "course"),
+	"Student": (("name", "student"), "students"),
+	"Scheduled Course Roster": (("stuemail_rc", "user"), "course"),
+	"Course Enrollment Individual": (("student_ce", "student"), "course"),
+	"Exam Submission": (("member", "user"), "course"),
+	"Assignment Submission": (("member", "user"), "course"),
+	"Discussion Submission": (("member", "user"), "course"),
+	"Oral Activity Submission": (("member", "user"), "course"),
+	"Quiz Submission": (("member", "user"), "course"),
+	"Course Schedule Progress": (("member", "user"), "course"),
+	# Same shape as the progress row it sits beside: a student sees their own
+	# attempts, an instructor their sections' (p009 §2.11).
+	"SCORM Attempt": (("member", "user"), "course"),
+	"Withdrawal Request": (("student", "student"), None),
+	"Graduation Request": (("student", "student"), None),
+	"Recommendation Letter": (("student", "student"), None),
+	"Culminating Project": (("student", "student"), "any"),
+	"Chapel Attendance": (("student", "student"), None),
+	"Course Schedule": ("student_sections", "course"),
+	"Course Schedule Chapter": ("student_sections_of", "course"),
+	"Course Lesson": ("student_sections_of", "course"),
+	"Student Attendance": (None, "course"),
+	# A student reads their own extensions; staff their sections' (decisions/082).
+	"Student Due Date Override": (("student", "student"), "course"),
+	# Moments and the instructor-only step results are the section staff's
+	# (decisions/100 §6). Oral Recording itself has its own rule in oral.py:
+	# it belongs to every student on it, not to one field.
+	"Oral Moment": (None, "course"),
+	"Oral Step Result": (None, "course"),
 }
 
 
@@ -81,88 +81,86 @@ CONFIG = {
 MENTOR_CONTENT = {"Course Schedule", "Course Schedule Chapter", "Course Lesson"}
 # doctype -> (field naming the student, "student" docname | "user" email)
 MENTOR_STUDENT_FIELD = {
-    "Scheduled Course Roster": ("student", "student"),
-    "Course Enrollment Individual": ("student_ce", "student"),
-    "Exam Submission": ("member", "user"),
-    "Assignment Submission": ("member", "user"),
-    "Discussion Submission": ("member", "user"),
-    "Oral Activity Submission": ("member", "user"),
-    "Quiz Submission": ("member", "user"),
-    "Course Schedule Progress": ("member", "user"),
-    "SCORM Attempt": ("member", "user"),
-    "Student Attendance": ("student", "student"),
-    "Student Due Date Override": ("student", "student"),
+	"Scheduled Course Roster": ("student", "student"),
+	"Course Enrollment Individual": ("student_ce", "student"),
+	"Exam Submission": ("member", "user"),
+	"Assignment Submission": ("member", "user"),
+	"Discussion Submission": ("member", "user"),
+	"Oral Activity Submission": ("member", "user"),
+	"Quiz Submission": ("member", "user"),
+	"Course Schedule Progress": ("member", "user"),
+	"SCORM Attempt": ("member", "user"),
+	"Student Attendance": ("student", "student"),
+	"Student Due Date Override": ("student", "student"),
 }
 
 
 def _mentee_keys(course_schedule, user, kind):
-    """The section's mentees as Student names or as their User emails."""
-    students = section_mentees(course_schedule, user)
-    if kind == "student" or not students:
-        return set(students)
+	"""The section's mentees as Student names or as their User emails."""
+	students = section_mentees(course_schedule, user)
+	if kind == "student" or not students:
+		return set(students)
 
-    def _users():
-        return set(
-            frappe.get_all(
-                "Student",
-                filters={"name": ["in", list(students)], "user": ["is", "set"]},
-                pluck="user",
-            )
-        )
+	def _users():
+		return set(
+			frappe.get_all(
+				"Student",
+				filters={"name": ["in", list(students)], "user": ["is", "set"]},
+				pluck="user",
+			)
+		)
 
-    return _memo(("mentee_users", course_schedule, user), _users)
+	return _memo(("mentee_users", course_schedule, user), _users)
 
 
 def _mentor_allows(doctype, doc, ptype, user):
-    if not is_read_ptype(ptype):
-        return False
-    if doctype == "Student":
-        return any(
-            doc.name in section_mentees(cs, user) for cs in mentored_sections(user)
-        )
-    cs = course_of(doc)
-    if not cs or cs not in mentored_sections(user):
-        return False
-    if doctype in MENTOR_CONTENT:
-        return True
-    spec = MENTOR_STUDENT_FIELD.get(doctype)
-    if not spec:
-        return False
-    field, kind = spec
-    return (doc.get(field) or "") in _mentee_keys(cs, user, kind)
+	if not is_read_ptype(ptype):
+		return False
+	if doctype == "Student":
+		return any(doc.name in section_mentees(cs, user) for cs in mentored_sections(user))
+	cs = course_of(doc)
+	if not cs or cs not in mentored_sections(user):
+		return False
+	if doctype in MENTOR_CONTENT:
+		return True
+	spec = MENTOR_STUDENT_FIELD.get(doctype)
+	if not spec:
+		return False
+	field, kind = spec
+	return (doc.get(field) or "") in _mentee_keys(cs, user, kind)
 
 
 def _mentor_condition(doctype, user):
-    sections = mentored_sections(user)
-    if not sections:
-        return None
-    if doctype == "Student":
-        mentees = set()
-        for cs in sections:
-            mentees |= section_mentees(cs, user)
-        return f"`tabStudent`.name in ({_esc(mentees)})" if mentees else None
-    cs_field = COURSE_FIELD.get(doctype)
-    if not cs_field:
-        return None
-    if doctype in MENTOR_CONTENT:
-        return f"`tab{doctype}`.`{cs_field}` in ({_esc(sections)})"
-    spec = MENTOR_STUDENT_FIELD.get(doctype)
-    if not spec:
-        return None
-    field, kind = spec
-    parts = []
-    for cs in sections:
-        keys = _mentee_keys(cs, user, kind)
-        if keys:
-            parts.append(
-                f"(`tab{doctype}`.`{cs_field}` = {frappe.db.escape(cs)} and "
-                f"`tab{doctype}`.`{field}` in ({_esc(keys)}))"  # nosec B608 -- every value is escaped
-            )
-    return "(" + " or ".join(parts) + ")" if parts else None
+	sections = mentored_sections(user)
+	if not sections:
+		return None
+	if doctype == "Student":
+		mentees = set()
+		for cs in sections:
+			mentees |= section_mentees(cs, user)
+		return f"`tabStudent`.name in ({_esc(mentees)})" if mentees else None
+	cs_field = COURSE_FIELD.get(doctype)
+	if not cs_field:
+		return None
+	if doctype in MENTOR_CONTENT:
+		return f"`tab{doctype}`.`{cs_field}` in ({_esc(sections)})"
+	spec = MENTOR_STUDENT_FIELD.get(doctype)
+	if not spec:
+		return None
+	field, kind = spec
+	parts = []
+	for cs in sections:
+		keys = _mentee_keys(cs, user, kind)
+		if keys:
+			parts.append(
+				f"(`tab{doctype}`.`{cs_field}` = {frappe.db.escape(cs)} and "
+				f"`tab{doctype}`.`{field}` in ({_esc(keys)}))"  # nosec B608 -- every value is escaped
+			)
+	return "(" + " or ".join(parts) + ")" if parts else None
 
 
 def _esc(values):
-    return ", ".join(frappe.db.escape(v) for v in values)
+	return ", ".join(frappe.db.escape(v) for v in values)
 
 
 # ------------------------------------------------------- roles outside the factory
@@ -188,196 +186,192 @@ _AUTOMATIC_ROLES = {"Guest", "All", "Desk User", "Administrator"}
 
 
 def _granted_by_another_role(doctype, ptype, user):
-    """True when a role outside the factory's scope grants ``ptype`` on the
-    doctype to this user at permlevel 0 (if_owner rows are not a blanket grant
-    and are left to the DocPerm evaluation that follows)."""
-    ptype = ptype or "read"
+	"""True when a role outside the factory's scope grants ``ptype`` on the
+	doctype to this user at permlevel 0 (if_owner rows are not a blanket grant
+	and are left to the DocPerm evaluation that follows)."""
+	ptype = ptype or "read"
 
-    def _compute():
-        from frappe.permissions import get_valid_perms
+	def _compute():
+		from frappe.permissions import get_valid_perms
 
-        for perm in get_valid_perms(doctype, user):
-            if perm.role in SCOPED_ROLES or perm.role in _AUTOMATIC_ROLES:
-                continue
-            if perm.get("permlevel") or perm.get("if_owner"):
-                continue
-            if perm.get(ptype):
-                return True
-        return False
+		for perm in get_valid_perms(doctype, user):
+			if perm.role in SCOPED_ROLES or perm.role in _AUTOMATIC_ROLES:
+				continue
+			if perm.get("permlevel") or perm.get("if_owner"):
+				continue
+			if perm.get(ptype):
+				return True
+		return False
 
-    return _memo(("other_role", doctype, ptype, user), _compute)
+	return _memo(("other_role", doctype, ptype, user), _compute)
 
 
 # ------------------------------------------------------------------ has_permission
 
 
 def _instructor_allows(doctype, doc, ptype, user, rule):
-    if rule == "any":
-        return True
-    tier = instructor_tier(user)
-    if not tier:
-        return False
-    if rule == "students":
-        student = doc.name
-        if is_read_ptype(ptype):
-            readable = readable_course_schedules(user)
-            if readable is None:
-                return True
-            sections = readable
-        else:
-            sections = own_course_schedules(user)
-        if not sections:
-            return False
-        return bool(
-            frappe.db.exists(
-                "Scheduled Course Roster",
-                {"student": student, "course_sc": ["in", sections]},
-            )
-        )
-    cs = course_of(doc)
-    if is_read_ptype(ptype):
-        if cs is None:
-            return tier == "record"
-        readable = readable_course_schedules(user)
-        return readable is None or cs in readable
-    if cs is None:
-        # A new section, or a row that has not been tied to one yet: only an
-        # instructor of record may create it.
-        return tier == "record"
-    return is_course_staff(cs, user=user)
+	if rule == "any":
+		return True
+	tier = instructor_tier(user)
+	if not tier:
+		return False
+	if rule == "students":
+		student = doc.name
+		if is_read_ptype(ptype):
+			readable = readable_course_schedules(user)
+			if readable is None:
+				return True
+			sections = readable
+		else:
+			sections = own_course_schedules(user)
+		if not sections:
+			return False
+		return bool(
+			frappe.db.exists(
+				"Scheduled Course Roster",
+				{"student": student, "course_sc": ["in", sections]},
+			)
+		)
+	cs = course_of(doc)
+	if is_read_ptype(ptype):
+		if cs is None:
+			return tier == "record"
+		readable = readable_course_schedules(user)
+		return readable is None or cs in readable
+	if cs is None:
+		# A new section, or a row that has not been tied to one yet: only an
+		# instructor of record may create it.
+		return tier == "record"
+	return is_course_staff(cs, user=user)
 
 
 def _student_allows(doctype, doc, ptype, user, rule):
-    if rule is None:
-        return False
-    if rule == "student_sections":
-        return doc.name in student_sections(user)
-    if rule == "student_sections_of":
-        cs = course_of(doc)
-        return bool(cs) and cs in student_sections(user)
-    field, kind = rule
-    if kind == "user":
-        return (doc.get(field) or "") == user
-    student = current_student(user)
-    if not student:
-        return False
-    value = doc.name if field == "name" else doc.get(field)
-    return value == student
+	if rule is None:
+		return False
+	if rule == "student_sections":
+		return doc.name in student_sections(user)
+	if rule == "student_sections_of":
+		cs = course_of(doc)
+		return bool(cs) and cs in student_sections(user)
+	field, kind = rule
+	if kind == "user":
+		return (doc.get(field) or "") == user
+	student = current_student(user)
+	if not student:
+		return False
+	value = doc.name if field == "name" else doc.get(field)
+	return value == student
 
 
 def has_for(doctype):
-    student_rule, instructor_rule = CONFIG[doctype]
+	student_rule, instructor_rule = CONFIG[doctype]
 
-    def has_permission(doc, ptype=None, user=None):
-        user = user or frappe.session.user
-        if is_school_role(user):
-            return True
-        if _granted_by_another_role(doctype, ptype, user):
-            return True
-        roles = _roles(user)
-        if "Instructor" in roles and instructor_rule:
-            if _instructor_allows(doctype, doc, ptype, user, instructor_rule):
-                return True
-            if _mentor_allows(doctype, doc, ptype, user):
-                return True
-            # A grader who is also a student still reads their own rows.
-        if student_rule is None or "Student" not in roles:
-            # The student branch is for students: an instructor reaches a
-            # section through their tier, not through the catalogue read.
-            return False
-        if student_rule in ("student_sections", "student_sections_of") and not (
-            is_read_ptype(ptype)
-        ):
-            return False
-        return _student_allows(doctype, doc, ptype, user, student_rule)
+	def has_permission(doc, ptype=None, user=None):
+		user = user or frappe.session.user
+		if is_school_role(user):
+			return True
+		if _granted_by_another_role(doctype, ptype, user):
+			return True
+		roles = _roles(user)
+		if "Instructor" in roles and instructor_rule:
+			if _instructor_allows(doctype, doc, ptype, user, instructor_rule):
+				return True
+			if _mentor_allows(doctype, doc, ptype, user):
+				return True
+			# A grader who is also a student still reads their own rows.
+		if student_rule is None or "Student" not in roles:
+			# The student branch is for students: an instructor reaches a
+			# section through their tier, not through the catalogue read.
+			return False
+		if student_rule in ("student_sections", "student_sections_of") and not (is_read_ptype(ptype)):
+			return False
+		return _student_allows(doctype, doc, ptype, user, student_rule)
 
-    has_permission.__name__ = f"has_permission_{frappe.scrub(doctype)}"
-    return has_permission
+	has_permission.__name__ = f"has_permission_{frappe.scrub(doctype)}"
+	return has_permission
 
 
 # ------------------------------------------------------ permission_query_conditions
 
 
 def _instructor_condition(doctype, user, rule):
-    """SQL for the instructor read branch, "" for unrestricted, None for
-    nothing readable."""
-    if rule == "any":
-        return ""
-    if not instructor_tier(user):
-        return None
-    readable = readable_course_schedules(user)
-    if readable is None:
-        return ""
-    if not readable:
-        return None
-    if rule == "students":
-        return (
-            f"`tabStudent`.name in (select student from `tabScheduled Course Roster` "
-            f"where course_sc in ({_esc(readable)}))"  # nosec B608 -- the value is escaped before it reaches the string
-        )
-    field = COURSE_FIELD[doctype]
-    return f"`tab{doctype}`.`{field}` in ({_esc(readable)})"
+	"""SQL for the instructor read branch, "" for unrestricted, None for
+	nothing readable."""
+	if rule == "any":
+		return ""
+	if not instructor_tier(user):
+		return None
+	readable = readable_course_schedules(user)
+	if readable is None:
+		return ""
+	if not readable:
+		return None
+	if rule == "students":
+		return (
+			f"`tabStudent`.name in (select student from `tabScheduled Course Roster` "
+			f"where course_sc in ({_esc(readable)}))"  # nosec B608 -- the value is escaped before it reaches the string
+		)
+	field = COURSE_FIELD[doctype]
+	return f"`tab{doctype}`.`{field}` in ({_esc(readable)})"
 
 
 def _student_condition(doctype, user, rule):
-    if rule is None:
-        return None
-    if rule == "student_sections":
-        enrolled = student_sections(user)
-        if not enrolled:
-            return None
-        return f"`tab{doctype}`.name in ({_esc(enrolled)})"
-    if rule == "student_sections_of":
-        enrolled = student_sections(user)
-        if not enrolled:
-            return None
-        field = COURSE_FIELD[doctype]
-        return f"`tab{doctype}`.`{field}` in ({_esc(enrolled)})"
-    field, kind = rule
-    if kind == "user":
-        return f"`tab{doctype}`.`{field}` = {frappe.db.escape(user)}"
-    student = current_student(user)
-    if not student:
-        return None
-    return f"`tab{doctype}`.`{field}` = {frappe.db.escape(student)}"
+	if rule is None:
+		return None
+	if rule == "student_sections":
+		enrolled = student_sections(user)
+		if not enrolled:
+			return None
+		return f"`tab{doctype}`.name in ({_esc(enrolled)})"
+	if rule == "student_sections_of":
+		enrolled = student_sections(user)
+		if not enrolled:
+			return None
+		field = COURSE_FIELD[doctype]
+		return f"`tab{doctype}`.`{field}` in ({_esc(enrolled)})"
+	field, kind = rule
+	if kind == "user":
+		return f"`tab{doctype}`.`{field}` = {frappe.db.escape(user)}"
+	student = current_student(user)
+	if not student:
+		return None
+	return f"`tab{doctype}`.`{field}` = {frappe.db.escape(student)}"
 
 
 def query_for(doctype):
-    student_rule, instructor_rule = CONFIG[doctype]
+	student_rule, instructor_rule = CONFIG[doctype]
 
-    def get_permission_query_conditions(user=None):
-        user = user or frappe.session.user
-        if is_school_role(user):
-            return ""
-        if _granted_by_another_role(doctype, "read", user):
-            return ""
-        parts = []
-        roles = _roles(user)
-        if "Instructor" in roles and instructor_rule:
-            cond = _instructor_condition(doctype, user, instructor_rule)
-            if cond == "":
-                return ""
-            if cond:
-                parts.append(cond)
-            cond = _mentor_condition(doctype, user)
-            if cond:
-                parts.append(cond)
-        if "Student" in roles:
-            cond = _student_condition(doctype, user, student_rule)
-            if cond:
-                parts.append(cond)
-        if not parts:
-            return "1=0"
-        return "(" + " or ".join(parts) + ")"
+	def get_permission_query_conditions(user=None):
+		user = user or frappe.session.user
+		if is_school_role(user):
+			return ""
+		if _granted_by_another_role(doctype, "read", user):
+			return ""
+		parts = []
+		roles = _roles(user)
+		if "Instructor" in roles and instructor_rule:
+			cond = _instructor_condition(doctype, user, instructor_rule)
+			if cond == "":
+				return ""
+			if cond:
+				parts.append(cond)
+			cond = _mentor_condition(doctype, user)
+			if cond:
+				parts.append(cond)
+		if "Student" in roles:
+			cond = _student_condition(doctype, user, student_rule)
+			if cond:
+				parts.append(cond)
+		if not parts:
+			return "1=0"
+		return "(" + " or ".join(parts) + ")"
 
-    get_permission_query_conditions.__name__ = (
-        f"get_permission_query_conditions_{frappe.scrub(doctype)}"
-    )
-    return get_permission_query_conditions
+	get_permission_query_conditions.__name__ = f"get_permission_query_conditions_{frappe.scrub(doctype)}"
+	return get_permission_query_conditions
 
 
 # Module-level names for hooks.py (dotted paths must resolve to attributes).
 for _dt in CONFIG:
-    _key = frappe.scrub(_dt)
-    globals()[f"has_permission_{_key}"] = has_for(_dt)
-    globals()[f"query_{_key}"] = query_for(_dt)
+	_key = frappe.scrub(_dt)
+	globals()[f"has_permission_{_key}"] = has_for(_dt)
+	globals()[f"query_{_key}"] = query_for(_dt)

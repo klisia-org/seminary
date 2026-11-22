@@ -58,31 +58,31 @@ SERVICE_NAME = "Geocoding"
 #: one that differs: a Person has both a `country` (where they are from) and a
 #: `mailing_country` (where the post goes), and only the latter is an address.
 LOCATABLE = {
-    "Person": (
-        "address_line_1",
-        "address_line_2",
-        "city",
-        "state",
-        "pincode",
-        "mailing_country",
-    ),
-    "Partner Organization": (
-        "address_line_1",
-        "address_line_2",
-        "city",
-        "state",
-        "pincode",
-        "country",
-    ),
+	"Person": (
+		"address_line_1",
+		"address_line_2",
+		"city",
+		"state",
+		"pincode",
+		"mailing_country",
+	),
+	"Partner Organization": (
+		"address_line_1",
+		"address_line_2",
+		"city",
+		"state",
+		"pincode",
+		"country",
+	),
 }
 
 #: What we write back. Kept here so the caller cannot half-fill it.
 RESULT_FIELDS = (
-    "latitude",
-    "longitude",
-    "geocoded_on",
-    "geocode_precision",
-    "geo_status",
+	"latitude",
+	"longitude",
+	"geocoded_on",
+	"geocode_precision",
+	"geo_status",
 )
 
 RESOLVED = "Resolved"
@@ -108,168 +108,166 @@ SWEEP_BATCH = 50
 #: the coordinate column. They are raised instead, which lands them in `Failed`
 #: and in the error log.
 PROVIDER_FAULTS = {
-    "REQUEST_DENIED",
-    "OVER_QUERY_LIMIT",
-    "OVER_DAILY_LIMIT",
-    "INVALID_REQUEST",
-    "UNKNOWN_ERROR",
+	"REQUEST_DENIED",
+	"OVER_QUERY_LIMIT",
+	"OVER_DAILY_LIMIT",
+	"INVALID_REQUEST",
+	"UNKNOWN_ERROR",
 }
 
 
 class GeocodingError(Exception):
-    """The provider refused or failed the request, as opposed to not knowing
-    the place."""
+	"""The provider refused or failed the request, as opposed to not knowing
+	the place."""
 
 
 def _settings():
-    """The one way this module reads its configuration.
+	"""The one way this module reads its configuration.
 
-    A single accessor so tests can substitute a stand-in instead of writing to
-    the live Single — which they used to do, and which overwrote a developer's
-    real API key with a test token the moment anything committed mid-test
-    (`create_request_log` ends with `frappe.db.commit()`, so that was every
-    lookup).
-    """
-    override = getattr(frappe.local, "_geocoding_settings", None)
-    return effective(override or frappe.get_single(SETTINGS))
+	A single accessor so tests can substitute a stand-in instead of writing to
+	the live Single — which they used to do, and which overwrote a developer's
+	real API key with a test token the moment anything committed mid-test
+	(`create_request_log` ends with `frappe.db.commit()`, so that was every
+	lookup).
+	"""
+	override = getattr(frappe.local, "_geocoding_settings", None)
+	return effective(override or frappe.get_single(SETTINGS))
 
 
 class HostedSettings:
-    """The host's proxy, as configured in site config rather than Settings.
+	"""The host's proxy, as configured in site config rather than Settings.
 
-    Press writes `geocoding_token` and `geocoding_base_url` when it installs
-    seminary on a site (Aretenic ADR 053), so a hosted school is geocoding
-    from its first day without holding a key or seeing one. The quota is the
-    host's to enforce, so there is no local ceiling.
-    """
+	Press writes `geocoding_token` and `geocoding_base_url` when it installs
+	seminary on a site (Aretenic ADR 053), so a hosted school is geocoding
+	from its first day without holding a key or seeing one. The quota is the
+	host's to enforce, so there is no local ceiling.
+	"""
 
-    enabled = 1
-    provider = "Vendor proxy"
-    daily_limit = 0
+	enabled = 1
+	provider = "Vendor proxy"
+	daily_limit = 0
 
-    def __init__(self, base_url: str, token: str):
-        self.base_url = base_url
-        self._token = token
+	def __init__(self, base_url: str, token: str):
+		self.base_url = base_url
+		self._token = token
 
-    def get_password(self, fieldname, raise_exception=True):
-        return self._token if fieldname == "api_key" else None
+	def get_password(self, fieldname, raise_exception=True):
+		return self._token if fieldname == "api_key" else None
 
 
 def hosted_config() -> tuple[str, str] | None:
-    """The host's (base_url, token) from site config, or None."""
-    base_url = frappe.conf.get("geocoding_base_url")
-    token = frappe.conf.get("geocoding_token")
-    return (base_url, token) if base_url and token else None
+	"""The host's (base_url, token) from site config, or None."""
+	base_url = frappe.conf.get("geocoding_base_url")
+	token = frappe.conf.get("geocoding_token")
+	return (base_url, token) if base_url and token else None
 
 
 def effective(settings):
-    """What a lookup should use: the host's proxy unless the school opted out.
+	"""What a lookup should use: the host's proxy unless the school opted out.
 
-    A stand-in without `use_own_settings` counts as the school's own, so tests
-    keep their configuration on a site that happens to carry a host token.
-    """
-    hosted = hosted_config()
-    if hosted and not getattr(settings, "use_own_settings", 1):
-        return HostedSettings(*hosted)
-    return settings
+	A stand-in without `use_own_settings` counts as the school's own, so tests
+	keep their configuration on a site that happens to carry a host token.
+	"""
+	hosted = hosted_config()
+	if hosted and not getattr(settings, "use_own_settings", 1):
+		return HostedSettings(*hosted)
+	return settings
 
 
 @contextmanager
 def using(settings):
-    """Run a lookup against a specific settings document.
+	"""Run a lookup against a specific settings document.
 
-    The Test Connection button needs the values on screen, including ones the
-    admin has typed but not yet saved — testing the saved configuration when
-    someone is trying out a new key would answer the wrong question.
-    """
-    previous = getattr(frappe.local, "_geocoding_settings", None)
-    frappe.local._geocoding_settings = settings
-    try:
-        yield settings
-    finally:
-        frappe.local._geocoding_settings = previous
+	The Test Connection button needs the values on screen, including ones the
+	admin has typed but not yet saved — testing the saved configuration when
+	someone is trying out a new key would answer the wrong question.
+	"""
+	previous = getattr(frappe.local, "_geocoding_settings", None)
+	frappe.local._geocoding_settings = settings
+	try:
+		yield settings
+	finally:
+		frappe.local._geocoding_settings = previous
 
 
 def is_enabled() -> bool:
-    return bool(_settings().enabled)
+	return bool(_settings().enabled)
 
 
 def address_fields(doctype: str) -> tuple:
-    """The address fields of a locatable doctype, or an empty tuple."""
-    return LOCATABLE.get(doctype, ())
+	"""The address fields of a locatable doctype, or an empty tuple."""
+	return LOCATABLE.get(doctype, ())
 
 
 def address_of(doc) -> str:
-    """The one-line address string handed to the provider."""
-    parts = [doc.get(f) for f in address_fields(doc.doctype)]
-    return ", ".join(p.strip() for p in parts if p and str(p).strip())
+	"""The one-line address string handed to the provider."""
+	parts = [doc.get(f) for f in address_fields(doc.doctype)]
+	return ", ".join(p.strip() for p in parts if p and str(p).strip())
 
 
 def address_changed(doc) -> bool:
-    """Did this save alter the address the coordinates were derived from?"""
-    before = doc.get_doc_before_save()
-    if not before:
-        return bool(address_of(doc))
-    return any(
-        (before.get(f) or "") != (doc.get(f) or "") for f in address_fields(doc.doctype)
-    )
+	"""Did this save alter the address the coordinates were derived from?"""
+	before = doc.get_doc_before_save()
+	if not before:
+		return bool(address_of(doc))
+	return any((before.get(f) or "") != (doc.get(f) or "") for f in address_fields(doc.doctype))
 
 
 def enqueue_for(doctype: str, name: str) -> None:
-    """Queue a lookup after the transaction commits.
+	"""Queue a lookup after the transaction commits.
 
-    `enqueue_after_commit` matters: without it the job can start before the
-    address is visible to another connection and geocode the previous value.
-    """
-    frappe.enqueue(
-        "seminary.seminary.integrations.geocoding.geocode_doc",
-        queue="short",
-        enqueue_after_commit=True,
-        doctype=doctype,
-        name=name,
-    )
+	`enqueue_after_commit` matters: without it the job can start before the
+	address is visible to another connection and geocode the previous value.
+	"""
+	frappe.enqueue(
+		"seminary.seminary.integrations.geocoding.geocode_doc",
+		queue="short",
+		enqueue_after_commit=True,
+		doctype=doctype,
+		name=name,
+	)
 
 
 def geocode_doc(doctype: str, name: str) -> dict | None:
-    """Resolve and store one record's coordinates. Safe to call twice."""
-    if not is_enabled():
-        return None
-    if doctype not in LOCATABLE or not frappe.db.exists(doctype, name):
-        return None
+	"""Resolve and store one record's coordinates. Safe to call twice."""
+	if not is_enabled():
+		return None
+	if doctype not in LOCATABLE or not frappe.db.exists(doctype, name):
+		return None
 
-    doc = frappe.get_doc(doctype, name)
-    address = address_of(doc)
-    if not address:
-        _clear(doctype, name, None)
-        return None
+	doc = frappe.get_doc(doctype, name)
+	address = address_of(doc)
+	if not address:
+		_clear(doctype, name, None)
+		return None
 
-    try:
-        result = lookup(address)
-    except Exception:
-        # A provider outage must not surface as a failed save, and it must not
-        # blank a coordinate we already hold — a stale point is better than no
-        # point for a distance ranking, and the pre-flight reports staleness.
-        frappe.log_error(frappe.get_traceback(), "geocoding: %s %s" % (doctype, name))
-        _mark(doctype, name, FAILED)
-        return None
+	try:
+		result = lookup(address)
+	except Exception:
+		# A provider outage must not surface as a failed save, and it must not
+		# blank a coordinate we already hold — a stale point is better than no
+		# point for a distance ranking, and the pre-flight reports staleness.
+		frappe.log_error(frappe.get_traceback(), "geocoding: %s %s" % (doctype, name))
+		_mark(doctype, name, FAILED)
+		return None
 
-    if not result:
-        _clear(doctype, name, UNRESOLVABLE)
-        return None
+	if not result:
+		_clear(doctype, name, UNRESOLVABLE)
+		return None
 
-    frappe.db.set_value(
-        doctype,
-        name,
-        {
-            "latitude": result["latitude"],
-            "longitude": result["longitude"],
-            "geocode_precision": result.get("precision"),
-            "geocoded_on": now_datetime(),
-            "geo_status": RESOLVED,
-        },
-        update_modified=False,
-    )
-    return result
+	frappe.db.set_value(
+		doctype,
+		name,
+		{
+			"latitude": result["latitude"],
+			"longitude": result["longitude"],
+			"geocode_precision": result.get("precision"),
+			"geocoded_on": now_datetime(),
+			"geo_status": RESOLVED,
+		},
+		update_modified=False,
+	)
+	return result
 
 
 #: Places API (New) hosts autocomplete and place details on its own domain,
@@ -279,390 +277,386 @@ PLACES_BASE_URL = "https://places.googleapis.com"
 #: Places API (New) requires an explicit field mask — omitting it is an error,
 #: not a default — and you are billed for the fields you ask for. Ask for the
 #: minimum: an id and a label to show, then the components and the point.
-AUTOCOMPLETE_MASK = (
-    "suggestions.placePrediction.placeId,suggestions.placePrediction.text"
-)
+AUTOCOMPLETE_MASK = "suggestions.placePrediction.placeId,suggestions.placePrediction.text"
 DETAILS_MASK = "addressComponents,location,formattedAddress"
 
 
 def _places_call(path, body=None, mask=AUTOCOMPLETE_MASK):
-    """One Places API (New) request, through whichever provider is configured.
+	"""One Places API (New) request, through whichever provider is configured.
 
-    Vendor proxy is not an afterthought here: the reason autocomplete is
-    proxied through this server at all is that the browser widget would have
-    put a Places key in page source, and a hosted school holds no Google
-    account to put there. Same switch, same key, same audit log as the
-    geocoder.
-    """
-    settings = _settings()
-    if not settings.enabled:
-        return None
-    key = settings.get_password("api_key", raise_exception=False)
-    if not key:
-        frappe.throw(_("Address Geocoding Settings is missing a server API key."))
+	Vendor proxy is not an afterthought here: the reason autocomplete is
+	proxied through this server at all is that the browser widget would have
+	put a Places key in page source, and a hosted school holds no Google
+	account to put there. Same switch, same key, same audit log as the
+	geocoder.
+	"""
+	settings = _settings()
+	if not settings.enabled:
+		return None
+	key = settings.get_password("api_key", raise_exception=False)
+	if not key:
+		frappe.throw(_("Address Geocoding Settings is missing a server API key."))
 
-    if settings.provider == "Vendor proxy":
-        base_url = settings.base_url
-        headers = {"Authorization": "Bearer %s" % key, "X-Goog-FieldMask": mask}
-    else:
-        base_url = PLACES_BASE_URL
-        headers = {"X-Goog-Api-Key": key, "X-Goog-FieldMask": mask}
+	if settings.provider == "Vendor proxy":
+		base_url = settings.base_url
+		headers = {"Authorization": "Bearer %s" % key, "X-Goog-FieldMask": mask}
+	else:
+		base_url = PLACES_BASE_URL
+		headers = {"X-Goog-Api-Key": key, "X-Goog-FieldMask": mask}
 
-    return client.post(base_url, path, body=body, headers=headers)
+	return client.post(base_url, path, body=body, headers=headers)
 
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=60, seconds=60, ip_based=True)
-def suggest_addresses(text: str, session_token: str = None) -> list[dict]:
-    """Address predictions for a partly-typed address.
+def suggest_addresses(text: str, session_token: str | None = None) -> list[dict]:
+	"""Address predictions for a partly-typed address.
 
-    Guest-callable because the public application form is the surface where a
-    badly typed address does the most damage — and the applicant is never
-    logged in. That makes it a billable endpoint open to the internet, so it is
-    rate limited per IP on top of the daily ceiling: 60 a minute is far more
-    than a human types and far less than a loop costs.
+	Guest-callable because the public application form is the surface where a
+	badly typed address does the most damage — and the applicant is never
+	logged in. That makes it a billable endpoint open to the internet, so it is
+	rate limited per IP on top of the daily ceiling: 60 a minute is far more
+	than a human types and far less than a loop costs.
 
-    Server-side on purpose. The Places JS widget would have worked with less
-    code, but it requires the API key in page source — and `Vendor proxy`
-    exists precisely so a hosted school holds no Google account, so there would
-    have been no key of theirs to expose and no honest way to expose ours.
+	Server-side on purpose. The Places JS widget would have worked with less
+	code, but it requires the API key in page source — and `Vendor proxy`
+	exists precisely so a hosted school holds no Google account, so there would
+	have been no key of theirs to expose and no honest way to expose ours.
 
-    `session_token` groups the keystrokes and the `resolve_address` call that
-    follows into one billable session; without it every keystroke is charged
-    separately.
-    """
-    text = (text or "").strip()
-    if len(text) < 3 or not is_enabled():
-        return []
+	`session_token` groups the keystrokes and the `resolve_address` call that
+	follows into one billable session; without it every keystroke is charged
+	separately.
+	"""
+	text = (text or "").strip()
+	if len(text) < 3 or not is_enabled():
+		return []
 
-    body = {"input": text}
-    if session_token:
-        body["sessionToken"] = session_token
-    try:
-        payload = _places_call("/v1/places:autocomplete", body)
-    except Exception:
-        # A typeahead that raises is worse than one that returns nothing: the
-        # field is still typeable, and the address still saves.
-        frappe.log_error(frappe.get_traceback(), "geocoding: autocomplete")
-        return []
+	body = {"input": text}
+	if session_token:
+		body["sessionToken"] = session_token
+	try:
+		payload = _places_call("/v1/places:autocomplete", body)
+	except Exception:
+		# A typeahead that raises is worse than one that returns nothing: the
+		# field is still typeable, and the address still saves.
+		frappe.log_error(frappe.get_traceback(), "geocoding: autocomplete")
+		return []
 
-    out = []
-    for suggestion in (payload or {}).get("suggestions") or []:
-        prediction = suggestion.get("placePrediction") or {}
-        label = (prediction.get("text") or {}).get("text")
-        if prediction.get("placeId") and label:
-            out.append({"place_id": prediction["placeId"], "label": label})
-    return out
+	out = []
+	for suggestion in (payload or {}).get("suggestions") or []:
+		prediction = suggestion.get("placePrediction") or {}
+		label = (prediction.get("text") or {}).get("text")
+		if prediction.get("placeId") and label:
+			out.append({"place_id": prediction["placeId"], "label": label})
+	return out
 
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=30, seconds=60, ip_based=True)
-def resolve_address(place_id: str, session_token: str = None) -> dict | None:
-    """The structured address and coordinates behind a chosen prediction.
+def resolve_address(place_id: str, session_token: str | None = None) -> dict | None:
+	"""The structured address and coordinates behind a chosen prediction.
 
-    Guest-callable and rate limited for the same reason as `suggest_addresses`:
-    the applicant form needs it, and a Place Details call is the more expensive
-    half of a session.
+	Guest-callable and rate limited for the same reason as `suggest_addresses`:
+	the applicant form needs it, and a Place Details call is the more expensive
+	half of a session.
 
-    Returns the point as well as the components, so an address picked from the
-    typeahead needs no separate Geocoding call afterwards — it arrives already
-    located, and already spelled the way the provider spells it, which is what
-    stops it coming back `Unresolvable` later.
-    """
-    if not place_id or not is_enabled():
-        return None
-    path = "/v1/places/%s" % place_id
-    params = {"sessionToken": session_token} if session_token else None
-    try:
-        settings = _settings()
-        key = settings.get_password("api_key", raise_exception=False)
-        if settings.provider == "Vendor proxy":
-            payload = client.get(
-                settings.base_url,
-                path,
-                auth_header="Authorization",
-                auth_value="Bearer %s" % key,
-                params=params,
-            )
-        else:
-            payload = client.get(
-                PLACES_BASE_URL,
-                path,
-                auth_header="X-Goog-Api-Key",
-                auth_value=key,
-                params=dict(params or {}, fields=DETAILS_MASK),
-            )
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "geocoding: place details")
-        return None
+	Returns the point as well as the components, so an address picked from the
+	typeahead needs no separate Geocoding call afterwards — it arrives already
+	located, and already spelled the way the provider spells it, which is what
+	stops it coming back `Unresolvable` later.
+	"""
+	if not place_id or not is_enabled():
+		return None
+	path = "/v1/places/%s" % place_id
+	params = {"sessionToken": session_token} if session_token else None
+	try:
+		settings = _settings()
+		key = settings.get_password("api_key", raise_exception=False)
+		if settings.provider == "Vendor proxy":
+			payload = client.get(
+				settings.base_url,
+				path,
+				auth_header="Authorization",
+				auth_value="Bearer %s" % key,
+				params=params,
+			)
+		else:
+			payload = client.get(
+				PLACES_BASE_URL,
+				path,
+				auth_header="X-Goog-Api-Key",
+				auth_value=key,
+				params=dict(params or {}, fields=DETAILS_MASK),
+			)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "geocoding: place details")
+		return None
 
-    return _shape_place(payload)
+	return _shape_place(payload)
 
 
 #: Google address component type -> (our field, which of longText/shortText).
 #: `shortText` for the state because an address line wants "PE", not
 #: "Pernambuco".
 COMPONENT_MAP = {
-    "street_number": ("_street_number", "longText"),
-    "route": ("_route", "longText"),
-    "subpremise": ("address_line_2", "longText"),
-    "locality": ("city", "longText"),
-    "postal_town": ("city", "longText"),
-    "administrative_area_level_2": ("_city_fallback", "longText"),
-    "administrative_area_level_1": ("state", "shortText"),
-    "postal_code": ("pincode", "longText"),
-    "country": ("country", "longText"),
+	"street_number": ("_street_number", "longText"),
+	"route": ("_route", "longText"),
+	"subpremise": ("address_line_2", "longText"),
+	"locality": ("city", "longText"),
+	"postal_town": ("city", "longText"),
+	"administrative_area_level_2": ("_city_fallback", "longText"),
+	"administrative_area_level_1": ("state", "shortText"),
+	"postal_code": ("pincode", "longText"),
+	"country": ("country", "longText"),
 }
 
 
 def _shape_place(payload) -> dict | None:
-    if not isinstance(payload, dict):
-        return None
-    out = {}
-    for component in payload.get("addressComponents") or []:
-        for kind in component.get("types") or []:
-            rule = COMPONENT_MAP.get(kind)
-            if rule and rule[0] not in out:
-                out[rule[0]] = component.get(rule[1])
+	if not isinstance(payload, dict):
+		return None
+	out = {}
+	for component in payload.get("addressComponents") or []:
+		for kind in component.get("types") or []:
+			rule = COMPONENT_MAP.get(kind)
+			if rule and rule[0] not in out:
+				out[rule[0]] = component.get(rule[1])
 
-    # Google splits the street across two components; an address line wants it
-    # whole.
-    out["address_line_1"] = " ".join(
-        p for p in (out.pop("_street_number", None), out.pop("_route", None)) if p
-    )
-    out.setdefault("city", out.pop("_city_fallback", None))
-    out.pop("_city_fallback", None)
+	# Google splits the street across two components; an address line wants it
+	# whole.
+	out["address_line_1"] = " ".join(
+		p for p in (out.pop("_street_number", None), out.pop("_route", None)) if p
+	)
+	out.setdefault("city", out.pop("_city_fallback", None))
+	out.pop("_city_fallback", None)
 
-    location = payload.get("location") or {}
-    if location.get("latitude") is not None:
-        out["latitude"] = location["latitude"]
-        out["longitude"] = location["longitude"]
-        # A place chosen from the typeahead is as precise as the provider gets.
-        out["precision"] = "PLACES"
-    out["formatted_address"] = payload.get("formattedAddress")
-    return out
+	location = payload.get("location") or {}
+	if location.get("latitude") is not None:
+		out["latitude"] = location["latitude"]
+		out["longitude"] = location["longitude"]
+		# A place chosen from the typeahead is as precise as the provider gets.
+		out["precision"] = "PLACES"
+	out["formatted_address"] = payload.get("formattedAddress")
+	return out
 
 
 @frappe.whitelist()
 def geocode_now(doctype: str, name: str) -> dict:
-    """Look one record up on demand, from the form's Location button.
+	"""Look one record up on demand, from the form's Location button.
 
-    Synchronous on purpose, unlike the save-time path: a person clicked a
-    button and is waiting for an answer, so silence would be the wrong
-    behaviour here even though it is the right one during an intake save.
-    """
-    if doctype not in LOCATABLE:
-        frappe.throw(_("{0} does not hold an address to look up.").format(_(doctype)))
-    frappe.has_permission(doctype, "write", doc=name, throw=True)
-    if not is_enabled():
-        return {"ok": False, "message": _("Geocoding is not enabled.")}
+	Synchronous on purpose, unlike the save-time path: a person clicked a
+	button and is waiting for an answer, so silence would be the wrong
+	behaviour here even though it is the right one during an intake save.
+	"""
+	if doctype not in LOCATABLE:
+		frappe.throw(_("{0} does not hold an address to look up.").format(_(doctype)))
+	frappe.has_permission(doctype, "write", doc=name, throw=True)
+	if not is_enabled():
+		return {"ok": False, "message": _("Geocoding is not enabled.")}
 
-    result = geocode_doc(doctype, name)
-    if result:
-        return {"ok": True, **result}
+	result = geocode_doc(doctype, name)
+	if result:
+		return {"ok": True, **result}
 
-    status = frappe.db.get_value(doctype, name, "geo_status")
-    if status == UNRESOLVABLE:
-        message = _("The provider knows of no such address.")
-    elif status == FAILED:
-        message = _("The provider could not be reached. It will be retried.")
-    else:
-        message = _("There is no mailing address to look up.")
-    return {"ok": False, "message": message}
+	status = frappe.db.get_value(doctype, name, "geo_status")
+	if status == UNRESOLVABLE:
+		message = _("The provider knows of no such address.")
+	elif status == FAILED:
+		message = _("The provider could not be reached. It will be retried.")
+	else:
+		message = _("There is no mailing address to look up.")
+	return {"ok": False, "message": message}
 
 
 def has_coordinates(doc, doctype: str = "Person") -> bool:
-    """Whether this record has a usable point.
+	"""Whether this record has a usable point.
 
-    `geo_status`, not latitude, is the presence signal. Frappe's Float columns
-    are NOT NULL DEFAULT 0, so an unresolved coordinate reads as `0.0, 0.0` —
-    which is a real place in the Gulf of Guinea, and a distance ranking that
-    quietly treated it as "unknown" would be guessing.
+	`geo_status`, not latitude, is the presence signal. Frappe's Float columns
+	are NOT NULL DEFAULT 0, so an unresolved coordinate reads as `0.0, 0.0` —
+	which is a real place in the Gulf of Guinea, and a distance ranking that
+	quietly treated it as "unknown" would be guessing.
 
-    `doctype` matters only when `doc` is a name rather than a record; it
-    defaults to Person because that is what the distance ranking asks about.
-    """
-    if isinstance(doc, str):
-        doc = frappe.db.get_value(doctype, doc, ["geo_status"], as_dict=True)
-    return bool(doc and doc.get("geo_status") == RESOLVED)
+	`doctype` matters only when `doc` is a name rather than a record; it
+	defaults to Person because that is what the distance ranking asks about.
+	"""
+	if isinstance(doc, str):
+		doc = frappe.db.get_value(doctype, doc, ["geo_status"], as_dict=True)
+	return bool(doc and doc.get("geo_status") == RESOLVED)
 
 
 def _clear(doctype: str, name: str, status) -> None:
-    """No address, or no such place: say so rather than leaving a stale point.
+	"""No address, or no such place: say so rather than leaving a stale point.
 
-    The coordinates go to 0 because the column cannot hold NULL; `geo_status`
-    is what records the outcome, and stamping `geocoded_on` distinguishes "we
-    looked and found nothing" from "never looked".
-    """
-    frappe.db.set_value(
-        doctype,
-        name,
-        {
-            "latitude": 0,
-            "longitude": 0,
-            "geocode_precision": None,
-            "geocoded_on": now_datetime(),
-            "geo_status": status,
-        },
-        update_modified=False,
-    )
+	The coordinates go to 0 because the column cannot hold NULL; `geo_status`
+	is what records the outcome, and stamping `geocoded_on` distinguishes "we
+	looked and found nothing" from "never looked".
+	"""
+	frappe.db.set_value(
+		doctype,
+		name,
+		{
+			"latitude": 0,
+			"longitude": 0,
+			"geocode_precision": None,
+			"geocoded_on": now_datetime(),
+			"geo_status": status,
+		},
+		update_modified=False,
+	)
 
 
 def _mark(doctype: str, name: str, status) -> None:
-    """Record an outcome without touching a point we already hold.
+	"""Record an outcome without touching a point we already hold.
 
-    A stale coordinate beats none for a ranking, so an outage must not blank
-    one — it only says the last attempt failed, which is what the sweeper and
-    the ADR 067 readiness pre-flight read.
-    """
-    frappe.db.set_value(
-        doctype,
-        name,
-        {"geocoded_on": now_datetime(), "geo_status": status},
-        update_modified=False,
-    )
+	A stale coordinate beats none for a ranking, so an outage must not blank
+	one — it only says the last attempt failed, which is what the sweeper and
+	the ADR 067 readiness pre-flight read.
+	"""
+	frappe.db.set_value(
+		doctype,
+		name,
+		{"geocoded_on": now_datetime(), "geo_status": status},
+		update_modified=False,
+	)
 
 
 def retry_failed_geocodes():
-    """Daily: retry the lookups that failed for reasons that pass.
+	"""Daily: retry the lookups that failed for reasons that pass.
 
-    Only `Failed` — an outage, a quota ceiling, a timeout. `Unresolvable` is
-    left alone because asking again costs money and gets the same answer, and
-    it clears by itself when someone corrects the address.
+	Only `Failed` — an outage, a quota ceiling, a timeout. `Unresolvable` is
+	left alone because asking again costs money and gets the same answer, and
+	it clears by itself when someone corrects the address.
 
-    `SWEEP_BATCH` is per doctype rather than per run: the doctypes are drained
-    independently, so a backlog of Persons cannot starve the handful of
-    organizations behind it.
-    """
-    if not is_enabled():
-        return
-    for doctype in LOCATABLE:
-        names = frappe.get_all(
-            doctype,
-            filters={"geo_status": FAILED},
-            pluck="name",
-            limit=SWEEP_BATCH,
-            order_by="geocoded_on asc",
-        )
-        for name in names:
-            geocode_doc(doctype, name)
+	`SWEEP_BATCH` is per doctype rather than per run: the doctypes are drained
+	independently, so a backlog of Persons cannot starve the handful of
+	organizations behind it.
+	"""
+	if not is_enabled():
+		return
+	for doctype in LOCATABLE:
+		names = frappe.get_all(
+			doctype,
+			filters={"geo_status": FAILED},
+			pluck="name",
+			limit=SWEEP_BATCH,
+			order_by="geocoded_on asc",
+		)
+		for name in names:
+			geocode_doc(doctype, name)
 
 
 def lookup(address: str) -> dict | None:
-    """Ask the configured provider for one address. Returns None on no match."""
-    settings = _settings()
-    if not settings.enabled:
-        return None
-    _assert_within_daily_limit(settings)
+	"""Ask the configured provider for one address. Returns None on no match."""
+	settings = _settings()
+	if not settings.enabled:
+		return None
+	_assert_within_daily_limit(settings)
 
-    key = settings.get_password("api_key", raise_exception=False)
-    if not key:
-        frappe.throw(_("Address Geocoding Settings is missing a server API key."))
+	key = settings.get_password("api_key", raise_exception=False)
+	if not key:
+		frappe.throw(_("Address Geocoding Settings is missing a server API key."))
 
-    if settings.provider == "Vendor proxy":
-        # Our endpoint takes a site token and speaks the same response shape,
-        # so the school configures nothing and we hold the upstream key.
-        payload = client.get(
-            settings.base_url,
-            "/geocode",
-            auth_header="Authorization",
-            auth_value="Bearer %s" % key,
-            params={"address": address},
-        )
-    else:
-        # Google authenticates by query parameter, not by header — verified
-        # against the live endpoint.
-        payload = client.get(
-            settings.base_url,
-            "/maps/api/geocode/json",
-            params={"address": address, "key": key},
-        )
+	if settings.provider == "Vendor proxy":
+		# Our endpoint takes a site token and speaks the same response shape,
+		# so the school configures nothing and we hold the upstream key.
+		payload = client.get(
+			settings.base_url,
+			"/geocode",
+			auth_header="Authorization",
+			auth_value="Bearer %s" % key,
+			params={"address": address},
+		)
+	else:
+		# Google authenticates by query parameter, not by header — verified
+		# against the live endpoint.
+		payload = client.get(
+			settings.base_url,
+			"/maps/api/geocode/json",
+			params={"address": address, "key": key},
+		)
 
-    try:
-        _assert_provider_ok(payload)
-    except GeocodingError as exc:
-        _log_request(address, "Failed", error=str(exc))
-        raise
-    result = _shape(payload)
-    _log_request(address, "Completed", output=payload.get("status"))
-    return result
+	try:
+		_assert_provider_ok(payload)
+	except GeocodingError as exc:
+		_log_request(address, "Failed", error=str(exc))
+		raise
+	result = _shape(payload)
+	_log_request(address, "Completed", output=payload.get("status"))
+	return result
 
 
 def _log_request(address: str, status: str, output=None, error=None) -> None:
-    """Record the call as an Integration Request.
+	"""Record the call as an Integration Request.
 
-    `client.get` does not do this — `make_get_request` sets a flag and creates
-    no record, despite what its wrapper's docstring used to say. Writing it
-    here is what makes the daily ceiling countable and gives the school an
-    auditable list of the addresses that left the building.
-    """
-    from frappe.integrations.utils import create_request_log
+	`client.get` does not do this — `make_get_request` sets a flag and creates
+	no record, despite what its wrapper's docstring used to say. Writing it
+	here is what makes the daily ceiling countable and gives the school an
+	auditable list of the addresses that left the building.
+	"""
+	from frappe.integrations.utils import create_request_log
 
-    try:
-        create_request_log(
-            {"address": address},
-            service_name=SERVICE_NAME,
-            is_remote_request=1,
-            status=status,
-            output=output,
-            error=error,
-        )
-    except Exception:
-        # An audit trail that breaks the thing it audits is worse than none.
-        frappe.log_error(frappe.get_traceback(), "geocoding: request log")
+	try:
+		create_request_log(
+			{"address": address},
+			service_name=SERVICE_NAME,
+			is_remote_request=1,
+			status=status,
+			output=output,
+			error=error,
+		)
+	except Exception:
+		# An audit trail that breaks the thing it audits is worse than none.
+		frappe.log_error(frappe.get_traceback(), "geocoding: request log")
 
 
 def _assert_provider_ok(payload) -> None:
-    """Separate "I will not answer" from "there is no such place"."""
-    if not isinstance(payload, dict):
-        return
-    status = payload.get("status")
-    if status in PROVIDER_FAULTS:
-        raise GeocodingError(
-            "%s: %s" % (status, payload.get("error_message") or "no detail given")
-        )
+	"""Separate "I will not answer" from "there is no such place"."""
+	if not isinstance(payload, dict):
+		return
+	status = payload.get("status")
+	if status in PROVIDER_FAULTS:
+		raise GeocodingError("%s: %s" % (status, payload.get("error_message") or "no detail given"))
 
 
 def _shape(payload) -> dict | None:
-    """Both modes answer in Google's shape; normalise to ours."""
-    if not isinstance(payload, dict):
-        return None
-    if payload.get("status") not in (None, "OK"):
-        return None
-    results = payload.get("results") or []
-    if not results:
-        return None
-    top = results[0]
-    location = (top.get("geometry") or {}).get("location") or {}
-    if location.get("lat") is None or location.get("lng") is None:
-        return None
-    return {
-        "latitude": location["lat"],
-        "longitude": location["lng"],
-        # "ROOFTOP" and "APPROXIMATE" are not the same answer, and a distance
-        # ranking built on a city centroid is noise. Store what we got so the
-        # readiness check can say so — and never leave it empty on a real
-        # match, because `has_coordinates` reads it as the presence signal.
-        "precision": (top.get("geometry") or {}).get("location_type") or "UNKNOWN",
-    }
+	"""Both modes answer in Google's shape; normalise to ours."""
+	if not isinstance(payload, dict):
+		return None
+	if payload.get("status") not in (None, "OK"):
+		return None
+	results = payload.get("results") or []
+	if not results:
+		return None
+	top = results[0]
+	location = (top.get("geometry") or {}).get("location") or {}
+	if location.get("lat") is None or location.get("lng") is None:
+		return None
+	return {
+		"latitude": location["lat"],
+		"longitude": location["lng"],
+		# "ROOFTOP" and "APPROXIMATE" are not the same answer, and a distance
+		# ranking built on a city centroid is noise. Store what we got so the
+		# readiness check can say so — and never leave it empty on a real
+		# match, because `has_coordinates` reads it as the presence signal.
+		"precision": (top.get("geometry") or {}).get("location_type") or "UNKNOWN",
+	}
 
 
 def _assert_within_daily_limit(settings) -> None:
-    """Stop a runaway loop before it spends money.
+	"""Stop a runaway loop before it spends money.
 
-    Counted from the Integration Request rows `_log_request` writes, so the
-    ceiling reads the same record the audit trail does and cannot drift out of
-    step with a tally of its own.
-    """
-    limit = settings.daily_limit or 0
-    if limit <= 0:
-        return
-    used = frappe.db.count(
-        "Integration Request",
-        {
-            "integration_request_service": SERVICE_NAME,
-            "creation": (">=", today()),
-        },
-    )
-    if used >= limit:
-        frappe.throw(_("Geocoding daily limit of {0} lookups reached.").format(limit))
+	Counted from the Integration Request rows `_log_request` writes, so the
+	ceiling reads the same record the audit trail does and cannot drift out of
+	step with a tally of its own.
+	"""
+	limit = settings.daily_limit or 0
+	if limit <= 0:
+		return
+	used = frappe.db.count(
+		"Integration Request",
+		{
+			"integration_request_service": SERVICE_NAME,
+			"creation": (">=", today()),
+		},
+	)
+	if used >= limit:
+		frappe.throw(_("Geocoding daily limit of {0} lookups reached.").format(limit))

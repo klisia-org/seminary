@@ -1,2 +1,1 @@
-frappe.ui.form.on("Academic Year", {
-});
+frappe.ui.form.on("Academic Year", {});

@@ -22,30 +22,26 @@ from seminary.seminary import person_fields
 
 
 def execute():
-    applicants = frappe.get_all(
-        "Student Applicant",
-        filters={"person": ["is", "set"]},
-        fields=["name"],
-        order_by="creation asc",
-    )
-    filled = 0
-    for row in applicants:
-        doc = frappe.get_doc("Student Applicant", row.name)
-        if not frappe.db.exists("Person", doc.person):
-            continue
-        before = frappe.db.get_value(
-            "Person", doc.person, "modified", as_dict=False, cache=False
-        )
-        person_spine.update_person(
-            doc.person,
-            email=doc.student_email_id,
-            overwrite=False,
-            **person_fields.spine_kwargs(doc),
-        )
-        after = frappe.db.get_value(
-            "Person", doc.person, "modified", as_dict=False, cache=False
-        )
-        if before != after:
-            filled += 1
-    if filled:
-        print("  filled shared attributes on %d Person record(s)" % filled)
+	applicants = frappe.get_all(
+		"Student Applicant",
+		filters={"person": ["is", "set"]},
+		fields=["name"],
+		order_by="creation asc",
+	)
+	filled = 0
+	for row in applicants:
+		doc = frappe.get_doc("Student Applicant", row.name)
+		if not frappe.db.exists("Person", doc.person):
+			continue
+		before = frappe.db.get_value("Person", doc.person, "modified", as_dict=False, cache=False)
+		person_spine.update_person(
+			doc.person,
+			email=doc.student_email_id,
+			overwrite=False,
+			**person_fields.spine_kwargs(doc),
+		)
+		after = frappe.db.get_value("Person", doc.person, "modified", as_dict=False, cache=False)
+		if before != after:
+			filled += 1
+	if filled:
+		print("  filled shared attributes on %d Person record(s)" % filled)

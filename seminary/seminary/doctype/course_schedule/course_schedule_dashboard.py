@@ -3,7 +3,6 @@
 
 from frappe import _
 
-
 """ def get_data():
 	return {
 		"fieldname": "course_schedule",

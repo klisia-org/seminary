@@ -25,41 +25,39 @@ DEAD_FIELDS = ("scorm_package_path", "manifest_file", "launch_file")
 
 
 def execute():
-    if not frappe.db.exists("DocType", DOCTYPE):
-        return
+	if not frappe.db.exists("DocType", DOCTYPE):
+		return
 
-    present = [f for f in DEAD_FIELDS if frappe.db.has_column(DOCTYPE, f)]
+	present = [f for f in DEAD_FIELDS if frappe.db.has_column(DOCTYPE, f)]
 
-    # Anything left in them is a surprise worth a line in the log: it would mean
-    # a row was written after the p008 teardown by something that still knew
-    # these fields. Nothing depends on the value; we are recording that it
-    # existed, because the column is about to stop existing.
-    for field in present:
-        stragglers = frappe.get_all(
-            DOCTYPE, filters={field: ["is", "set"]}, pluck="name", limit=20
-        )
-        if stragglers:
-            frappe.log_error(
-                f"{field} still set on: {', '.join(stragglers)}",
-                "p009_scorm_fields: dropping a column that was not empty",
-            )
+	# Anything left in them is a surprise worth a line in the log: it would mean
+	# a row was written after the p008 teardown by something that still knew
+	# these fields. Nothing depends on the value; we are recording that it
+	# existed, because the column is about to stop existing.
+	for field in present:
+		stragglers = frappe.get_all(DOCTYPE, filters={field: ["is", "set"]}, pluck="name", limit=20)
+		if stragglers:
+			frappe.log_error(
+				f"{field} still set on: {', '.join(stragglers)}",
+				"p009_scorm_fields: dropping a column that was not empty",
+			)
 
-    # Custom Fields and Property Setters first: a Property Setter pointing at a
-    # field that no longer exists makes every subsequent reload of the doctype
-    # noisy, and neither is removed by dropping the column.
-    for field in DEAD_FIELDS:
-        frappe.db.delete("Property Setter", {"doc_type": DOCTYPE, "field_name": field})
-        frappe.db.delete("Custom Field", {"dt": DOCTYPE, "fieldname": field})
+	# Custom Fields and Property Setters first: a Property Setter pointing at a
+	# field that no longer exists makes every subsequent reload of the doctype
+	# noisy, and neither is removed by dropping the column.
+	for field in DEAD_FIELDS:
+		frappe.db.delete("Property Setter", {"doc_type": DOCTYPE, "field_name": field})
+		frappe.db.delete("Custom Field", {"dt": DOCTYPE, "fieldname": field})
 
-    frappe.reload_doc("seminary", "doctype", "course_schedule_chapter")
-    frappe.reload_doc("seminary", "doctype", "course_lesson")
+	frappe.reload_doc("seminary", "doctype", "course_schedule_chapter")
+	frappe.reload_doc("seminary", "doctype", "course_lesson")
 
-    table = f"`tab{DOCTYPE}`"
-    for field in present:
-        # Re-checked after the reload: `reload_doc` on a doctype whose JSON no
-        # longer declares the field does not drop the column, but a concurrent
-        # migrate might have.
-        if frappe.db.has_column(DOCTYPE, field):
-            frappe.db.sql_ddl(f"ALTER TABLE {table} DROP COLUMN `{field}`")
+	table = f"`tab{DOCTYPE}`"
+	for field in present:
+		# Re-checked after the reload: `reload_doc` on a doctype whose JSON no
+		# longer declares the field does not drop the column, but a concurrent
+		# migrate might have.
+		if frappe.db.has_column(DOCTYPE, field):
+			frappe.db.sql_ddl(f"ALTER TABLE {table} DROP COLUMN `{field}`")
 
-    frappe.db.commit()
+	frappe.db.commit()

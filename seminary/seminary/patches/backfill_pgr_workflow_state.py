@@ -21,37 +21,37 @@ import frappe
 
 
 def execute():
-    rows = frappe.db.sql(
-        """SELECT name, docstatus, COALESCE(active, 0) AS active, workflow_state
+	rows = frappe.db.sql(
+		"""SELECT name, docstatus, COALESCE(active, 0) AS active, workflow_state
            FROM `tabProgram Graduation Requirement`""",
-        as_dict=True,
-    )
-    if not rows:
-        print("No Program Graduation Requirement rows to reconcile.")
-        return
+		as_dict=True,
+	)
+	if not rows:
+		print("No Program Graduation Requirement rows to reconcile.")
+		return
 
-    counts = {"Draft": 0, "Active": 0, "Superseded": 0}
-    for row in rows:
-        if row.docstatus == 0:
-            target = "Draft"
-        elif row.docstatus == 1 and row.active:
-            target = "Active"
-        else:  # submitted-but-inactive, or cancelled
-            target = "Superseded"
-        counts[target] += 1
-        if row.workflow_state == target:
-            continue
-        frappe.db.set_value(
-            "Program Graduation Requirement",
-            row.name,
-            "workflow_state",
-            target,
-            update_modified=False,
-        )
+	counts = {"Draft": 0, "Active": 0, "Superseded": 0}
+	for row in rows:
+		if row.docstatus == 0:
+			target = "Draft"
+		elif row.docstatus == 1 and row.active:
+			target = "Active"
+		else:  # submitted-but-inactive, or cancelled
+			target = "Superseded"
+		counts[target] += 1
+		if row.workflow_state == target:
+			continue
+		frappe.db.set_value(
+			"Program Graduation Requirement",
+			row.name,
+			"workflow_state",
+			target,
+			update_modified=False,
+		)
 
-    frappe.db.commit()
-    print(
-        f"Backfilled PGR workflow_state: "
-        f"Draft={counts['Draft']}, Active={counts['Active']}, "
-        f"Superseded={counts['Superseded']}."
-    )
+	frappe.db.commit()
+	print(
+		f"Backfilled PGR workflow_state: "
+		f"Draft={counts['Draft']}, Active={counts['Active']}, "
+		f"Superseded={counts['Superseded']}."
+	)

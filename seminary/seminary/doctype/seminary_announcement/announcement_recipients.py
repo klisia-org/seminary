@@ -11,71 +11,69 @@ from frappe import _
 
 
 def resolve_recipients(doc) -> list[dict]:
-    """Return a de-duplicated list of recipient dicts.
+	"""Return a de-duplicated list of recipient dicts.
 
-    Each dict has: party_type, party, party_name, email, user.
-    """
-    term = doc.academic_term
-    program_names = [p.program for p in (doc.programs or []) if p.program]
-    course_schedules = [
-        c.course_schedule for c in (doc.courses or []) if c.course_schedule
-    ]
-    seen: set[str] = set()
-    out: list[dict] = []
+	Each dict has: party_type, party, party_name, email, user.
+	"""
+	term = doc.academic_term
+	program_names = [p.program for p in (doc.programs or []) if p.program]
+	course_schedules = [c.course_schedule for c in (doc.courses or []) if c.course_schedule]
+	seen: set[str] = set()
+	out: list[dict] = []
 
-    if doc.audience_students_enrolled or course_schedules:
-        out.extend(_students_for_term(term, program_names, course_schedules, seen))
+	if doc.audience_students_enrolled or course_schedules:
+		out.extend(_students_for_term(term, program_names, course_schedules, seen))
 
-    if doc.audience_instructors_teaching:
-        out.extend(_instructors_for_term(term, course_schedules, seen))
+	if doc.audience_instructors_teaching:
+		out.extend(_instructors_for_term(term, course_schedules, seen))
 
-    if doc.audience_alumni:
-        out.extend(_alumni_recipients(seen))
+	if doc.audience_alumni:
+		out.extend(_alumni_recipients(seen))
 
-    if doc.custom_filter_doctype:
-        filters_raw = doc.custom_filters or "[]"
-        try:
-            filters = json.loads(filters_raw)
-        except (ValueError, TypeError):
-            frappe.throw(f"Custom filter JSON is not valid: {filters_raw}")
-        out.extend(
-            _from_custom_filter(
-                doc.custom_filter_doctype,
-                filters,
-                doc.custom_email_field or "email",
-                seen,
-            )
-        )
+	if doc.custom_filter_doctype:
+		filters_raw = doc.custom_filters or "[]"
+		try:
+			filters = json.loads(filters_raw)
+		except (ValueError, TypeError):
+			frappe.throw(f"Custom filter JSON is not valid: {filters_raw}")
+		out.extend(
+			_from_custom_filter(
+				doc.custom_filter_doctype,
+				filters,
+				doc.custom_email_field or "email",
+				seen,
+			)
+		)
 
-    return out
+	return out
 
 
 def _students_for_term(term, program_names, course_schedules, seen):
-    """Students with a non-withdrawn Course Enrollment Individual for a Course
-    Schedule in the given term. Optionally narrowed by programs or specific
-    course schedules.
-    """
-    params = {"term": term}
-    where = [
-        "cs.academic_term = %(term)s",
-        "cei.docstatus = 1",
-        "cei.withdrawn = 0",
-    ]
+	"""Students with a non-withdrawn Course Enrollment Individual for a Course
+	Schedule in the given term. Optionally narrowed by programs or specific
+	course schedules.
+	"""
+	params = {"term": term}
+	where = [
+		"cs.academic_term = %(term)s",
+		"cei.docstatus = 1",
+		"cei.withdrawn = 0",
+	]
 
-    if course_schedules:
-        placeholders = ", ".join([f"%(cs_{i})s" for i in range(len(course_schedules))])
-        where.append(f"cs.name IN ({placeholders})")
-        for i, cs in enumerate(course_schedules):
-            params[f"cs_{i}"] = cs
+	if course_schedules:
+		placeholders = ", ".join([f"%(cs_{i})s" for i in range(len(course_schedules))])
+		where.append(f"cs.name IN ({placeholders})")
+		for i, cs in enumerate(course_schedules):
+			params[f"cs_{i}"] = cs
 
-    if program_names:
-        placeholders = ", ".join([f"%(prog_{i})s" for i in range(len(program_names))])
-        where.append(f"pe.program IN ({placeholders})")
-        for i, prog in enumerate(program_names):
-            params[f"prog_{i}"] = prog
+	if program_names:
+		placeholders = ", ".join([f"%(prog_{i})s" for i in range(len(program_names))])
+		where.append(f"pe.program IN ({placeholders})")
+		for i, prog in enumerate(program_names):
+			params[f"prog_{i}"] = prog
 
-    rows = frappe.db.sql(
-        f"""
+	rows = frappe.db.sql(
+		f"""
         SELECT DISTINCT
             s.name AS student,
             s.student_name,
@@ -85,47 +83,47 @@ def _students_for_term(term, program_names, course_schedules, seen):
         JOIN `tabCourse Schedule` cs ON cei.coursesc_ce = cs.name
         JOIN `tabStudent` s ON cei.student_ce = s.name
         JOIN `tabProgram Enrollment` pe ON cei.program_ce = pe.name
-        WHERE {' AND '.join(where)}
+        WHERE {" AND ".join(where)}
         """,  # nosec B608 -- interpolates a clause built from constants in this function
-        params,
-        as_dict=True,
-    )
+		params,
+		as_dict=True,
+	)
 
-    out = []
-    for r in rows:
-        if not r.email:
-            continue
-        key = r.email.strip().lower()
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(
-            {
-                "party_type": "Student",
-                "party": r.student,
-                "party_name": r.student_name,
-                "email": r.email,
-                "user": r.user,
-            }
-        )
-    return out
+	out = []
+	for r in rows:
+		if not r.email:
+			continue
+		key = r.email.strip().lower()
+		if key in seen:
+			continue
+		seen.add(key)
+		out.append(
+			{
+				"party_type": "Student",
+				"party": r.student,
+				"party_name": r.student_name,
+				"email": r.email,
+				"user": r.user,
+			}
+		)
+	return out
 
 
 def _instructors_for_term(term, course_schedules, seen):
-    """Distinct instructors on Course Schedules in the given term. Narrowed by
-    course_schedules if provided.
-    """
-    params = {"term": term}
-    where = ["cs.academic_term = %(term)s"]
+	"""Distinct instructors on Course Schedules in the given term. Narrowed by
+	course_schedules if provided.
+	"""
+	params = {"term": term}
+	where = ["cs.academic_term = %(term)s"]
 
-    if course_schedules:
-        placeholders = ", ".join([f"%(cs_{i})s" for i in range(len(course_schedules))])
-        where.append(f"cs.name IN ({placeholders})")
-        for i, cs in enumerate(course_schedules):
-            params[f"cs_{i}"] = cs
+	if course_schedules:
+		placeholders = ", ".join([f"%(cs_{i})s" for i in range(len(course_schedules))])
+		where.append(f"cs.name IN ({placeholders})")
+		for i, cs in enumerate(course_schedules):
+			params[f"cs_{i}"] = cs
 
-    rows = frappe.db.sql(
-        f"""
+	rows = frappe.db.sql(
+		f"""
         SELECT DISTINCT
             i.name AS instructor,
             i.instructor_name,
@@ -134,145 +132,145 @@ def _instructors_for_term(term, course_schedules, seen):
         FROM `tabCourse Schedule Instructors` csi
         JOIN `tabCourse Schedule` cs ON csi.parent = cs.name
         JOIN `tabInstructor` i ON csi.instructor = i.name
-        WHERE {' AND '.join(where)}
+        WHERE {" AND ".join(where)}
         """,  # nosec B608 -- interpolates a clause built from constants in this function
-        params,
-        as_dict=True,
-    )
+		params,
+		as_dict=True,
+	)
 
-    out = []
-    for r in rows:
-        if not r.email:
-            continue
-        key = r.email.strip().lower()
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(
-            {
-                "party_type": "Instructor",
-                "party": r.instructor,
-                "party_name": r.instructor_name,
-                "email": r.email,
-                "user": r.user,
-            }
-        )
-    return out
+	out = []
+	for r in rows:
+		if not r.email:
+			continue
+		key = r.email.strip().lower()
+		if key in seen:
+			continue
+		seen.add(key)
+		out.append(
+			{
+				"party_type": "Instructor",
+				"party": r.instructor,
+				"party_name": r.instructor_name,
+				"email": r.email,
+				"user": r.user,
+			}
+		)
+	return out
 
 
 def _alumni_recipients(seen):
-    """All enabled Alumni Profiles. Term-independent — alumni reachability is
-    not scoped to a term, program, or course. Filtered on `enabled` (not
-    `show_in_directory`, which only governs the public directory listing).
-    """
-    rows = frappe.get_all(
-        "Alumni Profile",
-        filters={"enabled": 1},
-        fields=["name", "email", "full_name", "user"],
-    )
+	"""All enabled Alumni Profiles. Term-independent — alumni reachability is
+	not scoped to a term, program, or course. Filtered on `enabled` (not
+	`show_in_directory`, which only governs the public directory listing).
+	"""
+	rows = frappe.get_all(
+		"Alumni Profile",
+		filters={"enabled": 1},
+		fields=["name", "email", "full_name", "user"],
+	)
 
-    out = []
-    for r in rows:
-        if not r.email:
-            continue
-        key = r.email.strip().lower()
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(
-            {
-                "party_type": "Alumni",
-                "party": r.name,
-                "party_name": r.full_name,
-                "email": r.email,
-                "user": r.user,
-            }
-        )
-    return out
+	out = []
+	for r in rows:
+		if not r.email:
+			continue
+		key = r.email.strip().lower()
+		if key in seen:
+			continue
+		seen.add(key)
+		out.append(
+			{
+				"party_type": "Alumni",
+				"party": r.name,
+				"party_name": r.full_name,
+				"email": r.email,
+				"user": r.user,
+			}
+		)
+	return out
 
 
 # Doctypes an announcement may address through a custom filter (ADR 045; p007
 # §2.9). Anything else is refused at validate and at send.
 AUDIENCE_DOCTYPES = (
-    "Student",
-    "Instructor",
-    "Program Enrollment",
-    "Alumni Profile",
-    "Person",
-    "Course Enrollment Individual",
-    "Scheduled Course Roster",
+	"Student",
+	"Instructor",
+	"Program Enrollment",
+	"Alumni Profile",
+	"Person",
+	"Course Enrollment Individual",
+	"Scheduled Course Roster",
 )
 
 
 def validate_custom_filter(doctype, email_field):
-    """Raise unless `doctype` is an audience doctype and `email_field` is an
-    email-shaped field on it (p007 §2.9)."""
-    if doctype not in AUDIENCE_DOCTYPES:
-        frappe.throw(
-            _("{0} cannot be an announcement audience. Choose one of: {1}.").format(
-                doctype, ", ".join(AUDIENCE_DOCTYPES)
-            ),
-            title=_("Personalization error in custom filter"),
-        )
-    meta = frappe.get_meta(doctype)
-    df = meta.get_field(email_field)
-    ok = bool(df) and (
-        df.options == "Email"
-        or "email" in (df.fieldname or "").lower()
-        or "user" == (df.fieldname or "").lower()
-    )
-    if not ok:
-        frappe.throw(
-            _("{0} is not an email field on {1}.").format(email_field, doctype),
-            title=_("Personalization error in custom filter"),
-        )
+	"""Raise unless `doctype` is an audience doctype and `email_field` is an
+	email-shaped field on it (p007 §2.9)."""
+	if doctype not in AUDIENCE_DOCTYPES:
+		frappe.throw(
+			_("{0} cannot be an announcement audience. Choose one of: {1}.").format(
+				doctype, ", ".join(AUDIENCE_DOCTYPES)
+			),
+			title=_("Personalization error in custom filter"),
+		)
+	meta = frappe.get_meta(doctype)
+	df = meta.get_field(email_field)
+	ok = bool(df) and (
+		df.options == "Email"
+		or "email" in (df.fieldname or "").lower()
+		or "user" == (df.fieldname or "").lower()
+	)
+	if not ok:
+		frappe.throw(
+			_("{0} is not an email field on {1}.").format(email_field, doctype),
+			title=_("Personalization error in custom filter"),
+		)
 
 
 def _from_custom_filter(doctype, filters, email_field, seen):
-    validate_custom_filter(doctype, email_field)
-    meta = frappe.get_meta(doctype)
+	validate_custom_filter(doctype, email_field)
+	meta = frappe.get_meta(doctype)
 
-    fields = ["name", email_field]
-    user_field = "user" if meta.get_field("user") else None
-    name_field = None
-    for candidate in ("student_name", "instructor_name", "full_name", "title"):
-        if meta.get_field(candidate):
-            name_field = candidate
-            break
-    if user_field:
-        fields.append(user_field)
-    if name_field:
-        fields.append(name_field)
+	fields = ["name", email_field]
+	user_field = "user" if meta.get_field("user") else None
+	name_field = None
+	for candidate in ("student_name", "instructor_name", "full_name", "title"):
+		if meta.get_field(candidate):
+			name_field = candidate
+			break
+	if user_field:
+		fields.append(user_field)
+	if name_field:
+		fields.append(name_field)
 
-    # get_list, not get_all: the author's own row permissions apply (p007 §2.9).
-    rows = frappe.get_list(doctype, filters=filters or [], fields=fields)
+	# get_list, not get_all: the author's own row permissions apply (p007 §2.9).
+	rows = frappe.get_list(doctype, filters=filters or [], fields=fields)
 
-    out = []
-    for r in rows:
-        email = r.get(email_field)
-        if not email:
-            continue
-        key = email.strip().lower()
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(
-            {
-                "party_type": _party_type_for(doctype),
-                "party": r.get("name"),
-                "party_name": r.get(name_field) if name_field else r.get("name"),
-                "email": email,
-                "user": r.get(user_field) if user_field else None,
-            }
-        )
-    return out
+	out = []
+	for r in rows:
+		email = r.get(email_field)
+		if not email:
+			continue
+		key = email.strip().lower()
+		if key in seen:
+			continue
+		seen.add(key)
+		out.append(
+			{
+				"party_type": _party_type_for(doctype),
+				"party": r.get("name"),
+				"party_name": r.get(name_field) if name_field else r.get("name"),
+				"email": email,
+				"user": r.get(user_field) if user_field else None,
+			}
+		)
+	return out
 
 
 def _party_type_for(doctype):
-    if doctype == "Student":
-        return "Student"
-    if doctype == "Instructor":
-        return "Instructor"
-    if doctype == "User":
-        return "User"
-    return "Other"
+	if doctype == "Student":
+		return "Student"
+	if doctype == "Instructor":
+		return "Instructor"
+	if doctype == "User":
+		return "User"
+	return "Other"

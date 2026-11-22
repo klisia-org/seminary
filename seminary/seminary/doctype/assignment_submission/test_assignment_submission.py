@@ -9,15 +9,15 @@ from frappe.tests.utils import FrappeTestCase
 # Instructor test records predate the Person-first mandatory fields (ADR 068) and
 # abort every IntegrationTestCase in this folder before a test runs.
 IGNORE_TEST_RECORD_DEPENDENCIES = [
-    "Assignment Activity",
-    "Course",
-    "Course Lesson",
-    "Course Schedule",
-    "Scheduled Course Assess Criteria",
-    "Student",
-    "User",
+	"Assignment Activity",
+	"Course",
+	"Course Lesson",
+	"Course Schedule",
+	"Scheduled Course Assess Criteria",
+	"Student",
+	"User",
 ]
 
 
 class TestAssignmentSubmission(FrappeTestCase):
-    pass
+	pass

@@ -10,15 +10,15 @@ frappe.ui.form.on("Requirement Exception", {
 
 	refresh(frm) {
 		if (frm.is_new()) {
-			frm.set_intro(
-				__("Saving records this exception as approved by you."),
-				"blue"
-			);
+			frm.set_intro(__("Saving records this exception as approved by you."), "blue");
 			return;
 		}
 		const call = (method, args) =>
 			frappe
-				.call({ method: `${REX}.${method}`, args: Object.assign({ name: frm.doc.name }, args) })
+				.call({
+					method: `${REX}.${method}`,
+					args: Object.assign({ name: frm.doc.name }, args),
+				})
 				.then(() => frm.reload_doc());
 
 		if (frm.doc.status === "Requested") {

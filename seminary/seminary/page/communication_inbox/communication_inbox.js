@@ -112,11 +112,11 @@ class CommunicationInbox {
 		}
 		this.$list.empty();
 		rows.forEach((c) => {
-			const unread = c.unread
-				? `<span class="ci-badge">${c.unread}</span>`
-				: "";
+			const unread = c.unread ? `<span class="ci-badge">${c.unread}</span>` : "";
 			const item = $(`
-				<div class="ci-item ${c.person === this.active ? "active" : ""}" data-person="${frappe.utils.escape_html(c.person)}">
+				<div class="ci-item ${
+					c.person === this.active ? "active" : ""
+				}" data-person="${frappe.utils.escape_html(c.person)}">
 					<div class="ci-item-top">
 						<span class="ci-name">${frappe.utils.escape_html(c.person_name)}</span>
 						${unread}
@@ -124,7 +124,9 @@ class CommunicationInbox {
 					<div class="ci-snippet text-muted">
 						${c.last_mine ? "" : "↩ "}${frappe.utils.escape_html(c.snippet || "")}
 					</div>
-					<div class="ci-meta text-muted">${c.last_channel || ""} · ${frappe.datetime.comment_when(c.last_at)}</div>
+					<div class="ci-meta text-muted">${c.last_channel || ""} · ${frappe.datetime.comment_when(
+				c.last_at
+			)}</div>
 				</div>
 			`);
 			item.on("click", () => this.openConversation(c.person));
@@ -179,7 +181,9 @@ class CommunicationInbox {
 			<div class="ci-thead">${frappe.utils.escape_html(data.person_name)}</div>
 			<div class="ci-msgs">${bubbles || `<div class="text-muted">${__("No messages.")}</div>`}</div>
 			<div class="ci-reply">
-				<textarea class="form-control ci-reply-text" rows="2" placeholder="${__("Write a reply…")}"></textarea>
+				<textarea class="form-control ci-reply-text" rows="2" placeholder="${__(
+					"Write a reply…"
+				)}"></textarea>
 				<button class="btn btn-primary btn-sm ci-reply-send">${__("Reply")}</button>
 			</div>
 		`);

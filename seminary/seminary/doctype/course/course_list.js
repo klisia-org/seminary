@@ -1,10 +1,10 @@
-frappe.listview_settings['Course'] = {
-	onload: function(listview) {
+frappe.listview_settings["Course"] = {
+	onload: function (listview) {
 		// Competency counts are not Course fields — they live one query away, in
 		// Course Competency — so they cannot be a list column. The report shows
 		// them for every course at once, which is what the list view is being
 		// asked for here.
-		listview.page.add_menu_item(__("Competency Coverage"), function() {
+		listview.page.add_menu_item(__("Competency Coverage"), function () {
 			// Carry the list's own academic unit across so the report opens on
 			// the same slice of courses the user was already looking at.
 			const options = {};
@@ -13,13 +13,13 @@ frappe.listview_settings['Course'] = {
 			frappe.set_route("query-report", "Course Competency Coverage", options);
 		});
 
-		listview.page.add_actions_menu_item(__("Add to Program"), function() {
+		listview.page.add_actions_menu_item(__("Add to Program"), function () {
 			const docs = listview.get_checked_items();
 			if (!docs.length) {
 				frappe.msgprint(__("Please select at least one Course."));
 				return;
 			}
-			const names = docs.map(d => d.name);
+			const names = docs.map((d) => d.name);
 			frappe.prompt(
 				[
 					{

@@ -16,183 +16,183 @@ import frappe
 
 
 def recompute_program_enrollment_gpa(pe_name):
-    """Recompute current_gpa and current_honor for a Program Enrollment.
+	"""Recompute current_gpa and current_honor for a Program Enrollment.
 
-    Idempotent. Safe to call from any hook point. Always re-evaluates
-    graduation candidacy at the end (even when GPA itself short-circuits)
-    because PEC state has changed by the time this is invoked.
-    """
-    if not pe_name:
-        return
+	Idempotent. Safe to call from any hook point. Always re-evaluates
+	graduation candidacy at the end (even when GPA itself short-circuits)
+	because PEC state has changed by the time this is invoked.
+	"""
+	if not pe_name:
+		return
 
-    try:
-        _recompute_gpa_only(pe_name)
-    finally:
-        _evaluate_candidacy(pe_name)
+	try:
+		_recompute_gpa_only(pe_name)
+	finally:
+		_evaluate_candidacy(pe_name)
 
 
 def _recompute_gpa_only(pe_name):
-    pe = frappe.get_doc("Program Enrollment", pe_name)
-    program = frappe.get_cached_doc("Program", pe.program)
-    if program.is_ongoing:
-        return
-    basis = float(program.basis_for_gpa or 0)
-    if basis <= 0:
-        return
+	pe = frappe.get_doc("Program Enrollment", pe_name)
+	program = frappe.get_cached_doc("Program", pe.program)
+	if program.is_ongoing:
+		return
+	basis = float(program.basis_for_gpa or 0)
+	if basis <= 0:
+		return
 
-    weighted_sum = 0.0
-    credit_sum = 0.0
-    point_sum = 0.0
-    counted_rows = 0
+	weighted_sum = 0.0
+	credit_sum = 0.0
+	point_sum = 0.0
+	counted_rows = 0
 
-    # Leveling / remedial courses (ADR 058) never count toward GPA.
-    from seminary.seminary.leveling import leveling_excluded_courses
+	# Leveling / remedial courses (ADR 058) never count toward GPA.
+	from seminary.seminary.leveling import leveling_excluded_courses
 
-    excluded = leveling_excluded_courses(pe_name)
+	excluded = leveling_excluded_courses(pe_name)
 
-    for pec in pe.courses or []:
-        if not pec.count_in_gpa:
-            continue
-        if pec.course in excluded:
-            continue
-        if pec.pec_finalgradenum is None:
-            continue
-        credits = pec.credits or 0
-        if program.is_weighted and not credits:
-            continue
+	for pec in pe.courses or []:
+		if not pec.count_in_gpa:
+			continue
+		if pec.course in excluded:
+			continue
+		if pec.pec_finalgradenum is None:
+			continue
+		credits = pec.credits or 0
+		if program.is_weighted and not credits:
+			continue
 
-        scale = _resolve_grading_scale(pec)
-        if not scale:
-            continue
+		scale = _resolve_grading_scale(pec)
+		if not scale:
+			continue
 
-        gpa_pts = _convert_to_gpa_points(pec, scale, basis)
-        if gpa_pts is None:
-            continue
+		gpa_pts = _convert_to_gpa_points(pec, scale, basis)
+		if gpa_pts is None:
+			continue
 
-        weighted_sum += gpa_pts * credits
-        credit_sum += credits
-        point_sum += gpa_pts
-        counted_rows += 1
+		weighted_sum += gpa_pts * credits
+		credit_sum += credits
+		point_sum += gpa_pts
+		counted_rows += 1
 
-    if counted_rows == 0:
-        gpa = 0.0
-    elif program.is_weighted:
-        gpa = weighted_sum / credit_sum if credit_sum else 0.0
-    else:
-        gpa = point_sum / counted_rows
+	if counted_rows == 0:
+		gpa = 0.0
+	elif program.is_weighted:
+		gpa = weighted_sum / credit_sum if credit_sum else 0.0
+	else:
+		gpa = point_sum / counted_rows
 
-    gpa = round(gpa, 2)
-    honor = _resolve_honor(program, gpa)
+	gpa = round(gpa, 2)
+	honor = _resolve_honor(program, gpa)
 
-    frappe.db.set_value(
-        "Program Enrollment",
-        pe_name,
-        {"current_gpa": gpa, "current_honor": honor},
-        update_modified=False,
-    )
+	frappe.db.set_value(
+		"Program Enrollment",
+		pe_name,
+		{"current_gpa": gpa, "current_honor": honor},
+		update_modified=False,
+	)
 
 
 def _evaluate_candidacy(pe_name):
-    """Recompute graduation candidacy. Failures are logged, not raised —
-    a candidacy bug must never break a grade-entry or withdrawal flow."""
-    from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+	"""Recompute graduation candidacy. Failures are logged, not raised —
+	a candidacy bug must never break a grade-entry or withdrawal flow."""
+	from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
 
-    evaluate_candidacy_safe(pe_name)
+	evaluate_candidacy_safe(pe_name)
 
 
 def _resolve_grading_scale(pec):
-    """Return the Grading Scale doc to use for converting this PEC's numeric.
+	"""Return the Grading Scale doc to use for converting this PEC's numeric.
 
-    Internal rows use the Course Schedule's grading scale (gradesc_cs).
-    Transfer rows use the conversion policy's target_grading_scale, since
-    pec_finalgradenum was written on the target scale's units at import time.
-    """
-    if pec.partner_seminary and pec.conversion_policy_applied:
-        scale_name = frappe.db.get_value(
-            "Grade Conversion Policy",
-            pec.conversion_policy_applied,
-            "target_grading_scale",
-        )
-    elif pec.course:
-        scale_name = frappe.db.get_value("Course Schedule", pec.course, "gradesc_cs")
-    else:
-        return None
+	Internal rows use the Course Schedule's grading scale (gradesc_cs).
+	Transfer rows use the conversion policy's target_grading_scale, since
+	pec_finalgradenum was written on the target scale's units at import time.
+	"""
+	if pec.partner_seminary and pec.conversion_policy_applied:
+		scale_name = frappe.db.get_value(
+			"Grade Conversion Policy",
+			pec.conversion_policy_applied,
+			"target_grading_scale",
+		)
+	elif pec.course:
+		scale_name = frappe.db.get_value("Course Schedule", pec.course, "gradesc_cs")
+	else:
+		return None
 
-    if not scale_name:
-        return None
-    return frappe.get_cached_doc("Grading Scale", scale_name)
+	if not scale_name:
+		return None
+	return frappe.get_cached_doc("Grading Scale", scale_name)
 
 
 def _convert_to_gpa_points(pec, scale, basis):
-    """Map a PEC row's grade to grade points on the basis scale.
+	"""Map a PEC row's grade to grade points on the basis scale.
 
-    Points scales: linear scaling pec_finalgradenum / scale.maxnumgrade * basis.
-    Descriptive scales: look up the matching interval by grade_code and use its
-    threshold (which doubles as the GPA-points value for Descriptive scales,
-    per the field's description).
-    """
-    if scale.grscale_type == "Points":
-        max_num = float(scale.maxnumgrade or 0)
-        if max_num <= 0:
-            return None
-        pts = (float(pec.pec_finalgradenum) / max_num) * basis
-        return _clamp(pts, 0, basis)
+	Points scales: linear scaling pec_finalgradenum / scale.maxnumgrade * basis.
+	Descriptive scales: look up the matching interval by grade_code and use its
+	threshold (which doubles as the GPA-points value for Descriptive scales,
+	per the field's description).
+	"""
+	if scale.grscale_type == "Points":
+		max_num = float(scale.maxnumgrade or 0)
+		if max_num <= 0:
+			return None
+		pts = (float(pec.pec_finalgradenum) / max_num) * basis
+		return _clamp(pts, 0, basis)
 
-    if scale.grscale_type == "Descriptive":
-        return _points_from_code(pec, scale, basis)
+	if scale.grscale_type == "Descriptive":
+		return _points_from_code(pec, scale, basis)
 
-    if scale.grscale_type == "Competency-based education":
-        # Most competency-based programs report levels and no GPA at all, so the
-        # framework decides (ADR 065 section 7). When it does want one, the
-        # arithmetic is the Descriptive path unchanged: the level's threshold is
-        # its point value. send_grades also sets count_in_gpa to match, so a
-        # non-GPA row leaves the denominator too rather than being silently
-        # dropped from the numerator only.
-        if not _framework_emits_gpa(pec):
-            return None
-        return _points_from_code(pec, scale, basis)
+	if scale.grscale_type == "Competency-based education":
+		# Most competency-based programs report levels and no GPA at all, so the
+		# framework decides (ADR 065 section 7). When it does want one, the
+		# arithmetic is the Descriptive path unchanged: the level's threshold is
+		# its point value. send_grades also sets count_in_gpa to match, so a
+		# non-GPA row leaves the denominator too rather than being silently
+		# dropped from the numerator only.
+		if not _framework_emits_gpa(pec):
+			return None
+		return _points_from_code(pec, scale, basis)
 
-    return None
+	return None
 
 
 def _points_from_code(pec, scale, basis):
-    """Grade points read off the matching interval's threshold."""
-    code = pec.pec_finalgradecode
-    if not code:
-        return None
-    for interval in scale.intervals or []:
-        if interval.grade_code == code:
-            return _clamp(float(interval.threshold or 0), 0, basis)
-    # WF / FA often cannot hold an interval of their own on a Descriptive
-    # scale (thresholds are unique and F already has 0); when the scale counts
-    # them in the GPA they are worth zero.
-    if (code == scale.get("wf_code") and scale.get("wf_gpa")) or (
-        code == scale.get("fa_code") and scale.get("fa_gpa")
-    ):
-        return 0.0
-    return None
+	"""Grade points read off the matching interval's threshold."""
+	code = pec.pec_finalgradecode
+	if not code:
+		return None
+	for interval in scale.intervals or []:
+		if interval.grade_code == code:
+			return _clamp(float(interval.threshold or 0), 0, basis)
+	# WF / FA often cannot hold an interval of their own on a Descriptive
+	# scale (thresholds are unique and F already has 0); when the scale counts
+	# them in the GPA they are worth zero.
+	if (code == scale.get("wf_code") and scale.get("wf_gpa")) or (
+		code == scale.get("fa_code") and scale.get("fa_gpa")
+	):
+		return 0.0
+	return None
 
 
 def _framework_emits_gpa(pec):
-    if not pec.course:
-        return False
-    from seminary.seminary import cbe
+	if not pec.course:
+		return False
+	from seminary.seminary import cbe
 
-    framework = cbe.framework_doc(pec.course)
-    return bool(framework and framework.emit_gpa)
+	framework = cbe.framework_doc(pec.course)
+	return bool(framework and framework.emit_gpa)
 
 
 def _resolve_honor(program, gpa):
-    levels = sorted(
-        program.honors_levels or [],
-        key=lambda h: float(h.min_gpa or 0),
-        reverse=True,
-    )
-    for level in levels:
-        if gpa >= float(level.min_gpa or 0):
-            return level.honor_name
-    return ""
+	levels = sorted(
+		program.honors_levels or [],
+		key=lambda h: float(h.min_gpa or 0),
+		reverse=True,
+	)
+	for level in levels:
+		if gpa >= float(level.min_gpa or 0):
+			return level.honor_name
+	return ""
 
 
 def _clamp(value, low, high):
-    return max(low, min(high, value))
+	return max(low, min(high, value))

@@ -85,15 +85,21 @@
 	 * value is fine, or to a sentence saying what is wrong.
 	 */
 	function checkOnServer(value, country, subject) {
-		return frappe
-			.call({
-				method: "seminary.seminary.tax_ids.check_tax_id",
-				args: { value: value, country: country || "", subject: subject || "both" },
-			})
-			.then((r) => ((r.message || {}).ok ? null : (r.message || {}).message))
-			// An unreachable endpoint must not block typing; `validate()` on the
-			// server is still the thing that refuses a save.
-			.catch(() => null);
+		return (
+			frappe
+				.call({
+					method: "seminary.seminary.tax_ids.check_tax_id",
+					args: {
+						value: value,
+						country: country || "",
+						subject: subject || "both",
+					},
+				})
+				.then((r) => ((r.message || {}).ok ? null : (r.message || {}).message))
+				// An unreachable endpoint must not block typing; `validate()` on the
+				// server is still the thing that refuses a save.
+				.catch(() => null)
+		);
 	}
 
 	/**
@@ -211,9 +217,7 @@
 			const cleaned = clean(input.value, current);
 			if (!matches(cleaned, current)) {
 				const names = current.forms.map((f) => f.name).join(" / ");
-				input.setCustomValidity(
-					__("That does not look like a {0}.", [names])
-				);
+				input.setCustomValidity(__("That does not look like a {0}.", [names]));
 				input.reportValidity();
 				return;
 			}

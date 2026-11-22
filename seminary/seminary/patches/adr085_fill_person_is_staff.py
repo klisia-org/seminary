@@ -4,4 +4,4 @@ from seminary.seminary.staff import refresh
 
 
 def execute():
-    refresh()
+	refresh()

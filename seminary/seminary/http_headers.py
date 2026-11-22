@@ -59,77 +59,73 @@ _SELF_INLINE = "'self' 'unsafe-inline'"
 
 
 def _directives() -> list[str]:
-    script = " ".join(("'self'", "'unsafe-inline'", "'unsafe-eval'", *SCRIPT_ORIGINS))
-    style = " ".join((_SELF_INLINE, *STYLE_ORIGINS))
-    font = " ".join(("'self'", "data:", *FONT_ORIGINS))
-    return [
-        "default-src 'self'",
-        f"script-src {script}",
-        f"style-src {style}",
-        f"font-src {font}",
-        # `data:` for editor-pasted images; `blob:` for locally recorded media.
-        "img-src 'self' data: blob: https:",
-        "media-src 'self' data: blob: https:",
-        # Lessons legitimately frame YouTube, Genially and the like; the iframe
-        # tool checks the URL before it is ever stored (p008 F4).
-        "frame-src 'self' https:",
-        "connect-src 'self' https: wss: ws:",
-        # 'self', not 'none': the app frames its own pages. `embed_renderer`'s
-        # `type == "pdf"` branch exists precisely to iframe a site-hosted PDF
-        # (p008 F5), and 'none' forbids *all* framing, same-origin included --
-        # it broke PDF rendering in the owner's browser pass. Cross-origin
-        # framing is still refused, which is the clickjacking control.
-        "frame-ancestors 'self'",
-        "object-src 'none'",
-        "base-uri 'self'",
-        "form-action 'self'",
-    ]
+	script = " ".join(("'self'", "'unsafe-inline'", "'unsafe-eval'", *SCRIPT_ORIGINS))
+	style = " ".join((_SELF_INLINE, *STYLE_ORIGINS))
+	font = " ".join(("'self'", "data:", *FONT_ORIGINS))
+	return [
+		"default-src 'self'",
+		f"script-src {script}",
+		f"style-src {style}",
+		f"font-src {font}",
+		# `data:` for editor-pasted images; `blob:` for locally recorded media.
+		"img-src 'self' data: blob: https:",
+		"media-src 'self' data: blob: https:",
+		# Lessons legitimately frame YouTube, Genially and the like; the iframe
+		# tool checks the URL before it is ever stored (p008 F4).
+		"frame-src 'self' https:",
+		"connect-src 'self' https: wss: ws:",
+		# 'self', not 'none': the app frames its own pages. `embed_renderer`'s
+		# `type == "pdf"` branch exists precisely to iframe a site-hosted PDF
+		# (p008 F5), and 'none' forbids *all* framing, same-origin included --
+		# it broke PDF rendering in the owner's browser pass. Cross-origin
+		# framing is still refused, which is the clickjacking control.
+		"frame-ancestors 'self'",
+		"object-src 'none'",
+		"base-uri 'self'",
+		"form-action 'self'",
+	]
 
 
 def csp_enforced() -> bool:
-    return bool(frappe.conf.get("seminary_csp_enforce"))
+	return bool(frappe.conf.get("seminary_csp_enforce"))
 
 
 def policy() -> str:
-    return "; ".join(_directives())
+	return "; ".join(_directives())
 
 
 def apply_security_headers(response=None, request=None, **kwargs):
-    """`after_request`. Never raises: a header must not cost a response.
+	"""`after_request`. Never raises: a header must not cost a response.
 
-    Frappe calls this for every request that reached the framework, including
-    error responses -- which is exactly where the nginx layer gives up.
-    """
-    if response is None:
-        return
-    try:
-        from seminary.scorm.delivery import is_delivery_request
+	Frappe calls this for every request that reached the framework, including
+	error responses -- which is exactly where the nginx layer gives up.
+	"""
+	if response is None:
+		return
+	try:
+		from seminary.scorm.delivery import is_delivery_request
 
-        if is_delivery_request():
-            # The SCORM delivery origin carries its own complete policy
-            # (p009 §2.6) and it is deliberately a different one: a CSP loose
-            # enough to run real courseware, and `frame-ancestors` naming the
-            # APP origin rather than 'self'.
-            #
-            # The header that actually breaks is `X-Frame-Options: SAMEORIGIN`
-            # below. Set on a delivery response it forbids the app origin from
-            # framing the package -- so the player renders nothing, in every
-            # browser, with no error the app can see. Found on the first live
-            # pass; nothing short of a real cross-origin request shows it.
-            return
-        headers = response.headers
-        header = (
-            "Content-Security-Policy"
-            if csp_enforced()
-            else "Content-Security-Policy-Report-Only"
-        )
-        headers.setdefault(header, policy())
-        headers.setdefault("X-Content-Type-Options", "nosniff")
-        # Must track `frame-ancestors` above: DENY blocks same-origin framing
-        # too, and browsers that honour both apply the stricter one, so a DENY
-        # here would silently undo the 'self' in the CSP.
-        headers.setdefault("X-Frame-Options", "SAMEORIGIN")
-        headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        headers.setdefault("Permissions-Policy", "geolocation=(), payment=(), usb=()")
-    except Exception:
-        frappe.logger().error("could not set security headers", exc_info=True)
+		if is_delivery_request():
+			# The SCORM delivery origin carries its own complete policy
+			# (p009 §2.6) and it is deliberately a different one: a CSP loose
+			# enough to run real courseware, and `frame-ancestors` naming the
+			# APP origin rather than 'self'.
+			#
+			# The header that actually breaks is `X-Frame-Options: SAMEORIGIN`
+			# below. Set on a delivery response it forbids the app origin from
+			# framing the package -- so the player renders nothing, in every
+			# browser, with no error the app can see. Found on the first live
+			# pass; nothing short of a real cross-origin request shows it.
+			return
+		headers = response.headers
+		header = "Content-Security-Policy" if csp_enforced() else "Content-Security-Policy-Report-Only"
+		headers.setdefault(header, policy())
+		headers.setdefault("X-Content-Type-Options", "nosniff")
+		# Must track `frame-ancestors` above: DENY blocks same-origin framing
+		# too, and browsers that honour both apply the stricter one, so a DENY
+		# here would silently undo the 'self' in the CSP.
+		headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+		headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+		headers.setdefault("Permissions-Policy", "geolocation=(), payment=(), usb=()")
+	except Exception:
+		frappe.logger().error("could not set security headers", exc_info=True)

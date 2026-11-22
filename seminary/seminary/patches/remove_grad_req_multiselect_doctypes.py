@@ -10,6 +10,6 @@ import frappe
 
 
 def execute():
-    for dt in ("Grad Req Course Prerequisite", "Grad Req Emphasis Scope"):
-        if frappe.db.exists("DocType", dt):
-            frappe.delete_doc("DocType", dt, force=1, ignore_permissions=True)
+	for dt in ("Grad Req Course Prerequisite", "Grad Req Emphasis Scope"):
+		if frappe.db.exists("DocType", dt):
+			frappe.delete_doc("DocType", dt, force=1, ignore_permissions=True)

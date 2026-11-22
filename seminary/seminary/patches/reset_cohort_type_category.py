@@ -24,22 +24,20 @@ RETIRED = ("Student", "Pastor-Mentoring", "Alumni-Peer", "Mixed")
 
 
 def execute():
-    if not frappe.db.has_column("Cohort Type", "category"):
-        return
-    stale = frappe.get_all(
-        "Cohort Type", filters={"category": ("in", RETIRED)}, pluck="name"
-    )
-    if not stale:
-        return
-    frappe.db.set_value(
-        "Cohort Type",
-        {"category": ("in", RETIRED)},
-        "category",
-        "Unrestricted",
-        update_modified=False,
-    )
-    frappe.db.commit()
-    print(
-        "Cohort Type: reset %d type(s) to Unrestricted for reclassification: %s"
-        % (len(stale), ", ".join(stale))
-    )
+	if not frappe.db.has_column("Cohort Type", "category"):
+		return
+	stale = frappe.get_all("Cohort Type", filters={"category": ("in", RETIRED)}, pluck="name")
+	if not stale:
+		return
+	frappe.db.set_value(
+		"Cohort Type",
+		{"category": ("in", RETIRED)},
+		"category",
+		"Unrestricted",
+		update_modified=False,
+	)
+	frappe.db.commit()
+	print(
+		"Cohort Type: reset %d type(s) to Unrestricted for reclassification: %s"
+		% (len(stale), ", ".join(stale))
+	)

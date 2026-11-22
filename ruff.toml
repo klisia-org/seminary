@@ -1,0 +1,39 @@
+# Shared ruff setup for every app, kept in sync by a script: change the shared copy, not this
+# file, except below the app-specific marker.
+line-length = 110
+target-version = "py314"
+extend-exclude = [".history", "node_modules", "runbooks/data"]
+
+[lint]
+select = ["F", "E", "W", "I", "UP", "B", "RUF"]
+ignore = [
+    "B017", # assertRaises(Exception) - should be more specific
+    "B018", # useless expression, not assigned to anything
+    "B023", # function doesn't bind loop variable - will have last iteration's value
+    "B904", # raise inside except without from
+    "E101", # indentation contains mixed spaces and tabs
+    "E402", # module level import not at top of file
+    "E501", # line too long
+    "E741", # ambiguous variable name
+    "F401", # "unused" imports
+    "F403", # can't detect undefined names from * import
+    "F405", # can't detect undefined names from * import
+    "F722", # syntax error in forward type annotation
+    "W191", # indentation contains tabs
+    "RUF001", # ambiguous unicode: en dashes, curly quotes and the like are intentional typography
+    "RUF002", # the same, in docstrings
+    "RUF003", # the same, in comments
+    "UP030", # Use implicit references for positional format fields (translations)
+    "UP031", # Use format specifiers instead of percent format
+    "UP032", # Use f-string instead of `format` call (translations)
+    "UP037", # quoted annotations
+    "UP040", # Use type aliases instead of type annotations
+]
+typing-modules = ["frappe.types.DF"]
+
+[format]
+quote-style = "double"
+indent-style = "tab"
+docstring-code-format = true
+
+# ---- app-specific settings below (kept by sync.py) ----

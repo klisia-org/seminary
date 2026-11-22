@@ -9,5 +9,5 @@ from seminary.install import seed_room_features
 
 
 def execute():
-    seed_room_features()
-    print("Ensured starter Room Features exist.")
+	seed_room_features()
+	print("Ensured starter Room Features exist.")

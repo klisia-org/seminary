@@ -69,8 +69,16 @@ function apply_reader_policy_ui(frm) {
 		if (!cpt.apply_reader_policy) return free();
 		const required = Math.min(cpt.readers_required || 0, 2);
 		const policy = {
-			second_reader: { type: cpt.second_reader_type, allow: cpt.second_reader_allow_other_units, num: 1 },
-			third_reader: { type: cpt.third_reader_type, allow: cpt.third_reader_allow_other_units, num: 2 },
+			second_reader: {
+				type: cpt.second_reader_type,
+				allow: cpt.second_reader_allow_other_units,
+				num: 1,
+			},
+			third_reader: {
+				type: cpt.third_reader_type,
+				allow: cpt.third_reader_allow_other_units,
+				num: 2,
+			},
 		};
 		SLOTS.forEach((f) => {
 			const p = policy[f];
@@ -81,7 +89,8 @@ function apply_reader_policy_ui(frm) {
 				frm.set_value(`${f}_type`, p.type || "Instructor");
 			}
 			frm.set_query(f, () => {
-				if ((p.type || "Instructor") === "External Examiner") return { filters: { is_active: 1 } };
+				if ((p.type || "Instructor") === "External Examiner")
+					return { filters: { is_active: 1 } };
 				if (!p.allow && frm.doc.academic_unit) {
 					return {
 						query: "seminary.seminary.faculty.instructors_in_unit",
@@ -123,8 +132,12 @@ async function prompt_assign_advisor(frm) {
 					filters: advisorFilters,
 				}),
 				description: restrict
-					? __("Qualified Thesis/CP Advisors with capacity, from this project's Academic Unit. Their capacity is claimed and the project is activated.")
-					: __("Qualified Thesis/CP Advisors with capacity (any unit). Their capacity is claimed and the project is activated."),
+					? __(
+							"Qualified Thesis/CP Advisors with capacity, from this project's Academic Unit. Their capacity is claimed and the project is activated."
+					  )
+					: __(
+							"Qualified Thesis/CP Advisors with capacity (any unit). Their capacity is claimed and the project is activated."
+					  ),
 			},
 		],
 		primary_action_label: __("Assign"),

@@ -20,27 +20,27 @@ from seminary.seminary.utils import country_code
 
 
 def is_holiday(date, country=None, subdiv=None) -> bool:
-    """True if `date` is a public holiday in the given country (default: the
-    site's default country). Unknown/unsupported countries return False rather
-    than raising, so callers never need to guard."""
-    if not date:
-        return False
-    d = getdate(date)
-    # The alpha-2 code the holidays library expects. Shared with the tax-ID
-    # registry (ADR 071), so it lives in utils rather than here.
-    code = country_code(country or frappe.db.get_default("country"))
-    if not code:
-        return False
-    cal = _calendar(code, d.year, subdiv)
-    return d in cal if cal is not None else False
+	"""True if `date` is a public holiday in the given country (default: the
+	site's default country). Unknown/unsupported countries return False rather
+	than raising, so callers never need to guard."""
+	if not date:
+		return False
+	d = getdate(date)
+	# The alpha-2 code the holidays library expects. Shared with the tax-ID
+	# registry (ADR 071), so it lives in utils rather than here.
+	code = country_code(country or frappe.db.get_default("country"))
+	if not code:
+		return False
+	cal = _calendar(code, d.year, subdiv)
+	return d in cal if cal is not None else False
 
 
 def _calendar(code, year, subdiv=None):
-    """Return a holidays calendar for the country/year, or None if unsupported."""
-    import holidays as holidays_lib
+	"""Return a holidays calendar for the country/year, or None if unsupported."""
+	import holidays as holidays_lib
 
-    try:
-        return holidays_lib.country_holidays(code, subdiv=subdiv, years=year)
-    except (KeyError, NotImplementedError, AttributeError):
-        # Country (or subdivision) not covered by the framework.
-        return None
+	try:
+		return holidays_lib.country_holidays(code, subdiv=subdiv, years=year)
+	except (KeyError, NotImplementedError, AttributeError):
+		# Country (or subdivision) not covered by the framework.
+		return None

@@ -12,5 +12,5 @@ from seminary.install import seed_culminating_project_types
 
 
 def execute():
-    seed_culminating_project_types()
-    print("Ensured starter Culminating Project Types exist.")
+	seed_culminating_project_types()
+	print("Ensured starter Culminating Project Types exist.")

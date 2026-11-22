@@ -18,15 +18,9 @@ import frappe
 
 
 def execute():
-    setter = frappe.db.exists(
-        "Property Setter", {"doc_type": "Instructor", "field_name": "naming_series"}
-    )
-    if setter:
-        frappe.delete_doc(
-            "Property Setter", setter, force=True, ignore_permissions=True
-        )
-        print("  removed the orphan Instructor.naming_series property setter")
+	setter = frappe.db.exists("Property Setter", {"doc_type": "Instructor", "field_name": "naming_series"})
+	if setter:
+		frappe.delete_doc("Property Setter", setter, force=True, ignore_permissions=True)
+		print("  removed the orphan Instructor.naming_series property setter")
 
-    frappe.db.delete(
-        "Singles", {"doctype": "Seminary Settings", "field": "instructor_created_by"}
-    )
+	frappe.db.delete("Singles", {"doctype": "Seminary Settings", "field": "instructor_created_by"})

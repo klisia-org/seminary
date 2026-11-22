@@ -1,9 +1,9 @@
-import frappe
 import os
 import socket
-from urllib.parse import urlparse
 from typing import Optional
+from urllib.parse import urlparse
 
+import frappe
 from frappe.sessions import get_csrf_token
 
 from seminary.seminary import portal_theme
@@ -12,134 +12,134 @@ DEV_SERVER_ENV_KEY = "SEMINARY_DEV_SERVER_URL"
 
 
 def get_context(context):
-    """Get context for seminary frontend page."""
-    if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect-to=/seminary/"
-        raise frappe.Redirect
+	"""Get context for seminary frontend page."""
+	if frappe.session.user == "Guest":
+		frappe.local.flags.redirect_location = "/login?redirect-to=/seminary/"
+		raise frappe.Redirect
 
-    context.no_cache = 1
-    # Passed through the context rather than left to `{{ frappe.session.csrf_token }}`,
-    # which reads a snapshot of the Jinja sandbox globals whose build order relative
-    # to this function is not guaranteed. This is also the pattern frappe's own desk
-    # template and the mainstream apps (builder, hrms, insights) use.
-    context.csrf_token = get_csrf_token()
-    theme = portal_theme.get_portal_theme()
-    context.boot = frappe._dict(get_boot_data())
-    # Empty unless an installed app supplies a theme (p017).
-    context.portal_theme_head = portal_theme.render_head(theme)
-    if logo := portal_theme.boot_logo(theme):
-        context.boot.portal_logo = logo
-    context.title = "Seminary ERP"
-    context.history_base = "/seminary/"
+	context.no_cache = 1
+	# Passed through the context rather than left to `{{ frappe.session.csrf_token }}`,
+	# which reads a snapshot of the Jinja sandbox globals whose build order relative
+	# to this function is not guaranteed. This is also the pattern frappe's own desk
+	# template and the mainstream apps (builder, hrms, insights) use.
+	context.csrf_token = get_csrf_token()
+	theme = portal_theme.get_portal_theme()
+	context.boot = frappe._dict(get_boot_data())
+	# Empty unless an installed app supplies a theme (p017).
+	context.portal_theme_head = portal_theme.render_head(theme)
+	if logo := portal_theme.boot_logo(theme):
+		context.boot.portal_logo = logo
+	context.title = "Seminary ERP"
+	context.history_base = "/seminary/"
 
-    if _is_dev_request():
-        dev_server_url = _get_dev_server_url().rstrip("/")
-        if not _is_dev_server_running(dev_server_url):
-            frappe.throw(
-                f"Vite dev server is not reachable at {dev_server_url}. "
-                "Run `yarn dev` in apps/seminary/frontend to start it."
-            )
-        context.template = "templates/pages/seminary_dev.html"
-        context.dev_server_url = dev_server_url
-    else:
-        context.dev_server_url = None
+	if _is_dev_request():
+		dev_server_url = _get_dev_server_url().rstrip("/")
+		if not _is_dev_server_running(dev_server_url):
+			frappe.throw(
+				f"Vite dev server is not reachable at {dev_server_url}. "
+				"Run `yarn dev` in apps/seminary/frontend to start it."
+			)
+		context.template = "templates/pages/seminary_dev.html"
+		context.dev_server_url = dev_server_url
+	else:
+		context.dev_server_url = None
 
-    return context
+	return context
 
 
 def get_boot_data():
-    """Shared boot data for Seminary frontend."""
-    boot = {}
+	"""Shared boot data for Seminary frontend."""
+	boot = {}
 
-    user = frappe.get_doc("User", frappe.session.user)
-    boot["user"] = {
-        "name": user.name,
-        "email": user.email,
-        "full_name": user.full_name,
-        "user_image": user.user_image,
-        "username": user.username,
-    }
+	user = frappe.get_doc("User", frappe.session.user)
+	boot["user"] = {
+		"name": user.name,
+		"email": user.email,
+		"full_name": user.full_name,
+		"user_image": user.user_image,
+		"username": user.username,
+	}
 
-    # `session.data.csrf_token` is populated *lazily*, by `sessions.get_csrf_token()`
-    # (frappe/sessions.py:194). Nothing on a website page calls it, so reading the
-    # slot directly yields an empty token on a fresh session — and then every
-    # hand-rolled POST that sends `window.csrf_token` fails with "CSRF token not
-    # found". Generating it here fills the slot before the page renders, which also
-    # fixes `{{ frappe.session.csrf_token }}` in the template, since that reads the
-    # same value (frappe/utils/safe_exec.py:363).
-    boot["csrf_token"] = get_csrf_token()
-    boot["sitename"] = frappe.local.site
-    # Server datetimes are naive in the site's zone; the portal needs the zone
-    # to show them in the viewer's own time ("2 hours ago", not "in 9 hours").
-    boot["site_time_zone"] = frappe.utils.get_system_timezone()
-    # `sysdefaults` is NOT shipped (p005a A02-1, deferred from p006 F8 pending
-    # this inventory). `frappe.defaults.get_defaults()` returned 92 keys into
-    # `window.sysdefaults` on every page load, and nothing in `frontend/src`,
-    # `portal-shell/src`, `seminary/public` or frappe-ui ever read one of them.
-    #
-    # What it did ship, measured on the canary, was a security-posture
-    # inventory: allow_error_traceback, enable_two_factor_auth and
-    # two_factor_method, allow_consecutive_login_attempts, allow_login_after_
-    # fail, minimum_password_score, password_reset_limit, session_expiry,
-    # deny_multiple_sessions, encrypt_backup, backup_limit,
-    # document_share_key_expiry, max_signups_allowed_per_hour -- plus the
-    # ERPNext commercial defaults (company, country, price lists, warehouse).
-    # An attacker reading the page learnt the lockout threshold and that 2FA
-    # was off before trying a single password.
-    #
-    # If the SPA ever needs a default, add that ONE key here by name.
-    #
-    # `lang` is such a key (aretenic decision 071): portal-shell's userLocale() and
-    # dayjsLocale() read it, so dates, numbers and relative times follow the user's
-    # language rather than the browser's.
-    boot["lang"] = frappe.local.lang
-    #
-    # The session id is carried by the cookie; the SPA never reads it, so it is
-    # not echoed into the page (p006 F8).
-    boot["session"] = {"user": frappe.session.user}
+	# `session.data.csrf_token` is populated *lazily*, by `sessions.get_csrf_token()`
+	# (frappe/sessions.py:194). Nothing on a website page calls it, so reading the
+	# slot directly yields an empty token on a fresh session — and then every
+	# hand-rolled POST that sends `window.csrf_token` fails with "CSRF token not
+	# found". Generating it here fills the slot before the page renders, which also
+	# fixes `{{ frappe.session.csrf_token }}` in the template, since that reads the
+	# same value (frappe/utils/safe_exec.py:363).
+	boot["csrf_token"] = get_csrf_token()
+	boot["sitename"] = frappe.local.site
+	# Server datetimes are naive in the site's zone; the portal needs the zone
+	# to show them in the viewer's own time ("2 hours ago", not "in 9 hours").
+	boot["site_time_zone"] = frappe.utils.get_system_timezone()
+	# `sysdefaults` is NOT shipped (p005a A02-1, deferred from p006 F8 pending
+	# this inventory). `frappe.defaults.get_defaults()` returned 92 keys into
+	# `window.sysdefaults` on every page load, and nothing in `frontend/src`,
+	# `portal-shell/src`, `seminary/public` or frappe-ui ever read one of them.
+	#
+	# What it did ship, measured on the canary, was a security-posture
+	# inventory: allow_error_traceback, enable_two_factor_auth and
+	# two_factor_method, allow_consecutive_login_attempts, allow_login_after_
+	# fail, minimum_password_score, password_reset_limit, session_expiry,
+	# deny_multiple_sessions, encrypt_backup, backup_limit,
+	# document_share_key_expiry, max_signups_allowed_per_hour -- plus the
+	# ERPNext commercial defaults (company, country, price lists, warehouse).
+	# An attacker reading the page learnt the lockout threshold and that 2FA
+	# was off before trying a single password.
+	#
+	# If the SPA ever needs a default, add that ONE key here by name.
+	#
+	# `lang` is such a key (aretenic decision 071): portal-shell's userLocale() and
+	# dayjsLocale() read it, so dates, numbers and relative times follow the user's
+	# language rather than the browser's.
+	boot["lang"] = frappe.local.lang
+	#
+	# The session id is carried by the cookie; the SPA never reads it, so it is
+	# not echoed into the page (p006 F8).
+	boot["session"] = {"user": frappe.session.user}
 
-    return boot
+	return boot
 
 
 DEV_COOKIE = "seminary_dev"
 
 
 def _is_dev_request() -> bool:
-    """`?dev=1` serves the SPA from Vite; `?dev=0` goes back to the build.
+	"""`?dev=1` serves the SPA from Vite; `?dev=0` goes back to the build.
 
-    Remembered in a cookie, because the router drops the query on the first
-    navigation and a refresh would otherwise fall back to the last build.
-    Only on a developer_mode site, so production never serves the dev page.
-    """
-    if not frappe.conf.developer_mode:
-        return False
-    flag = frappe.form_dict.get("dev")
-    if isinstance(flag, str):
-        on = flag.lower() in {"1", "true", "yes"}
-        if on:
-            frappe.local.cookie_manager.set_cookie(DEV_COOKIE, "1")
-        else:
-            frappe.local.cookie_manager.delete_cookie(DEV_COOKIE)
-        return on
-    return frappe.request.cookies.get(DEV_COOKIE) == "1"
+	Remembered in a cookie, because the router drops the query on the first
+	navigation and a refresh would otherwise fall back to the last build.
+	Only on a developer_mode site, so production never serves the dev page.
+	"""
+	if not frappe.conf.developer_mode:
+		return False
+	flag = frappe.form_dict.get("dev")
+	if isinstance(flag, str):
+		on = flag.lower() in {"1", "true", "yes"}
+		if on:
+			frappe.local.cookie_manager.set_cookie(DEV_COOKIE, "1")
+		else:
+			frappe.local.cookie_manager.delete_cookie(DEV_COOKIE)
+		return on
+	return frappe.request.cookies.get(DEV_COOKIE) == "1"
 
 
 def _get_dev_server_url() -> str:
-    # frappe-ui's frappeProxy puts Vite at webserver_port + 80 (8006 -> 8086),
-    # so a fixed 8080 only matched a bench on 8000.
-    vite_port = int(frappe.conf.get("webserver_port") or 8000) + 80
-    return os.environ.get(DEV_SERVER_ENV_KEY, f"http://localhost:{vite_port}")
+	# frappe-ui's frappeProxy puts Vite at webserver_port + 80 (8006 -> 8086),
+	# so a fixed 8080 only matched a bench on 8000.
+	vite_port = int(frappe.conf.get("webserver_port") or 8000) + 80
+	return os.environ.get(DEV_SERVER_ENV_KEY, f"http://localhost:{vite_port}")
 
 
 def _is_dev_server_running(dev_server_url: str) -> bool:
-    parsed = urlparse(dev_server_url)
-    if not parsed.hostname:
-        return False
+	parsed = urlparse(dev_server_url)
+	if not parsed.hostname:
+		return False
 
-    port = parsed.port or (443 if parsed.scheme == "https" else 80)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(1)
-    try:
-        return sock.connect_ex((parsed.hostname, port)) == 0
-    finally:
-        sock.close()
+	port = parsed.port or (443 if parsed.scheme == "https" else 80)
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.settimeout(1)
+	try:
+		return sock.connect_ex((parsed.hostname, port)) == 0
+	finally:
+		sock.close()

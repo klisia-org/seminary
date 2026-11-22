@@ -13,24 +13,24 @@ See `privatedocs/p004-object-storage-for-large-media.md`.
 """
 
 from seminary.storage.backend import (
-    LocalDiskBackend,
-    StorageBackend,
-    get_storage_backend,
-    is_offloaded,
-    key_from_url,
-    object_key,
-    url_for_key,
+	LocalDiskBackend,
+	StorageBackend,
+	get_storage_backend,
+	is_offloaded,
+	key_from_url,
+	object_key,
+	url_for_key,
 )
 from seminary.storage.routing import should_offload
 
 __all__ = [
-    "LocalDiskBackend",
-    "StorageBackend",
-    "get_storage_backend",
-    "is_offloaded",
-    "key_from_url",
-    "limits",
-    "object_key",
-    "should_offload",
-    "url_for_key",
+	"LocalDiskBackend",
+	"StorageBackend",
+	"get_storage_backend",
+	"is_offloaded",
+	"key_from_url",
+	"limits",
+	"object_key",
+	"should_offload",
+	"url_for_key",
 ]

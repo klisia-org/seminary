@@ -24,8 +24,7 @@ function describe_archive_rule(frm) {
 
 	const scoped_to_one_thing =
 		frm.doc.category === "Course scoped" ||
-		(["Paced Program", "Throughout Program"].includes(frm.doc.category) &&
-			frm.doc.program);
+		(["Paced Program", "Throughout Program"].includes(frm.doc.category) && frm.doc.program);
 	const resolved = scoped_to_one_thing
 		? __(
 				"As set up, a cohort of this type belongs to one thing that happens once, so archiving keeps its members."
@@ -47,9 +46,7 @@ frappe.ui.form.on("Cohort Type", {
 		describe_archive_rule(frm);
 		if (frm.is_new() || !frm.doc.plannable || !frm.doc.mentor_unit) return;
 
-		frm.add_custom_button(__("Open Cohort Planner"), () =>
-			frappe.set_route("cohort-planner")
-		);
+		frm.add_custom_button(__("Open Cohort Planner"), () => frappe.set_route("cohort-planner"));
 
 		frappe
 			.call("seminary.seminary.discipleship.planner.planner_setup", {
@@ -66,9 +63,7 @@ frappe.ui.form.on("Cohort Type", {
 function show_readiness(frm, setup) {
 	if (!setup) return;
 	const waiting = (setup.scopes || {}).all || 0;
-	const gaps = (setup.readiness || []).filter(
-		(r) => r.mentors_missing || r.students_missing
-	);
+	const gaps = (setup.readiness || []).filter((r) => r.mentors_missing || r.students_missing);
 
 	// Mentor gaps and student gaps are never summed: one student without a
 	// detail is one student unplaced, but a mentor pool without it makes the
@@ -98,16 +93,10 @@ function show_readiness(frm, setup) {
 
 	const blocked = gaps.some((r) => r.mentors_missing);
 	const headline = [
-		__("{0} mentors available, {1} students waiting", [
-			(setup.mentors || []).length,
-			waiting,
-		]),
+		__("{0} mentors available, {1} students waiting", [(setup.mentors || []).length, waiting]),
 	]
 		.concat(lines)
 		.join(" · ");
 
-	frm.dashboard.set_headline(
-		headline,
-		blocked ? "orange" : lines.length ? "blue" : "green"
-	);
+	frm.dashboard.set_headline(headline, blocked ? "orange" : lines.length ? "blue" : "green");
 }

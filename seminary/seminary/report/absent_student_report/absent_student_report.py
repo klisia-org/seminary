@@ -10,73 +10,73 @@ from seminary.seminary.holidays import is_holiday
 
 
 def execute(filters=None):
-    if not filters:
-        filters = {}
+	if not filters:
+		filters = {}
 
-    if not filters.get("date"):
-        msgprint(_("Please select date"), raise_exception=1)
+	if not filters.get("date"):
+		msgprint(_("Please select date"), raise_exception=1)
 
-    columns = get_columns(filters)
-    date = filters.get("date")
+	columns = get_columns(filters)
+	date = filters.get("date")
 
-    if is_holiday(filters.get("date")):
-        msgprint(
-            _("No attendance has been marked for {0} as it is a Holiday").format(
-                frappe.bold(formatdate(filters.get("date")))
-            )
-        )
+	if is_holiday(filters.get("date")):
+		msgprint(
+			_("No attendance has been marked for {0} as it is a Holiday").format(
+				frappe.bold(formatdate(filters.get("date")))
+			)
+		)
 
-    absent_students = get_absent_students(date)
+	absent_students = get_absent_students(date)
 
-    data = []
-    for student in absent_students:
-        row = [student.student, student.student_name]
-        stud_details = frappe.db.get_value(
-            "Student",
-            student.student,
-            ["student_email_id", "student_mobile_number"],
-            as_dict=True,
-        )
+	data = []
+	for student in absent_students:
+		row = [student.student, student.student_name]
+		stud_details = frappe.db.get_value(
+			"Student",
+			student.student,
+			["student_email_id", "student_mobile_number"],
+			as_dict=True,
+		)
 
-        if stud_details.student_email_id:
-            row += [stud_details.student_email_id]
-        else:
-            row += [""]
+		if stud_details.student_email_id:
+			row += [stud_details.student_email_id]
+		else:
+			row += [""]
 
-        if stud_details.student_mobile_number:
-            row += [stud_details.student_mobile_number]
-        else:
-            row += [""]
+		if stud_details.student_mobile_number:
+			row += [stud_details.student_mobile_number]
+		else:
+			row += [""]
 
-        data.append(row)
+		data.append(row)
 
-    return columns, data
+	return columns, data
 
 
 def get_columns(filters):
-    columns = [
-        _("Student") + ":Link/Student:90",
-        _("Student Name") + "::150",
-        _("Student Group") + "::180",
-        _("Student Email Address") + "::180",
-        _("Student Mobile No.") + "::150",
-    ]
-    return columns
+	columns = [
+		_("Student") + ":Link/Student:90",
+		_("Student Name") + "::150",
+		_("Student Group") + "::180",
+		_("Student Email Address") + "::180",
+		_("Student Mobile No.") + "::150",
+	]
+	return columns
 
 
 def get_absent_students(date):
-    absent_students = frappe.db.sql(
-        """
+	absent_students = frappe.db.sql(
+		"""
 		SELECT student, stuname_roster AS student_name
 		FROM `tabStudent Attendance`
 		WHERE
 			status='Absent' and docstatus=1 and date = %s
 		ORDER BY
 			stuname_roster""",
-        date,
-        as_dict=1,
-    )
-    return absent_students
+		date,
+		as_dict=1,
+	)
+	return absent_students
 
 
 # `get_transportation_details` lived here, mapping each absent student to their

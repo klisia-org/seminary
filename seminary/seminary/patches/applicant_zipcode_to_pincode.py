@@ -20,27 +20,24 @@ TABLE = "tabStudent Applicant"
 
 
 def execute():
-    if not frappe.db.table_exists("Student Applicant"):
-        return
-    columns = {c.get("Field") or c.get("column_name") for c in _describe()}
-    if "zipcode" not in columns:
-        return
-    if "pincode" in columns:
-        # sync_all got here first (a patch re-run after a failed migrate).
-        # Keep whichever value a human typed, then leave the orphan behind for
-        # trim-tables — dropping it here would discard the only copy if this
-        # patch is the thing that just failed.
-        frappe.db.sql(
-            "update `%s` set pincode = zipcode "
-            "where (pincode is null or pincode = '') and zipcode is not null"
-            % TABLE  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
-        )
-        return
-    frappe.db.sql_ddl(
-        "alter table `%s` change column `zipcode` `pincode` varchar(140)" % TABLE
-    )
-    print("  renamed Student Applicant.zipcode to pincode")
+	if not frappe.db.table_exists("Student Applicant"):
+		return
+	columns = {c.get("Field") or c.get("column_name") for c in _describe()}
+	if "zipcode" not in columns:
+		return
+	if "pincode" in columns:
+		# sync_all got here first (a patch re-run after a failed migrate).
+		# Keep whichever value a human typed, then leave the orphan behind for
+		# trim-tables — dropping it here would discard the only copy if this
+		# patch is the thing that just failed.
+		frappe.db.sql(
+			"update `%s` set pincode = zipcode "
+			"where (pincode is null or pincode = '') and zipcode is not null" % TABLE  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
+		)
+		return
+	frappe.db.sql_ddl("alter table `%s` change column `zipcode` `pincode` varchar(140)" % TABLE)
+	print("  renamed Student Applicant.zipcode to pincode")
 
 
 def _describe():
-    return frappe.db.sql("describe `%s`" % TABLE, as_dict=True)
+	return frappe.db.sql("describe `%s`" % TABLE, as_dict=True)

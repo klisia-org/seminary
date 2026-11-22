@@ -13,12 +13,12 @@ NEW = "seminary.seminary.financial.actions.regenerate_current_term_charges"
 
 
 def execute():
-    script = frappe.db.get_value("Custom HTML Block", BLOCK, "script")
-    if script and OLD in script:
-        frappe.db.set_value(
-            "Custom HTML Block",
-            BLOCK,
-            "script",
-            script.replace(OLD, NEW),
-            update_modified=False,
-        )
+	script = frappe.db.get_value("Custom HTML Block", BLOCK, "script")
+	if script and OLD in script:
+		frappe.db.set_value(
+			"Custom HTML Block",
+			BLOCK,
+			"script",
+			script.replace(OLD, NEW),
+			update_modified=False,
+		)

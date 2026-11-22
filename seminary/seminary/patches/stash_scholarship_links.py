@@ -15,38 +15,38 @@ STASH = "__scholarship_link_stash"
 
 
 def execute():
-    # Column still present only on the first run of this release.
-    has_col = frappe.db.sql(
-        """
+	# Column still present only on the first run of this release.
+	has_col = frappe.db.sql(
+		"""
         SELECT 1 FROM information_schema.columns
         WHERE table_name = 'tabPayers Fee Category PE'
           AND column_name = 'scholarship'
           AND table_schema = DATABASE()
         """
-    )
-    if not has_col:
-        print("No legacy scholarship column to stash.")
-        return
+	)
+	if not has_col:
+		print("No legacy scholarship column to stash.")
+		return
 
-    frappe.db.sql_ddl(
-        f"""
+	frappe.db.sql_ddl(
+		f"""
         CREATE TABLE IF NOT EXISTS `{STASH}` (
             pfc VARCHAR(140),
             pf_pe VARCHAR(140),
             scholarship VARCHAR(140)
         )
         """
-    )
+	)
 
-    # STASH is a module constant, not a request value.
-    insert = f"""
+	# STASH is a module constant, not a request value.
+	insert = f"""
         INSERT INTO `{STASH}` (pfc, pf_pe, scholarship)
         SELECT name, pf_pe, scholarship
         FROM `tabPayers Fee Category PE`
         WHERE scholarship IS NOT NULL AND scholarship != ''
         """  # nosec B608
-    frappe.db.sql(insert)
-    counted = f"SELECT COUNT(*) FROM `{STASH}`"  # nosec B608
-    count = frappe.db.sql(counted)[0][0]
-    frappe.db.commit()
-    print(f"Stashed {count} scholarship link(s) for award migration.")
+	frappe.db.sql(insert)
+	counted = f"SELECT COUNT(*) FROM `{STASH}`"  # nosec B608
+	count = frappe.db.sql(counted)[0][0]
+	frappe.db.commit()
+	print(f"Stashed {count} scholarship link(s) for award migration.")

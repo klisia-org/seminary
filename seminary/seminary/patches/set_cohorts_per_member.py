@@ -23,13 +23,11 @@ COURSE_SCOPED = "Course scoped"
 
 
 def execute():
-    for name, category in frappe.get_all(
-        "Cohort Type", fields=["name", "category"], as_list=True
-    ):
-        frappe.db.set_value(
-            "Cohort Type",
-            name,
-            "max_lineages_per_member",
-            0 if category == COURSE_SCOPED else 1,
-            update_modified=False,
-        )
+	for name, category in frappe.get_all("Cohort Type", fields=["name", "category"], as_list=True):
+		frappe.db.set_value(
+			"Cohort Type",
+			name,
+			"max_lineages_per_member",
+			0 if category == COURSE_SCOPED else 1,
+			update_modified=False,
+		)

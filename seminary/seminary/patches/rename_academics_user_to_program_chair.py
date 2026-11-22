@@ -23,17 +23,15 @@ import frappe
 
 
 def execute():
-    if not frappe.db.exists("Role", "Academics User"):
-        return
+	if not frappe.db.exists("Role", "Academics User"):
+		return
 
-    if frappe.db.exists("Role", "Program Chair"):
-        # Target already exists (e.g. created by install on a fresh-then-upgraded
-        # site). Merge the old role into it so assignments/permissions collapse.
-        frappe.rename_doc(
-            "Role", "Academics User", "Program Chair", merge=True, force=True
-        )
-    else:
-        frappe.rename_doc("Role", "Academics User", "Program Chair", force=True)
+	if frappe.db.exists("Role", "Program Chair"):
+		# Target already exists (e.g. created by install on a fresh-then-upgraded
+		# site). Merge the old role into it so assignments/permissions collapse.
+		frappe.rename_doc("Role", "Academics User", "Program Chair", merge=True, force=True)
+	else:
+		frappe.rename_doc("Role", "Academics User", "Program Chair", force=True)
 
-    frappe.db.commit()
-    print('Renamed role "Academics User" -> "Program Chair".')
+	frappe.db.commit()
+	print('Renamed role "Academics User" -> "Program Chair".')

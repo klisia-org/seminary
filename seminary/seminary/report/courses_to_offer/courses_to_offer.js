@@ -1,10 +1,10 @@
 frappe.query_reports["Courses to Offer"] = {
-	"filters": [
+	filters: [
 		{
-			"fieldname": "program",
-			"label": __("Program"),
-			"fieldtype": "Link",
-			"options": "Program"
-		}
-	]
+			fieldname: "program",
+			label: __("Program"),
+			fieldtype: "Link",
+			options: "Program",
+		},
+	],
 };

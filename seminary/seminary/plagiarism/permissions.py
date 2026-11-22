@@ -33,37 +33,37 @@ designed work p008a deferred for the activity doctypes.
 import frappe
 
 STAFF_ROLES = {
-    "Instructor",
-    "Program Chair",
-    "Seminary Manager",
-    "System Manager",
+	"Instructor",
+	"Program Chair",
+	"Seminary Manager",
+	"System Manager",
 }
 
 
 def _is_staff(user=None) -> bool:
-    user = user or frappe.session.user
-    if user == "Administrator":
-        return True
-    return bool(STAFF_ROLES & set(frappe.get_roles(user)))
+	user = user or frappe.session.user
+	if user == "Administrator":
+		return True
+	return bool(STAFF_ROLES & set(frappe.get_roles(user)))
 
 
 def has_permission(doc, ptype=None, user=None):
-    """Staff only, for every permission type.
+	"""Staff only, for every permission type.
 
-    A controller `has_permission` can only *restrict* -- frappe checks it in
-    addition to the DocPerms, never instead of them -- so this does not widen
-    anything the JSON withholds. It now receives `ptype`, which is what makes
-    the restriction expressible at all.
-    """
-    return _is_staff(user)
+	A controller `has_permission` can only *restrict* -- frappe checks it in
+	addition to the DocPerms, never instead of them -- so this does not widen
+	anything the JSON withholds. It now receives `ptype`, which is what makes
+	the restriction expressible at all.
+	"""
+	return _is_staff(user)
 
 
 def get_permission_query_conditions(user=None):
-    """The other half of the pair: the same rule, applied to list queries.
+	"""The other half of the pair: the same rule, applied to list queries.
 
-    `1 = 0` rather than `None`, because `None` reads as *no restriction* --
-    the exact fail-open shape p005a flagged elsewhere as A01-20.
-    """
-    if _is_staff(user):
-        return ""
-    return "1 = 0"
+	`1 = 0` rather than `None`, because `None` reads as *no restriction* --
+	the exact fail-open shape p005a flagged elsewhere as A01-20.
+	"""
+	if _is_staff(user):
+		return ""
+	return "1 = 0"

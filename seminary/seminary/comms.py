@@ -37,8 +37,8 @@ from frappe import _
 from frappe.rate_limiter import rate_limit
 from frappe.utils import add_to_date, cint, now_datetime
 
-from seminary.seminary import security_log
 from seminary.language import native_choices
+from seminary.seminary import security_log
 from seminary.seminary.author_templates import render_author_text
 
 ADAPTER_HOOK = "communication_channel_providers"
@@ -66,661 +66,632 @@ DISPATCH_BATCH = 500
 
 
 class EmailAdapter:
-    """Delivers through the site's Frappe Email Account stack."""
+	"""Delivers through the site's Frappe Email Account stack."""
 
-    final_status = "Sent"
+	final_status = "Sent"
 
-    def send(self, log, account):
-        if not log.to_address:
-            raise ValueError("Email log has no to_address")
-        frappe.sendmail(
-            recipients=[log.to_address],
-            subject=log.subject or "",
-            message=log.message or "",
-            reference_doctype=log.reference_doctype or log.doctype,
-            reference_name=log.reference_name or log.name,
-            expose_recipients="hide",
-            now=False,
-        )
-        return None
+	def send(self, log, account):
+		if not log.to_address:
+			raise ValueError("Email log has no to_address")
+		frappe.sendmail(
+			recipients=[log.to_address],
+			subject=log.subject or "",
+			message=log.message or "",
+			reference_doctype=log.reference_doctype or log.doctype,
+			reference_name=log.reference_name or log.name,
+			expose_recipients="hide",
+			now=False,
+		)
+		return None
 
 
 class InAppAdapter:
-    """The Communication Log row itself is the portal-inbox message: landing
-    in the ledger is delivery. Read comes from the portal (stage two).
+	"""The Communication Log row itself is the portal-inbox message: landing
+	in the ledger is delivery. Read comes from the portal (stage two).
 
-    instant=True: delivered synchronously at queue time — there is no carrier
-    to rate-limit, and the inbox should never wait for the cron drainer."""
+	instant=True: delivered synchronously at queue time — there is no carrier
+	to rate-limit, and the inbox should never wait for the cron drainer."""
 
-    final_status = "Delivered"
-    instant = True
+	final_status = "Delivered"
+	instant = True
 
-    def send(self, log, account):
-        if not log.person:
-            raise ValueError("In-App messages need a Person")
-        return None
+	def send(self, log, account):
+		if not log.person:
+			raise ValueError("In-App messages need a Person")
+		return None
 
 
 class PrintAdapter:
-    """The Communication Log holds the rendered letter snapshot (log.message).
-    There is no carrier, so like In-App the row itself is the delivery. The
-    printable artifact is the consolidated Letters PDF on the Seminary
-    Announcement (all recipients, one per page), not a PDF per log."""
+	"""The Communication Log holds the rendered letter snapshot (log.message).
+	There is no carrier, so like In-App the row itself is the delivery. The
+	printable artifact is the consolidated Letters PDF on the Seminary
+	Announcement (all recipients, one per page), not a PDF per log."""
 
-    final_status = "Delivered"
-    instant = True
+	final_status = "Delivered"
+	instant = True
 
-    def send(self, log, account):
-        if not log.message:
-            raise ValueError("Print log has no rendered letter")
-        return None
+	def send(self, log, account):
+		if not log.message:
+			raise ValueError("Print log has no rendered letter")
+		return None
 
 
 def get_adapter_registry():
-    registry = {}
-    hooked = frappe.get_hooks(ADAPTER_HOOK) or {}
-    for key, value in hooked.items():
-        registry[key] = value[-1] if isinstance(value, list) else value
-    return registry
+	registry = {}
+	hooked = frappe.get_hooks(ADAPTER_HOOK) or {}
+	for key, value in hooked.items():
+		registry[key] = value[-1] if isinstance(value, list) else value
+	return registry
 
 
 def get_adapter(provider_key):
-    path = get_adapter_registry().get(provider_key)
-    if not path:
-        frappe.throw(_("No adapter registered for provider {0}.").format(provider_key))
-    return frappe.get_attr(path)()
+	path = get_adapter_registry().get(provider_key)
+	if not path:
+		frappe.throw(_("No adapter registered for provider {0}.").format(provider_key))
+	return frappe.get_attr(path)()
 
 
 # ---------------------------------------------------------------- routing
 
 
 def consent_blocks(person_doc, channel, category):
-    # A deceased Person (p018) is sent nothing, on any channel or category.
-    if person_doc.get("deceased_on"):
-        return True
-    if not category or category == "Emergency":
-        return False
-    # Physical mail carries no opt-in requirement — Print is never consent-blocked.
-    if channel == PRINT_CHANNEL:
-        return False
-    status = None
-    for row in person_doc.consents:
-        if row.channel == channel and row.category == category:
-            status = row.status
-            break
-    if category == "Promotional":
-        return status != "Opted In"
-    return status == "Opted Out"
+	# A deceased Person (p018) is sent nothing, on any channel or category.
+	if person_doc.get("deceased_on"):
+		return True
+	if not category or category == "Emergency":
+		return False
+	# Physical mail carries no opt-in requirement — Print is never consent-blocked.
+	if channel == PRINT_CHANNEL:
+		return False
+	status = None
+	for row in person_doc.consents:
+		if row.channel == channel and row.category == category:
+			status = row.status
+			break
+	if category == "Promotional":
+		return status != "Opted In"
+	return status == "Opted Out"
 
 
 HOLD_HOOK = "communication_holds"
 
 
-def hold_reason(
-    person_doc, channel, category, reference_doctype=None, reference_name=None
-):
-    """Why another app holds this Person from this message, or None (p019).
+def hold_reason(person_doc, channel, category, reference_doctype=None, reference_name=None):
+	"""Why another app holds this Person from this message, or None (p019).
 
-    Each ``communication_holds`` hook is called with (person, channel, category,
-    reference_doctype, reference_name) and returns a reason or None. Emergency is
-    never held. seminary does not know why: the app that holds says so."""
-    if not person_doc or category == "Emergency":
-        return None
-    for path in frappe.get_hooks(HOLD_HOOK) or []:
-        reason = frappe.get_attr(path)(
-            person_doc.name, channel, category, reference_doctype, reference_name
-        )
-        if reason:
-            return reason
-    return None
+	Each ``communication_holds`` hook is called with (person, channel, category,
+	reference_doctype, reference_name) and returns a reason or None. Emergency is
+	never held. seminary does not know why: the app that holds says so."""
+	if not person_doc or category == "Emergency":
+		return None
+	for path in frappe.get_hooks(HOLD_HOOK) or []:
+		reason = frappe.get_attr(path)(person_doc.name, channel, category, reference_doctype, reference_name)
+		if reason:
+			return reason
+	return None
 
 
 def resolve_address(person_doc, channel, category=None):
-    rows = [
-        r
-        for r in person_doc.channel_addresses
-        if r.channel == channel and r.status == "Active"
-    ]
-    if category:
-        scoped = next((r for r in rows if r.category == category), None)
-        if scoped:
-            return scoped.value
-    primary = next((r for r in rows if r.is_primary), None)
-    if primary:
-        return primary.value
-    unscoped = next((r for r in rows if not r.category), None)
-    if unscoped:
-        return unscoped.value
-    if rows:
-        return rows[0].value
-    # Voice calls reach the same number as SMS — fall back to the SMS address
-    # (the primary mobile mirrors there) so Voice works without a separate one.
-    if channel == VOICE_CHANNEL:
-        return resolve_address(person_doc, SMS_CHANNEL, category)
-    return None
+	rows = [r for r in person_doc.channel_addresses if r.channel == channel and r.status == "Active"]
+	if category:
+		scoped = next((r for r in rows if r.category == category), None)
+		if scoped:
+			return scoped.value
+	primary = next((r for r in rows if r.is_primary), None)
+	if primary:
+		return primary.value
+	unscoped = next((r for r in rows if not r.category), None)
+	if unscoped:
+		return unscoped.value
+	if rows:
+		return rows[0].value
+	# Voice calls reach the same number as SMS — fall back to the SMS address
+	# (the primary mobile mirrors there) so Voice works without a separate one.
+	if channel == VOICE_CHANNEL:
+		return resolve_address(person_doc, SMS_CHANNEL, category)
+	return None
 
 
 def reachability(
-    person_doc,
-    channel,
-    category,
-    *,
-    email=None,
-    reference_doctype=None,
-    reference_name=None,
+	person_doc,
+	channel,
+	category,
+	*,
+	email=None,
+	reference_doctype=None,
+	reference_name=None,
 ):
-    """Would a queued send on this channel actually deliver, and if not, why?
-    Returns 'ok' | 'opted_out' | 'held' | 'no_address'. Mirrors the routing checks in
-    send_message so the announcement preview and the email/portal fallback
-    agree with what dispatch will do. `email` is the known address for the
-    Email channel when the spine has no Person (announcement recipients are
-    resolved by email)."""
-    if person_doc and consent_blocks(person_doc, channel, category):
-        return "opted_out"
-    if hold_reason(person_doc, channel, category, reference_doctype, reference_name):
-        return "held"
-    if channel == IN_APP_CHANNEL:
-        return "ok" if person_doc else "no_address"
-    if channel == PRINT_CHANNEL:
-        return "ok"  # addressless: a PDF can always be generated
-    address = email if (channel == EMAIL_CHANNEL and email) else None
-    if not address and person_doc:
-        address = resolve_address(person_doc, channel, category)
-    return "ok" if address else "no_address"
+	"""Would a queued send on this channel actually deliver, and if not, why?
+	Returns 'ok' | 'opted_out' | 'held' | 'no_address'. Mirrors the routing checks in
+	send_message so the announcement preview and the email/portal fallback
+	agree with what dispatch will do. `email` is the known address for the
+	Email channel when the spine has no Person (announcement recipients are
+	resolved by email)."""
+	if person_doc and consent_blocks(person_doc, channel, category):
+		return "opted_out"
+	if hold_reason(person_doc, channel, category, reference_doctype, reference_name):
+		return "held"
+	if channel == IN_APP_CHANNEL:
+		return "ok" if person_doc else "no_address"
+	if channel == PRINT_CHANNEL:
+		return "ok"  # addressless: a PDF can always be generated
+	address = email if (channel == EMAIL_CHANNEL and email) else None
+	if not address and person_doc:
+		address = resolve_address(person_doc, channel, category)
+	return "ok" if address else "no_address"
 
 
 def pick_account(channel, country=None):
-    accounts = frappe.get_all(
-        "Channel Provider Account",
-        filters={"channel": channel, "enabled": 1},
-        fields=["name", "country"],
-        order_by="creation asc",
-    )
-    if country:
-        match = next((a for a in accounts if a.country == country), None)
-        if match:
-            return match.name
-    default = next((a for a in accounts if not a.country), None)
-    if default:
-        return default.name
-    return accounts[0].name if accounts else None
+	accounts = frappe.get_all(
+		"Channel Provider Account",
+		filters={"channel": channel, "enabled": 1},
+		fields=["name", "country"],
+		order_by="creation asc",
+	)
+	if country:
+		match = next((a for a in accounts if a.country == country), None)
+		if match:
+			return match.name
+	default = next((a for a in accounts if not a.country), None)
+	if default:
+		return default.name
+	return accounts[0].name if accounts else None
 
 
 # ---------------------------------------------------------------- queueing
 
 
 def send(
-    person,
-    template,
-    *,
-    to_address=None,
-    context=None,
-    channel="Email",
-    category=None,
-    reference_doctype=None,
-    reference_name=None,
-    triggered_by=None,
-    scheduled_at=None,
-    dedupe_key=None,
-    awaiting_response=0,
-    follow_up_after_days=0,
-    follow_up_template=None,
-    follow_up_of=None,
+	person,
+	template,
+	*,
+	to_address=None,
+	context=None,
+	channel="Email",
+	category=None,
+	reference_doctype=None,
+	reference_name=None,
+	triggered_by=None,
+	scheduled_at=None,
+	dedupe_key=None,
+	awaiting_response=0,
+	follow_up_after_days=0,
+	follow_up_template=None,
+	follow_up_of=None,
 ):
-    """Render a Communication Template and queue the log. Returns the log
-    name, or None when deduped / consent-cancelled.
+	"""Render a Communication Template and queue the log. Returns the log
+	name, or None when deduped / consent-cancelled.
 
-    person may be None for addresses the spine doesn't know (an external
-    recommender, a custom-filter recipient) — pass to_address explicitly and
-    the site-default template version renders without consent data."""
-    person_doc = frappe.get_doc("Person", person) if person else None
-    tpl = frappe.get_doc("Communication Template", template)
-    if not tpl.enabled:
-        frappe.throw(_("Communication Template {0} is disabled.").format(template))
-    category = category or tpl.category
+	person may be None for addresses the spine doesn't know (an external
+	recommender, a custom-filter recipient) — pass to_address explicitly and
+	the site-default template version renders without consent data."""
+	person_doc = frappe.get_doc("Person", person) if person else None
+	tpl = frappe.get_doc("Communication Template", template)
+	if not tpl.enabled:
+		frappe.throw(_("Communication Template {0} is disabled.").format(template))
+	category = category or tpl.category
 
-    language = person_doc.language if person_doc else None
-    version = tpl.get_version(channel, language)
-    if not version:
-        frappe.throw(
-            _("Template {0} has no version for channel {1}.").format(template, channel)
-        )
+	language = person_doc.language if person_doc else None
+	version = tpl.get_version(channel, language)
+	if not version:
+		frappe.throw(_("Template {0} has no version for channel {1}.").format(template, channel))
 
-    ctx = {"person": person_doc}
-    if reference_doctype and reference_name:
-        ctx["doc"] = frappe.get_doc(reference_doctype, reference_name)
-    ctx.update(context or {})
+	ctx = {"person": person_doc}
+	if reference_doctype and reference_name:
+		ctx["doc"] = frappe.get_doc(reference_doctype, reference_name)
+	ctx.update(context or {})
 
-    # Template Version text is author text (p006 F10): rendered in a sandbox
-    # with the context and Jinja filters, no Frappe globals.
-    return send_message(
-        channel=channel,
-        # The subject is a `Data` field on every channel -- never HTML -- so it
-        # is rendered plain. The body follows the channel (p005a A05-7).
-        subject=render_author_text(version.subject, ctx) if version.subject else None,
-        message=render_author_text(version.body, ctx, html=channel in HTML_CHANNELS),
-        person=person_doc,
-        to_address=to_address,
-        category=category,
-        template=tpl.name,
-        language=version.language or language,
-        reference_doctype=reference_doctype,
-        reference_name=reference_name,
-        triggered_by=triggered_by,
-        scheduled_at=scheduled_at,
-        dedupe_key=dedupe_key,
-        awaiting_response=awaiting_response,
-        follow_up_after_days=follow_up_after_days,
-        follow_up_template=follow_up_template,
-        follow_up_of=follow_up_of,
-    )
+	# Template Version text is author text (p006 F10): rendered in a sandbox
+	# with the context and Jinja filters, no Frappe globals.
+	return send_message(
+		channel=channel,
+		# The subject is a `Data` field on every channel -- never HTML -- so it
+		# is rendered plain. The body follows the channel (p005a A05-7).
+		subject=render_author_text(version.subject, ctx) if version.subject else None,
+		message=render_author_text(version.body, ctx, html=channel in HTML_CHANNELS),
+		person=person_doc,
+		to_address=to_address,
+		category=category,
+		template=tpl.name,
+		language=version.language or language,
+		reference_doctype=reference_doctype,
+		reference_name=reference_name,
+		triggered_by=triggered_by,
+		scheduled_at=scheduled_at,
+		dedupe_key=dedupe_key,
+		awaiting_response=awaiting_response,
+		follow_up_after_days=follow_up_after_days,
+		follow_up_template=follow_up_template,
+		follow_up_of=follow_up_of,
+	)
 
 
 def get_role_users(role):
-    """Enabled users holding a role, minus the system accounts."""
-    users = frappe.get_all(
-        "Has Role",
-        filters={"role": role, "parenttype": "User"},
-        pluck="parent",
-        distinct=True,
-    )
-    if not users:
-        return []
-    enabled = frappe.get_all(
-        "User",
-        filters=[["name", "in", users], ["enabled", "=", 1]],
-        pluck="name",
-    )
-    return [u for u in enabled if u not in ("Administrator", "Guest")]
+	"""Enabled users holding a role, minus the system accounts."""
+	users = frappe.get_all(
+		"Has Role",
+		filters={"role": role, "parenttype": "User"},
+		pluck="parent",
+		distinct=True,
+	)
+	if not users:
+		return []
+	enabled = frappe.get_all(
+		"User",
+		filters=[["name", "in", users], ["enabled", "=", 1]],
+		pluck="name",
+	)
+	return [u for u in enabled if u not in ("Administrator", "Guest")]
 
 
 def send_to_role(
-    role,
-    template,
-    *,
-    context=None,
-    channel="Email",
-    reference_doctype=None,
-    reference_name=None,
-    triggered_by=None,
-    dedupe_prefix=None,
+	role,
+	template,
+	*,
+	context=None,
+	channel="Email",
+	reference_doctype=None,
+	reference_name=None,
+	triggered_by=None,
+	dedupe_prefix=None,
 ):
-    """Queue one templated log per enabled user holding the role. Each user
-    gets a Person ensured (the ADR 042 staff seam), so staff communications
-    land on their timeline too."""
-    from seminary.seminary import person as person_spine
+	"""Queue one templated log per enabled user holding the role. Each user
+	gets a Person ensured (the ADR 042 staff seam), so staff communications
+	land on their timeline too."""
+	from seminary.seminary import person as person_spine
 
-    logs = []
-    for user in get_role_users(role):
-        try:
-            logs.append(
-                send(
-                    person_spine.ensure_person(user=user),
-                    template,
-                    context=context,
-                    channel=channel,
-                    reference_doctype=reference_doctype,
-                    reference_name=reference_name,
-                    triggered_by=triggered_by,
-                    dedupe_key=f"{dedupe_prefix}::{user}" if dedupe_prefix else None,
-                )
-            )
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"send_to_role({role}, {template}) failed for {user}",
-            )
-    return [log for log in logs if log]
+	logs = []
+	for user in get_role_users(role):
+		try:
+			logs.append(
+				send(
+					person_spine.ensure_person(user=user),
+					template,
+					context=context,
+					channel=channel,
+					reference_doctype=reference_doctype,
+					reference_name=reference_name,
+					triggered_by=triggered_by,
+					dedupe_key=f"{dedupe_prefix}::{user}" if dedupe_prefix else None,
+				)
+			)
+		except Exception:
+			frappe.log_error(
+				frappe.get_traceback(),
+				f"send_to_role({role}, {template}) failed for {user}",
+			)
+	return [log for log in logs if log]
 
 
 def send_message(
-    *,
-    channel,
-    message,
-    subject=None,
-    person=None,
-    to_address=None,
-    category=None,
-    template=None,
-    language=None,
-    media_url=None,
-    reference_doctype=None,
-    reference_name=None,
-    triggered_by=None,
-    scheduled_at=None,
-    dedupe_key=None,
-    awaiting_response=0,
-    follow_up_after_days=0,
-    follow_up_template=None,
-    follow_up_of=None,
-    in_reply_to=None,
-    attach_files=None,
+	*,
+	channel,
+	message,
+	subject=None,
+	person=None,
+	to_address=None,
+	category=None,
+	template=None,
+	language=None,
+	media_url=None,
+	reference_doctype=None,
+	reference_name=None,
+	triggered_by=None,
+	scheduled_at=None,
+	dedupe_key=None,
+	awaiting_response=0,
+	follow_up_after_days=0,
+	follow_up_template=None,
+	follow_up_of=None,
+	in_reply_to=None,
+	attach_files=None,
 ):
-    """Queue a pre-rendered message (the raw path — used by the Seminary
-    Announcement port, where content is authored, not templated).
+	"""Queue a pre-rendered message (the raw path — used by the Seminary
+	Announcement port, where content is authored, not templated).
 
-    For external channels embedded files are flipped public so the recipient's
-    client can fetch them without a session. For In-App (portal inbox) they stay
-    private and are attached to the per-recipient log instead, so Frappe's
-    /private/files ACL serves them only to the recipient/sender (ADR 043).
+	For external channels embedded files are flipped public so the recipient's
+	client can fetch them without a session. For In-App (portal inbox) they stay
+	private and are attached to the per-recipient log instead, so Frappe's
+	/private/files ACL serves them only to the recipient/sender (ADR 043).
 
-    Nothing is queued while history is being imported (ADR 094 §1): every
-    notice passes through here."""
-    if frappe.flags.in_import:
-        return None
-    if channel != IN_APP_CHANNEL:
-        message = _publish_embedded_files(message)
-    person_doc = None
-    if person:
-        person_doc = (
-            person
-            if hasattr(person, "channel_addresses")
-            else frappe.get_doc("Person", person)
-        )
+	Nothing is queued while history is being imported (ADR 094 §1): every
+	notice passes through here."""
+	if frappe.flags.in_import:
+		return None
+	if channel != IN_APP_CHANNEL:
+		message = _publish_embedded_files(message)
+	person_doc = None
+	if person:
+		person_doc = person if hasattr(person, "channel_addresses") else frappe.get_doc("Person", person)
 
-    values = dict(
-        doctype="Communication Log",
-        direction="Outbound",
-        status="Queued",
-        person=person_doc.name if person_doc else None,
-        channel=channel,
-        category=category,
-        to_address=to_address,
-        template=template,
-        language=language,
-        subject=subject,
-        message=message,
-        media_url=media_url,
-        in_reply_to=in_reply_to,
-        reference_doctype=reference_doctype,
-        reference_name=reference_name,
-        triggered_by=triggered_by or frappe.session.user,
-        scheduled_at=scheduled_at,
-        awaiting_response=awaiting_response,
-        follow_up_after_days=follow_up_after_days,
-        follow_up_template=follow_up_template,
-        follow_up_of=follow_up_of,
-    )
+	values = dict(
+		doctype="Communication Log",
+		direction="Outbound",
+		status="Queued",
+		person=person_doc.name if person_doc else None,
+		channel=channel,
+		category=category,
+		to_address=to_address,
+		template=template,
+		language=language,
+		subject=subject,
+		message=message,
+		media_url=media_url,
+		in_reply_to=in_reply_to,
+		reference_doctype=reference_doctype,
+		reference_name=reference_name,
+		triggered_by=triggered_by or frappe.session.user,
+		scheduled_at=scheduled_at,
+		awaiting_response=awaiting_response,
+		follow_up_after_days=follow_up_after_days,
+		follow_up_template=follow_up_template,
+		follow_up_of=follow_up_of,
+	)
 
-    if person_doc and consent_blocks(person_doc, channel, category):
-        values.update(
-            status="Cancelled",
-            error=(
-                _("{0} is deceased.").format(person_doc.name)
-                if person_doc.get("deceased_on")
-                else _("Blocked by consent: {0} / {1} for {2}.").format(
-                    channel, category, person_doc.name
-                )
-            ),
-        )
-        return _insert_log(values, dedupe_key)
+	if person_doc and consent_blocks(person_doc, channel, category):
+		values.update(
+			status="Cancelled",
+			error=(
+				_("{0} is deceased.").format(person_doc.name)
+				if person_doc.get("deceased_on")
+				else _("Blocked by consent: {0} / {1} for {2}.").format(channel, category, person_doc.name)
+			),
+		)
+		return _insert_log(values, dedupe_key)
 
-    held = hold_reason(person_doc, channel, category, reference_doctype, reference_name)
-    if held:
-        values.update(status="Cancelled", error=held)
-        return _insert_log(values, dedupe_key)
+	held = hold_reason(person_doc, channel, category, reference_doctype, reference_name)
+	if held:
+		values.update(status="Cancelled", error=held)
+		return _insert_log(values, dedupe_key)
 
-    if not values["to_address"] and person_doc and channel not in ADDRESSLESS_CHANNELS:
-        values["to_address"] = resolve_address(person_doc, channel, category)
-    if not values["to_address"] and channel not in ADDRESSLESS_CHANNELS:
-        values.update(
-            status="Cancelled",
-            error=_("No active {0} address.").format(channel),
-        )
-        return _insert_log(values, dedupe_key)
+	if not values["to_address"] and person_doc and channel not in ADDRESSLESS_CHANNELS:
+		values["to_address"] = resolve_address(person_doc, channel, category)
+	if not values["to_address"] and channel not in ADDRESSLESS_CHANNELS:
+		values.update(
+			status="Cancelled",
+			error=_("No active {0} address.").format(channel),
+		)
+		return _insert_log(values, dedupe_key)
 
-    account = pick_account(channel, person_doc.country if person_doc else None)
-    if not account:
-        frappe.throw(
-            _("No enabled Channel Provider Account for channel {0}.").format(channel)
-        )
-    values["provider_account"] = account
-    log_name = _insert_log(values, dedupe_key)
-    if log_name and channel == IN_APP_CHANNEL:
-        _attach_inapp_files(log_name, message, attach_files)
-    if log_name and not scheduled_at:
-        _maybe_deliver_instant(log_name, account)
-    return log_name
+	account = pick_account(channel, person_doc.country if person_doc else None)
+	if not account:
+		frappe.throw(_("No enabled Channel Provider Account for channel {0}.").format(channel))
+	values["provider_account"] = account
+	log_name = _insert_log(values, dedupe_key)
+	if log_name and channel == IN_APP_CHANNEL:
+		_attach_inapp_files(log_name, message, attach_files)
+	if log_name and not scheduled_at:
+		_maybe_deliver_instant(log_name, account)
+	return log_name
 
 
 def _attach_inapp_files(log_name, message, attach_files=None):
-    """Attach every private file an In-App message references — explicit
-    attachments plus inline images in the body — to the per-recipient
-    Communication Log, reusing the uploaded bytes (create_attachment_copy).
-    The recipient/sender can then download via Frappe's /private/files ACL
-    because they can read their own log; nothing is made public."""
-    from seminary.storage.backend import FILE_URL_RE, is_offloaded, normalize_file_url
+	"""Attach every private file an In-App message references — explicit
+	attachments plus inline images in the body — to the per-recipient
+	Communication Log, reusing the uploaded bytes (create_attachment_copy).
+	The recipient/sender can then download via Frappe's /private/files ACL
+	because they can read their own log; nothing is made public."""
+	from seminary.storage.backend import FILE_URL_RE, is_offloaded, normalize_file_url
 
-    urls = set(attach_files or [])
-    # Scan with FILE_URL_RE, not a bare /private/files/ pattern, so that media
-    # offloaded to object storage is still found and attached (privatedocs/p004).
-    # Public /files/ URLs are skipped as before — they need no attachment.
-    urls |= {
-        url
-        for url in FILE_URL_RE.findall(message or "")
-        if url.startswith("/private/files/") or is_offloaded(url)
-    }
-    for url in urls:
-        # normalize_file_url keeps an offloaded URL's ?key= intact while still
-        # stripping Frappe's ?fid= from a private disk URL.
-        base = unquote(normalize_file_url(url))
-        name = frappe.db.get_value("File", {"file_url": base}, "name")
-        if not name:
-            continue
-        if frappe.db.exists(
-            "File",
-            {
-                "file_url": base,
-                "attached_to_doctype": "Communication Log",
-                "attached_to_name": log_name,
-            },
-        ):
-            continue
-        try:
-            source = frappe.get_doc("File", name)
-            source.create_attachment_copy(
-                "Communication Log", log_name, ignore_permissions=True
-            )
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(), f"Could not attach {url} to {log_name}"
-            )
+	urls = set(attach_files or [])
+	# Scan with FILE_URL_RE, not a bare /private/files/ pattern, so that media
+	# offloaded to object storage is still found and attached (privatedocs/p004).
+	# Public /files/ URLs are skipped as before — they need no attachment.
+	urls |= {
+		url
+		for url in FILE_URL_RE.findall(message or "")
+		if url.startswith("/private/files/") or is_offloaded(url)
+	}
+	for url in urls:
+		# normalize_file_url keeps an offloaded URL's ?key= intact while still
+		# stripping Frappe's ?fid= from a private disk URL.
+		base = unquote(normalize_file_url(url))
+		name = frappe.db.get_value("File", {"file_url": base}, "name")
+		if not name:
+			continue
+		if frappe.db.exists(
+			"File",
+			{
+				"file_url": base,
+				"attached_to_doctype": "Communication Log",
+				"attached_to_name": log_name,
+			},
+		):
+			continue
+		try:
+			source = frappe.get_doc("File", name)
+			source.create_attachment_copy("Communication Log", log_name, ignore_permissions=True)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"Could not attach {url} to {log_name}")
 
 
 def _maybe_deliver_instant(log_name, account_name):
-    """Adapters marked instant=True (In-App) deliver at queue time instead of
-    waiting for the cron drainer. Errors fall back to the normal retry path."""
-    account = frappe.get_doc("Channel Provider Account", account_name)
-    try:
-        adapter = get_adapter(account.provider)
-    except Exception:
-        return
-    if getattr(adapter, "instant", False):
-        _deliver(log_name, account)
+	"""Adapters marked instant=True (In-App) deliver at queue time instead of
+	waiting for the cron drainer. Errors fall back to the normal retry path."""
+	account = frappe.get_doc("Channel Provider Account", account_name)
+	try:
+		adapter = get_adapter(account.provider)
+	except Exception:
+		return
+	if getattr(adapter, "instant", False):
+		_deliver(log_name, account)
 
 
 def _publish_embedded_files(message):
-    """Message content SENT over an EXTERNAL channel (Email): the recipient's
-    client fetches embedded images with no Frappe session, so an embedded
-    private upload would 403. Flip the referenced Files public and rewrite their
-    URLs in the snapshot. NOT used for In-App — those stay private and are
-    served by doc-permission (see _attach_inapp_files / _privatize_embedded_files)."""
-    if not message or "/private/files/" not in message:
-        return message
-    for file_url in set(re.findall(r"/private/files/[^\"'\s>)]+", message)):
-        # The desk editor appends ?fid=... to private URLs; File.file_url
-        # stores the bare path.
-        base = unquote(file_url.split("?")[0])
-        name = frappe.db.get_value(
-            "File", {"file_url": base}, "name"
-        ) or frappe.db.get_value("File", {"file_url": file_url.split("?")[0]}, "name")
-        if not name:
-            continue
-        # p007 §2.6 required only that the sender may READ the file. Reading is
-        # not grounds for publishing: under p007 §8.2 "may read" means "is
-        # attached to a document I may read", which for a student is every
-        # private file on every section they are enrolled in. A student pasting
-        # a lesson attachment's URL into contact_instructor therefore published
-        # it to the open internet (p005a A02-7, reproduced). Require read AND a
-        # claim on the file: you own it, or you are staff who send mail.
-        if frappe.session.user != "Administrator":
-            if not frappe.has_permission("File", "read", name):
-                continue
-            owner = frappe.db.get_value("File", name, "owner")
-            if owner != frappe.session.user and not _is_messaging_staff():
-                continue
-        try:
-            # p007 §8.2: the recipient's mail client has no session, so this
-            # is one of the two server paths allowed to publish a file.
-            #
-            # Go through file_policy.set_privacy rather than saving the File
-            # directly: it rewrites the URL in the host document's content and
-            # in the sibling rows adopt() created on other sections. Saving
-            # directly left every one of those pointing at a /private/files/
-            # path that no longer existed — so the publish also broke the
-            # attachment for everyone else in the course (p005a A02-7).
-            from seminary.seminary import file_policy
+	"""Message content SENT over an EXTERNAL channel (Email): the recipient's
+	client fetches embedded images with no Frappe session, so an embedded
+	private upload would 403. Flip the referenced Files public and rewrite their
+	URLs in the snapshot. NOT used for In-App — those stay private and are
+	served by doc-permission (see _attach_inapp_files / _privatize_embedded_files)."""
+	if not message or "/private/files/" not in message:
+		return message
+	for file_url in set(re.findall(r"/private/files/[^\"'\s>)]+", message)):
+		# The desk editor appends ?fid=... to private URLs; File.file_url
+		# stores the bare path.
+		base = unquote(file_url.split("?")[0])
+		name = frappe.db.get_value("File", {"file_url": base}, "name") or frappe.db.get_value(
+			"File", {"file_url": file_url.split("?")[0]}, "name"
+		)
+		if not name:
+			continue
+		# p007 §2.6 required only that the sender may READ the file. Reading is
+		# not grounds for publishing: under p007 §8.2 "may read" means "is
+		# attached to a document I may read", which for a student is every
+		# private file on every section they are enrolled in. A student pasting
+		# a lesson attachment's URL into contact_instructor therefore published
+		# it to the open internet (p005a A02-7, reproduced). Require read AND a
+		# claim on the file: you own it, or you are staff who send mail.
+		if frappe.session.user != "Administrator":
+			if not frappe.has_permission("File", "read", name):
+				continue
+			owner = frappe.db.get_value("File", name, "owner")
+			if owner != frappe.session.user and not _is_messaging_staff():
+				continue
+		try:
+			# p007 §8.2: the recipient's mail client has no session, so this
+			# is one of the two server paths allowed to publish a file.
+			#
+			# Go through file_policy.set_privacy rather than saving the File
+			# directly: it rewrites the URL in the host document's content and
+			# in the sibling rows adopt() created on other sections. Saving
+			# directly left every one of those pointing at a /private/files/
+			# path that no longer existed — so the publish also broke the
+			# attachment for everyone else in the course (p005a A02-7).
+			from seminary.seminary import file_policy
 
-            new_url = file_policy.set_privacy(base, public=True)
-            if new_url and new_url != file_url:
-                message = message.replace(file_url, new_url)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(), f"Could not publish embedded file {file_url}"
-            )
-    return message
+			new_url = file_policy.set_privacy(base, public=True)
+			if new_url and new_url != file_url:
+				message = message.replace(file_url, new_url)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"Could not publish embedded file {file_url}")
+	return message
 
 
 def _privatize_embedded_files(message):
-    """Defense-in-depth for In-App compose: if an inline image was uploaded
-    public (the editor's default before the private-upload fix), flip the
-    sender's OWN file private and rewrite its URL, so portal-message content is
-    never publicly reachable regardless of the client. Scoped to files owned by
-    the current user so we never re-privatize a shared/system public asset."""
-    if not message or "/files/" not in message:
-        return message
-    for file_url in set(re.findall(r"(?<!/private)/files/[^\"'\s>)]+", message)):
-        base = unquote(file_url.split("?")[0])
-        row = frappe.db.get_value(
-            "File", {"file_url": base, "is_private": 0}, ["name", "owner"], as_dict=True
-        )
-        if not row or row.owner != frappe.session.user:
-            continue
-        try:
-            file_doc = frappe.get_doc("File", row.name)
-            file_doc.is_private = 1
-            file_doc.save(ignore_permissions=True)
-            message = message.replace(file_url, file_doc.file_url)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(), f"Could not privatize embedded file {file_url}"
-            )
-    return message
+	"""Defense-in-depth for In-App compose: if an inline image was uploaded
+	public (the editor's default before the private-upload fix), flip the
+	sender's OWN file private and rewrite its URL, so portal-message content is
+	never publicly reachable regardless of the client. Scoped to files owned by
+	the current user so we never re-privatize a shared/system public asset."""
+	if not message or "/files/" not in message:
+		return message
+	for file_url in set(re.findall(r"(?<!/private)/files/[^\"'\s>)]+", message)):
+		base = unquote(file_url.split("?")[0])
+		row = frappe.db.get_value(
+			"File", {"file_url": base, "is_private": 0}, ["name", "owner"], as_dict=True
+		)
+		if not row or row.owner != frappe.session.user:
+			continue
+		try:
+			file_doc = frappe.get_doc("File", row.name)
+			file_doc.is_private = 1
+			file_doc.save(ignore_permissions=True)
+			message = message.replace(file_url, file_doc.file_url)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"Could not privatize embedded file {file_url}")
+	return message
 
 
 def _inline_file_images(html):
-    """Embed referenced site files (letter-head logos, message images) as
-    base64 data URIs so the PDF renderer never has to fetch them over HTTP —
-    the usual cause of missing letter-head logos (wrong host/port, private-file
-    auth, spaces in the filename). Reads bytes straight off disk, so it works
-    for both public and private files."""
-    if not html:
-        return html
+	"""Embed referenced site files (letter-head logos, message images) as
+	base64 data URIs so the PDF renderer never has to fetch them over HTTP —
+	the usual cause of missing letter-head logos (wrong host/port, private-file
+	auth, spaces in the filename). Reads bytes straight off disk, so it works
+	for both public and private files."""
+	if not html:
+		return html
 
-    def repl(match):
-        opening, src = match.group(1), match.group(2)
-        # src may be relative (/files/x.png) or absolute (http://host/files/x.png)
-        path_match = re.search(r"/(?:private/)?files/[^\"']*", src)
-        if not path_match:
-            return match.group(0)
-        raw = path_match.group(0)
-        path = unquote(raw.split("?")[0])
-        name = frappe.db.get_value("File", {"file_url": path}, "name") or (
-            frappe.db.get_value("File", {"file_url": raw.split("?")[0]}, "name")
-        )
-        if not name:
-            return match.group(0)
-        try:
-            content = frappe.get_doc("File", name).get_content()
-        except Exception:
-            return match.group(0)
-        if isinstance(content, str):
-            content = content.encode()
-        mime = mimetypes.guess_type(path)[0] or "image/png"
-        b64 = base64.b64encode(content).decode()
-        return f"{opening}data:{mime};base64,{b64}"
+	def repl(match):
+		opening, src = match.group(1), match.group(2)
+		# src may be relative (/files/x.png) or absolute (http://host/files/x.png)
+		path_match = re.search(r"/(?:private/)?files/[^\"']*", src)
+		if not path_match:
+			return match.group(0)
+		raw = path_match.group(0)
+		path = unquote(raw.split("?")[0])
+		name = frappe.db.get_value("File", {"file_url": path}, "name") or (
+			frappe.db.get_value("File", {"file_url": raw.split("?")[0]}, "name")
+		)
+		if not name:
+			return match.group(0)
+		try:
+			content = frappe.get_doc("File", name).get_content()
+		except Exception:
+			return match.group(0)
+		if isinstance(content, str):
+			content = content.encode()
+		mime = mimetypes.guess_type(path)[0] or "image/png"
+		b64 = base64.b64encode(content).decode()
+		return f"{opening}data:{mime};base64,{b64}"
 
-    return re.sub(r'(src=["\'])([^"\']*?/(?:private/)?files/[^"\']*)', repl, html)
+	return re.sub(r'(src=["\'])([^"\']*?/(?:private/)?files/[^"\']*)', repl, html)
 
 
 # Editors constrain images to their container on screen but store no width cap,
 # so wkhtmltopdf renders them at full native size (gigantic, multi-page). Cap to
 # the page width while preserving aspect ratio and any smaller explicit size.
 _PDF_STYLE = (
-    "<style>"
-    "img{max-width:100%!important;height:auto!important;}"
-    "table{max-width:100%!important;}"
-    "</style>"
+	"<style>img{max-width:100%!important;height:auto!important;}table{max-width:100%!important;}</style>"
 )
 
 
 def pdf_html(html):
-    """Prepare authored HTML for PDF rendering: inline referenced site images
-    as data URIs (no HTTP fetch) and cap image size to the page width."""
-    return _PDF_STYLE + _inline_file_images(html)
+	"""Prepare authored HTML for PDF rendering: inline referenced site images
+	as data URIs (no HTTP fetch) and cap image size to the page width."""
+	return _PDF_STYLE + _inline_file_images(html)
 
 
 def _insert_log(values, dedupe_key=None):
-    if dedupe_key:
-        if frappe.db.exists("Communication Log", {"idempotency_key": dedupe_key}):
-            return None
-        values["idempotency_key"] = dedupe_key
-    log = frappe.get_doc(values)
-    try:
-        log.insert(ignore_permissions=True)
-    except (frappe.UniqueValidationError, frappe.DuplicateEntryError):
-        return None  # raced on the idempotency key — already queued elsewhere
-    if log.status == "Cancelled":
-        _reflect_announcement(log)
-    return log.name
+	if dedupe_key:
+		if frappe.db.exists("Communication Log", {"idempotency_key": dedupe_key}):
+			return None
+		values["idempotency_key"] = dedupe_key
+	log = frappe.get_doc(values)
+	try:
+		log.insert(ignore_permissions=True)
+	except (frappe.UniqueValidationError, frappe.DuplicateEntryError):
+		return None  # raced on the idempotency key — already queued elsewhere
+	if log.status == "Cancelled":
+		_reflect_announcement(log)
+	return log.name
 
 
 # ---------------------------------------------------------------- dispatch
 
 
 def dispatch():
-    """Cron drainer: deliver Queued logs per provider account, up to
-    hourly_limit minus the trailing-hour sent count. Emergency-category logs
-    bypass the throttle (never the account's enabled flag)."""
-    now = now_datetime()
-    accounts = {
-        a.name: a
-        for a in frappe.get_all(
-            "Channel Provider Account",
-            filters={"enabled": 1},
-            fields=["name", "channel", "provider", "hourly_limit", "settings"],
-        )
-    }
-    if not accounts:
-        return
+	"""Cron drainer: deliver Queued logs per provider account, up to
+	hourly_limit minus the trailing-hour sent count. Emergency-category logs
+	bypass the throttle (never the account's enabled flag)."""
+	now = now_datetime()
+	accounts = {
+		a.name: a
+		for a in frappe.get_all(
+			"Channel Provider Account",
+			filters={"enabled": 1},
+			fields=["name", "channel", "provider", "hourly_limit", "settings"],
+		)
+	}
+	if not accounts:
+		return
 
-    remaining = {}
-    for name, account in accounts.items():
-        if account.hourly_limit:
-            used = frappe.db.count(
-                "Communication Log",
-                {
-                    "provider_account": name,
-                    "direction": "Outbound",
-                    "sent_at": (">=", add_to_date(now, hours=-1)),
-                },
-            )
-            remaining[name] = max(0, account.hourly_limit - used)
-        else:
-            remaining[name] = None  # unlimited
+	remaining = {}
+	for name, account in accounts.items():
+		if account.hourly_limit:
+			used = frappe.db.count(
+				"Communication Log",
+				{
+					"provider_account": name,
+					"direction": "Outbound",
+					"sent_at": (">=", add_to_date(now, hours=-1)),
+				},
+			)
+			remaining[name] = max(0, account.hourly_limit - used)
+		else:
+			remaining[name] = None  # unlimited
 
-    rows = frappe.db.sql(
-        """
+	rows = frappe.db.sql(
+		"""
         SELECT name, provider_account, category
         FROM `tabCommunication Log`
         WHERE direction = 'Outbound' AND status = 'Queued'
@@ -729,187 +700,177 @@ def dispatch():
         ORDER BY creation ASC
         LIMIT %(limit)s
         """,
-        {"now": now, "limit": DISPATCH_BATCH},
-        as_dict=True,
-    )
+		{"now": now, "limit": DISPATCH_BATCH},
+		as_dict=True,
+	)
 
-    for row in rows:
-        account = accounts.get(row.provider_account)
-        if not account:
-            continue  # account disabled/removed: stays Queued for ops to fix
-        emergency = row.category == "Emergency"
-        if (
-            remaining[account.name] is not None
-            and remaining[account.name] <= 0
-            and not emergency
-        ):
-            continue
-        delivered = _deliver(row.name, account)
-        if delivered and remaining[account.name] is not None and not emergency:
-            remaining[account.name] -= 1
+	for row in rows:
+		account = accounts.get(row.provider_account)
+		if not account:
+			continue  # account disabled/removed: stays Queued for ops to fix
+		emergency = row.category == "Emergency"
+		if remaining[account.name] is not None and remaining[account.name] <= 0 and not emergency:
+			continue
+		delivered = _deliver(row.name, account)
+		if delivered and remaining[account.name] is not None and not emergency:
+			remaining[account.name] -= 1
 
-    _finalize_announcements()
-    frappe.db.commit()
+	_finalize_announcements()
+	frappe.db.commit()
 
 
 def _deliver(log_name, account):
-    log = frappe.get_doc("Communication Log", log_name)
-    if log.status != "Queued":
-        return False  # raced with another dispatcher run
-    log.db_set("status", "Sending", update_modified=False)
-    try:
-        adapter = get_adapter(account.provider)
-        message_id = adapter.send(log, account)
-        stamp = now_datetime()
-        updates = {"status": adapter.final_status, "sent_at": stamp, "error": None}
-        if adapter.final_status == "Delivered":
-            updates["delivered_at"] = stamp
-        if message_id:
-            updates["provider_message_id"] = message_id
-        log.db_set(updates, update_modified=False)
-        _reflect_announcement(log)
-        return True
-    except Exception as e:
-        retries = (log.retry_count or 0) + 1
-        if retries >= MAX_RETRIES:
-            log.db_set(
-                {"status": "Failed", "retry_count": retries, "error": str(e)[:500]},
-                update_modified=False,
-            )
-            frappe.log_error(
-                f"Communication Log {log.name} failed permanently: {e}",
-                "Communication Dispatch",
-            )
-            _reflect_announcement(log)
-        else:
-            log.db_set(
-                {
-                    "status": "Queued",
-                    "retry_count": retries,
-                    "error": str(e)[:500],
-                    "next_attempt_at": add_to_date(
-                        now_datetime(), minutes=5 * (2 ** (retries - 1))
-                    ),
-                },
-                update_modified=False,
-            )
-        return False
+	log = frappe.get_doc("Communication Log", log_name)
+	if log.status != "Queued":
+		return False  # raced with another dispatcher run
+	log.db_set("status", "Sending", update_modified=False)
+	try:
+		adapter = get_adapter(account.provider)
+		message_id = adapter.send(log, account)
+		stamp = now_datetime()
+		updates = {"status": adapter.final_status, "sent_at": stamp, "error": None}
+		if adapter.final_status == "Delivered":
+			updates["delivered_at"] = stamp
+		if message_id:
+			updates["provider_message_id"] = message_id
+		log.db_set(updates, update_modified=False)
+		_reflect_announcement(log)
+		return True
+	except Exception as e:
+		retries = (log.retry_count or 0) + 1
+		if retries >= MAX_RETRIES:
+			log.db_set(
+				{"status": "Failed", "retry_count": retries, "error": str(e)[:500]},
+				update_modified=False,
+			)
+			frappe.log_error(
+				f"Communication Log {log.name} failed permanently: {e}",
+				"Communication Dispatch",
+			)
+			_reflect_announcement(log)
+		else:
+			log.db_set(
+				{
+					"status": "Queued",
+					"retry_count": retries,
+					"error": str(e)[:500],
+					"next_attempt_at": add_to_date(now_datetime(), minutes=5 * (2 ** (retries - 1))),
+				},
+				update_modified=False,
+			)
+		return False
 
 
 def account_settings(account):
-    """Effective provider config for an account (typed credential fields with
-    secrets decrypted, overlaid on the raw Extra Settings JSON). Accepts a doc,
-    a name, or the lightweight dict dispatch() carries — the latter two are
-    loaded to a doc so Password fields decrypt."""
-    # frappe._dict (what dispatch carries) returns None for missing attrs rather
-    # than raising, so probe for a *callable* get_config, not just its presence.
-    get_config = getattr(account, "get_config", None)
-    if callable(get_config):
-        return get_config()
-    name = account if isinstance(account, str) else account.name
-    return frappe.get_doc("Channel Provider Account", name).get_config()
+	"""Effective provider config for an account (typed credential fields with
+	secrets decrypted, overlaid on the raw Extra Settings JSON). Accepts a doc,
+	a name, or the lightweight dict dispatch() carries — the latter two are
+	loaded to a doc so Password fields decrypt."""
+	# frappe._dict (what dispatch carries) returns None for missing attrs rather
+	# than raising, so probe for a *callable* get_config, not just its presence.
+	get_config = getattr(account, "get_config", None)
+	if callable(get_config):
+		return get_config()
+	name = account if isinstance(account, str) else account.name
+	return frappe.get_doc("Channel Provider Account", name).get_config()
 
 
 # ------------------------------------------------- announcement reflection
 
 
 def _reflect_announcement(log):
-    """Stage-one port glue: mirror log outcomes onto Seminary Announcement
-    Recipient rows so the desk grid and portal query keep working.
+	"""Stage-one port glue: mirror log outcomes onto Seminary Announcement
+	Recipient rows so the desk grid and portal query keep working.
 
-    A recipient can now receive several channels (Email, In-App, SMS, …). The
-    grid has one row per recipient, so we roll the channels up monotonically:
-    "Sent wins" — any channel reaching Sent/Delivered/Read marks the recipient
-    Sent; we only record Failed when the row is not already Sent. The rule is
-    order-independent, so out-of-order webhook/dispatch events converge."""
-    if log.reference_doctype != "Seminary Announcement" or not log.reference_name:
-        return
-    success = log.status in ("Sent", "Delivered", "Read")
-    failed = log.status in ("Failed", "Cancelled")
-    if not (success or failed):
-        return
-    row = _announcement_recipient_row(log)
-    if not row:
-        return
-    current = frappe.db.get_value(
-        "Seminary Announcement Recipient", row, "delivery_status"
-    )
-    if current == "Sent":
-        return  # Sent wins — never downgraded by a later channel failure.
-    frappe.db.set_value(
-        "Seminary Announcement Recipient",
-        row,
-        {
-            "delivery_status": "Sent" if success else "Failed",
-            "error": None if success else (log.error or None),
-        },
-        update_modified=False,
-    )
+	A recipient can now receive several channels (Email, In-App, SMS, …). The
+	grid has one row per recipient, so we roll the channels up monotonically:
+	"Sent wins" — any channel reaching Sent/Delivered/Read marks the recipient
+	Sent; we only record Failed when the row is not already Sent. The rule is
+	order-independent, so out-of-order webhook/dispatch events converge."""
+	if log.reference_doctype != "Seminary Announcement" or not log.reference_name:
+		return
+	success = log.status in ("Sent", "Delivered", "Read")
+	failed = log.status in ("Failed", "Cancelled")
+	if not (success or failed):
+		return
+	row = _announcement_recipient_row(log)
+	if not row:
+		return
+	current = frappe.db.get_value("Seminary Announcement Recipient", row, "delivery_status")
+	if current == "Sent":
+		return  # Sent wins — never downgraded by a later channel failure.
+	frappe.db.set_value(
+		"Seminary Announcement Recipient",
+		row,
+		{
+			"delivery_status": "Sent" if success else "Failed",
+			"error": None if success else (log.error or None),
+		},
+		update_modified=False,
+	)
 
 
 def _announcement_recipient_row(log):
-    """Find the recipient grid row for an announcement log across any channel.
+	"""Find the recipient grid row for an announcement log across any channel.
 
-    The recipient email is encoded in the per-recipient idempotency key
-    (``seminary-announcement::<name>::<email>::<channel>``), so non-Email
-    channels — whose to_address is a phone number or chat id — still map back
-    to their row. Falls back to to_address for older Email-only logs."""
-    email = None
-    key = log.idempotency_key or ""
-    if key.startswith("seminary-announcement::"):
-        parts = key.split("::")
-        if len(parts) >= 4:
-            email = parts[2]
-    if not email:
-        email = (log.to_address or "").lower()
-    if not email:
-        return None
-    return frappe.db.get_value(
-        "Seminary Announcement Recipient",
-        {"parent": log.reference_name, "email": email},
-        "name",
-    )
+	The recipient email is encoded in the per-recipient idempotency key
+	(``seminary-announcement::<name>::<email>::<channel>``), so non-Email
+	channels — whose to_address is a phone number or chat id — still map back
+	to their row. Falls back to to_address for older Email-only logs."""
+	email = None
+	key = log.idempotency_key or ""
+	if key.startswith("seminary-announcement::"):
+		parts = key.split("::")
+		if len(parts) >= 4:
+			email = parts[2]
+	if not email:
+		email = (log.to_address or "").lower()
+	if not email:
+		return None
+	return frappe.db.get_value(
+		"Seminary Announcement Recipient",
+		{"parent": log.reference_name, "email": email},
+		"name",
+	)
 
 
 def _finalize_announcements():
-    for name in frappe.get_all(
-        "Seminary Announcement",
-        filters={"docstatus": 1, "status": "Sending"},
-        pluck="name",
-    ):
-        base = {
-            "reference_doctype": "Seminary Announcement",
-            "reference_name": name,
-            "direction": "Outbound",
-        }
-        if frappe.db.count(
-            "Communication Log", {**base, "status": ("in", ("Queued", "Sending"))}
-        ):
-            continue
-        delivered = frappe.db.count(
-            "Communication Log",
-            {**base, "status": ("in", ("Sent", "Delivered", "Read"))},
-        )
-        frappe.db.set_value(
-            "Seminary Announcement",
-            name,
-            {
-                "status": "Sent" if delivered else "Failed",
-                "sent_datetime": now_datetime(),
-            },
-            update_modified=False,
-        )
+	for name in frappe.get_all(
+		"Seminary Announcement",
+		filters={"docstatus": 1, "status": "Sending"},
+		pluck="name",
+	):
+		base = {
+			"reference_doctype": "Seminary Announcement",
+			"reference_name": name,
+			"direction": "Outbound",
+		}
+		if frappe.db.count("Communication Log", {**base, "status": ("in", ("Queued", "Sending"))}):
+			continue
+		delivered = frappe.db.count(
+			"Communication Log",
+			{**base, "status": ("in", ("Sent", "Delivered", "Read"))},
+		)
+		frappe.db.set_value(
+			"Seminary Announcement",
+			name,
+			{
+				"status": "Sent" if delivered else "Failed",
+				"sent_datetime": now_datetime(),
+			},
+			update_modified=False,
+		)
 
 
 # ---------------------------------------------------------------- follow-up
 
 
 def process_follow_ups():
-    """Daily sweep (ADR 043): outbound logs awaiting a response whose window
-    elapsed with no read and no inbound reply either queue their follow-up
-    template or raise a ToDo for whoever triggered them."""
-    due = frappe.db.sql(
-        """
+	"""Daily sweep (ADR 043): outbound logs awaiting a response whose window
+	elapsed with no read and no inbound reply either queue their follow-up
+	template or raise a ToDo for whoever triggered them."""
+	due = frappe.db.sql(
+		"""
         SELECT name FROM `tabCommunication Log`
         WHERE direction = 'Outbound'
           AND awaiting_response = 1 AND follow_up_done = 0
@@ -918,14 +879,14 @@ def process_follow_ups():
           AND read_at IS NULL
           AND sent_at <= DATE_SUB(%(now)s, INTERVAL follow_up_after_days DAY)
         """,
-        {"now": now_datetime()},
-        pluck=True,
-    )
-    for name in due:
-        try:
-            _follow_up(frappe.get_doc("Communication Log", name))
-        except Exception:
-            frappe.log_error(frappe.get_traceback(), f"Follow-up failed for {name}")
+		{"now": now_datetime()},
+		pluck=True,
+	)
+	for name in due:
+		try:
+			_follow_up(frappe.get_doc("Communication Log", name))
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"Follow-up failed for {name}")
 
 
 # ------------------------------------------------------------ portal inbox
@@ -935,321 +896,308 @@ INBOX_VISIBLE_STATUSES = ("Sent", "Delivered", "Read")
 
 
 def _my_person():
-    """The Person linked to the session user. Portal endpoints below filter by
-    this server-side — a portal user can only ever see their own ledger."""
-    from seminary.seminary.person import find_person
+	"""The Person linked to the session user. Portal endpoints below filter by
+	this server-side — a portal user can only ever see their own ledger."""
+	from seminary.seminary.person import find_person
 
-    if frappe.session.user == "Guest":
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
-    person = find_person(user=frappe.session.user)
-    if not person:
-        frappe.throw(_("No Person record is linked to your account."))
-    return person
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+	person = find_person(user=frappe.session.user)
+	if not person:
+		frappe.throw(_("No Person record is linked to your account."))
+	return person
 
 
 @frappe.whitelist()
 def get_my_inbox(channel=None, category=None, unread_only=0, limit=100, box="inbox"):
-    """The structured portal inbox (ADR 043 stage two): every message sent to
-    the session user's Person, any channel, with filterable metadata.
-    box="sent" lists the messages the session user composed instead."""
-    person = _my_person()
-    if box == "sent":
-        filters = {"triggered_by": frappe.session.user, "direction": "Outbound"}
-    else:
-        filters = {
-            "person": person,
-            "direction": "Outbound",
-            "status": ("in", INBOX_VISIBLE_STATUSES),
-        }
-    if channel:
-        filters["channel"] = channel
-    if category:
-        filters["category"] = category
-    if cint(unread_only) and box != "sent":
-        filters["read_at"] = ("is", "not set")
-    messages = frappe.get_all(
-        "Communication Log",
-        filters=filters,
-        fields=[
-            "name",
-            "channel",
-            "category",
-            "subject",
-            "message",
-            "status",
-            "sent_at",
-            "read_at",
-            "reference_doctype",
-            "reference_name",
-            "creation",
-            "triggered_by",
-            "person",
-        ],
-        order_by="creation desc",
-        limit_page_length=cint(limit) or 100,
-    )
-    _annotate_parties(messages)
-    if box != "sent":
-        _annotate_replyable(messages)
-    unread = frappe.db.count(
-        "Communication Log",
-        {
-            "person": person,
-            "direction": "Outbound",
-            "status": ("in", ("Sent", "Delivered")),
-            "read_at": ("is", "not set"),
-        },
-    )
-    return {"messages": messages, "unread": unread}
+	"""The structured portal inbox (ADR 043 stage two): every message sent to
+	the session user's Person, any channel, with filterable metadata.
+	box="sent" lists the messages the session user composed instead."""
+	person = _my_person()
+	if box == "sent":
+		filters = {"triggered_by": frappe.session.user, "direction": "Outbound"}
+	else:
+		filters = {
+			"person": person,
+			"direction": "Outbound",
+			"status": ("in", INBOX_VISIBLE_STATUSES),
+		}
+	if channel:
+		filters["channel"] = channel
+	if category:
+		filters["category"] = category
+	if cint(unread_only) and box != "sent":
+		filters["read_at"] = ("is", "not set")
+	messages = frappe.get_all(
+		"Communication Log",
+		filters=filters,
+		fields=[
+			"name",
+			"channel",
+			"category",
+			"subject",
+			"message",
+			"status",
+			"sent_at",
+			"read_at",
+			"reference_doctype",
+			"reference_name",
+			"creation",
+			"triggered_by",
+			"person",
+		],
+		order_by="creation desc",
+		limit_page_length=cint(limit) or 100,
+	)
+	_annotate_parties(messages)
+	if box != "sent":
+		_annotate_replyable(messages)
+	unread = frappe.db.count(
+		"Communication Log",
+		{
+			"person": person,
+			"direction": "Outbound",
+			"status": ("in", ("Sent", "Delivered")),
+			"read_at": ("is", "not set"),
+		},
+	)
+	return {"messages": messages, "unread": unread}
 
 
 def _annotate_parties(messages):
-    """Attach human names: sender_name from the triggering User, person_name
-    for the recipient (the Sent box shows who a message went to)."""
-    users = {m.triggered_by for m in messages if m.triggered_by}
-    persons = {m.person for m in messages if m.person}
-    user_names = (
-        dict(
-            frappe.get_all(
-                "User",
-                filters=[["name", "in", list(users)]],
-                fields=["name", "full_name"],
-                as_list=True,
-            )
-        )
-        if users
-        else {}
-    )
-    person_names = (
-        dict(
-            frappe.get_all(
-                "Person",
-                filters=[["name", "in", list(persons)]],
-                fields=["name", "full_name"],
-                as_list=True,
-            )
-        )
-        if persons
-        else {}
-    )
-    for m in messages:
-        m["sender_name"] = user_names.get(m.triggered_by)
-        m["person_name"] = person_names.get(m.person)
+	"""Attach human names: sender_name from the triggering User, person_name
+	for the recipient (the Sent box shows who a message went to)."""
+	users = {m.triggered_by for m in messages if m.triggered_by}
+	persons = {m.person for m in messages if m.person}
+	user_names = (
+		dict(
+			frappe.get_all(
+				"User",
+				filters=[["name", "in", list(users)]],
+				fields=["name", "full_name"],
+				as_list=True,
+			)
+		)
+		if users
+		else {}
+	)
+	person_names = (
+		dict(
+			frappe.get_all(
+				"Person",
+				filters=[["name", "in", list(persons)]],
+				fields=["name", "full_name"],
+				as_list=True,
+			)
+		)
+		if persons
+		else {}
+	)
+	for m in messages:
+		m["sender_name"] = user_names.get(m.triggered_by)
+		m["person_name"] = person_names.get(m.person)
 
 
 def _annotate_replyable(messages):
-    """Say which received messages can actually be answered (ADR 070).
+	"""Say which received messages can actually be answered (ADR 070).
 
-    The portal used to offer Reply on any Community message with a named
-    sender, and `reply_portal_message` then refused the ones outside the
-    replier's messaging scope — a button that fails is worse than no button.
-    That was reachable before peer messaging existed (a course message from an
-    instructor you no longer study under) and is easy to hit now: someone can
-    be listed in the alumni directory, and so be reachable, while their own
-    account does not hold a role any messaging rule names.
+	The portal used to offer Reply on any Community message with a named
+	sender, and `reply_portal_message` then refused the ones outside the
+	replier's messaging scope — a button that fails is worse than no button.
+	That was reachable before peer messaging existed (a course message from an
+	instructor you no longer study under) and is easy to hit now: someone can
+	be listed in the alumni directory, and so be reachable, while their own
+	account does not hold a role any messaging rule names.
 
-    Resolved once per distinct sender rather than once per message; with the
-    Alumni Directory audience `may_message` is a single exists() anyway.
-    """
-    from seminary.seminary.person import find_person
+	Resolved once per distinct sender rather than once per message; with the
+	Alumni Directory audience `may_message` is a single exists() anyway.
+	"""
+	from seminary.seminary.person import find_person
 
-    verdict = {}
-    for m in messages:
-        m["can_reply"] = False
-        if not (m.get("triggered_by") and m.get("sender_name")):
-            continue
-        if m["triggered_by"] not in verdict:
-            sender_person = find_person(user=m["triggered_by"])
-            verdict[m["triggered_by"]] = bool(
-                sender_person and may_message(sender_person)
-            )
-        m["can_reply"] = verdict[m["triggered_by"]]
+	verdict = {}
+	for m in messages:
+		m["can_reply"] = False
+		if not (m.get("triggered_by") and m.get("sender_name")):
+			continue
+		if m["triggered_by"] not in verdict:
+			sender_person = find_person(user=m["triggered_by"])
+			verdict[m["triggered_by"]] = bool(sender_person and may_message(sender_person))
+		m["can_reply"] = verdict[m["triggered_by"]]
 
 
 @frappe.whitelist()
 def get_my_unread_count():
-    """Lightweight unread count for the portal sidebar badge (same definition
-    as get_my_inbox's unread)."""
-    person = _my_person()
-    return frappe.db.count(
-        "Communication Log",
-        {
-            "person": person,
-            "direction": "Outbound",
-            "status": ("in", ("Sent", "Delivered")),
-            "read_at": ("is", "not set"),
-        },
-    )
+	"""Lightweight unread count for the portal sidebar badge (same definition
+	as get_my_inbox's unread)."""
+	person = _my_person()
+	return frappe.db.count(
+		"Communication Log",
+		{
+			"person": person,
+			"direction": "Outbound",
+			"status": ("in", ("Sent", "Delivered")),
+			"read_at": ("is", "not set"),
+		},
+	)
 
 
 @frappe.whitelist()
 def mark_inbox_read(name):
-    """Portal read receipt: sets read_at (and Read for in-flight statuses)."""
-    person = _my_person()
-    log = frappe.db.get_value(
-        "Communication Log", name, ["person", "status", "read_at"], as_dict=True
-    )
-    if not log or log.person != person:
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
-    if log.read_at:
-        return log.read_at
-    stamp = now_datetime()
-    updates = {"read_at": stamp}
-    if log.status in ("Sent", "Delivered"):
-        updates["status"] = "Read"
-    frappe.db.set_value("Communication Log", name, updates, update_modified=False)
-    return stamp
+	"""Portal read receipt: sets read_at (and Read for in-flight statuses)."""
+	person = _my_person()
+	log = frappe.db.get_value("Communication Log", name, ["person", "status", "read_at"], as_dict=True)
+	if not log or log.person != person:
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+	if log.read_at:
+		return log.read_at
+	stamp = now_datetime()
+	updates = {"read_at": stamp}
+	if log.status in ("Sent", "Delivered"):
+		updates["status"] = "Read"
+	frappe.db.set_value("Communication Log", name, updates, update_modified=False)
+	return stamp
 
 
 @frappe.whitelist()
 def mark_all_inbox_read():
-    person = _my_person()
-    frappe.db.sql(
-        """
+	person = _my_person()
+	frappe.db.sql(
+		"""
         UPDATE `tabCommunication Log`
         SET read_at = %(stamp)s,
             status = CASE WHEN status IN ('Sent', 'Delivered') THEN 'Read' ELSE status END
         WHERE person = %(person)s AND direction = 'Outbound'
           AND read_at IS NULL AND status IN ('Sent', 'Delivered', 'Read')
         """,
-        {"stamp": now_datetime(), "person": person},
-    )
-    return True
+		{"stamp": now_datetime(), "person": person},
+	)
+	return True
 
 
 @frappe.whitelist()
 def get_my_communication_preferences():
-    """Self-service preferences (ADR 043 stage two): language, per
-    channel × category consent, and the person's channel addresses.
+	"""Self-service preferences (ADR 043 stage two): language, per
+	channel × category consent, and the person's channel addresses.
 
-    Addresses stopped being read-only in ADR 070: `editable` says whether the
-    portal may change or remove a row (only the ones the person added
-    themselves, and never the primary), while sharing is offered on every row
-    because it changes visibility rather than the datum."""
-    person = frappe.get_doc("Person", _my_person())
-    consents = {f"{row.channel}::{row.category}": row.status for row in person.consents}
-    return {
-        "language": person.language,
-        # Each language in its own name, so the person finds theirs.
-        "languages": [
-            {"name": code, "language_name": name}
-            for code, name in native_choices(enabled_only=True)
-        ],
-        "channels": frappe.get_all(
-            "Communication Channel",
-            filters={"enabled": 1},
-            pluck="name",
-            order_by="creation asc",
-        ),
-        "categories": list(PREF_CATEGORIES),
-        "consents": consents,
-        "mailing_address": {
-            "address_line_1": person.address_line_1,
-            "address_line_2": person.address_line_2,
-            "city": person.city,
-            "state": person.state,
-            "pincode": person.pincode,
-            # The postal country, never person.country — that one selects the
-            # comms provider account (ADR 046 addendum, ADR 070).
-            "country": person.mailing_country,
-        },
-        "countries": frappe.get_all("Country", pluck="name", order_by="name asc"),
-        "self_managed_channels": [
-            c
-            for c in SELF_MANAGED_CHANNELS
-            if frappe.db.exists("Communication Channel", {"name": c, "enabled": 1})
-        ],
-        "directory_sharing_available": bool(
-            frappe.db.exists("Alumni Profile", {"person": person.name, "enabled": 1})
-        ),
-        "addresses": [
-            {
-                "name": row.name,
-                "channel": row.channel,
-                "value": row.value,
-                "category": row.category,
-                "is_primary": row.is_primary,
-                "verified": row.verified,
-                "verified_on": row.verified_on,
-                "status": row.status,
-                "share_in_directory": row.share_in_directory,
-                "source": row.source,
-                "editable": bool(
-                    row.source == SELF_SERVICE_SOURCE and not row.is_primary
-                ),
-            }
-            for row in person.channel_addresses
-        ],
-    }
+	Addresses stopped being read-only in ADR 070: `editable` says whether the
+	portal may change or remove a row (only the ones the person added
+	themselves, and never the primary), while sharing is offered on every row
+	because it changes visibility rather than the datum."""
+	person = frappe.get_doc("Person", _my_person())
+	consents = {f"{row.channel}::{row.category}": row.status for row in person.consents}
+	return {
+		"language": person.language,
+		# Each language in its own name, so the person finds theirs.
+		"languages": [
+			{"name": code, "language_name": name} for code, name in native_choices(enabled_only=True)
+		],
+		"channels": frappe.get_all(
+			"Communication Channel",
+			filters={"enabled": 1},
+			pluck="name",
+			order_by="creation asc",
+		),
+		"categories": list(PREF_CATEGORIES),
+		"consents": consents,
+		"mailing_address": {
+			"address_line_1": person.address_line_1,
+			"address_line_2": person.address_line_2,
+			"city": person.city,
+			"state": person.state,
+			"pincode": person.pincode,
+			# The postal country, never person.country — that one selects the
+			# comms provider account (ADR 046 addendum, ADR 070).
+			"country": person.mailing_country,
+		},
+		"countries": frappe.get_all("Country", pluck="name", order_by="name asc"),
+		"self_managed_channels": [
+			c
+			for c in SELF_MANAGED_CHANNELS
+			if frappe.db.exists("Communication Channel", {"name": c, "enabled": 1})
+		],
+		"directory_sharing_available": bool(
+			frappe.db.exists("Alumni Profile", {"person": person.name, "enabled": 1})
+		),
+		"addresses": [
+			{
+				"name": row.name,
+				"channel": row.channel,
+				"value": row.value,
+				"category": row.category,
+				"is_primary": row.is_primary,
+				"verified": row.verified,
+				"verified_on": row.verified_on,
+				"status": row.status,
+				"share_in_directory": row.share_in_directory,
+				"source": row.source,
+				"editable": bool(row.source == SELF_SERVICE_SOURCE and not row.is_primary),
+			}
+			for row in person.channel_addresses
+		],
+	}
 
 
 @frappe.whitelist()
-def update_my_communication_preferences(
-    language=None, consents=None, mailing_address=None
-):
-    """consents: [{channel, category, status: Unset|Opted In|Opted Out}, ...].
-    mailing_address: {address_line_1, address_line_2, city, state, pincode,
-    country}. Writes through the Person spine with source='portal'. Emergency
-    opt-outs are recorded but the engine ignores them by design (ADR 043)."""
-    person = frappe.get_doc("Person", _my_person())
-    if isinstance(consents, str):
-        consents = json.loads(consents)
-    if isinstance(mailing_address, str):
-        mailing_address = json.loads(mailing_address)
+def update_my_communication_preferences(language=None, consents=None, mailing_address=None):
+	"""consents: [{channel, category, status: Unset|Opted In|Opted Out}, ...].
+	mailing_address: {address_line_1, address_line_2, city, state, pincode,
+	country}. Writes through the Person spine with source='portal'. Emergency
+	opt-outs are recorded but the engine ignores them by design (ADR 043)."""
+	person = frappe.get_doc("Person", _my_person())
+	if isinstance(consents, str):
+		consents = json.loads(consents)
+	if isinstance(mailing_address, str):
+		mailing_address = json.loads(mailing_address)
 
-    if mailing_address is not None:
-        for field in ("address_line_1", "address_line_2", "city", "state", "pincode"):
-            person.set(field, (mailing_address.get(field) or "").strip() or None)
-        country = (mailing_address.get("country") or "").strip()
-        # The postal country only. This used to write person.country, which
-        # pick_account reads to choose a provider — so correcting a mailing
-        # address could move someone's messaging region. ADR 046 split
-        # mailing_country out precisely to stop that (ADR 070).
-        if country and frappe.db.exists("Country", country):
-            person.mailing_country = country
+	if mailing_address is not None:
+		for field in ("address_line_1", "address_line_2", "city", "state", "pincode"):
+			person.set(field, (mailing_address.get(field) or "").strip() or None)
+		country = (mailing_address.get("country") or "").strip()
+		# The postal country only. This used to write person.country, which
+		# pick_account reads to choose a provider — so correcting a mailing
+		# address could move someone's messaging region. ADR 046 split
+		# mailing_country out precisely to stop that (ADR 070).
+		if country and frappe.db.exists("Country", country):
+			person.mailing_country = country
 
-    if language:
-        if not frappe.db.exists("Language", language):
-            frappe.throw(_("Unknown language {0}.").format(language))
-        person.language = language
+	if language:
+		if not frappe.db.exists("Language", language):
+			frappe.throw(_("Unknown language {0}.").format(language))
+		person.language = language
 
-    for item in consents or []:
-        channel = item.get("channel")
-        category = item.get("category")
-        status = item.get("status") or "Unset"
-        if (
-            category not in PREF_CATEGORIES
-            or status not in ("Unset", "Opted In", "Opted Out")
-            or not frappe.db.exists("Communication Channel", channel)
-        ):
-            continue
-        row = next(
-            (
-                r
-                for r in person.consents
-                if r.channel == channel and r.category == category
-            ),
-            None,
-        )
-        if row:
-            if row.status != status:
-                row.status = status
-                row.source = "portal"
-                row.recorded_on = now_datetime()
-        elif status != "Unset":
-            person.append(
-                "consents",
-                {
-                    "channel": channel,
-                    "category": category,
-                    "status": status,
-                    "source": "portal",
-                    "recorded_on": now_datetime(),
-                },
-            )
+	for item in consents or []:
+		channel = item.get("channel")
+		category = item.get("category")
+		status = item.get("status") or "Unset"
+		if (
+			category not in PREF_CATEGORIES
+			or status not in ("Unset", "Opted In", "Opted Out")
+			or not frappe.db.exists("Communication Channel", channel)
+		):
+			continue
+		row = next(
+			(r for r in person.consents if r.channel == channel and r.category == category),
+			None,
+		)
+		if row:
+			if row.status != status:
+				row.status = status
+				row.source = "portal"
+				row.recorded_on = now_datetime()
+		elif status != "Unset":
+			person.append(
+				"consents",
+				{
+					"channel": channel,
+					"category": category,
+					"status": status,
+					"source": "portal",
+					"recorded_on": now_datetime(),
+				},
+			)
 
-    person.save(ignore_permissions=True)
-    return get_my_communication_preferences()
+	person.save(ignore_permissions=True)
+	return get_my_communication_preferences()
 
 
 # ------------------------------------------------- self-service addresses
@@ -1265,165 +1213,153 @@ _PHONE_RE = re.compile(r"^\+[1-9]\d{6,14}$")
 
 
 def _my_address_row(row):
-    """Resolve one of the caller's own channel-address rows.
+	"""Resolve one of the caller's own channel-address rows.
 
-    "Not yours" and "does not exist" throw the same message on purpose: the
-    row name is a global id, so distinguishing them would turn this into an
-    enumeration oracle over everybody's addresses."""
-    person = _my_person()
-    info = frappe.db.get_value(
-        "Person Channel Address",
-        row,
-        ["name", "parent", "parenttype", "channel", "value", "source", "is_primary"],
-        as_dict=True,
-    )
-    if not info or info.parenttype != "Person" or info.parent != person:
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
-    return person, info
+	"Not yours" and "does not exist" throw the same message on purpose: the
+	row name is a global id, so distinguishing them would turn this into an
+	enumeration oracle over everybody's addresses."""
+	person = _my_person()
+	info = frappe.db.get_value(
+		"Person Channel Address",
+		row,
+		["name", "parent", "parenttype", "channel", "value", "source", "is_primary"],
+		as_dict=True,
+	)
+	if not info or info.parenttype != "Person" or info.parent != person:
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+	return person, info
 
 
 def _require_self_service(info):
-    if info.source != SELF_SERVICE_SOURCE:
-        frappe.throw(
-            _("The school keeps this address. Ask the registrar to change it.")
-        )
-    if info.is_primary:
-        frappe.throw(_("Your primary address can't be changed here."))
+	if info.source != SELF_SERVICE_SOURCE:
+		frappe.throw(_("The school keeps this address. Ask the registrar to change it."))
+	if info.is_primary:
+		frappe.throw(_("Your primary address can't be changed here."))
 
 
 def _clean_address(channel, value):
-    """Validate a typed address for a channel, returning the stored form."""
-    value = (value or "").strip()
-    if not value:
-        frappe.throw(_("Enter an address."))
-    if channel not in SELF_MANAGED_CHANNELS:
-        frappe.throw(_("You can't add an address for {0}.").format(_(channel)))
-    if not frappe.db.exists("Communication Channel", {"name": channel, "enabled": 1}):
-        frappe.throw(_("Unknown channel {0}.").format(channel))
-    if channel == EMAIL_CHANNEL:
-        frappe.utils.validate_email_address(value, throw=True)
-        return value.lower()
-    compact = re.sub(r"[\s\-()]", "", value)
-    if not _PHONE_RE.match(compact):
-        frappe.throw(_("Include the country code, e.g. +15551234567."))
-    return compact
+	"""Validate a typed address for a channel, returning the stored form."""
+	value = (value or "").strip()
+	if not value:
+		frappe.throw(_("Enter an address."))
+	if channel not in SELF_MANAGED_CHANNELS:
+		frappe.throw(_("You can't add an address for {0}.").format(_(channel)))
+	if not frappe.db.exists("Communication Channel", {"name": channel, "enabled": 1}):
+		frappe.throw(_("Unknown channel {0}.").format(channel))
+	if channel == EMAIL_CHANNEL:
+		frappe.utils.validate_email_address(value, throw=True)
+		return value.lower()
+	compact = re.sub(r"[\s\-()]", "", value)
+	if not _PHONE_RE.match(compact):
+		frappe.throw(_("Include the country code, e.g. +15551234567."))
+	return compact
 
 
 def _clean_category(category):
-    category = (category or "").strip()
-    if category and category not in PREF_CATEGORIES:
-        frappe.throw(_("Unknown category {0}.").format(category))
-    return category or None
+	category = (category or "").strip()
+	if category and category not in PREF_CATEGORIES:
+		frappe.throw(_("Unknown category {0}.").format(category))
+	return category or None
 
 
 @frappe.whitelist(methods=["POST"])
 def add_my_address(channel, value, category=None, share_in_directory=0):
-    """Add a channel address to the caller's own Person (ADR 070).
+	"""Add a channel address to the caller's own Person (ADR 070).
 
-    Lands unverified: `request_verification` sends the confirmation that makes
-    it usable in the alumni directory."""
-    person_name = _my_person()
-    value = _clean_address(channel, value)
-    category = _clean_category(category)
-    person = frappe.get_doc("Person", person_name)
-    mine = [
-        r
-        for r in person.channel_addresses
-        if r.channel == channel and r.source == SELF_SERVICE_SOURCE
-    ]
-    if len(mine) >= MAX_SELF_ADDRESSES_PER_CHANNEL:
-        frappe.throw(
-            _("You already have {0} {1} addresses.").format(
-                MAX_SELF_ADDRESSES_PER_CHANNEL, _(channel)
-            )
-        )
-    person.append(
-        "channel_addresses",
-        {
-            "channel": channel,
-            "value": value,
-            "category": category,
-            "is_primary": 0,
-            "verified": 0,
-            "status": "Active",
-            "share_in_directory": cint(share_in_directory),
-            "source": SELF_SERVICE_SOURCE,
-        },
-    )
-    # Saved through the parent so validate_channel_addresses runs: it dedupes,
-    # lowercases email and keeps one primary per channel.
-    person.save(ignore_permissions=True)
+	Lands unverified: `request_verification` sends the confirmation that makes
+	it usable in the alumni directory."""
+	person_name = _my_person()
+	value = _clean_address(channel, value)
+	category = _clean_category(category)
+	person = frappe.get_doc("Person", person_name)
+	mine = [r for r in person.channel_addresses if r.channel == channel and r.source == SELF_SERVICE_SOURCE]
+	if len(mine) >= MAX_SELF_ADDRESSES_PER_CHANNEL:
+		frappe.throw(
+			_("You already have {0} {1} addresses.").format(MAX_SELF_ADDRESSES_PER_CHANNEL, _(channel))
+		)
+	person.append(
+		"channel_addresses",
+		{
+			"channel": channel,
+			"value": value,
+			"category": category,
+			"is_primary": 0,
+			"verified": 0,
+			"status": "Active",
+			"share_in_directory": cint(share_in_directory),
+			"source": SELF_SERVICE_SOURCE,
+		},
+	)
+	# Saved through the parent so validate_channel_addresses runs: it dedupes,
+	# lowercases email and keeps one primary per channel.
+	person.save(ignore_permissions=True)
 
-    if channel == EMAIL_CHANNEL:
-        from seminary.seminary.address_verification import send_verification
+	if channel == EMAIL_CHANNEL:
+		from seminary.seminary.address_verification import send_verification
 
-        added = next(
-            (
-                r
-                for r in person.channel_addresses
-                if r.channel == channel and r.value == value
-            ),
-            None,
-        )
-        if added:
-            # Best effort: the address is saved either way, and Preferences
-            # offers a re-send. A mail failure must not lose the row.
-            try:
-                send_verification(person.name, channel, value, added.name)
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), "address verification send")
-    return get_my_communication_preferences()
+		added = next(
+			(r for r in person.channel_addresses if r.channel == channel and r.value == value),
+			None,
+		)
+		if added:
+			# Best effort: the address is saved either way, and Preferences
+			# offers a re-send. A mail failure must not lose the row.
+			try:
+				send_verification(person.name, channel, value, added.name)
+			except Exception:
+				frappe.log_error(frappe.get_traceback(), "address verification send")
+	return get_my_communication_preferences()
 
 
 @frappe.whitelist(methods=["POST"])
 def update_my_address(row, value=None, category=None):
-    """Correct an address the caller added themselves."""
-    person_name, info = _my_address_row(row)
-    _require_self_service(info)
-    person = frappe.get_doc("Person", person_name)
-    target = next((r for r in person.channel_addresses if r.name == row), None)
-    if not target:
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
-    if value is not None:
-        cleaned = _clean_address(target.channel, value)
-        if cleaned != target.value:
-            target.value = cleaned
-            # A verified address that gets retyped is not a verified address.
-            target.verified = 0
-            target.verified_on = None
-            target.status = "Active"
-    if category is not None:
-        target.category = _clean_category(category)
-    person.save(ignore_permissions=True)
-    return get_my_communication_preferences()
+	"""Correct an address the caller added themselves."""
+	person_name, info = _my_address_row(row)
+	_require_self_service(info)
+	person = frappe.get_doc("Person", person_name)
+	target = next((r for r in person.channel_addresses if r.name == row), None)
+	if not target:
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+	if value is not None:
+		cleaned = _clean_address(target.channel, value)
+		if cleaned != target.value:
+			target.value = cleaned
+			# A verified address that gets retyped is not a verified address.
+			target.verified = 0
+			target.verified_on = None
+			target.status = "Active"
+	if category is not None:
+		target.category = _clean_category(category)
+	person.save(ignore_permissions=True)
+	return get_my_communication_preferences()
 
 
 @frappe.whitelist(methods=["POST"])
 def delete_my_address(row):
-    """Remove an address the caller added themselves."""
-    person_name, info = _my_address_row(row)
-    _require_self_service(info)
-    person = frappe.get_doc("Person", person_name)
-    person.channel_addresses = [r for r in person.channel_addresses if r.name != row]
-    person.save(ignore_permissions=True)
-    return get_my_communication_preferences()
+	"""Remove an address the caller added themselves."""
+	person_name, info = _my_address_row(row)
+	_require_self_service(info)
+	person = frappe.get_doc("Person", person_name)
+	person.channel_addresses = [r for r in person.channel_addresses if r.name != row]
+	person.save(ignore_permissions=True)
+	return get_my_communication_preferences()
 
 
 @frappe.whitelist(methods=["POST"])
 def set_address_sharing(row, share_in_directory):
-    """Show or hide one address in the people directory (ADR 070).
+	"""Show or hide one address in the people directory (ADR 070).
 
-    Unlike editing, this works on every row the caller owns — including the
-    registrar-created primary. It changes who sees the address, not the
-    address itself, and the typical alumnus has no other email to offer."""
-    person_name, _info = _my_address_row(row)
-    person = frappe.get_doc("Person", person_name)
-    target = next((r for r in person.channel_addresses if r.name == row), None)
-    if not target:
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
-    target.share_in_directory = cint(share_in_directory)
-    person.save(ignore_permissions=True)
-    return get_my_communication_preferences()
+	Unlike editing, this works on every row the caller owns — including the
+	registrar-created primary. It changes who sees the address, not the
+	address itself, and the typical alumnus has no other email to offer."""
+	person_name, _info = _my_address_row(row)
+	person = frappe.get_doc("Person", person_name)
+	target = next((r for r in person.channel_addresses if r.name == row), None)
+	if not target:
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
+	target.share_in_directory = cint(share_in_directory)
+	person.save(ignore_permissions=True)
+	return get_my_communication_preferences()
 
 
 # -------------------------------------------------------- portal messaging
@@ -1432,249 +1368,240 @@ STAFF_MESSAGING_ROLES = {"Instructor", "Seminary Manager", "Program Chair"}
 
 
 def _is_messaging_staff():
-    return bool(set(frappe.get_roles()) & STAFF_MESSAGING_ROLES)
+	return bool(set(frappe.get_roles()) & STAFF_MESSAGING_ROLES)
 
 
 @frappe.whitelist()
 def get_my_messaging_scope(course=None):
-    """Who the session user may message (ADR 043 portal messaging), the
-    authorization source of truth — send_portal_message validates against it
-    server-side.
+	"""Who the session user may message (ADR 043 portal messaging), the
+	authorization source of truth — send_portal_message validates against it
+	server-side.
 
-    Driven by the Portal Messaging Rules configured on Seminary Settings
-    (sender role -> audience). When no rules are configured it falls back to
-    the built-in defaults: students reach the instructors of course schedules
-    they're enrolled in; staff (Instructor / Seminary Manager / Program Chair)
-    reach every instructor and student, narrowable per course schedule.
+	Driven by the Portal Messaging Rules configured on Seminary Settings
+	(sender role -> audience). When no rules are configured it falls back to
+	the built-in defaults: students reach the instructors of course schedules
+	they're enrolled in; staff (Instructor / Seminary Manager / Program Chair)
+	reach every instructor and student, narrowable per course schedule.
 
-    Each recipient carries a `group` (display heading for the compose picker)
-    and a `kind` (Instructor / Student / Role / User / Support — the
-    all_students expansion and existing checks key off `kind`)."""
-    me = _my_person()
-    staff = _is_messaging_staff()
-    settings = frappe.get_cached_doc("Seminary Settings")
-    rules = [r for r in (settings.portal_messaging_rules or []) if r.enabled]
+	Each recipient carries a `group` (display heading for the compose picker)
+	and a `kind` (Instructor / Student / Role / User / Support — the
+	all_students expansion and existing checks key off `kind`)."""
+	me = _my_person()
+	staff = _is_messaging_staff()
+	settings = frappe.get_cached_doc("Seminary Settings")
+	rules = [r for r in (settings.portal_messaging_rules or []) if r.enabled]
 
-    if not rules:
-        recipients = _legacy_recipients(course, staff)
-    else:
-        my_roles = set(frappe.get_roles())
-        by_person = {}
-        for rule in rules:
-            if rule.sender_role not in my_roles:
-                continue
-            group = (rule.group_label or "").strip() or _default_group(rule)
-            for rec in _resolve_audience(rule, course, staff, settings):
-                _merge_recipient(by_person, rec, group)
-        recipients = list(by_person.values())
+	if not rules:
+		recipients = _legacy_recipients(course, staff)
+	else:
+		my_roles = set(frappe.get_roles())
+		by_person = {}
+		for rule in rules:
+			if rule.sender_role not in my_roles:
+				continue
+			group = (rule.group_label or "").strip() or _default_group(rule)
+			for rec in _resolve_audience(rule, course, staff, settings):
+				_merge_recipient(by_person, rec, group)
+		recipients = list(by_person.values())
 
-    if staff:
-        courses = _staff_course_options()
-    else:
-        courses = [
-            {"value": r.name, "label": f"{r.title} ({r.academic_term})"}
-            for r in _student_enrolled_cs()
-        ]
-    recipients = [r for r in recipients if r["person"] != me]
-    return {"staff": staff, "courses": courses, "recipients": recipients}
+	if staff:
+		courses = _staff_course_options()
+	else:
+		courses = [
+			{"value": r.name, "label": f"{r.title} ({r.academic_term})"} for r in _student_enrolled_cs()
+		]
+	recipients = [r for r in recipients if r["person"] != me]
+	return {"staff": staff, "courses": courses, "recipients": recipients}
 
 
 def _legacy_recipients(course, staff):
-    """Built-in messaging policy used when a seminary has configured no Portal
-    Messaging Rules (and for pre-seed installs). Mirrors the original ADR 043
-    behavior verbatim, backfilling the display `group`."""
-    if staff:
-        recipients = _staff_recipients(course)
-    else:
-        recipients = _student_recipients(
-            course, [r.name for r in _student_enrolled_cs()]
-        )
-    for r in recipients:
-        r["group"] = "Instructors" if r["kind"] == "Instructor" else "Students"
-    return recipients
+	"""Built-in messaging policy used when a seminary has configured no Portal
+	Messaging Rules (and for pre-seed installs). Mirrors the original ADR 043
+	behavior verbatim, backfilling the display `group`."""
+	if staff:
+		recipients = _staff_recipients(course)
+	else:
+		recipients = _student_recipients(course, [r.name for r in _student_enrolled_cs()])
+	for r in recipients:
+		r["group"] = "Instructors" if r["kind"] == "Instructor" else "Students"
+	return recipients
 
 
 # ----- rule-driven audience resolution
 
 _AUDIENCE_GROUP = {
-    "Course Instructors": "Instructors",
-    "All Instructors": "Instructors",
-    "Course Students": "Students",
-    "All Students": "Students",
-    "Alumni Directory": "Alumni",
-    "Support User": "Support",
-    "Specific User": "Direct",
+	"Course Instructors": "Instructors",
+	"All Instructors": "Instructors",
+	"Course Students": "Students",
+	"All Students": "Students",
+	"Alumni Directory": "Alumni",
+	"Support User": "Support",
+	"Specific User": "Direct",
 }
 
 
 def _default_group(rule):
-    if rule.audience == "Role":
-        return rule.audience_role or "Other"
-    return _AUDIENCE_GROUP.get(rule.audience, "Other")
+	if rule.audience == "Role":
+		return rule.audience_role or "Other"
+	return _AUDIENCE_GROUP.get(rule.audience, "Other")
 
 
 def _merge_recipient(by_person, rec, group):
-    """Dedupe by person across rules: first rule that reaches a person wins the
-    display group; later rules only union the per-course annotations."""
-    existing = by_person.get(rec["person"])
-    if existing:
-        for c in rec.get("courses", []):
-            if c not in existing["courses"]:
-                existing["courses"].append(c)
-        return
-    rec = dict(rec)
-    rec["group"] = group
-    rec.setdefault("courses", [])
-    by_person[rec["person"]] = rec
+	"""Dedupe by person across rules: first rule that reaches a person wins the
+	display group; later rules only union the per-course annotations."""
+	existing = by_person.get(rec["person"])
+	if existing:
+		for c in rec.get("courses", []):
+			if c not in existing["courses"]:
+				existing["courses"].append(c)
+		return
+	rec = dict(rec)
+	rec["group"] = group
+	rec.setdefault("courses", [])
+	by_person[rec["person"]] = rec
 
 
 def _resolve_audience(rule, course, staff, settings):
-    audience = rule.audience
-    if audience == "Course Instructors":
-        return _student_recipients(course, [r.name for r in _student_enrolled_cs()])
-    if audience == "Course Students":
-        return _course_student_recipients(course, staff)
-    if audience == "All Instructors":
-        return _all_instructor_recipients(course) if staff else []
-    if audience == "All Students":
-        return _all_student_recipients(course) if staff else []
-    if audience == "Alumni Directory":
-        return _alumni_directory_recipients()
-    if audience == "Role":
-        return _role_recipients(rule.audience_role)
-    if audience == "Specific User":
-        return _user_recipient(rule.audience_user, "User")
-    if audience == "Support User":
-        return _user_recipient(settings.support_user, "Support")
-    return []
+	audience = rule.audience
+	if audience == "Course Instructors":
+		return _student_recipients(course, [r.name for r in _student_enrolled_cs()])
+	if audience == "Course Students":
+		return _course_student_recipients(course, staff)
+	if audience == "All Instructors":
+		return _all_instructor_recipients(course) if staff else []
+	if audience == "All Students":
+		return _all_student_recipients(course) if staff else []
+	if audience == "Alumni Directory":
+		return _alumni_directory_recipients()
+	if audience == "Role":
+		return _role_recipients(rule.audience_role)
+	if audience == "Specific User":
+		return _user_recipient(rule.audience_user, "User")
+	if audience == "Support User":
+		return _user_recipient(settings.support_user, "Support")
+	return []
 
 
 def _alumni_directory_recipients():
-    """The people listed in the alumni directory (ADR 070).
+	"""The people listed in the alumni directory (ADR 070).
 
-    Keyed on `show_in_directory`, not on holding the Alumni role: a graduate
-    who hid themselves from the directory has said they do not want to be
-    found, and an `audience="Role"` rule pointed at Alumni would list them in
-    a compose picker anyway."""
-    rows = frappe.get_all(
-        "Alumni Profile",
-        filters={"enabled": 1, "show_in_directory": 1, "person": ("is", "set")},
-        fields=["person", "full_name"],
-    )
-    return [
-        {"person": r.person, "label": r.full_name, "kind": "Alumni", "courses": []}
-        for r in rows
-    ]
+	Keyed on `show_in_directory`, not on holding the Alumni role: a graduate
+	who hid themselves from the directory has said they do not want to be
+	found, and an `audience="Role"` rule pointed at Alumni would list them in
+	a compose picker anyway."""
+	rows = frappe.get_all(
+		"Alumni Profile",
+		filters={"enabled": 1, "show_in_directory": 1, "person": ("is", "set")},
+		fields=["person", "full_name"],
+	)
+	return [{"person": r.person, "label": r.full_name, "kind": "Alumni", "courses": []} for r in rows]
 
 
 def may_message(target, course=None):
-    """Is this one person within the caller's messaging scope?
+	"""Is this one person within the caller's messaging scope?
 
-    `get_my_messaging_scope` materializes every allowed recipient, which is
-    fine for a course roster and not for an alumni body. This answers the
-    single-recipient question the send path actually asks, without building
-    the list; it falls back to the full scope for audiences that have no
-    cheaper test (ADR 070)."""
-    if not target or target == _my_person():
-        return False
-    settings = frappe.get_cached_doc("Seminary Settings")
-    rules = [r for r in (settings.portal_messaging_rules or []) if r.enabled]
-    my_roles = set(frappe.get_roles())
-    mine = [r for r in rules if r.sender_role in my_roles]
-    if mine and all(r.audience == "Alumni Directory" for r in mine):
-        return bool(
-            frappe.db.exists(
-                "Alumni Profile",
-                {"person": target, "enabled": 1, "show_in_directory": 1},
-            )
-        )
-    scope = get_my_messaging_scope(course=course)
-    return any(r["person"] == target for r in scope["recipients"])
+	`get_my_messaging_scope` materializes every allowed recipient, which is
+	fine for a course roster and not for an alumni body. This answers the
+	single-recipient question the send path actually asks, without building
+	the list; it falls back to the full scope for audiences that have no
+	cheaper test (ADR 070)."""
+	if not target or target == _my_person():
+		return False
+	settings = frappe.get_cached_doc("Seminary Settings")
+	rules = [r for r in (settings.portal_messaging_rules or []) if r.enabled]
+	my_roles = set(frappe.get_roles())
+	mine = [r for r in rules if r.sender_role in my_roles]
+	if mine and all(r.audience == "Alumni Directory" for r in mine):
+		return bool(
+			frappe.db.exists(
+				"Alumni Profile",
+				{"person": target, "enabled": 1, "show_in_directory": 1},
+			)
+		)
+	scope = get_my_messaging_scope(course=course)
+	return any(r["person"] == target for r in scope["recipients"])
 
 
 def _all_instructor_recipients(course=None):
-    """Every active instructor, or — when a course filter is set — just the
-    instructors of that Course Schedule (preserves the staff course filter)."""
-    if course:
-        rows = frappe.db.sql(
-            """
+	"""Every active instructor, or — when a course filter is set — just the
+	instructors of that Course Schedule (preserves the staff course filter)."""
+	if course:
+		rows = frappe.db.sql(
+			"""
             SELECT DISTINCT i.person, i.instructor_name
             FROM `tabCourse Schedule Instructors` csi
             JOIN `tabInstructor` i ON csi.instructor = i.name
             WHERE csi.parent = %(cs)s AND IFNULL(i.person, '') != ''
             """,
-            {"cs": course},
-            as_dict=True,
-        )
-    else:
-        rows = frappe.get_all(
-            "Instructor",
-            filters={"status": "Active", "person": ("is", "set")},
-            fields=["person", "instructor_name"],
-        )
-    return [
-        {
-            "person": r.person,
-            "label": r.instructor_name,
-            "kind": "Instructor",
-            "courses": [],
-        }
-        for r in rows
-    ]
+			{"cs": course},
+			as_dict=True,
+		)
+	else:
+		rows = frappe.get_all(
+			"Instructor",
+			filters={"status": "Active", "person": ("is", "set")},
+			fields=["person", "instructor_name"],
+		)
+	return [
+		{
+			"person": r.person,
+			"label": r.instructor_name,
+			"kind": "Instructor",
+			"courses": [],
+		}
+		for r in rows
+	]
 
 
 def _all_student_recipients(course=None):
-    """Every enabled student, or — when a course filter is set — just the
-    students enrolled in that Course Schedule."""
-    if course:
-        rows = frappe.db.sql(
-            """
+	"""Every enabled student, or — when a course filter is set — just the
+	students enrolled in that Course Schedule."""
+	if course:
+		rows = frappe.db.sql(
+			"""
             SELECT DISTINCT s.person, s.student_name
             FROM `tabCourse Enrollment Individual` cei
             JOIN `tabStudent` s ON cei.student_ce = s.name
             WHERE cei.coursesc_ce = %(cs)s AND cei.docstatus = 1
               AND cei.withdrawn = 0 AND IFNULL(s.person, '') != ''
             """,
-            {"cs": course},
-            as_dict=True,
-        )
-    else:
-        rows = frappe.get_all(
-            "Student",
-            filters={"enabled": 1, "person": ("is", "set")},
-            fields=["person", "student_name"],
-        )
-    return [
-        {"person": r.person, "label": r.student_name, "kind": "Student", "courses": []}
-        for r in rows
-    ]
+			{"cs": course},
+			as_dict=True,
+		)
+	else:
+		rows = frappe.get_all(
+			"Student",
+			filters={"enabled": 1, "person": ("is", "set")},
+			fields=["person", "student_name"],
+		)
+	return [{"person": r.person, "label": r.student_name, "kind": "Student", "courses": []} for r in rows]
 
 
 def _course_student_recipients(course, staff):
-    """Students enrolled in the sender's course schedules — the schedules a
-    staff member teaches, or a student's own enrolled schedules — honoring the
-    course filter."""
-    if staff:
-        rows = frappe.db.sql(
-            """
+	"""Students enrolled in the sender's course schedules — the schedules a
+	staff member teaches, or a student's own enrolled schedules — honoring the
+	course filter."""
+	if staff:
+		rows = frappe.db.sql(
+			"""
             SELECT DISTINCT cs.name
             FROM `tabCourse Schedule` cs
             JOIN `tabCourse Schedule Instructors` csi ON csi.parent = cs.name
             JOIN `tabInstructor` i ON csi.instructor = i.name
             WHERE i.user = %(user)s
             """,
-            {"user": frappe.session.user},
-            as_dict=True,
-        )
-        cs_names = [r.name for r in rows]
-    else:
-        cs_names = [r.name for r in _student_enrolled_cs()]
-    if course:
-        cs_names = [c for c in cs_names if c == course]
-    if not cs_names:
-        return []
-    rows = frappe.db.sql(
-        """
+			{"user": frappe.session.user},
+			as_dict=True,
+		)
+		cs_names = [r.name for r in rows]
+	else:
+		cs_names = [r.name for r in _student_enrolled_cs()]
+	if course:
+		cs_names = [c for c in cs_names if c == course]
+	if not cs_names:
+		return []
+	rows = frappe.db.sql(
+		"""
         SELECT DISTINCT s.person, s.student_name, cs.title
         FROM `tabCourse Enrollment Individual` cei
         JOIN `tabStudent` s ON cei.student_ce = s.name
@@ -1682,33 +1609,33 @@ def _course_student_recipients(course, staff):
         WHERE cei.coursesc_ce IN %(cs)s AND cei.docstatus = 1
           AND cei.withdrawn = 0 AND IFNULL(s.person, '') != ''
         """,
-        {"cs": tuple(cs_names)},
-        as_dict=True,
-    )
-    by_person = {}
-    for r in rows:
-        entry = by_person.setdefault(
-            r.person,
-            {
-                "person": r.person,
-                "label": r.student_name,
-                "kind": "Student",
-                "courses": [],
-            },
-        )
-        if r.title:
-            entry["courses"].append(r.title)
-    return list(by_person.values())
+		{"cs": tuple(cs_names)},
+		as_dict=True,
+	)
+	by_person = {}
+	for r in rows:
+		entry = by_person.setdefault(
+			r.person,
+			{
+				"person": r.person,
+				"label": r.student_name,
+				"kind": "Student",
+				"courses": [],
+			},
+		)
+		if r.title:
+			entry["courses"].append(r.title)
+	return list(by_person.values())
 
 
 def _role_recipients(role):
-    """Persons whose enabled User holds `role`. Single join (no find_person
-    N+1); Person-less role holders are silently skipped since messages target a
-    Person."""
-    if not role:
-        return []
-    rows = frappe.db.sql(
-        """
+	"""Persons whose enabled User holds `role`. Single join (no find_person
+	N+1); Person-less role holders are silently skipped since messages target a
+	Person."""
+	if not role:
+		return []
+	rows = frappe.db.sql(
+		"""
         SELECT DISTINCT p.name AS person, p.full_name AS label
         FROM `tabHas Role` hr
         JOIN `tabUser` u ON hr.parent = u.name
@@ -1716,34 +1643,31 @@ def _role_recipients(role):
         WHERE hr.parenttype = 'User' AND hr.role = %(role)s
           AND u.enabled = 1 AND u.name NOT IN ('Administrator', 'Guest')
         """,
-        {"role": role},
-        as_dict=True,
-    )
-    return [
-        {"person": r.person, "label": r.label, "kind": "Role", "courses": []}
-        for r in rows
-    ]
+		{"role": role},
+		as_dict=True,
+	)
+	return [{"person": r.person, "label": r.label, "kind": "Role", "courses": []} for r in rows]
 
 
 def _user_recipient(user, kind):
-    if not user:
-        return []
-    from seminary.seminary.person import find_person
+	if not user:
+		return []
+	from seminary.seminary.person import find_person
 
-    person = find_person(user=user)
-    if not person:
-        return []
-    label = (
-        frappe.db.get_value("Person", person, "full_name")
-        or frappe.db.get_value("User", user, "full_name")
-        or user
-    )
-    return [{"person": person, "label": label, "kind": kind, "courses": []}]
+	person = find_person(user=user)
+	if not person:
+		return []
+	label = (
+		frappe.db.get_value("Person", person, "full_name")
+		or frappe.db.get_value("User", user, "full_name")
+		or user
+	)
+	return [{"person": person, "label": label, "kind": kind, "courses": []}]
 
 
 def _student_enrolled_cs():
-    return frappe.db.sql(
-        """
+	return frappe.db.sql(
+		"""
         SELECT DISTINCT cs.name, cs.title, cs.academic_term, cs.creation
         FROM `tabCourse Enrollment Individual` cei
         JOIN `tabCourse Schedule` cs ON cei.coursesc_ce = cs.name
@@ -1751,46 +1675,46 @@ def _student_enrolled_cs():
         WHERE s.user = %(user)s AND cei.docstatus = 1 AND cei.withdrawn = 0
         ORDER BY cs.creation DESC
         """,
-        {"user": frappe.session.user},
-        as_dict=True,
-    )
+		{"user": frappe.session.user},
+		as_dict=True,
+	)
 
 
 def _student_recipients(course, enrolled_cs):
-    if course:
-        enrolled_cs = [cs for cs in enrolled_cs if cs == course]
-    if not enrolled_cs:
-        return []
-    rows = frappe.db.sql(
-        """
+	if course:
+		enrolled_cs = [cs for cs in enrolled_cs if cs == course]
+	if not enrolled_cs:
+		return []
+	rows = frappe.db.sql(
+		"""
         SELECT DISTINCT i.person, i.instructor_name, cs.title
         FROM `tabCourse Schedule Instructors` csi
         JOIN `tabInstructor` i ON csi.instructor = i.name
         JOIN `tabCourse Schedule` cs ON csi.parent = cs.name
         WHERE csi.parent IN %(cs)s AND IFNULL(i.person, '') != ''
         """,
-        {"cs": tuple(enrolled_cs)},
-        as_dict=True,
-    )
-    by_person = {}
-    for r in rows:
-        entry = by_person.setdefault(
-            r.person,
-            {
-                "person": r.person,
-                "label": r.instructor_name,
-                "kind": "Instructor",
-                "courses": [],
-            },
-        )
-        if r.title:
-            entry["courses"].append(r.title)
-    return list(by_person.values())
+		{"cs": tuple(enrolled_cs)},
+		as_dict=True,
+	)
+	by_person = {}
+	for r in rows:
+		entry = by_person.setdefault(
+			r.person,
+			{
+				"person": r.person,
+				"label": r.instructor_name,
+				"kind": "Instructor",
+				"courses": [],
+			},
+		)
+		if r.title:
+			entry["courses"].append(r.title)
+	return list(by_person.values())
 
 
 def _staff_course_options():
-    rows = frappe.db.sql(
-        """
+	rows = frappe.db.sql(
+		"""
         SELECT DISTINCT cs.name, cs.title, cs.academic_term
         FROM `tabCourse Schedule` cs
         JOIN `tabAcademic Term` t ON cs.academic_term = t.name
@@ -1800,315 +1724,303 @@ def _staff_course_options():
         ORDER BY cs.creation DESC
         LIMIT 300
         """,
-        {"user": frappe.session.user},
-        as_dict=True,
-    )
-    return [{"value": r.name, "label": f"{r.title} ({r.academic_term})"} for r in rows]
+		{"user": frappe.session.user},
+		as_dict=True,
+	)
+	return [{"value": r.name, "label": f"{r.title} ({r.academic_term})"} for r in rows]
 
 
 def _staff_recipients(course):
-    if course:
-        instructors = frappe.db.sql(
-            """
+	if course:
+		instructors = frappe.db.sql(
+			"""
             SELECT DISTINCT i.person, i.instructor_name
             FROM `tabCourse Schedule Instructors` csi
             JOIN `tabInstructor` i ON csi.instructor = i.name
             WHERE csi.parent = %(cs)s AND IFNULL(i.person, '') != ''
             """,
-            {"cs": course},
-            as_dict=True,
-        )
-        students = frappe.db.sql(
-            """
+			{"cs": course},
+			as_dict=True,
+		)
+		students = frappe.db.sql(
+			"""
             SELECT DISTINCT s.person, s.student_name
             FROM `tabCourse Enrollment Individual` cei
             JOIN `tabStudent` s ON cei.student_ce = s.name
             WHERE cei.coursesc_ce = %(cs)s AND cei.docstatus = 1
               AND cei.withdrawn = 0 AND IFNULL(s.person, '') != ''
             """,
-            {"cs": course},
-            as_dict=True,
-        )
-    else:
-        instructors = frappe.get_all(
-            "Instructor",
-            filters={"status": "Active", "person": ("is", "set")},
-            fields=["person", "instructor_name"],
-        )
-        students = frappe.get_all(
-            "Student",
-            filters={"enabled": 1, "person": ("is", "set")},
-            fields=["person", "student_name"],
-        )
-    out = [
-        {
-            "person": r.person,
-            "label": r.instructor_name,
-            "kind": "Instructor",
-            "courses": [],
-        }
-        for r in instructors
-    ]
-    seen = {r["person"] for r in out}
-    out += [
-        {"person": r.person, "label": r.student_name, "kind": "Student", "courses": []}
-        for r in students
-        if r.person not in seen
-    ]
-    return out
+			{"cs": course},
+			as_dict=True,
+		)
+	else:
+		instructors = frappe.get_all(
+			"Instructor",
+			filters={"status": "Active", "person": ("is", "set")},
+			fields=["person", "instructor_name"],
+		)
+		students = frappe.get_all(
+			"Student",
+			filters={"enabled": 1, "person": ("is", "set")},
+			fields=["person", "student_name"],
+		)
+	out = [
+		{
+			"person": r.person,
+			"label": r.instructor_name,
+			"kind": "Instructor",
+			"courses": [],
+		}
+		for r in instructors
+	]
+	seen = {r["person"] for r in out}
+	out += [
+		{"person": r.person, "label": r.student_name, "kind": "Student", "courses": []}
+		for r in students
+		if r.person not in seen
+	]
+	return out
 
 
 @frappe.whitelist()
 def send_portal_message(
-    recipients=None,
-    message=None,
-    subject=None,
-    course=None,
-    all_students=0,
-    recipient=None,
-    attachments=None,
+	recipients=None,
+	message=None,
+	subject=None,
+	course=None,
+	all_students=0,
+	recipient=None,
+	attachments=None,
 ):
-    """Portal compose: person-to-person In-App messages, instant delivery.
-    Accepts a list of recipients; all_students expands to every student in the
-    sender's scope (staff only — and the scope already honors the course
-    filter). Every target is validated against the scope server-side. The body
-    is rich text (sanitized server-side); attachments and inline images stay
-    PRIVATE and are attached to each recipient's log, so only the recipient and
-    sender can download them via Frappe's /private/files ACL (ADR 043)."""
-    _my_person()
-    if not frappe.utils.strip_html(message or "").strip():
-        frappe.throw(_("Write a message first."))
+	"""Portal compose: person-to-person In-App messages, instant delivery.
+	Accepts a list of recipients; all_students expands to every student in the
+	sender's scope (staff only — and the scope already honors the course
+	filter). Every target is validated against the scope server-side. The body
+	is rich text (sanitized server-side); attachments and inline images stay
+	PRIVATE and are attached to each recipient's log, so only the recipient and
+	sender can download them via Frappe's /private/files ACL (ADR 043)."""
+	_my_person()
+	if not frappe.utils.strip_html(message or "").strip():
+		frappe.throw(_("Write a message first."))
 
-    if isinstance(recipients, str):
-        recipients = json.loads(recipients)
-    targets = list(recipients or [])
-    if recipient:
-        targets.append(recipient)
+	if isinstance(recipients, str):
+		recipients = json.loads(recipients)
+	targets = list(recipients or [])
+	if recipient:
+		targets.append(recipient)
 
-    # The scope is built only when the whole list is genuinely needed: the
-    # all_students expansion, or a multi-recipient send. Naming one recipient
-    # — every send from the alumni directory — takes the targeted check
-    # instead, because materializing an alumni body to test one membership is
-    # a list nobody reads (ADR 070).
-    scope = None
-    if cint(all_students):
-        scope = get_my_messaging_scope(course=course)
-        if not scope["staff"]:
-            frappe.throw(
-                _("Only staff can message all students."), frappe.PermissionError
-            )
-        targets += [r["person"] for r in scope["recipients"] if r["kind"] == "Student"]
+	# The scope is built only when the whole list is genuinely needed: the
+	# all_students expansion, or a multi-recipient send. Naming one recipient
+	# — every send from the alumni directory — takes the targeted check
+	# instead, because materializing an alumni body to test one membership is
+	# a list nobody reads (ADR 070).
+	scope = None
+	if cint(all_students):
+		scope = get_my_messaging_scope(course=course)
+		if not scope["staff"]:
+			frappe.throw(_("Only staff can message all students."), frappe.PermissionError)
+		targets += [r["person"] for r in scope["recipients"] if r["kind"] == "Student"]
 
-    targets = [t for t in dict.fromkeys(targets) if t]
-    if not targets:
-        frappe.throw(_("Pick at least one recipient."))
-    if scope is None and len(targets) == 1:
-        if not may_message(targets[0], course=course):
-            frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
-    else:
-        if scope is None:
-            scope = get_my_messaging_scope(course=course)
-        allowed = {r["person"] for r in scope["recipients"]}
-        blocked = [t for t in targets if t not in allowed]
-        if blocked:
-            frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
+	targets = [t for t in dict.fromkeys(targets) if t]
+	if not targets:
+		frappe.throw(_("Pick at least one recipient."))
+	if scope is None and len(targets) == 1:
+		if not may_message(targets[0], course=course):
+			frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
+	else:
+		if scope is None:
+			scope = get_my_messaging_scope(course=course)
+		allowed = {r["person"] for r in scope["recipients"]}
+		blocked = [t for t in targets if t not in allowed]
+		if blocked:
+			frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
 
-    if isinstance(attachments, str):
-        attachments = json.loads(attachments)
-    # Only the sender's own uploads travel with the message (p007 §2.6): a
-    # file_url naming someone else's private File is dropped, not attached.
-    attachments = _own_attachments(attachments or [])
-    attach_files = [a["file_url"] for a in attachments if a.get("file_url")]
+	if isinstance(attachments, str):
+		attachments = json.loads(attachments)
+	# Only the sender's own uploads travel with the message (p007 §2.6): a
+	# file_url naming someone else's private File is dropped, not attached.
+	attachments = _own_attachments(attachments or [])
+	attach_files = [a["file_url"] for a in attachments if a.get("file_url")]
 
-    # always_sanitize: skip the JSON/no-tag short-circuit so a comment-wrapped
-    # payload cannot slip past the parser (p006 F13).
-    body = frappe.utils.sanitize_html(message, always_sanitize=True)
-    body = _privatize_embedded_files(body)  # belt-and-suspenders on inline images
-    body += _attachment_html(attachments)
-    sent = 0
-    for target in targets:
-        if send_message(
-            channel=IN_APP_CHANNEL,
-            person=target,
-            subject=subject,
-            message=body,
-            category="Community",
-            reference_doctype="Course Schedule" if course else None,
-            reference_name=course,
-            triggered_by=frappe.session.user,
-            attach_files=attach_files,
-        ):
-            sent += 1
-    return {"sent": sent}
+	# always_sanitize: skip the JSON/no-tag short-circuit so a comment-wrapped
+	# payload cannot slip past the parser (p006 F13).
+	body = frappe.utils.sanitize_html(message, always_sanitize=True)
+	body = _privatize_embedded_files(body)  # belt-and-suspenders on inline images
+	body += _attachment_html(attachments)
+	sent = 0
+	for target in targets:
+		if send_message(
+			channel=IN_APP_CHANNEL,
+			person=target,
+			subject=subject,
+			message=body,
+			category="Community",
+			reference_doctype="Course Schedule" if course else None,
+			reference_name=course,
+			triggered_by=frappe.session.user,
+			attach_files=attach_files,
+		):
+			sent += 1
+	return {"sent": sent}
 
 
 def _own_attachments(attachments):
-    from seminary.storage.backend import normalize_file_url
+	from seminary.storage.backend import normalize_file_url
 
-    kept = []
-    for a in attachments:
-        url = a.get("file_url")
-        if not url:
-            continue
-        base = unquote(normalize_file_url(url))
-        owner = frappe.db.get_value("File", {"file_url": base}, "owner")
-        if owner == frappe.session.user:
-            kept.append(a)
-    return kept
+	kept = []
+	for a in attachments:
+		url = a.get("file_url")
+		if not url:
+			continue
+		base = unquote(normalize_file_url(url))
+		owner = frappe.db.get_value("File", {"file_url": base}, "owner")
+		if owner == frappe.session.user:
+			kept.append(a)
+	return kept
 
 
 def _attachment_html(attachments):
-    """A trusted download-link block appended to a message body. The files stay
-    PRIVATE; _attach_inapp_files attaches them to each recipient's log so the
-    /private/files links resolve only for the recipient and sender."""
-    if not attachments:
-        return ""
-    if isinstance(attachments, str):
-        attachments = json.loads(attachments)
-    items = "".join(
-        '<li><a href="{0}">{1}</a></li>'.format(
-            frappe.utils.escape_html(a.get("file_url", "")),
-            frappe.utils.escape_html(
-                a.get("file_name") or a.get("file_url") or _("Attachment")
-            ),
-        )
-        for a in (attachments or [])
-        if a.get("file_url")
-    )
-    if not items:
-        return ""
-    return "<hr><p><b>{0}</b></p><ul>{1}</ul>".format(_("Attachments"), items)
+	"""A trusted download-link block appended to a message body. The files stay
+	PRIVATE; _attach_inapp_files attaches them to each recipient's log so the
+	/private/files links resolve only for the recipient and sender."""
+	if not attachments:
+		return ""
+	if isinstance(attachments, str):
+		attachments = json.loads(attachments)
+	items = "".join(
+		'<li><a href="{0}">{1}</a></li>'.format(
+			frappe.utils.escape_html(a.get("file_url", "")),
+			frappe.utils.escape_html(a.get("file_name") or a.get("file_url") or _("Attachment")),
+		)
+		for a in (attachments or [])
+		if a.get("file_url")
+	)
+	if not items:
+		return ""
+	return "<hr><p><b>{0}</b></p><ul>{1}</ul>".format(_("Attachments"), items)
 
 
 def _reply_reference(in_reply_to):
-    """The course a reply belongs to: the reference of the message it answers,
-    when that is a Course Schedule (privatedocs p015 §2). Anything else -- no
-    reference, or some other record -- is not copied."""
-    if not in_reply_to:
-        return {}
-    ref = frappe.db.get_value(
-        "Communication Log",
-        in_reply_to,
-        ["reference_doctype", "reference_name"],
-        as_dict=True,
-    )
-    if ref and ref.reference_doctype == "Course Schedule" and ref.reference_name:
-        return {
-            "reference_doctype": "Course Schedule",
-            "reference_name": ref.reference_name,
-        }
-    return {}
+	"""The course a reply belongs to: the reference of the message it answers,
+	when that is a Course Schedule (privatedocs p015 §2). Anything else -- no
+	reference, or some other record -- is not copied."""
+	if not in_reply_to:
+		return {}
+	ref = frappe.db.get_value(
+		"Communication Log",
+		in_reply_to,
+		["reference_doctype", "reference_name"],
+		as_dict=True,
+	)
+	if ref and ref.reference_doctype == "Course Schedule" and ref.reference_name:
+		return {
+			"reference_doctype": "Course Schedule",
+			"reference_name": ref.reference_name,
+		}
+	return {}
 
 
 @frappe.whitelist()
 def reply_portal_message(in_reply_to, message):
-    """Portal reply: answer a received In-App message, threaded to it. Replies
-    go to the original sender (must be within the replier's messaging scope)."""
-    me = _my_person()
-    if not (message or "").strip():
-        frappe.throw(_("Write a message first."))
-    original = frappe.db.get_value(
-        "Communication Log",
-        in_reply_to,
-        ["person", "triggered_by"],
-        as_dict=True,
-    )
-    if not original or original.person != me:
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
+	"""Portal reply: answer a received In-App message, threaded to it. Replies
+	go to the original sender (must be within the replier's messaging scope)."""
+	me = _my_person()
+	if not (message or "").strip():
+		frappe.throw(_("Write a message first."))
+	original = frappe.db.get_value(
+		"Communication Log",
+		in_reply_to,
+		["person", "triggered_by"],
+		as_dict=True,
+	)
+	if not original or original.person != me:
+		frappe.throw(_("Not permitted."), frappe.PermissionError)
 
-    from seminary.seminary.person import find_person
+	from seminary.seminary.person import find_person
 
-    sender_person = find_person(user=original.triggered_by)
-    if not sender_person or sender_person == me:
-        frappe.throw(_("This message can't be replied to."))
-    if not may_message(sender_person):
-        frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
+	sender_person = find_person(user=original.triggered_by)
+	if not sender_person or sender_person == me:
+		frappe.throw(_("This message can't be replied to."))
+	if not may_message(sender_person):
+		frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
 
-    body = "<p>{0}</p>".format(
-        frappe.utils.escape_html(message.strip()).replace("\n", "<br>")
-    )
-    log = send_message(
-        channel=IN_APP_CHANNEL,
-        person=sender_person,
-        message=body,
-        category="Community",
-        triggered_by=frappe.session.user,
-        in_reply_to=in_reply_to,
-        **_reply_reference(in_reply_to),
-    )
-    return {"log": log}
+	body = "<p>{0}</p>".format(frappe.utils.escape_html(message.strip()).replace("\n", "<br>"))
+	log = send_message(
+		channel=IN_APP_CHANNEL,
+		person=sender_person,
+		message=body,
+		category="Community",
+		triggered_by=frappe.session.user,
+		in_reply_to=in_reply_to,
+		**_reply_reference(in_reply_to),
+	)
+	return {"log": log}
 
 
 @frappe.whitelist()
 def contact_instructor(instructor, channel, message, subject=None):
-    """Portal contact: a logged message to an instructor on a chosen channel
-    (ADR 042/043) — the icons on Course Detail route here instead of opening the
-    instructor's personal app, so the conversation lives in the Communication
-    Log. Authorized two ways: the instructor must be within the sender's
-    `get_my_messaging_scope` (a student reaches only the instructors of courses
-    they're enrolled in) and the instructor's own `students_may_contact` toggle
-    must allow it (staff are always allowed). In-App lands in the inbox; an
-    external channel routes through its provider account when one is configured."""
-    _my_person()
-    if not frappe.utils.strip_html(message or "").strip():
-        frappe.throw(_("Write a message first."))
+	"""Portal contact: a logged message to an instructor on a chosen channel
+	(ADR 042/043) — the icons on Course Detail route here instead of opening the
+	instructor's personal app, so the conversation lives in the Communication
+	Log. Authorized two ways: the instructor must be within the sender's
+	`get_my_messaging_scope` (a student reaches only the instructors of courses
+	they're enrolled in) and the instructor's own `students_may_contact` toggle
+	must allow it (staff are always allowed). In-App lands in the inbox; an
+	external channel routes through its provider account when one is configured."""
+	_my_person()
+	if not frappe.utils.strip_html(message or "").strip():
+		frappe.throw(_("Write a message first."))
 
-    info = frappe.db.get_value(
-        "Instructor",
-        instructor,
-        ["person", "students_may_contact"],
-        as_dict=True,
-    )
-    if not info or not info.person:
-        frappe.throw(_("Instructor not found."), frappe.DoesNotExistError)
+	info = frappe.db.get_value(
+		"Instructor",
+		instructor,
+		["person", "students_may_contact"],
+		as_dict=True,
+	)
+	if not info or not info.person:
+		frappe.throw(_("Instructor not found."), frappe.DoesNotExistError)
 
-    if not _is_messaging_staff() and not info.students_may_contact:
-        frappe.throw(
-            _("This instructor isn't accepting student messages."),
-            frappe.PermissionError,
-        )
-    if info.person not in {r["person"] for r in get_my_messaging_scope()["recipients"]}:
-        frappe.throw(_("You can't message this instructor."), frappe.PermissionError)
+	if not _is_messaging_staff() and not info.students_may_contact:
+		frappe.throw(
+			_("This instructor isn't accepting student messages."),
+			frappe.PermissionError,
+		)
+	if info.person not in {r["person"] for r in get_my_messaging_scope()["recipients"]}:
+		frappe.throw(_("You can't message this instructor."), frappe.PermissionError)
 
-    if not frappe.db.get_value(
-        "Communication Channel",
-        {"name": channel, "enabled": 1, "portal_contactable": 1},
-    ):
-        frappe.throw(_("This channel isn't available."))
+	if not frappe.db.get_value(
+		"Communication Channel",
+		{"name": channel, "enabled": 1, "portal_contactable": 1},
+	):
+		frappe.throw(_("This channel isn't available."))
 
-    # Pre-check the provider so a missing external account fails friendly here,
-    # not with send_message's generic "No enabled Channel Provider Account".
-    if channel != IN_APP_CHANNEL:
-        if not pick_account(channel):
-            frappe.throw(_("This channel isn't available right now."))
-        person_doc = frappe.get_doc("Person", info.person)
-        if not resolve_address(person_doc, channel):
-            frappe.throw(_("This instructor has no {0} address.").format(channel))
+	# Pre-check the provider so a missing external account fails friendly here,
+	# not with send_message's generic "No enabled Channel Provider Account".
+	if channel != IN_APP_CHANNEL:
+		if not pick_account(channel):
+			frappe.throw(_("This channel isn't available right now."))
+		person_doc = frappe.get_doc("Person", info.person)
+		if not resolve_address(person_doc, channel):
+			frappe.throw(_("This instructor has no {0} address.").format(channel))
 
-    # Email needs a subject; default one naming the sender so the recipient
-    # knows who reached out (the send goes out from the seminary's address).
-    if channel == EMAIL_CHANNEL and not (subject or "").strip():
-        sender = frappe.utils.get_fullname(frappe.session.user)
-        subject = (
-            _("New message from {0}").format(sender)
-            if sender
-            else _("New message from the portal")
-        )
+	# Email needs a subject; default one naming the sender so the recipient
+	# knows who reached out (the send goes out from the seminary's address).
+	if channel == EMAIL_CHANNEL and not (subject or "").strip():
+		sender = frappe.utils.get_fullname(frappe.session.user)
+		subject = _("New message from {0}").format(sender) if sender else _("New message from the portal")
 
-    body = "<p>{0}</p>".format(
-        frappe.utils.escape_html(message.strip()).replace("\n", "<br>")
-    )
-    log = send_message(
-        channel=channel,
-        person=info.person,
-        subject=subject,
-        message=body,
-        category="Community",
-        reference_doctype="Instructor",
-        reference_name=instructor,
-        triggered_by=frappe.session.user,
-    )
-    return {"log": log}
+	body = "<p>{0}</p>".format(frappe.utils.escape_html(message.strip()).replace("\n", "<br>"))
+	log = send_message(
+		channel=channel,
+		person=info.person,
+		subject=subject,
+		message=body,
+		category="Community",
+		reference_doctype="Instructor",
+		reference_name=instructor,
+		triggered_by=frappe.session.user,
+	)
+	return {"log": log}
 
 
 # ---------------------------------------------------------------- webhooks
@@ -2117,15 +2029,15 @@ def contact_instructor(instructor, channel, message, subject=None):
 # downgrades a "read".
 _STATUS_RANK = {"Queued": 0, "Sending": 1, "Sent": 2, "Delivered": 3, "Read": 4}
 _STATUS_ALIASES = {
-    "sent": "Sent",
-    "delivered": "Delivered",
-    "read": "Read",
-    "failed": "Failed",
-    "bounced": "Bounced",
-    # A carrier rejecting the address, not a send that went wrong — which is
-    # what makes it safe to mark the address itself (ADR 070). Plain "failed"
-    # stays a send-attempt failure that MAX_RETRIES owns.
-    "undelivered": "Bounced",
+	"sent": "Sent",
+	"delivered": "Delivered",
+	"read": "Read",
+	"failed": "Failed",
+	"bounced": "Bounced",
+	# A carrier rejecting the address, not a send that went wrong — which is
+	# what makes it safe to mark the address itself (ADR 070). Plain "failed"
+	# stays a send-attempt failure that MAX_RETRIES owns.
+	"undelivered": "Bounced",
 }
 
 
@@ -2136,254 +2048,248 @@ _STATUS_ALIASES = {
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 @rate_limit(key="account", limit=600, seconds=60, ip_based=False)
 def webhook(account=None, secret=None, **kwargs):
-    """Provider webhook endpoint (ADR 043):
-    POST /api/method/seminary.seminary.comms.webhook?account=<Channel Provider Account>
+	"""Provider webhook endpoint (ADR 043):
+	POST /api/method/seminary.seminary.comms.webhook?account=<Channel Provider Account>
 
-    Verification defaults to a shared secret (settings JSON `webhook_secret`,
-    sent as ?secret=, X-Webhook-Secret header, or payload field) — an account
-    with no secret configured rejects everything. Adapters override
-    verify_webhook / handle_webhook for provider-native signatures and payload
-    shapes; the default contract accepts normalized JSON:
-      {"kind": "status", "provider_message_id": "...", "status": "delivered"}
-      {"kind": "inbound", "from_address": "...", "body": "...", "subject": "..."}
-    """
+	Verification defaults to a shared secret (settings JSON `webhook_secret`,
+	sent as ?secret=, X-Webhook-Secret header, or payload field) — an account
+	with no secret configured rejects everything. Adapters override
+	verify_webhook / handle_webhook for provider-native signatures and payload
+	shapes; the default contract accepts normalized JSON:
+	  {"kind": "status", "provider_message_id": "...", "status": "delivered"}
+	  {"kind": "inbound", "from_address": "...", "body": "...", "subject": "..."}
+	"""
 
-    # One message for all three failures (p010 H5, p005a A10-2/A06-6). This is
-    # an `allow_guest` endpoint, and distinguishing "Unknown account." from
-    # "Account disabled." from a verify failure let an anonymous caller
-    # enumerate `Channel Provider Account` names *and* their enabled state --
-    # the last of the three error-text oracles p005 found. Which of the three
-    # it was goes to the security log, where an operator can read it and a
-    # prober cannot. Same shape as p008 F11 and p008a's folder API.
-    def _refuse(reason):
-        security_log.record_denial("webhook", reason=reason, account=account)
-        frappe.throw(_("Webhook rejected."), frappe.PermissionError)
+	# One message for all three failures (p010 H5, p005a A10-2/A06-6). This is
+	# an `allow_guest` endpoint, and distinguishing "Unknown account." from
+	# "Account disabled." from a verify failure let an anonymous caller
+	# enumerate `Channel Provider Account` names *and* their enabled state --
+	# the last of the three error-text oracles p005 found. Which of the three
+	# it was goes to the security log, where an operator can read it and a
+	# prober cannot. Same shape as p008 F11 and p008a's folder API.
+	def _refuse(reason):
+		security_log.record_denial("webhook", reason=reason, account=account)
+		frappe.throw(_("Webhook rejected."), frappe.PermissionError)
 
-    if not account or not frappe.db.exists("Channel Provider Account", account):
-        _refuse("unknown-account")
-    acc = frappe.get_doc("Channel Provider Account", account)
-    if not acc.enabled:
-        _refuse("account-disabled")
-    settings = account_settings(acc)
-    adapter = get_adapter(acc.provider)
+	if not account or not frappe.db.exists("Channel Provider Account", account):
+		_refuse("unknown-account")
+	acc = frappe.get_doc("Channel Provider Account", account)
+	if not acc.enabled:
+		_refuse("account-disabled")
+	settings = account_settings(acc)
+	adapter = get_adapter(acc.provider)
 
-    payload = _webhook_payload(kwargs)
-    verify = getattr(adapter, "verify_webhook", None) or _verify_webhook_secret
-    if not verify(acc, settings, secret or payload.get("secret")):
-        _refuse("verification-failed")
+	payload = _webhook_payload(kwargs)
+	verify = getattr(adapter, "verify_webhook", None) or _verify_webhook_secret
+	if not verify(acc, settings, secret or payload.get("secret")):
+		_refuse("verification-failed")
 
-    parse = getattr(adapter, "handle_webhook", None) or _parse_generic_webhook
-    event = parse(payload, acc)
-    if not event:
-        return {"ok": True, "handled": False}
-    result = _apply_webhook_event(event, acc)
-    return {"ok": True, **result}
+	parse = getattr(adapter, "handle_webhook", None) or _parse_generic_webhook
+	event = parse(payload, acc)
+	if not event:
+		return {"ok": True, "handled": False}
+	result = _apply_webhook_event(event, acc)
+	return {"ok": True, **result}
 
 
 def _webhook_payload(kwargs):
-    payload = {}
-    request = getattr(frappe.local, "request", None)
-    if request is not None:
-        body = request.get_json(silent=True)
-        if isinstance(body, dict):
-            payload.update(body)
-    payload.update({k: v for k, v in kwargs.items() if k not in ("cmd",)})
-    return payload
+	payload = {}
+	request = getattr(frappe.local, "request", None)
+	if request is not None:
+		body = request.get_json(silent=True)
+		if isinstance(body, dict):
+			payload.update(body)
+	payload.update({k: v for k, v in kwargs.items() if k not in ("cmd",)})
+	return payload
 
 
 def _verify_webhook_secret(account, settings, provided):
-    """Default verification: constant-time compare against the account's
-    configured webhook_secret. No secret configured = nothing accepted."""
-    import hmac
+	"""Default verification: constant-time compare against the account's
+	configured webhook_secret. No secret configured = nothing accepted."""
+	import hmac
 
-    expected = settings.get("webhook_secret")
-    if not expected:
-        return False
-    if not provided:
-        request = getattr(frappe.local, "request", None)
-        if request is not None:
-            provided = request.headers.get("X-Webhook-Secret")
-    return bool(provided) and hmac.compare_digest(str(provided), str(expected))
+	expected = settings.get("webhook_secret")
+	if not expected:
+		return False
+	if not provided:
+		request = getattr(frappe.local, "request", None)
+		if request is not None:
+			provided = request.headers.get("X-Webhook-Secret")
+	return bool(provided) and hmac.compare_digest(str(provided), str(expected))
 
 
 def _parse_generic_webhook(payload, account):
-    kind = payload.get("kind")
-    if not kind:
-        if payload.get("status") and payload.get("provider_message_id"):
-            kind = "status"
-        elif payload.get("from_address") and payload.get("body"):
-            kind = "inbound"
-    if kind == "status":
-        status = _STATUS_ALIASES.get(str(payload.get("status", "")).strip().lower())
-        if not status or not payload.get("provider_message_id"):
-            return None
-        return {
-            "kind": "status",
-            "provider_message_id": payload["provider_message_id"],
-            "status": status,
-        }
-    if kind == "inbound":
-        if not payload.get("from_address") or not payload.get("body"):
-            return None
-        return {
-            "kind": "inbound",
-            "from_address": payload["from_address"],
-            "body": payload["body"],
-            "subject": payload.get("subject"),
-            "provider_message_id": payload.get("provider_message_id"),
-        }
-    return None
+	kind = payload.get("kind")
+	if not kind:
+		if payload.get("status") and payload.get("provider_message_id"):
+			kind = "status"
+		elif payload.get("from_address") and payload.get("body"):
+			kind = "inbound"
+	if kind == "status":
+		status = _STATUS_ALIASES.get(str(payload.get("status", "")).strip().lower())
+		if not status or not payload.get("provider_message_id"):
+			return None
+		return {
+			"kind": "status",
+			"provider_message_id": payload["provider_message_id"],
+			"status": status,
+		}
+	if kind == "inbound":
+		if not payload.get("from_address") or not payload.get("body"):
+			return None
+		return {
+			"kind": "inbound",
+			"from_address": payload["from_address"],
+			"body": payload["body"],
+			"subject": payload.get("subject"),
+			"provider_message_id": payload.get("provider_message_id"),
+		}
+	return None
 
 
 def _apply_webhook_event(event, account):
-    if event["kind"] == "status":
-        return _apply_status_event(event, account)
-    if event["kind"] == "inbound":
-        return _apply_inbound_event(event, account)
-    return {"handled": False}
+	if event["kind"] == "status":
+		return _apply_status_event(event, account)
+	if event["kind"] == "inbound":
+		return _apply_inbound_event(event, account)
+	return {"handled": False}
 
 
 def _set_address_state(log, status=None, verified=None):
-    """Carry a provider's verdict from the ledger back to the spine (ADR 070).
+	"""Carry a provider's verdict from the ledger back to the spine (ADR 070).
 
-    A delivery receipt or a bounce is a fact about the address, not only about
-    one message — but nothing wrote it down, so `Person Channel Address.status`
-    never left "Active" and its Bounced/Invalid options were unreachable.
+	A delivery receipt or a bounce is a fact about the address, not only about
+	one message — but nothing wrote it down, so `Person Channel Address.status`
+	never left "Active" and its Bounced/Invalid options were unreachable.
 
-    Requires `log.person`: an announcement recipient resolved by email alone
-    has none, and matching on (channel, value) across every Person would mark
-    a shared family address bounced on two records. Writes the child row
-    directly rather than saving the Person — this runs as Guest inside a
-    webhook, where a parent save would fire propagation and a queued geocode
-    and could throw on an unrelated duplicate, losing the verdict."""
-    if not (log.person and log.to_address) or log.channel in ADDRESSLESS_CHANNELS:
-        return
-    value = log.to_address.strip()
-    row = None
-    # validate_channel_addresses lowercases stored email; to_address may not be.
-    for candidate in (value, value.lower()):
-        row = frappe.db.get_value(
-            "Person Channel Address",
-            {
-                "parenttype": "Person",
-                "parent": log.person,
-                "channel": log.channel,
-                "value": candidate,
-            },
-            "name",
-        )
-        if row:
-            break
-    if not row:
-        return
-    updates = {}
-    if status:
-        updates["status"] = status
-    if verified is not None:
-        updates["verified"] = cint(verified)
-        if verified:
-            updates["verified_on"] = now_datetime()
-    if updates:
-        frappe.db.set_value(
-            "Person Channel Address", row, updates, update_modified=False
-        )
+	Requires `log.person`: an announcement recipient resolved by email alone
+	has none, and matching on (channel, value) across every Person would mark
+	a shared family address bounced on two records. Writes the child row
+	directly rather than saving the Person — this runs as Guest inside a
+	webhook, where a parent save would fire propagation and a queued geocode
+	and could throw on an unrelated duplicate, losing the verdict."""
+	if not (log.person and log.to_address) or log.channel in ADDRESSLESS_CHANNELS:
+		return
+	value = log.to_address.strip()
+	row = None
+	# validate_channel_addresses lowercases stored email; to_address may not be.
+	for candidate in (value, value.lower()):
+		row = frappe.db.get_value(
+			"Person Channel Address",
+			{
+				"parenttype": "Person",
+				"parent": log.person,
+				"channel": log.channel,
+				"value": candidate,
+			},
+			"name",
+		)
+		if row:
+			break
+	if not row:
+		return
+	updates = {}
+	if status:
+		updates["status"] = status
+	if verified is not None:
+		updates["verified"] = cint(verified)
+		if verified:
+			updates["verified_on"] = now_datetime()
+	if updates:
+		frappe.db.set_value("Person Channel Address", row, updates, update_modified=False)
 
 
 def _apply_status_event(event, account):
-    log_name = frappe.db.get_value(
-        "Communication Log",
-        {
-            "provider_message_id": event["provider_message_id"],
-            "provider_account": account.name,
-        },
-    ) or frappe.db.get_value(
-        "Communication Log", {"provider_message_id": event["provider_message_id"]}
-    )
-    if not log_name:
-        return {"handled": False, "reason": "unknown provider_message_id"}
-    log = frappe.get_doc("Communication Log", log_name)
-    new_status = event["status"]
-    stamp = now_datetime()
+	log_name = frappe.db.get_value(
+		"Communication Log",
+		{
+			"provider_message_id": event["provider_message_id"],
+			"provider_account": account.name,
+		},
+	) or frappe.db.get_value("Communication Log", {"provider_message_id": event["provider_message_id"]})
+	if not log_name:
+		return {"handled": False, "reason": "unknown provider_message_id"}
+	log = frappe.get_doc("Communication Log", log_name)
+	new_status = event["status"]
+	stamp = now_datetime()
 
-    if new_status in ("Failed", "Bounced"):
-        log.db_set(
-            {"status": new_status, "error": _("Reported by provider webhook.")},
-            update_modified=False,
-        )
-        # Only a bounce. "Failed" is also what a provider outage or a rate-limit
-        # rejection looks like, and marking the address on that would disable a
-        # good one for good, silently, during an incident (ADR 070).
-        if new_status == "Bounced":
-            _set_address_state(log, status="Bounced", verified=0)
-    else:
-        if new_status == "Delivered":
-            # A carrier confirming delivery is stronger proof the address
-            # exists than any click-through we could ask for.
-            _set_address_state(log, verified=1)
-        if _STATUS_RANK.get(new_status, 0) <= _STATUS_RANK.get(log.status, 0):
-            return {"handled": True, "log": log.name, "noop": True}
-        updates = {"status": new_status}
-        if new_status == "Delivered" and not log.delivered_at:
-            updates["delivered_at"] = stamp
-        if new_status == "Read":
-            if not log.delivered_at:
-                updates["delivered_at"] = stamp
-            if not log.read_at:
-                updates["read_at"] = stamp
-        log.db_set(updates, update_modified=False)
-    _reflect_announcement(log)
-    return {"handled": True, "log": log.name}
+	if new_status in ("Failed", "Bounced"):
+		log.db_set(
+			{"status": new_status, "error": _("Reported by provider webhook.")},
+			update_modified=False,
+		)
+		# Only a bounce. "Failed" is also what a provider outage or a rate-limit
+		# rejection looks like, and marking the address on that would disable a
+		# good one for good, silently, during an incident (ADR 070).
+		if new_status == "Bounced":
+			_set_address_state(log, status="Bounced", verified=0)
+	else:
+		if new_status == "Delivered":
+			# A carrier confirming delivery is stronger proof the address
+			# exists than any click-through we could ask for.
+			_set_address_state(log, verified=1)
+		if _STATUS_RANK.get(new_status, 0) <= _STATUS_RANK.get(log.status, 0):
+			return {"handled": True, "log": log.name, "noop": True}
+		updates = {"status": new_status}
+		if new_status == "Delivered" and not log.delivered_at:
+			updates["delivered_at"] = stamp
+		if new_status == "Read":
+			if not log.delivered_at:
+				updates["delivered_at"] = stamp
+			if not log.read_at:
+				updates["read_at"] = stamp
+		log.db_set(updates, update_modified=False)
+	_reflect_announcement(log)
+	return {"handled": True, "log": log.name}
 
 
 def _apply_inbound_event(event, account):
-    """An incoming message: matched to a Person through their channel address
-    for this account's channel; unmatched senders still land in the ledger
-    with the raw from_address (ADR 043)."""
-    addr = (event.get("from_address") or "").strip()
-    person = _match_person_by_address(account.channel, addr)
-    body = "<p>{0}</p>".format(
-        frappe.utils.escape_html((event.get("body") or "").strip()).replace(
-            "\n", "<br>"
-        )
-    )
-    log = frappe.get_doc(
-        {
-            "doctype": "Communication Log",
-            "direction": "Inbound",
-            "status": "Delivered",
-            "channel": account.channel,
-            "provider_account": account.name,
-            "person": person,
-            "from_address": addr,
-            "subject": event.get("subject"),
-            "message": body,
-            "provider_message_id": event.get("provider_message_id"),
-            "triggered_by": f"webhook::{account.name}",
-            "delivered_at": now_datetime(),
-        }
-    )
-    log.insert(ignore_permissions=True)
-    return {"handled": True, "log": log.name, "person": person}
+	"""An incoming message: matched to a Person through their channel address
+	for this account's channel; unmatched senders still land in the ledger
+	with the raw from_address (ADR 043)."""
+	addr = (event.get("from_address") or "").strip()
+	person = _match_person_by_address(account.channel, addr)
+	body = "<p>{0}</p>".format(
+		frappe.utils.escape_html((event.get("body") or "").strip()).replace("\n", "<br>")
+	)
+	log = frappe.get_doc(
+		{
+			"doctype": "Communication Log",
+			"direction": "Inbound",
+			"status": "Delivered",
+			"channel": account.channel,
+			"provider_account": account.name,
+			"person": person,
+			"from_address": addr,
+			"subject": event.get("subject"),
+			"message": body,
+			"provider_message_id": event.get("provider_message_id"),
+			"triggered_by": f"webhook::{account.name}",
+			"delivered_at": now_datetime(),
+		}
+	)
+	log.insert(ignore_permissions=True)
+	return {"handled": True, "log": log.name, "person": person}
 
 
 def _match_person_by_address(channel, address):
-    if not address:
-        return None
-    candidates = [address]
-    if address.lower() != address:
-        candidates.append(address.lower())
-    for value in candidates:
-        person = frappe.db.get_value(
-            "Person Channel Address",
-            {"parenttype": "Person", "channel": channel, "value": value},
-            "parent",
-        )
-        if person:
-            return person
-    # last resort for Email: the spine's primary_email
-    if channel == EMAIL_CHANNEL:
-        return frappe.db.get_value("Person", {"primary_email": address.lower()})
-    return None
+	if not address:
+		return None
+	candidates = [address]
+	if address.lower() != address:
+		candidates.append(address.lower())
+	for value in candidates:
+		person = frappe.db.get_value(
+			"Person Channel Address",
+			{"parenttype": "Person", "channel": channel, "value": value},
+			"parent",
+		)
+		if person:
+			return person
+	# last resort for Email: the spine's primary_email
+	if channel == EMAIL_CHANNEL:
+		return frappe.db.get_value("Person", {"primary_email": address.lower()})
+	return None
 
 
 # ----------------------------------------------------- desk conversation UI
@@ -2391,61 +2297,59 @@ def _match_person_by_address(channel, address):
 
 @frappe.whitelist()
 def get_person_timeline(person, limit=50):
-    """The CRM-style conversation feed for a Person (desk form, ADR 044)."""
-    frappe.has_permission("Communication Log", "read", throw=True)
-    # get_list, not get_all: the Communication Log row hook applies (p007 §2.6).
-    return frappe.get_list(
-        "Communication Log",
-        filters={"person": person},
-        fields=[
-            "name",
-            "direction",
-            "channel",
-            "status",
-            "category",
-            "subject",
-            "message",
-            "to_address",
-            "from_address",
-            "triggered_by",
-            "reference_doctype",
-            "reference_name",
-            "sent_at",
-            "read_at",
-            "creation",
-        ],
-        order_by="creation desc",
-        limit_page_length=int(limit),
-    )
+	"""The CRM-style conversation feed for a Person (desk form, ADR 044)."""
+	frappe.has_permission("Communication Log", "read", throw=True)
+	# get_list, not get_all: the Communication Log row hook applies (p007 §2.6).
+	return frappe.get_list(
+		"Communication Log",
+		filters={"person": person},
+		fields=[
+			"name",
+			"direction",
+			"channel",
+			"status",
+			"category",
+			"subject",
+			"message",
+			"to_address",
+			"from_address",
+			"triggered_by",
+			"reference_doctype",
+			"reference_name",
+			"sent_at",
+			"read_at",
+			"creation",
+		],
+		order_by="creation desc",
+		limit_page_length=int(limit),
+	)
 
 
 @frappe.whitelist()
-def compose_communication(
-    person, channel, subject=None, message=None, template=None, send_now=1
-):
-    """Desk compose action ('start an email / send an SMS from the system').
-    Either renders a template or takes free-form subject/message; queues
-    through the normal consent/routing path and optionally delivers
-    immediately instead of waiting for the cron drainer."""
-    frappe.has_permission("Communication Log", "create", throw=True)
-    if template:
-        log = send(person, template, channel=channel, triggered_by=frappe.session.user)
-    else:
-        if not message:
-            frappe.throw(_("Provide a message or pick a template."))
-        log = send_message(
-            channel=channel,
-            subject=subject,
-            message=message,
-            person=person,
-            category="Transactional",
-            triggered_by=frappe.session.user,
-        )
-    if log and frappe.utils.cint(send_now):
-        status = frappe.db.get_value("Communication Log", log, "status")
-        if status == "Queued":
-            deliver_now(log)
-    return log
+def compose_communication(person, channel, subject=None, message=None, template=None, send_now=1):
+	"""Desk compose action ('start an email / send an SMS from the system').
+	Either renders a template or takes free-form subject/message; queues
+	through the normal consent/routing path and optionally delivers
+	immediately instead of waiting for the cron drainer."""
+	frappe.has_permission("Communication Log", "create", throw=True)
+	if template:
+		log = send(person, template, channel=channel, triggered_by=frappe.session.user)
+	else:
+		if not message:
+			frappe.throw(_("Provide a message or pick a template."))
+		log = send_message(
+			channel=channel,
+			subject=subject,
+			message=message,
+			person=person,
+			category="Transactional",
+			triggered_by=frappe.session.user,
+		)
+	if log and frappe.utils.cint(send_now):
+		status = frappe.db.get_value("Communication Log", log, "status")
+		if status == "Queued":
+			deliver_now(log)
+	return log
 
 
 # ------------------------------------------------- desk communication inbox
@@ -2461,35 +2365,35 @@ NON_CONVERSATION_REF = "Seminary Announcement"
 
 
 def _inbox_viewer():
-    from seminary.seminary.person import find_person
+	from seminary.seminary.person import find_person
 
-    return find_person(user=frappe.session.user)
+	return find_person(user=frappe.session.user)
 
 
 def _counterparty(log, me_user, cache):
-    """The other party in a log relative to the viewer: the recipient when the
-    viewer sent it, else the sender's Person."""
-    if log.triggered_by == me_user:
-        return log.person
-    if log.triggered_by not in cache:
-        from seminary.seminary.person import find_person
+	"""The other party in a log relative to the viewer: the recipient when the
+	viewer sent it, else the sender's Person."""
+	if log.triggered_by == me_user:
+		return log.person
+	if log.triggered_by not in cache:
+		from seminary.seminary.person import find_person
 
-        cache[log.triggered_by] = find_person(user=log.triggered_by)
-    return cache[log.triggered_by]
+		cache[log.triggered_by] = find_person(user=log.triggered_by)
+	return cache[log.triggered_by]
 
 
 @frappe.whitelist()
 def get_inbox_conversations(scope="all", limit=50):
-    """The viewer's conversations, grouped by the other party, most-recent
-    first. scope='unread' keeps only those with messages to the viewer not yet
-    read. Broadcast announcements are excluded."""
-    frappe.has_permission("Communication Log", "read", throw=True)
-    me_user = frappe.session.user
-    me = _inbox_viewer()
-    if not me:
-        return []
-    logs = frappe.db.sql(
-        """
+	"""The viewer's conversations, grouped by the other party, most-recent
+	first. scope='unread' keeps only those with messages to the viewer not yet
+	read. Broadcast announcements are excluded."""
+	frappe.has_permission("Communication Log", "read", throw=True)
+	me_user = frappe.session.user
+	me = _inbox_viewer()
+	if not me:
+		return []
+	logs = frappe.db.sql(
+		"""
         SELECT name, person, triggered_by, channel, subject, message,
                read_at, creation
         FROM `tabCommunication Log`
@@ -2498,66 +2402,64 @@ def get_inbox_conversations(scope="all", limit=50):
         ORDER BY creation DESC
         LIMIT 2000
         """,
-        {"me": me, "user": me_user, "ref": NON_CONVERSATION_REF},
-        as_dict=True,
-    )
-    cache, convos, order = {}, {}, []
-    for log in logs:
-        other = _counterparty(log, me_user, cache)
-        if not other or other == me:
-            continue
-        if other not in convos:
-            convos[other] = {"last": log, "unread": 0}
-            order.append(other)
-        if log.person == me and log.triggered_by != me_user and not log.read_at:
-            convos[other]["unread"] += 1
+		{"me": me, "user": me_user, "ref": NON_CONVERSATION_REF},
+		as_dict=True,
+	)
+	cache, convos, order = {}, {}, []
+	for log in logs:
+		other = _counterparty(log, me_user, cache)
+		if not other or other == me:
+			continue
+		if other not in convos:
+			convos[other] = {"last": log, "unread": 0}
+			order.append(other)
+		if log.person == me and log.triggered_by != me_user and not log.read_at:
+			convos[other]["unread"] += 1
 
-    names = (
-        dict(
-            frappe.get_all(
-                "Person",
-                filters=[["name", "in", order]],
-                fields=["name", "full_name"],
-                as_list=True,
-            )
-        )
-        if order
-        else {}
-    )
-    rows = []
-    for other in order:
-        info = convos[other]
-        if scope == "unread" and not info["unread"]:
-            continue
-        last = info["last"]
-        rows.append(
-            {
-                "person": other,
-                "person_name": names.get(other) or other,
-                "unread": info["unread"],
-                "last_at": last.creation,
-                "last_channel": last.channel,
-                "last_mine": last.triggered_by == me_user,
-                "snippet": (
-                    last.subject or frappe.utils.strip_html(last.message or "")
-                )[:80],
-            }
-        )
-    return rows[: int(limit)]
+	names = (
+		dict(
+			frappe.get_all(
+				"Person",
+				filters=[["name", "in", order]],
+				fields=["name", "full_name"],
+				as_list=True,
+			)
+		)
+		if order
+		else {}
+	)
+	rows = []
+	for other in order:
+		info = convos[other]
+		if scope == "unread" and not info["unread"]:
+			continue
+		last = info["last"]
+		rows.append(
+			{
+				"person": other,
+				"person_name": names.get(other) or other,
+				"unread": info["unread"],
+				"last_at": last.creation,
+				"last_channel": last.channel,
+				"last_mine": last.triggered_by == me_user,
+				"snippet": (last.subject or frappe.utils.strip_html(last.message or ""))[:80],
+			}
+		)
+	return rows[: int(limit)]
 
 
 @frappe.whitelist()
 def get_conversation(person, limit=200):
-    """The thread between the viewer and `person`, oldest first. Each message
-    carries `mine` (the viewer sent it) for chat-bubble sides."""
-    frappe.has_permission("Communication Log", "read", throw=True)
-    me_user = frappe.session.user
-    me = _inbox_viewer()
-    if not me:
-        frappe.throw(_("No Person is linked to your account."))
-    other_user = frappe.db.get_value("Person", person, "user")
-    messages = frappe.db.sql(
-        """
+	"""The thread between the viewer and `person`, oldest first. Each message
+	carries `mine` (the viewer sent it) for chat-bubble sides."""
+	frappe.has_permission("Communication Log", "read", throw=True)
+	me_user = frappe.session.user
+	me = _inbox_viewer()
+	if not me:
+		frappe.throw(_("No Person is linked to your account."))
+	other_user = frappe.db.get_value("Person", person, "user")
+	messages = frappe.db.sql(
+		"""
         SELECT name, channel, status, category, subject, message, to_address,
                from_address, triggered_by, sent_at, read_at, creation
         FROM `tabCommunication Log`
@@ -2569,140 +2471,134 @@ def get_conversation(person, limit=200):
         ORDER BY creation ASC
         LIMIT %(limit)s
         """,
-        {
-            "me": me,
-            "other": person,
-            "other_user": other_user,
-            "me_user": me_user,
-            "ref": NON_CONVERSATION_REF,
-            "limit": int(limit),
-        },
-        as_dict=True,
-    )
-    for m in messages:
-        m["mine"] = m.triggered_by == me_user
-    return {
-        "person": person,
-        "person_name": frappe.db.get_value("Person", person, "full_name") or person,
-        "messages": messages,
-    }
+		{
+			"me": me,
+			"other": person,
+			"other_user": other_user,
+			"me_user": me_user,
+			"ref": NON_CONVERSATION_REF,
+			"limit": int(limit),
+		},
+		as_dict=True,
+	)
+	for m in messages:
+		m["mine"] = m.triggered_by == me_user
+	return {
+		"person": person,
+		"person_name": frappe.db.get_value("Person", person, "full_name") or person,
+		"messages": messages,
+	}
 
 
 @frappe.whitelist()
 def mark_conversation_read(person):
-    """Mark messages the viewer received from `person` as read."""
-    frappe.has_permission("Communication Log", "read", throw=True)
-    me = _inbox_viewer()
-    other_user = frappe.db.get_value("Person", person, "user")
-    if not me or not other_user:
-        return False
-    frappe.db.sql(
-        """
+	"""Mark messages the viewer received from `person` as read."""
+	frappe.has_permission("Communication Log", "read", throw=True)
+	me = _inbox_viewer()
+	other_user = frappe.db.get_value("Person", person, "user")
+	if not me or not other_user:
+		return False
+	frappe.db.sql(
+		"""
         UPDATE `tabCommunication Log`
         SET read_at = %(now)s,
             status = CASE WHEN status IN ('Sent', 'Delivered') THEN 'Read' ELSE status END
         WHERE person = %(me)s AND triggered_by = %(other_user)s AND read_at IS NULL
         """,
-        {"now": now_datetime(), "me": me, "other_user": other_user},
-    )
-    return True
+		{"now": now_datetime(), "me": me, "other_user": other_user},
+	)
+	return True
 
 
 @frappe.whitelist()
 def reply_in_conversation(person, message, in_reply_to=None, channel=None):
-    """Reply to `person`, threaded to the message it answers. Person-to-person
-    desk messages go In-App by default (or the replied-to message's channel)."""
-    frappe.has_permission("Communication Log", "create", throw=True)
-    if not (message or "").strip():
-        frappe.throw(_("Write a reply first."))
-    if not channel and in_reply_to:
-        channel = frappe.db.get_value("Communication Log", in_reply_to, "channel")
-    channel = channel or IN_APP_CHANNEL
-    body = "<p>{0}</p>".format(
-        frappe.utils.escape_html(message.strip()).replace("\n", "<br>")
-    )
-    log = send_message(
-        channel=channel,
-        person=person,
-        message=body,
-        category="Community",
-        triggered_by=frappe.session.user,
-        in_reply_to=in_reply_to,
-        **_reply_reference(in_reply_to),
-    )
-    if log and frappe.db.get_value("Communication Log", log, "status") == "Queued":
-        deliver_now(log)
-    mark_conversation_read(person)
-    return {"log": log, "channel": channel}
+	"""Reply to `person`, threaded to the message it answers. Person-to-person
+	desk messages go In-App by default (or the replied-to message's channel)."""
+	frappe.has_permission("Communication Log", "create", throw=True)
+	if not (message or "").strip():
+		frappe.throw(_("Write a reply first."))
+	if not channel and in_reply_to:
+		channel = frappe.db.get_value("Communication Log", in_reply_to, "channel")
+	channel = channel or IN_APP_CHANNEL
+	body = "<p>{0}</p>".format(frappe.utils.escape_html(message.strip()).replace("\n", "<br>"))
+	log = send_message(
+		channel=channel,
+		person=person,
+		message=body,
+		category="Community",
+		triggered_by=frappe.session.user,
+		in_reply_to=in_reply_to,
+		**_reply_reference(in_reply_to),
+	)
+	if log and frappe.db.get_value("Communication Log", log, "status") == "Queued":
+		deliver_now(log)
+	mark_conversation_read(person)
+	return {"log": log, "channel": channel}
 
 
 @frappe.whitelist()
 def get_inbox_unread_count():
-    """Unread conversation messages to the viewer (desk inbox badge)."""
-    frappe.has_permission("Communication Log", "read", throw=True)
-    me = _inbox_viewer()
-    if not me:
-        return 0
-    return frappe.db.sql(
-        """
+	"""Unread conversation messages to the viewer (desk inbox badge)."""
+	frappe.has_permission("Communication Log", "read", throw=True)
+	me = _inbox_viewer()
+	if not me:
+		return 0
+	return frappe.db.sql(
+		"""
         SELECT COUNT(*) FROM `tabCommunication Log`
         WHERE person = %(me)s AND triggered_by != %(user)s
           AND direction = 'Outbound' AND read_at IS NULL
           AND IFNULL(reference_doctype, '') != %(ref)s
         """,
-        {"me": me, "user": frappe.session.user, "ref": NON_CONVERSATION_REF},
-    )[0][0]
+		{"me": me, "user": frappe.session.user, "ref": NON_CONVERSATION_REF},
+	)[0][0]
 
 
 def deliver_now(log_name):
-    """Deliver a single Queued log immediately (compose 'send now'). Skips the
-    hourly budget — a deliberate human action, not a bulk drain."""
-    account_name = frappe.db.get_value(
-        "Communication Log", log_name, "provider_account"
-    )
-    if not account_name:
-        return False
-    account = frappe.get_doc("Channel Provider Account", account_name)
-    return _deliver(log_name, account)
+	"""Deliver a single Queued log immediately (compose 'send now'). Skips the
+	hourly budget — a deliberate human action, not a bulk drain."""
+	account_name = frappe.db.get_value("Communication Log", log_name, "provider_account")
+	if not account_name:
+		return False
+	account = frappe.get_doc("Channel Provider Account", account_name)
+	return _deliver(log_name, account)
 
 
 def _follow_up(log):
-    responded = log.person and frappe.db.exists(
-        "Communication Log",
-        {"direction": "Inbound", "person": log.person, "creation": (">", log.sent_at)},
-    )
-    if not responded:
-        if log.follow_up_template and log.person:
-            send(
-                log.person,
-                log.follow_up_template,
-                channel=log.channel,
-                category=log.category,
-                reference_doctype=log.reference_doctype,
-                reference_name=log.reference_name,
-                triggered_by=log.triggered_by,
-                follow_up_of=log.name,
-                dedupe_key=f"follow-up::{log.name}",
-            )
-        else:
-            assignee = (
-                log.triggered_by
-                if log.triggered_by and frappe.db.exists("User", log.triggered_by)
-                else None
-            )
-            frappe.get_doc(
-                {
-                    "doctype": "ToDo",
-                    "description": _(
-                        "No response to '{0}' ({1}) after {2} day(s). Follow up manually."
-                    ).format(
-                        log.subject or log.name,
-                        log.to_address,
-                        log.follow_up_after_days,
-                    ),
-                    "reference_type": "Communication Log",
-                    "reference_name": log.name,
-                    "allocated_to": assignee,
-                }
-            ).insert(ignore_permissions=True)
-    log.db_set("follow_up_done", 1, update_modified=False)
+	responded = log.person and frappe.db.exists(
+		"Communication Log",
+		{"direction": "Inbound", "person": log.person, "creation": (">", log.sent_at)},
+	)
+	if not responded:
+		if log.follow_up_template and log.person:
+			send(
+				log.person,
+				log.follow_up_template,
+				channel=log.channel,
+				category=log.category,
+				reference_doctype=log.reference_doctype,
+				reference_name=log.reference_name,
+				triggered_by=log.triggered_by,
+				follow_up_of=log.name,
+				dedupe_key=f"follow-up::{log.name}",
+			)
+		else:
+			assignee = (
+				log.triggered_by if log.triggered_by and frappe.db.exists("User", log.triggered_by) else None
+			)
+			frappe.get_doc(
+				{
+					"doctype": "ToDo",
+					"description": _(
+						"No response to '{0}' ({1}) after {2} day(s). Follow up manually."
+					).format(
+						log.subject or log.name,
+						log.to_address,
+						log.follow_up_after_days,
+					),
+					"reference_type": "Communication Log",
+					"reference_name": log.name,
+					"allocated_to": assignee,
+				}
+			).insert(ignore_permissions=True)
+	log.db_set("follow_up_done", 1, update_modified=False)

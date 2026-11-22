@@ -19,7 +19,9 @@ frappe.ui.form.on("Person", {
 		// concluded rather than four read-only numbers with no explanation.
 		// Shared with Partner Organization: public/js/geo_location.bundle.js.
 		window.seminary?.renderLocationSummary(frm);
-		window.seminary?.bindFormAddressAutocomplete(frm, { country_field: "mailing_country" });
+		window.seminary?.bindFormAddressAutocomplete(frm, {
+			country_field: "mailing_country",
+		});
 		["Email", "SMS", "In-App"].forEach((channel) => {
 			frm.add_custom_button(__(channel), () => compose(frm, channel), __("Compose"));
 		});
@@ -52,7 +54,9 @@ function render_org_footprint(frm) {
 	const wrapper = frm.get_field("org_footprint_html").$wrapper;
 	wrapper.html(`<div class="text-muted">${__("Loading footprint...")}</div>`);
 	frappe
-		.call("seminary.seminary.faculty.person_org_footprint", { person: frm.doc.name })
+		.call("seminary.seminary.faculty.person_org_footprint", {
+			person: frm.doc.name,
+		})
 		.then((r) => {
 			const fp = r.message || {};
 			const units = fp.units || [];
@@ -67,14 +71,18 @@ function render_org_footprint(frm) {
 			}
 
 			if (!units.length) {
-				blocks.push(`<div class="text-muted">${__("No Academic Unit memberships.")}</div>`);
+				blocks.push(
+					`<div class="text-muted">${__("No Academic Unit memberships.")}</div>`
+				);
 			} else {
 				const rows = units.map((u) => {
 					const caps = (u.capabilities || [])
 						.map((c) => {
 							const cap = esc(c.capability);
 							const slots =
-								c.max_students > 0 ? ` (${c.current_students || 0}/${c.max_students})` : "";
+								c.max_students > 0
+									? ` (${c.current_students || 0}/${c.max_students})`
+									: "";
 							return `<span class="indicator-pill blue" style="margin:1px">${cap}${slots}</span>`;
 						})
 						.join(" ");
@@ -87,8 +95,12 @@ function render_org_footprint(frm) {
 							<a href="/app/academic-unit/${encodeURIComponent(u.unit)}">${esc(u.unit)}</a>${parent}
 							${u.is_active ? "" : ` <span class="text-muted small">(${__("inactive")})</span>`}
 						</td>
-						<td class="text-muted small" style="padding:6px 8px;border-bottom:1px solid var(--border-color)">${esc(u.unit_type || "")}</td>
-						<td style="padding:6px 8px;border-bottom:1px solid var(--border-color)">${caps || '<span class="text-muted small">—</span>'}</td>
+						<td class="text-muted small" style="padding:6px 8px;border-bottom:1px solid var(--border-color)">${esc(
+							u.unit_type || ""
+						)}</td>
+						<td style="padding:6px 8px;border-bottom:1px solid var(--border-color)">${
+							caps || '<span class="text-muted small">—</span>'
+						}</td>
 					</tr>`;
 				});
 				blocks.push(`<table style="width:100%;border-collapse:collapse">
@@ -119,7 +131,9 @@ function render_conversation(frm) {
 	const wrapper = frm.get_field("conversation_html").$wrapper;
 	wrapper.html(`<div class="text-muted">${__("Loading conversation...")}</div>`);
 	frappe
-		.call("seminary.seminary.comms.get_person_timeline", { person: frm.doc.name })
+		.call("seminary.seminary.comms.get_person_timeline", {
+			person: frm.doc.name,
+		})
 		.then((r) => {
 			const rows = r.message || [];
 			if (!rows.length) {
@@ -131,9 +145,11 @@ function render_conversation(frm) {
 				const color = STATUS_COLORS[row.status] || "gray";
 				const when = frappe.datetime.prettyDate(row.sent_at || row.creation);
 				const ref = row.reference_name
-					? `· <a href="/app/${frappe.router.slug(row.reference_doctype)}/${encodeURIComponent(
+					? `· <a href="/app/${frappe.router.slug(
+							row.reference_doctype
+					  )}/${encodeURIComponent(row.reference_name)}">${frappe.utils.escape_html(
 							row.reference_name
-					  )}">${frappe.utils.escape_html(row.reference_name)}</a>`
+					  )}</a>`
 					: "";
 				const subject = frappe.utils.escape_html(
 					row.subject || frappe.utils.strip_html(row.message || "").slice(0, 80)
@@ -142,7 +158,9 @@ function render_conversation(frm) {
 					<div class="comm-row" style="display:flex;gap:8px;align-items:baseline;padding:8px 4px;border-bottom:1px solid var(--border-color);">
 						<span class="text-muted" style="min-width:14px">${arrow}</span>
 						<span class="indicator-pill ${color}" style="white-space:nowrap">${__(row.status)}</span>
-						<span style="min-width:64px" class="text-muted small">${frappe.utils.escape_html(row.channel)}</span>
+						<span style="min-width:64px" class="text-muted small">${frappe.utils.escape_html(
+							row.channel
+						)}</span>
 						<a href="/app/communication-log/${encodeURIComponent(row.name)}" style="flex:1">${subject}</a>
 						<span class="text-muted small" style="white-space:nowrap">${when} ${ref}</span>
 					</div>`;
@@ -160,14 +178,24 @@ function compose(frm, channel) {
 			options: "Communication Template",
 			description: __("Pick a template, or leave blank and write below."),
 		},
-		{ fieldname: "subject", fieldtype: "Data", label: __("Subject"), depends_on: "eval:!doc.template" },
+		{
+			fieldname: "subject",
+			fieldtype: "Data",
+			label: __("Subject"),
+			depends_on: "eval:!doc.template",
+		},
 		{
 			fieldname: "message",
 			fieldtype: "Text Editor",
 			label: __("Message"),
 			depends_on: "eval:!doc.template",
 		},
-		{ fieldname: "send_now", fieldtype: "Check", label: __("Send now"), default: 1 },
+		{
+			fieldname: "send_now",
+			fieldtype: "Check",
+			label: __("Send now"),
+			default: 1,
+		},
 	];
 	const d = new frappe.ui.Dialog({
 		title: __("Compose {0} to {1}", [__(channel), frm.doc.full_name]),
@@ -186,7 +214,10 @@ function compose(frm, channel) {
 				.then((r) => {
 					d.hide();
 					if (r.message) {
-						frappe.show_alert({ message: __("Queued: {0}", [r.message]), indicator: "green" });
+						frappe.show_alert({
+							message: __("Queued: {0}", [r.message]),
+							indicator: "green",
+						});
 					} else {
 						frappe.show_alert({
 							message: __("Not sent (deduplicated or blocked by consent)."),

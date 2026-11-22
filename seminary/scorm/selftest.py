@@ -104,280 +104,270 @@ PROBE_HTML = "/scorm/_selftest_probe.html"
 
 @frappe.whitelist()
 def run() -> dict:
-    """Run all four arms. Returns a verdict per arm plus an overall `ok`."""
-    frappe.only_for("System Manager")
+	"""Run all four arms. Returns a verdict per arm plus an overall `ok`."""
+	frappe.only_for("System Manager")
 
-    arms = {
-        "config": _config(),
-        "hooks": _hooks(),
-        "storage": _storage(),
-    }
-    # Arm 4 needs a host to talk to; running it against `None` would report a
-    # connection failure and bury the real finding, which arm 1 already made.
-    arms["origin"] = (
-        _origin()
-        if arms["config"]["ok"]
-        else {"ok": False, "detail": "Not run: see config."}
-    )
+	arms = {
+		"config": _config(),
+		"hooks": _hooks(),
+		"storage": _storage(),
+	}
+	# Arm 4 needs a host to talk to; running it against `None` would report a
+	# connection failure and bury the real finding, which arm 1 already made.
+	arms["origin"] = _origin() if arms["config"]["ok"] else {"ok": False, "detail": "Not run: see config."}
 
-    return {
-        "ok": all(arm["ok"] for arm in arms.values()),
-        "arms": arms,
-    }
+	return {
+		"ok": all(arm["ok"] for arm in arms.values()),
+		"arms": arms,
+	}
 
 
 # --------------------------------------------------------------- arm 1: config
 
 
 def _registrable(host: str) -> str:
-    """The last two labels of `host`.
+	"""The last two labels of `host`.
 
-    A deliberate approximation of the public-suffix list, and wrong in one
-    direction only: `a.co.uk` and `b.co.uk` both reduce to `co.uk` and are
-    reported as sharing a registrable domain, which is a false *refusal* an
-    operator can read and overrule. The opposite error -- passing two hosts that
-    really can set each other's cookies -- is the one §2.2 cannot tolerate, and
-    this cannot make it. Shipping the full list to catch a case nobody here has
-    is not worth the dependency.
-    """
-    return ".".join(host.lower().strip(".").split(".")[-2:])
+	A deliberate approximation of the public-suffix list, and wrong in one
+	direction only: `a.co.uk` and `b.co.uk` both reduce to `co.uk` and are
+	reported as sharing a registrable domain, which is a false *refusal* an
+	operator can read and overrule. The opposite error -- passing two hosts that
+	really can set each other's cookies -- is the one §2.2 cannot tolerate, and
+	this cannot make it. Shipping the full list to catch a case nobody here has
+	is not worth the dependency.
+	"""
+	return ".".join(host.lower().strip(".").split(".")[-2:])
 
 
 def _config() -> dict:
-    from seminary.scorm import delivery
+	from seminary.scorm import delivery
 
-    host = delivery.delivery_host()
-    if not host:
-        return {
-            "ok": False,
-            "detail": "`scorm_delivery_host` is not set; SCORM playback is off on this site.",
-        }
+	host = delivery.delivery_host()
+	if not host:
+		return {
+			"ok": False,
+			"detail": "`scorm_delivery_host` is not set; SCORM playback is off on this site.",
+		}
 
-    app_origin = delivery.SCORMDelivery._app_origin()
-    if not app_origin:
-        return {
-            "ok": False,
-            "delivery_host": host,
-            "detail": (
-                "`scorm_delivery_host` is set but neither `scorm_app_origin` nor "
-                "`host_name` is. The delivery origin cannot name the origin allowed "
-                "to frame it, so it refuses to serve -- and says so only in the "
-                "Error Log."
-            ),
-        }
+	app_origin = delivery.SCORMDelivery._app_origin()
+	if not app_origin:
+		return {
+			"ok": False,
+			"delivery_host": host,
+			"detail": (
+				"`scorm_delivery_host` is set but neither `scorm_app_origin` nor "
+				"`host_name` is. The delivery origin cannot name the origin allowed "
+				"to frame it, so it refuses to serve -- and says so only in the "
+				"Error Log."
+			),
+		}
 
-    app_host = app_origin.split("://", 1)[-1].split("/")[0].split(":")[0]
-    if _registrable(host) == _registrable(app_host):
-        return {
-            "ok": False,
-            "delivery_host": host,
-            "app_origin": app_origin,
-            "detail": (
-                f"`{host}` and `{app_host}` share the registrable domain "
-                f"`{_registrable(host)}`. A sibling subdomain can set a cookie the "
-                "application host will receive, which hands every package uploader "
-                "a session-fixation primitive -- the delivery host must be a "
-                "different registrable domain."
-            ),
-        }
+	app_host = app_origin.split("://", 1)[-1].split("/")[0].split(":")[0]
+	if _registrable(host) == _registrable(app_host):
+		return {
+			"ok": False,
+			"delivery_host": host,
+			"app_origin": app_origin,
+			"detail": (
+				f"`{host}` and `{app_host}` share the registrable domain "
+				f"`{_registrable(host)}`. A sibling subdomain can set a cookie the "
+				"application host will receive, which hands every package uploader "
+				"a session-fixation primitive -- the delivery host must be a "
+				"different registrable domain."
+			),
+		}
 
-    origin = delivery.delivery_origin()
-    if origin.startswith("http://") and not delivery.is_loopback_host(host):
-        return {
-            "ok": False,
-            "delivery_host": host,
-            "app_origin": app_origin,
-            "detail": (
-                f"`scorm_delivery_origin` is plaintext (`{origin}`) on a host that is "
-                "not loopback. That override exists so the two-origin pass can be run "
-                "on a developer bench; on anything a student can reach it hands every "
-                "launch token to the network in clear."
-            ),
-        }
+	origin = delivery.delivery_origin()
+	if origin.startswith("http://") and not delivery.is_loopback_host(host):
+		return {
+			"ok": False,
+			"delivery_host": host,
+			"app_origin": app_origin,
+			"detail": (
+				f"`scorm_delivery_origin` is plaintext (`{origin}`) on a host that is "
+				"not loopback. That override exists so the two-origin pass can be run "
+				"on a developer bench; on anything a student can reach it hands every "
+				"launch token to the network in clear."
+			),
+		}
 
-    return {
-        "ok": True,
-        "delivery_host": host,
-        "delivery_origin": origin,
-        "app_origin": app_origin,
-        "send_learner_name": bool(
-            True
-            if frappe.conf.get("scorm_send_learner_name") is None
-            else frappe.conf.get("scorm_send_learner_name")
-        ),
-    }
+	return {
+		"ok": True,
+		"delivery_host": host,
+		"delivery_origin": origin,
+		"app_origin": app_origin,
+		"send_learner_name": bool(
+			True
+			if frappe.conf.get("scorm_send_learner_name") is None
+			else frappe.conf.get("scorm_send_learner_name")
+		),
+	}
 
 
 # ---------------------------------------------------------------- arm 2: hooks
 
 
 def _hooks() -> dict:
-    renderers = frappe.get_hooks("page_renderer") or []
-    before = frappe.get_hooks("before_request") or []
+	renderers = frappe.get_hooks("page_renderer") or []
+	before = frappe.get_hooks("before_request") or []
 
-    missing = []
-    if "seminary.scorm.delivery.SCORMDelivery" not in renderers:
-        missing.append("page_renderer -> seminary.scorm.delivery.SCORMDelivery")
-    if "seminary.scorm.delivery.guard_delivery_host" not in before:
-        missing.append("before_request -> seminary.scorm.delivery.guard_delivery_host")
+	missing = []
+	if "seminary.scorm.delivery.SCORMDelivery" not in renderers:
+		missing.append("page_renderer -> seminary.scorm.delivery.SCORMDelivery")
+	if "seminary.scorm.delivery.guard_delivery_host" not in before:
+		missing.append("before_request -> seminary.scorm.delivery.guard_delivery_host")
 
-    if missing:
-        return {
-            "ok": False,
-            "missing": missing,
-            "detail": (
-                "Hooks are not registered. Without the renderer nothing is served; "
-                "without the guard the whole application answers on the delivery "
-                "host. Run `bench --site <site> migrate` and clear the cache."
-            ),
-        }
-    return {"ok": True}
+	if missing:
+		return {
+			"ok": False,
+			"missing": missing,
+			"detail": (
+				"Hooks are not registered. Without the renderer nothing is served; "
+				"without the guard the whole application answers on the delivery "
+				"host. Run `bench --site <site> migrate` and clear the cache."
+			),
+		}
+	return {"ok": True}
 
 
 # -------------------------------------------------------------- arm 3: storage
 
 
 def _storage() -> dict:
-    from seminary.storage.backend import get_storage_backend
+	from seminary.storage.backend import get_storage_backend
 
-    backend = get_storage_backend()
-    name = type(backend).__name__
-    if not backend.is_configured():
-        return {
-            "ok": False,
-            "backend": name,
-            "detail": (
-                "No object storage configured. SCORM packages are exploded to "
-                "object storage and have no on-disk path, so playback "
-                "cannot work without it."
-            ),
-        }
+	backend = get_storage_backend()
+	name = type(backend).__name__
+	if not backend.is_configured():
+		return {
+			"ok": False,
+			"backend": name,
+			"detail": (
+				"No object storage configured. SCORM packages are exploded to "
+				"object storage and have no on-disk path, so playback "
+				"cannot work without it."
+			),
+		}
 
-    key = f"scorm/_selftest/{frappe.generate_hash(length=16)}/probe.txt"
-    payload = b"seminary scorm selftest"
-    try:
-        backend.put(key, payload, content_type="text/plain")
-        if backend.read(key) != payload:
-            return {
-                "ok": False,
-                "backend": name,
-                "detail": "Object read back did not match what was written.",
-            }
-    except Exception as e:
-        return {
-            "ok": False,
-            "backend": name,
-            "detail": f"Round-trip under `scorm/` failed: {e}",
-        }
-    finally:
-        # Best effort, for the same reason `storage.api.selftest` gives: losing
-        # the verdict to a cleanup failure would be worse than a stray probe.
-        try:
-            backend.delete(key)
-        except Exception:
-            frappe.log_error(
-                title="seminary.scorm: selftest probe not cleaned up",
-                message=f"{key}\n{frappe.get_traceback()}",
-            )
+	key = f"scorm/_selftest/{frappe.generate_hash(length=16)}/probe.txt"
+	payload = b"seminary scorm selftest"
+	try:
+		backend.put(key, payload, content_type="text/plain")
+		if backend.read(key) != payload:
+			return {
+				"ok": False,
+				"backend": name,
+				"detail": "Object read back did not match what was written.",
+			}
+	except Exception as e:
+		return {
+			"ok": False,
+			"backend": name,
+			"detail": f"Round-trip under `scorm/` failed: {e}",
+		}
+	finally:
+		# Best effort, for the same reason `storage.api.selftest` gives: losing
+		# the verdict to a cleanup failure would be worse than a stray probe.
+		try:
+			backend.delete(key)
+		except Exception:
+			frappe.log_error(
+				title="seminary.scorm: selftest probe not cleaned up",
+				message=f"{key}\n{frappe.get_traceback()}",
+			)
 
-    return {"ok": True, "backend": name, "prefix": "scorm/"}
+	return {"ok": True, "backend": name, "prefix": "scorm/"}
 
 
 # --------------------------------------------------------------- arm 4: origin
 
 
 def _fetch(origin: str, path: str) -> dict:
-    import requests
+	import requests
 
-    url = f"{origin}{path}"
-    try:
-        response = requests.get(
-            url,
-            timeout=HTTP_TIMEOUT,
-            allow_redirects=False,
-            # No cookie jar, no session: see the module docstring.
-            headers={"User-Agent": "seminary-scorm-selftest"},
-        )
-    except Exception as e:
-        return {"error": str(e)}
-    return {
-        "status": response.status_code,
-        "content_type": (response.headers.get("Content-Type") or "").split(";")[0],
-        "length": len(response.content or b""),
-    }
+	url = f"{origin}{path}"
+	try:
+		response = requests.get(
+			url,
+			timeout=HTTP_TIMEOUT,
+			allow_redirects=False,
+			# No cookie jar, no session: see the module docstring.
+			headers={"User-Agent": "seminary-scorm-selftest"},
+		)
+	except Exception as e:
+		return {"error": str(e)}
+	return {
+		"status": response.status_code,
+		"content_type": (response.headers.get("Content-Type") or "").split(";")[0],
+		"length": len(response.content or b""),
+	}
 
 
 def _origin() -> dict:
-    from seminary.scorm import delivery
+	from seminary.scorm import delivery
 
-    host = delivery.delivery_host()
-    origin = delivery.delivery_origin()
-    probes = {
-        path: _fetch(origin, path)
-        for path in (PROBE_DESK, PROBE_API, PROBE_SCORM, PROBE_HTML)
-    }
+	host = delivery.delivery_host()
+	origin = delivery.delivery_origin()
+	probes = {path: _fetch(origin, path) for path in (PROBE_DESK, PROBE_API, PROBE_SCORM, PROBE_HTML)}
 
-    failures = []
+	failures = []
 
-    unreachable = [p for p, r in probes.items() if "error" in r]
-    if unreachable:
-        return {
-            "ok": False,
-            "host": host,
-            "probes": probes,
-            "detail": (
-                f"Could not reach {origin} -- DNS, the certificate, or the "
-                "proxy. This is the expected result on a development bench, where "
-                "the delivery host does not resolve; it is a real failure anywhere "
-                "a student will open a package."
-            ),
-        }
+	unreachable = [p for p, r in probes.items() if "error" in r]
+	if unreachable:
+		return {
+			"ok": False,
+			"host": host,
+			"probes": probes,
+			"detail": (
+				f"Could not reach {origin} -- DNS, the certificate, or the "
+				"proxy. This is the expected result on a development bench, where "
+				"the delivery host does not resolve; it is a real failure anywhere "
+				"a student will open a package."
+			),
+		}
 
-    for path in (PROBE_DESK, PROBE_API):
-        if probes[path]["status"] == 200:
-            failures.append(
-                f"`{path}` answered 200 on the delivery host. The application is "
-                "being served on the delivery origin, which undoes the isolation "
-                "the whole design rests on."
-            )
+	for path in (PROBE_DESK, PROBE_API):
+		if probes[path]["status"] == 200:
+			failures.append(
+				f"`{path}` answered 200 on the delivery host. The application is "
+				"being served on the delivery origin, which undoes the isolation "
+				"the whole design rests on."
+			)
 
-    scorm = probes[PROBE_SCORM]
-    if scorm["status"] != 404:
-        failures.append(
-            f"`{PROBE_SCORM}` answered {scorm['status']}; a path with no token "
-            "must be a 404."
-        )
-    elif scorm["content_type"] != "text/plain" or scorm["length"]:
-        # frappe's own 404 is an HTML page; `SCORMDelivery._missing` is an empty
-        # `text/plain`. Reaching the website router here means the renderer is
-        # not being consulted, so every package member would 404 too.
-        failures.append(
-            f"`{PROBE_SCORM}` 404'd through the website router "
-            f"({scorm['content_type'] or 'no content-type'}, {scorm['length']} bytes) "
-            "rather than through SCORMDelivery. The renderer is registered but not "
-            "reached -- check that the request arrives with the delivery `Host`."
-        )
+	scorm = probes[PROBE_SCORM]
+	if scorm["status"] != 404:
+		failures.append(f"`{PROBE_SCORM}` answered {scorm['status']}; a path with no token must be a 404.")
+	elif scorm["content_type"] != "text/plain" or scorm["length"]:
+		# frappe's own 404 is an HTML page; `SCORMDelivery._missing` is an empty
+		# `text/plain`. Reaching the website router here means the renderer is
+		# not being consulted, so every package member would 404 too.
+		failures.append(
+			f"`{PROBE_SCORM}` 404'd through the website router "
+			f"({scorm['content_type'] or 'no content-type'}, {scorm['length']} bytes) "
+			"rather than through SCORMDelivery. The renderer is registered but not "
+			"reached -- check that the request arrives with the delivery `Host`."
+		)
 
-    html = probes[PROBE_HTML]
-    if 300 <= html["status"] < 400:
-        failures.append(
-            f"`{PROBE_HTML}` was redirected ({html['status']}) instead of reaching "
-            "the renderer. nginx is rewriting `.html` away before the request "
-            "reaches Python, so every HTML member of every package 404s and a "
-            "package whose entry is `index.html` makes the launcher frame "
-            "itself. See PROBE_HTML in this module for the three rewrite lines "
-            "and the `location ^~ /scorm/` block that has to precede them."
-        )
+	html = probes[PROBE_HTML]
+	if 300 <= html["status"] < 400:
+		failures.append(
+			f"`{PROBE_HTML}` was redirected ({html['status']}) instead of reaching "
+			"the renderer. nginx is rewriting `.html` away before the request "
+			"reaches Python, so every HTML member of every package 404s and a "
+			"package whose entry is `index.html` makes the launcher frame "
+			"itself. See PROBE_HTML in this module for the three rewrite lines "
+			"and the `location ^~ /scorm/` block that has to precede them."
+		)
 
-    if failures:
-        return {"ok": False, "host": host, "probes": probes, "failures": failures}
-    return {
-        "ok": True,
-        "host": host,
-        "probes": probes,
-        "detail": (
-            "The delivery origin refuses Desk and the API and reaches the SCORM "
-            "renderer. This does not prove the host resolves to *this* site -- see "
-            "the module docstring."
-        ),
-    }
+	if failures:
+		return {"ok": False, "host": host, "probes": probes, "failures": failures}
+	return {
+		"ok": True,
+		"host": host,
+		"probes": probes,
+		"detail": (
+			"The delivery origin refuses Desk and the API and reaches the SCORM "
+			"renderer. This does not prove the host resolves to *this* site -- see "
+			"the module docstring."
+		),
+	}

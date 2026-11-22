@@ -102,9 +102,7 @@ function add_workflow_buttons(frm) {
 			});
 			frm.reload_doc();
 		});
-	}).addClass(
-		frm.doc.batch_status === "Dry-Run Clean" ? "btn-default" : "btn-primary"
-	);
+	}).addClass(frm.doc.batch_status === "Dry-Run Clean" ? "btn-default" : "btn-primary");
 }
 
 function has_image_rows(frm) {
@@ -125,13 +123,14 @@ async function render_image_match(frm) {
 	}
 
 	const attachments = await frappe.db.get_list("File", {
-		filters: { attached_to_doctype: frm.doctype, attached_to_name: frm.docname },
+		filters: {
+			attached_to_doctype: frm.doctype,
+			attached_to_name: frm.docname,
+		},
 		fields: ["file_name"],
 		limit: 0,
 	});
-	const have = new Set(
-		(attachments || []).map((f) => (f.file_name || "").toLowerCase())
-	);
+	const have = new Set((attachments || []).map((f) => (f.file_name || "").toLowerCase()));
 	const missing = wanted.filter((name) => !have.has(name.toLowerCase()));
 	const matched = wanted.length - missing.length;
 

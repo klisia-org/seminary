@@ -19,7 +19,7 @@
 // Remove when Frappe renders `meta.documentation` in form view: delete this
 // file and its `app_include_js` entry in hooks.py, then `bench build`.
 
-$(document).on('form-refresh', function (e, frm) {
+$(document).on("form-refresh", function (e, frm) {
 	seminary_add_doc_link_icon(frm);
 });
 
@@ -27,7 +27,7 @@ function seminary_add_doc_link_icon(frm) {
 	const url = frm.meta && frm.meta.documentation;
 
 	// form-refresh can fire repeatedly — drop any prior icon before re-adding.
-	frm.page.wrapper.find('.seminary-doc-help').remove();
+	frm.page.wrapper.find(".seminary-doc-help").remove();
 
 	if (!url) {
 		return;
@@ -36,11 +36,11 @@ function seminary_add_doc_link_icon(frm) {
 	// es-line-question is in the desk (espresso) icon sprite; lucide names
 	// (e.g. circle-help) are not loaded in Desk and render an empty button.
 	frm.page.add_action_icon(
-		'es-line-question',
+		"es-line-question",
 		function () {
-			window.open(url, '_blank');
+			window.open(url, "_blank");
 		},
-		'seminary-doc-help',
-		__('Documentation')
+		"seminary-doc-help",
+		__("Documentation")
 	);
 }

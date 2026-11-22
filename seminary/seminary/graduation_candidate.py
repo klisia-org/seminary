@@ -32,7 +32,6 @@ touching the PE's modified timestamp on read-driven recomputation.
 import frappe
 from frappe.model.document import Document
 
-
 # Applied when a Program leaves `graduation_request_trigger` empty. Filing as
 # soon as the in-progress courses would close out the program is the more
 # permissive of the two triggers; the request still has to clear Academic
@@ -41,84 +40,84 @@ DEFAULT_REQUEST_TRIGGER = "Enrolled in final courses"
 
 
 def resolve_request_trigger(program) -> str:
-    """The graduation request trigger in force for a Program (doc or name).
+	"""The graduation request trigger in force for a Program (doc or name).
 
-    Falls back to DEFAULT_REQUEST_TRIGGER so a program that was never
-    explicitly configured still lets its students file.
-    """
-    if isinstance(program, str):
-        trigger = frappe.db.get_value("Program", program, "graduation_request_trigger")
-    else:
-        trigger = program.get("graduation_request_trigger")
-    return trigger or DEFAULT_REQUEST_TRIGGER
+	Falls back to DEFAULT_REQUEST_TRIGGER so a program that was never
+	explicitly configured still lets its students file.
+	"""
+	if isinstance(program, str):
+		trigger = frappe.db.get_value("Program", program, "graduation_request_trigger")
+	else:
+		trigger = program.get("graduation_request_trigger")
+	return trigger or DEFAULT_REQUEST_TRIGGER
 
 
 def evaluate_candidacy(pe_name: str) -> bool:
-    """Recompute and persist `grad_candidate` for one Program Enrollment.
-    Returns the new value. Safe to call multiple times.
-    """
-    pe = frappe.db.get_value(
-        "Program Enrollment",
-        pe_name,
-        [
-            "name",
-            "program",
-            "docstatus",
-            "pgmenrol_active",
-            "totalcredits",
-            "current_gpa",
-            "grad_candidate",
-        ],
-        as_dict=True,
-    )
-    if not pe:
-        return False
+	"""Recompute and persist `grad_candidate` for one Program Enrollment.
+	Returns the new value. Safe to call multiple times.
+	"""
+	pe = frappe.db.get_value(
+		"Program Enrollment",
+		pe_name,
+		[
+			"name",
+			"program",
+			"docstatus",
+			"pgmenrol_active",
+			"totalcredits",
+			"current_gpa",
+			"grad_candidate",
+		],
+		as_dict=True,
+	)
+	if not pe:
+		return False
 
-    new_value = _compute(pe)
-    if new_value != bool(pe.grad_candidate):
-        frappe.db.set_value(
-            "Program Enrollment",
-            pe.name,
-            "grad_candidate",
-            int(new_value),
-            update_modified=False,
-        )
-    return new_value
+	new_value = _compute(pe)
+	if new_value != bool(pe.grad_candidate):
+		frappe.db.set_value(
+			"Program Enrollment",
+			pe.name,
+			"grad_candidate",
+			int(new_value),
+			update_modified=False,
+		)
+	return new_value
 
 
 def evaluate_candidacy_safe(pe_name: str) -> bool:
-    """Same as evaluate_candidacy but swallows + logs any exception.
+	"""Same as evaluate_candidacy but swallows + logs any exception.
 
-    Use at hook callsites where a candidacy bug must never block the
-    primary operation (course enrollment, withdrawal, grade entry).
-    """
-    try:
-        return evaluate_candidacy(pe_name)
-    except Exception:
-        frappe.log_error(
-            title="Graduation candidacy evaluation failed",
-            message=frappe.get_traceback(),
-        )
-        return False
+	Use at hook callsites where a candidacy bug must never block the
+	primary operation (course enrollment, withdrawal, grade entry).
+	"""
+	try:
+		return evaluate_candidacy(pe_name)
+	except Exception:
+		frappe.log_error(
+			title="Graduation candidacy evaluation failed",
+			message=frappe.get_traceback(),
+		)
+		return False
 
 
 def recompute_for_program(program: str) -> int:
-    """Re-evaluate every active PE on a program. Returns count flipped.
+	"""Re-evaluate every active PE on a program. Returns count flipped.
 
-    Bench-callable for backfill or after changing a program's trigger.
-    """
-    pe_names = frappe.get_all(
-        "Program Enrollment",
-        filters={"program": program, "docstatus": 1, "pgmenrol_active": 1},
-        pluck="name",
-    )
-    flipped = 0
-    for name in pe_names:
-        before = frappe.db.get_value("Program Enrollment", name, "grad_candidate")
-        after = evaluate_candidacy(name)
-        if bool(before) != after:
-            flipped += 1
-    return flipped
+	Bench-callable for backfill or after changing a program's trigger.
+	"""
+	pe_names = frappe.get_all(
+		"Program Enrollment",
+		filters={"program": program, "docstatus": 1, "pgmenrol_active": 1},
+		pluck="name",
+	)
+	flipped = 0
+	for name in pe_names:
+		before = frappe.db.get_value("Program Enrollment", name, "grad_candidate")
+		after = evaluate_candidacy(name)
+		if bool(before) != after:
+			flipped += 1
+	return flipped
 
 
 # ---------------------------------------------------------------------------
@@ -127,158 +126,150 @@ def recompute_for_program(program: str) -> int:
 
 
 def _compute(pe) -> bool:
-    """Pure computation — returns True/False without persisting."""
-    if pe.docstatus != 1 or not pe.pgmenrol_active:
-        return False
+	"""Pure computation — returns True/False without persisting."""
+	if pe.docstatus != 1 or not pe.pgmenrol_active:
+		return False
 
-    program = frappe.get_cached_doc("Program", pe.program)
-    if program.is_ongoing:
-        return False
-    if not program.students_can_request_graduation:
-        return False
-    trigger = resolve_request_trigger(program)
+	program = frappe.get_cached_doc("Program", pe.program)
+	if program.is_ongoing:
+		return False
+	if not program.students_can_request_graduation:
+		return False
+	trigger = resolve_request_trigger(program)
 
-    # GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
-    # 0 = no minimum. Ongoing programs already returned above.
-    min_gpa = float(program.get("min_graduation_gpa") or 0)
-    if min_gpa > 0 and float(pe.current_gpa or 0) < min_gpa:
-        return False
+	# GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
+	# 0 = no minimum. Ongoing programs already returned above.
+	min_gpa = float(program.get("min_graduation_gpa") or 0)
+	if min_gpa > 0 and float(pe.current_gpa or 0) < min_gpa:
+		return False
 
-    completed, in_progress = _course_status_sets(pe.name)
-    mandatory_program = _mandatory_program_courses(program)
-    mandatory_emphasis = _mandatory_emphasis_courses(pe, program)
-    in_progress_credits = _credit_sum(program, in_progress)
+	completed, in_progress = _course_status_sets(pe.name)
+	mandatory_program = _mandatory_program_courses(program)
+	mandatory_emphasis = _mandatory_emphasis_courses(pe, program)
+	in_progress_credits = _credit_sum(program, in_progress)
 
-    # Leveling / advanced standing (ADR 058): placed-out courses are satisfied;
-    # Required leveling courses must be passed to graduate. Approved
-    # substitutions and course waivers count too (decisions/098 §5).
-    from seminary.seminary.exceptions import satisfied_courses
-    from seminary.seminary.leveling import leveling_sets
+	# Leveling / advanced standing (ADR 058): placed-out courses are satisfied;
+	# Required leveling courses must be passed to graduate. Approved
+	# substitutions and course waivers count too (decisions/098 §5).
+	from seminary.seminary.exceptions import satisfied_courses
+	from seminary.seminary.leveling import leveling_sets
 
-    _exempted, required_leveling, _lvl = leveling_sets(pe.name)
+	_exempted, required_leveling, _lvl = leveling_sets(pe.name)
 
-    count_in_progress = trigger == "Enrolled in final courses"
-    satisfied = satisfied_courses(
-        pe.name, completed | (in_progress if count_in_progress else set())
-    )
+	count_in_progress = trigger == "Enrolled in final courses"
+	satisfied = satisfied_courses(pe.name, completed | (in_progress if count_in_progress else set()))
 
-    if mandatory_program - satisfied:
-        return False
-    if mandatory_emphasis - satisfied:
-        return False
-    # Required leveling courses must actually be passed (not merely in progress).
-    if required_leveling - completed:
-        return False
+	if mandatory_program - satisfied:
+		return False
+	if mandatory_emphasis - satisfied:
+		return False
+	# Required leveling courses must actually be passed (not merely in progress).
+	if required_leveling - completed:
+		return False
 
-    completed_credits = pe.totalcredits or 0
-    credits_required = program.credits_complete or 0
-    if program.program_type == "Credits-based":
-        available = completed_credits + (
-            in_progress_credits if count_in_progress else 0
-        )
-        if available < credits_required:
-            return False
+	completed_credits = pe.totalcredits or 0
+	credits_required = program.credits_complete or 0
+	if program.program_type == "Credits-based":
+		available = completed_credits + (in_progress_credits if count_in_progress else 0)
+		if available < credits_required:
+			return False
 
-    if _has_pending_blocker(pe.name):
-        return False
+	if _has_pending_blocker(pe.name):
+		return False
 
-    return True
+	return True
 
 
 def _has_pending_blocker(pe_name: str) -> bool:
-    """True iff at least one mandatory SGR row marked
-    `blocks_graduation_request` is not yet Fulfilled or Waived.
-    """
-    rows = frappe.get_all(
-        "Student Graduation Requirement",
-        filters={
-            "parent": pe_name,
-            "parenttype": "Program Enrollment",
-            "blocks_graduation_request": 1,
-            "mandatory": 1,
-            "status": ("not in", ("Fulfilled", "Waived")),
-        },
-        limit=1,
-    )
-    return bool(rows)
+	"""True iff at least one mandatory SGR row marked
+	`blocks_graduation_request` is not yet Fulfilled or Waived.
+	"""
+	rows = frappe.get_all(
+		"Student Graduation Requirement",
+		filters={
+			"parent": pe_name,
+			"parenttype": "Program Enrollment",
+			"blocks_graduation_request": 1,
+			"mandatory": 1,
+			"status": ("not in", ("Fulfilled", "Waived")),
+		},
+		limit=1,
+	)
+	return bool(rows)
 
 
 def _course_status_sets(pe_name: str):
-    """Return (completed, in_progress) sets of course names for the PE."""
-    completed = set(
-        frappe.get_all(
-            "Program Enrollment Course",
-            filters={"parent": pe_name, "status": "Pass"},
-            pluck="course_name",
-        )
-    )
+	"""Return (completed, in_progress) sets of course names for the PE."""
+	completed = set(
+		frappe.get_all(
+			"Program Enrollment Course",
+			filters={"parent": pe_name, "status": "Pass"},
+			pluck="course_name",
+		)
+	)
 
-    in_progress = set(
-        frappe.get_all(
-            "Course Enrollment Individual",
-            filters={
-                "program_ce": pe_name,
-                "docstatus": 1,
-                "withdrawn": 0,
-                "course_cancelled": 0,
-                "workflow_state": "Submitted",
-            },
-            pluck="course_data",
-        )
-    )
-    # A course can appear in both sets if a final grade lands while a CEI
-    # row is still flagged Submitted; treat completed as authoritative.
-    in_progress -= completed
-    return completed, in_progress
+	in_progress = set(
+		frappe.get_all(
+			"Course Enrollment Individual",
+			filters={
+				"program_ce": pe_name,
+				"docstatus": 1,
+				"withdrawn": 0,
+				"course_cancelled": 0,
+				"workflow_state": "Submitted",
+			},
+			pluck="course_data",
+		)
+	)
+	# A course can appear in both sets if a final grade lands while a CEI
+	# row is still flagged Submitted; treat completed as authoritative.
+	in_progress -= completed
+	return completed, in_progress
 
 
 def _mandatory_program_courses(program: Document) -> set:
-    return {pc.course for pc in program.courses if pc.required}
+	return {pc.course for pc in program.courses if pc.required}
 
 
 def _mandatory_emphasis_courses(pe, program: Document) -> set:
-    """Mandatory courses across the student's active emphasis tracks."""
-    active_tracks = (
-        [
-            e.emphasis_track
-            for e in (pe.emphases or [])
-            if e.status in ("Active", "Completed")
-        ]
-        if hasattr(pe, "emphases")
-        else []
-    )
+	"""Mandatory courses across the student's active emphasis tracks."""
+	active_tracks = (
+		[e.emphasis_track for e in (pe.emphases or []) if e.status in ("Active", "Completed")]
+		if hasattr(pe, "emphases")
+		else []
+	)
 
-    if not active_tracks:
-        # pe came from db.get_value (no child tables loaded) — fetch directly
-        active_tracks = frappe.get_all(
-            "Program Enrollment Emphasis",
-            filters={
-                "parent": pe.name,
-                "status": ("in", ("Active", "Completed")),
-            },
-            pluck="emphasis_track",
-        )
+	if not active_tracks:
+		# pe came from db.get_value (no child tables loaded) — fetch directly
+		active_tracks = frappe.get_all(
+			"Program Enrollment Emphasis",
+			filters={
+				"parent": pe.name,
+				"status": ("in", ("Active", "Completed")),
+			},
+			pluck="emphasis_track",
+		)
 
-    if not active_tracks:
-        return set()
+	if not active_tracks:
+		return set()
 
-    rows = frappe.get_all(
-        "Program Track Courses",
-        filters={
-            "parent": program.name,
-            "program_track": ("in", active_tracks),
-            "pgm_track_course_mandatory": 1,
-        },
-        pluck="program_track_course",
-    )
-    return set(rows)
+	rows = frappe.get_all(
+		"Program Track Courses",
+		filters={
+			"parent": program.name,
+			"program_track": ("in", active_tracks),
+			"pgm_track_course_mandatory": 1,
+		},
+		pluck="program_track_course",
+	)
+	return set(rows)
 
 
 def _credit_sum(program: Document, course_names: set) -> float:
-    if not course_names:
-        return 0
-    total = 0
-    for pc in program.courses:
-        if pc.course in course_names:
-            total += pc.pgmcourse_credits or 0
-    return total
+	if not course_names:
+		return 0
+	total = 0
+	for pc in program.courses:
+		if pc.course in course_names:
+			total += pc.pgmcourse_credits or 0
+	return total

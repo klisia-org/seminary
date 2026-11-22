@@ -10,4 +10,4 @@ from frappe.model.document import Document
 
 
 class StandardDevelopmentQuestion(Document):
-    pass
+	pass

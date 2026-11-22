@@ -18,145 +18,141 @@ from frappe import _
 _INACTIVE_STATES = ("Withdrawn", "Unseated")
 
 _DAY_FIELDS = [
-    ("monday", "M"),
-    ("tuesday", "T"),
-    ("wednesday", "W"),
-    ("thursday", "Th"),
-    ("friday", "F"),
-    ("saturday", "Sa"),
-    ("sunday", "Su"),
+	("monday", "M"),
+	("tuesday", "T"),
+	("wednesday", "W"),
+	("thursday", "Th"),
+	("friday", "F"),
+	("saturday", "Sa"),
+	("sunday", "Su"),
 ]
 
 
 def execute(filters=None):
-    filters = filters or {}
-    columns = _columns()
-    rows = _rows(filters)
-    return columns, rows
+	filters = filters or {}
+	columns = _columns()
+	rows = _rows(filters)
+	return columns, rows
 
 
 def _columns():
-    return [
-        {
-            "label": _("Alert"),
-            "fieldname": "alert",
-            "fieldtype": "Check",
-            "width": 60,
-        },
-        {
-            "label": _("Student"),
-            "fieldname": "student",
-            "fieldtype": "Link",
-            "options": "Student",
-            "width": 150,
-        },
-        {"label": _("Term"), "fieldname": "term", "fieldtype": "Data", "width": 130},
-        {
-            "label": _("Enrollment"),
-            "fieldname": "enrollment",
-            "fieldtype": "Link",
-            "options": "Course Enrollment Individual",
-            "width": 170,
-        },
-        {
-            "label": _("Course"),
-            "fieldname": "course",
-            "fieldtype": "Link",
-            "options": "Course Schedule",
-            "width": 200,
-        },
-        {"label": _("State"), "fieldname": "state", "fieldtype": "Data", "width": 120},
-        {"label": _("Room"), "fieldname": "room", "fieldtype": "Data", "width": 110},
-        {"label": _("When"), "fieldname": "when", "fieldtype": "Data", "width": 130},
-        {
-            "label": _("Conflicts With"),
-            "fieldname": "conflicts_with",
-            "fieldtype": "Data",
-            "width": 260,
-        },
-        {
-            "label": _("Overlap Dates"),
-            "fieldname": "overlap_dates",
-            "fieldtype": "Data",
-            "width": 200,
-        },
-    ]
+	return [
+		{
+			"label": _("Alert"),
+			"fieldname": "alert",
+			"fieldtype": "Check",
+			"width": 60,
+		},
+		{
+			"label": _("Student"),
+			"fieldname": "student",
+			"fieldtype": "Link",
+			"options": "Student",
+			"width": 150,
+		},
+		{"label": _("Term"), "fieldname": "term", "fieldtype": "Data", "width": 130},
+		{
+			"label": _("Enrollment"),
+			"fieldname": "enrollment",
+			"fieldtype": "Link",
+			"options": "Course Enrollment Individual",
+			"width": 170,
+		},
+		{
+			"label": _("Course"),
+			"fieldname": "course",
+			"fieldtype": "Link",
+			"options": "Course Schedule",
+			"width": 200,
+		},
+		{"label": _("State"), "fieldname": "state", "fieldtype": "Data", "width": 120},
+		{"label": _("Room"), "fieldname": "room", "fieldtype": "Data", "width": 110},
+		{"label": _("When"), "fieldname": "when", "fieldtype": "Data", "width": 130},
+		{
+			"label": _("Conflicts With"),
+			"fieldname": "conflicts_with",
+			"fieldtype": "Data",
+			"width": 260,
+		},
+		{
+			"label": _("Overlap Dates"),
+			"fieldname": "overlap_dates",
+			"fieldtype": "Data",
+			"width": 200,
+		},
+	]
 
 
 def _rows(filters):
-    pairs = _conflicting_pairs(filters.get("academic_term"))
-    if not pairs:
-        return []
+	pairs = _conflicting_pairs(filters.get("academic_term"))
+	if not pairs:
+		return []
 
-    # Day/time label for every course schedule that appears in a clash.
-    cs_names = {p[k] for p in pairs for k in ("cs_a", "cs_b")}
-    when_by_cs = _when_labels(cs_names)
+	# Day/time label for every course schedule that appears in a clash.
+	cs_names = {p[k] for p in pairs for k in ("cs_a", "cs_b")}
+	when_by_cs = _when_labels(cs_names)
 
-    # Aggregate to one row per enrolled side; a CEI clashing with several others
-    # collects all counterparts and overlap dates under a single row.
-    by_cei = {}
-    for p in pairs:
-        _add_side(by_cei, p, "a", "b", when_by_cs)
-        _add_side(by_cei, p, "b", "a", when_by_cs)
+	# Aggregate to one row per enrolled side; a CEI clashing with several others
+	# collects all counterparts and overlap dates under a single row.
+	by_cei = {}
+	for p in pairs:
+		_add_side(by_cei, p, "a", "b", when_by_cs)
+		_add_side(by_cei, p, "b", "a", when_by_cs)
 
-    rows = []
-    only_alert = frappe.utils.cint(filters.get("submitted_only"))
-    for r in by_cei.values():
-        if only_alert and not r["alert"]:
-            continue
-        r["conflicts_with"] = "; ".join(sorted(r.pop("_counterparts")))
-        r["overlap_dates"] = ", ".join(
-            frappe.utils.formatdate(d, "MMM d") for d in sorted(r.pop("_dates"))
-        )
-        rows.append(r)
+	rows = []
+	only_alert = frappe.utils.cint(filters.get("submitted_only"))
+	for r in by_cei.values():
+		if only_alert and not r["alert"]:
+			continue
+		r["conflicts_with"] = "; ".join(sorted(r.pop("_counterparts")))
+		r["overlap_dates"] = ", ".join(frappe.utils.formatdate(d, "MMM d") for d in sorted(r.pop("_dates")))
+		rows.append(r)
 
-    rows.sort(key=lambda r: (-r["alert"], r["term"] or "", r["student"] or ""))
-    return rows
+	rows.sort(key=lambda r: (-r["alert"], r["term"] or "", r["student"] or ""))
+	return rows
 
 
 def _add_side(by_cei, p, this, other, when_by_cs):
-    cei = p[f"cei_{this}"]
-    state = p[f"state_{this}"]
-    other_state = p[f"state_{other}"]
-    alert = 1 if (state == "Submitted" or other_state == "Submitted") else 0
+	cei = p[f"cei_{this}"]
+	state = p[f"state_{this}"]
+	other_state = p[f"state_{other}"]
+	alert = 1 if (state == "Submitted" or other_state == "Submitted") else 0
 
-    row = by_cei.get(cei)
-    if not row:
-        row = {
-            "alert": alert,
-            "student": p["student"],
-            "term": p["term"],
-            "enrollment": cei,
-            "course": p[f"cs_{this}"],
-            "state": state,
-            "room": p[f"room_{this}"] or "",
-            "when": when_by_cs.get(p[f"cs_{this}"], ""),
-            "_counterparts": set(),
-            "_dates": set(),
-        }
-        by_cei[cei] = row
-    row["alert"] = max(row["alert"], alert)
-    row["_counterparts"].add(
-        "{0} ({1})".format(p[f"title_{other}"] or p[f"cs_{other}"], other_state or "")
-    )
-    if p["meetdate"]:
-        row["_dates"].add(p["meetdate"])
+	row = by_cei.get(cei)
+	if not row:
+		row = {
+			"alert": alert,
+			"student": p["student"],
+			"term": p["term"],
+			"enrollment": cei,
+			"course": p[f"cs_{this}"],
+			"state": state,
+			"room": p[f"room_{this}"] or "",
+			"when": when_by_cs.get(p[f"cs_{this}"], ""),
+			"_counterparts": set(),
+			"_dates": set(),
+		}
+		by_cei[cei] = row
+	row["alert"] = max(row["alert"], alert)
+	row["_counterparts"].add("{0} ({1})".format(p[f"title_{other}"] or p[f"cs_{other}"], other_state or ""))
+	if p["meetdate"]:
+		row["_dates"].add(p["meetdate"])
 
 
 def _conflicting_pairs(academic_term):
-    """Overlapping enrollment pairs for the same student (one row per shared date).
+	"""Overlapping enrollment pairs for the same student (one row per shared date).
 
-    Self-join keeps cei_b.name > cei_a.name so each pair surfaces once; the
-    meeting-date join with strict time overlap mirrors ADR-038 room detection.
-    """
-    conditions = ""
-    params = {"inactive": _INACTIVE_STATES}
-    if academic_term:
-        conditions = "AND cei_a.academic_term = %(term)s"
-        params["term"] = academic_term
+	Self-join keeps cei_b.name > cei_a.name so each pair surfaces once; the
+	meeting-date join with strict time overlap mirrors ADR-038 room detection.
+	"""
+	conditions = ""
+	params = {"inactive": _INACTIVE_STATES}
+	if academic_term:
+		conditions = "AND cei_a.academic_term = %(term)s"
+		params["term"] = academic_term
 
-    return frappe.db.sql(
-        f"""
+	return frappe.db.sql(
+		f"""
         SELECT DISTINCT
             cei_a.name AS cei_a, cei_a.workflow_state AS state_a,
             cs_a.name AS cs_a, cs_a.title AS title_a, cs_a.room AS room_a,
@@ -194,26 +190,22 @@ def _conflicting_pairs(academic_term):
           {conditions}
         ORDER BY ma.cs_meetdate
         """,  # nosec B608 -- interpolates a clause built from constants in this function
-        params,
-        as_dict=True,
-    )
+		params,
+		as_dict=True,
+	)
 
 
 def _when_labels(cs_names):
-    if not cs_names:
-        return {}
-    fields = ["name", "modality", "from_time", "to_time"] + [
-        d for d, _abbr in _DAY_FIELDS
-    ]
-    labels = {}
-    for cs in frappe.get_all(
-        "Course Schedule", filters={"name": ["in", list(cs_names)]}, fields=fields
-    ):
-        days = "".join(abbr for field, abbr in _DAY_FIELDS if cs.get(field))
-        time = ""
-        if cs.from_time:
-            time = frappe.utils.format_time(cs.from_time, "h:mm a")
-            if cs.to_time:
-                time += "–" + frappe.utils.format_time(cs.to_time, "h:mm a")
-        labels[cs.name] = " ".join(part for part in (days, time) if part)
-    return labels
+	if not cs_names:
+		return {}
+	fields = ["name", "modality", "from_time", "to_time"] + [d for d, _abbr in _DAY_FIELDS]
+	labels = {}
+	for cs in frappe.get_all("Course Schedule", filters={"name": ["in", list(cs_names)]}, fields=fields):
+		days = "".join(abbr for field, abbr in _DAY_FIELDS if cs.get(field))
+		time = ""
+		if cs.from_time:
+			time = frappe.utils.format_time(cs.from_time, "h:mm a")
+			if cs.to_time:
+				time += "–" + frappe.utils.format_time(cs.to_time, "h:mm a")
+		labels[cs.name] = " ".join(part for part in (days, time) if part)
+	return labels

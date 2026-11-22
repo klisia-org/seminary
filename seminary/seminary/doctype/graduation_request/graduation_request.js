@@ -72,7 +72,11 @@ function render_grad_reqs(frm, audit) {
 	const wrapper = frm.fields_dict.graduation_requirements_html.$wrapper;
 	const reqs = audit.graduation_requirements || [];
 	if (!reqs.length) {
-		wrapper.html(`<p class="text-muted">${__("No graduation requirements snapshotted on this enrollment.")}</p>`);
+		wrapper.html(
+			`<p class="text-muted">${__(
+				"No graduation requirements snapshotted on this enrollment."
+			)}</p>`
+		);
 		return;
 	}
 
@@ -92,27 +96,33 @@ function render_grad_reqs(frm, audit) {
 		return `<a href="${url}" target="_blank">${frappe.utils.escape_html(req.linked_doc)}</a>`;
 	};
 
-	let html = '<table class="table table-bordered table-condensed">'
-		+ "<thead><tr>"
-		+ `<th>${__("Requirement")}</th>`
-		+ `<th>${__("Type")}</th>`
-		+ `<th>${__("Status")}</th>`
-		+ `<th>${__("Mandatory")}</th>`
-		+ `<th>${__("Blocks Request")}</th>`
-		+ `<th>${__("Due")}</th>`
-		+ `<th>${__("Linked Document")}</th>`
-		+ "</tr></thead><tbody>";
+	let html =
+		'<table class="table table-bordered table-condensed">' +
+		"<thead><tr>" +
+		`<th>${__("Requirement")}</th>` +
+		`<th>${__("Type")}</th>` +
+		`<th>${__("Status")}</th>` +
+		`<th>${__("Mandatory")}</th>` +
+		`<th>${__("Blocks Request")}</th>` +
+		`<th>${__("Due")}</th>` +
+		`<th>${__("Linked Document")}</th>` +
+		"</tr></thead><tbody>";
 
 	for (const req of reqs) {
-		html += "<tr>"
-			+ `<td>${frappe.utils.escape_html(req.requirement_name || "")}${req.waived ? ` <em>(${__("waived")})</em>` : ""}</td>`
-			+ `<td>${frappe.utils.escape_html(req.requirement_type || "—")}</td>`
-			+ `<td style="color:${status_color(req.status)};font-weight:bold">${frappe.utils.escape_html(req.status || "—")}</td>`
-			+ `<td>${req.mandatory ? __("Yes") : __("No")}</td>`
-			+ `<td>${req.blocks_graduation_request ? __("Yes") : __("No")}</td>`
-			+ `<td>${req.due_date || "—"}</td>`
-			+ `<td>${desk_link(req)}</td>`
-			+ "</tr>";
+		html +=
+			"<tr>" +
+			`<td>${frappe.utils.escape_html(req.requirement_name || "")}${
+				req.waived ? ` <em>(${__("waived")})</em>` : ""
+			}</td>` +
+			`<td>${frappe.utils.escape_html(req.requirement_type || "—")}</td>` +
+			`<td style="color:${status_color(
+				req.status
+			)};font-weight:bold">${frappe.utils.escape_html(req.status || "—")}</td>` +
+			`<td>${req.mandatory ? __("Yes") : __("No")}</td>` +
+			`<td>${req.blocks_graduation_request ? __("Yes") : __("No")}</td>` +
+			`<td>${req.due_date || "—"}</td>` +
+			`<td>${desk_link(req)}</td>` +
+			"</tr>";
 	}
 	html += "</tbody></table>";
 	wrapper.html(html);
@@ -126,36 +136,46 @@ function render_pending_payments(frm, rows) {
 	}
 
 	let total = 0;
-	let html = '<table class="table table-bordered table-condensed">'
-		+ "<thead><tr>"
-		+ `<th>${__("Payer")}</th>`
-		+ `<th>${__("Unpaid Invoices")}</th>`
-		+ `<th class="text-right">${__("Total Unpaid")}</th>`
-		+ "</tr></thead><tbody>";
+	let html =
+		'<table class="table table-bordered table-condensed">' +
+		"<thead><tr>" +
+		`<th>${__("Payer")}</th>` +
+		`<th>${__("Unpaid Invoices")}</th>` +
+		`<th class="text-right">${__("Total Unpaid")}</th>` +
+		"</tr></thead><tbody>";
 
 	for (const row of rows) {
 		total += row.total_unpaid || 0;
 		const inv_links = (row.invoices || [])
 			.map((inv) => {
 				const url = `/app/sales-invoice/${encodeURIComponent(inv.name)}`;
-				return `<a href="${url}" target="_blank">${frappe.utils.escape_html(inv.name)}</a> <span class="text-muted">(${frappe.utils.escape_html(inv.source)})</span>`;
+				return `<a href="${url}" target="_blank">${frappe.utils.escape_html(
+					inv.name
+				)}</a> <span class="text-muted">(${frappe.utils.escape_html(inv.source)})</span>`;
 			})
 			.join(", ");
-		html += "<tr>"
-			+ `<td>${frappe.utils.escape_html(row.customer || "")}</td>`
-			+ `<td>${inv_links}</td>`
-			+ `<td class="text-right" style="color:#d97706;font-weight:bold">${format_currency(row.total_unpaid)}</td>`
-			+ "</tr>";
+		html +=
+			"<tr>" +
+			`<td>${frappe.utils.escape_html(row.customer || "")}</td>` +
+			`<td>${inv_links}</td>` +
+			`<td class="text-right" style="color:#d97706;font-weight:bold">${format_currency(
+				row.total_unpaid
+			)}</td>` +
+			"</tr>";
 	}
-	html += "</tbody>"
-		+ "<tfoot><tr>"
-		+ `<th colspan="2" class="text-right">${__("Total")}</th>`
-		+ `<th class="text-right" style="color:#d97706">${format_currency(total)}</th>`
-		+ "</tr></tfoot></table>";
+	html +=
+		"</tbody>" +
+		"<tfoot><tr>" +
+		`<th colspan="2" class="text-right">${__("Total")}</th>` +
+		`<th class="text-right" style="color:#d97706">${format_currency(total)}</th>` +
+		"</tr></tfoot></table>";
 	wrapper.html(html);
 }
 
 function format_currency(value) {
 	const n = Number(value || 0);
-	return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+	return n.toLocaleString(undefined, {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
 }

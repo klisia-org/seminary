@@ -22,9 +22,9 @@ and release the capacity counter.
 """
 
 import frappe
+from frappe import _
 
 from seminary.seminary import guards
-from frappe import _
 
 # routes_to machine keys (must match Faculty Capability.routes_to / seeds).
 PLACEMENT_EXAMINER_ROUTE = "Placement Examiner"
@@ -38,45 +38,42 @@ PROJECT_REVIEW_KEY = "Project Reviews"
 
 # Roles that see every unit's worklist (mirrors utils.COURSE_FULL_ACCESS_ROLES).
 FACULTY_FULL_ACCESS_ROLES = {
-    "Program Chair",
-    "Seminary Manager",
-    "System Manager",
-    "Administrator",
+	"Program Chair",
+	"Seminary Manager",
+	"System Manager",
+	"Administrator",
 }
 
 
 def _resolve_units(unit: str) -> list[str]:
-    """The unit itself, plus — for an Academic Interdepartment — its member units
-    (transitive resolution, one level)."""
-    units = [unit]
-    if (
-        frappe.db.get_value("Academic Unit", unit, "unit_type")
-        == "Academic Interdepartment"
-    ):
-        units += frappe.get_all(
-            "Academic Unit Constituent",
-            filters={"parent": unit, "parentfield": "member_units"},
-            pluck="member_unit",
-        )
-    return units
+	"""The unit itself, plus — for an Academic Interdepartment — its member units
+	(transitive resolution, one level)."""
+	units = [unit]
+	if frappe.db.get_value("Academic Unit", unit, "unit_type") == "Academic Interdepartment":
+		units += frappe.get_all(
+			"Academic Unit Constituent",
+			filters={"parent": unit, "parentfield": "member_units"},
+			pluck="member_unit",
+		)
+	return units
 
 
 def _remaining(row) -> float:
-    """max_students 0 means unlimited — treat as infinite capacity."""
-    cap = row.max_students or 0
-    return float("inf") if cap == 0 else cap - (row.current_students or 0)
+	"""max_students 0 means unlimited — treat as infinite capacity."""
+	cap = row.max_students or 0
+	return float("inf") if cap == 0 else cap - (row.current_students or 0)
 
 
 def _capability_rows(unit: str, route: str):
-    """Active capability rows in ``unit`` (resolved transitively) wired to ``route``,
-    keyed on Person. ``instructor`` may be null for organizational capacities that a
-    plain Person holds (ADR 062). Academic routing filters to the instructor-bearing
-    subset via ``_instructor_rows``."""
-    units = _resolve_units(unit)
-    if not units:
-        return []
-    return frappe.db.sql(
-        """
+	"""Active capability rows in ``unit`` (resolved transitively) wired to ``route``,
+	keyed on Person. ``instructor`` may be null for organizational capacities that a
+	plain Person holds (ADR 062). Academic routing filters to the instructor-bearing
+	subset via ``_instructor_rows``."""
+	units = _resolve_units(unit)
+	if not units:
+		return []
+	return frappe.db.sql(
+		"""
         SELECT m.name AS membership, m.person AS person, m.instructor AS instructor,
                m.unit AS unit, c.name AS cap_row, c.max_students, c.current_students
         FROM `tabAcademic Unit Membership` m
@@ -87,153 +84,151 @@ def _capability_rows(unit: str, route: str):
           AND fc.routes_to = %(route)s
           AND fc.is_active = 1
         """,
-        {"units": tuple(units), "route": route},
-        as_dict=True,
-    )
+		{"units": tuple(units), "route": route},
+		as_dict=True,
+	)
 
 
 def _instructor_rows(unit: str, route: str):
-    """``_capability_rows`` filtered to instructor-bearing memberships — the basis for
-    every instructor-keyed (academic) routing helper. Behaviour matches the pre-ADR-062
-    instructor-only core."""
-    return [r for r in _capability_rows(unit, route) if r.instructor]
+	"""``_capability_rows`` filtered to instructor-bearing memberships — the basis for
+	every instructor-keyed (academic) routing helper. Behaviour matches the pre-ADR-062
+	instructor-only core."""
+	return [r for r in _capability_rows(unit, route) if r.instructor]
 
 
 def eligible_instructors(unit: str, route: str) -> list[dict]:
-    """Instructors in ``unit`` (transitive for an interdepartment) wired to
-    ``route`` and with remaining capacity, most-available first. One entry per
-    instructor (their best-remaining capability row)."""
-    best: dict[str, frappe._dict] = {}
-    for row in _instructor_rows(unit, route):
-        if _remaining(row) <= 0:
-            continue
-        current = best.get(row.instructor)
-        if current is None or _remaining(row) > _remaining(current):
-            best[row.instructor] = row
-    rows = sorted(best.values(), key=_remaining, reverse=True)
-    return [
-        {
-            "instructor": r.instructor,
-            "membership": r.membership,
-            "unit": r.unit,
-            "remaining": _remaining(r),
-        }
-        for r in rows
-    ]
+	"""Instructors in ``unit`` (transitive for an interdepartment) wired to
+	``route`` and with remaining capacity, most-available first. One entry per
+	instructor (their best-remaining capability row)."""
+	best: dict[str, frappe._dict] = {}
+	for row in _instructor_rows(unit, route):
+		if _remaining(row) <= 0:
+			continue
+		current = best.get(row.instructor)
+		if current is None or _remaining(row) > _remaining(current):
+			best[row.instructor] = row
+	rows = sorted(best.values(), key=_remaining, reverse=True)
+	return [
+		{
+			"instructor": r.instructor,
+			"membership": r.membership,
+			"unit": r.unit,
+			"remaining": _remaining(r),
+		}
+		for r in rows
+	]
 
 
 def claim_slot(cap_row: str, enforce_ceiling: bool = True) -> bool:
-    """Take one slot on a capability row. Returns False when it was refused.
+	"""Take one slot on a capability row. Returns False when it was refused.
 
-    The read and the write are one critical section. Every claim here used to be
-    read-then-write with no lock, so two placements could see the same last slot
-    and both take it — a latent defect the internship and CP advisor claims have
-    carried all along, hidden only by the fact that humans assign one at a time.
-    A batch is what makes two claims land in the same millisecond.
+	The read and the write are one critical section. Every claim here used to be
+	read-then-write with no lock, so two placements could see the same last slot
+	and both take it — a latent defect the internship and CP advisor claims have
+	carried all along, hidden only by the fact that humans assign one at a time.
+	A batch is what makes two claims land in the same millisecond.
 
-    Two different questions, and only one of them is this function's to answer:
-    *is there room*, which the lock settles, and *will this person take one
-    more*, which only they can. So the ceiling binds where the **system** is
-    choosing an assignee and not where a **human** already has — see
-    ``claim_capability`` and ``claim_for`` below.
-    """
-    rows = frappe.db.sql(
-        """
+	Two different questions, and only one of them is this function's to answer:
+	*is there room*, which the lock settles, and *will this person take one
+	more*, which only they can. So the ceiling binds where the **system** is
+	choosing an assignee and not where a **human** already has — see
+	``claim_capability`` and ``claim_for`` below.
+	"""
+	rows = frappe.db.sql(
+		"""
         SELECT max_students, current_students
         FROM `tabAcademic Unit Capability`
         WHERE name = %s
         FOR UPDATE
         """,
-        cap_row,
-        as_dict=True,
-    )
-    if not rows:
-        return False
-    cap = rows[0].max_students or 0
-    current = rows[0].current_students or 0
-    if cap and current >= cap and enforce_ceiling:
-        return False
-    frappe.db.set_value(
-        "Academic Unit Capability", cap_row, "current_students", current + 1
-    )
-    return True
+		cap_row,
+		as_dict=True,
+	)
+	if not rows:
+		return False
+	cap = rows[0].max_students or 0
+	current = rows[0].current_students or 0
+	if cap and current >= cap and enforce_ceiling:
+		return False
+	frappe.db.set_value("Academic Unit Capability", cap_row, "current_students", current + 1)
+	return True
 
 
 def claim_capability(unit: str, route: str) -> str | None:
-    """Pick the instructor with the most remaining capacity for ``route``,
-    increment their counter, and return the instructor — or None when no one is
-    eligible. Caller decides whether to auto-assign (manual entry wins).
+	"""Pick the instructor with the most remaining capacity for ``route``,
+	increment their counter, and return the instructor — or None when no one is
+	eligible. Caller decides whether to auto-assign (manual entry wins).
 
-    Walks the candidates rather than taking the best one and trusting it: the
-    unlocked read that ordered them may already be stale by the time the claim
-    runs, and losing the race should cost the next-best assignee, not the whole
-    assignment.
-    """
-    candidates = sorted(
-        (r for r in _instructor_rows(unit, route) if _remaining(r) > 0),
-        key=_remaining,
-        reverse=True,
-    )
-    for row in candidates:
-        if claim_slot(row.cap_row):
-            return row.instructor
-    return None
+	Walks the candidates rather than taking the best one and trusting it: the
+	unlocked read that ordered them may already be stale by the time the claim
+	runs, and losing the race should cost the next-best assignee, not the whole
+	assignment.
+	"""
+	candidates = sorted(
+		(r for r in _instructor_rows(unit, route) if _remaining(r) > 0),
+		key=_remaining,
+		reverse=True,
+	)
+	for row in candidates:
+		if claim_slot(row.cap_row):
+			return row.instructor
+	return None
 
 
 def claim_for(unit: str, route: str, instructor: str) -> bool:
-    """Increment a *specific* instructor's capacity counter for (unit, route) —
-    used when a human picks the assignee (a CP advisor, a cohort mentor) instead
-    of round-robin. Returns True if a capacity row was found and incremented,
-    False when the instructor holds no such capability (the assignment still
-    proceeds, just untracked).
+	"""Increment a *specific* instructor's capacity counter for (unit, route) —
+	used when a human picks the assignee (a CP advisor, a cohort mentor) instead
+	of round-robin. Returns True if a capacity row was found and incremented,
+	False when the instructor holds no such capability (the assignment still
+	proceeds, just untracked).
 
-    **The ceiling does not bind here, deliberately.** By the time this runs the
-    assignment has already been made by a person who meant it, so refusing the
-    increment would not undo the work — it would only stop counting it, and an
-    undercounted advisor then looks free to the next round-robin. Over the
-    ceiling is a fact to report, which is what the caller does; an undercount is
-    a fact destroyed.
+	**The ceiling does not bind here, deliberately.** By the time this runs the
+	assignment has already been made by a person who meant it, so refusing the
+	increment would not undo the work — it would only stop counting it, and an
+	undercounted advisor then looks free to the next round-robin. Over the
+	ceiling is a fact to report, which is what the caller does; an undercount is
+	a fact destroyed.
 
-    The lock still applies. That was the actual defect (see ``claim_slot``), and
-    it is fixed for every caller.
-    """
-    if not (unit and instructor):
-        return False
-    for row in _instructor_rows(unit, route):
-        if row.instructor == instructor:
-            return claim_slot(row.cap_row, enforce_ceiling=False)
-    return False
+	The lock still applies. That was the actual defect (see ``claim_slot``), and
+	it is fixed for every caller.
+	"""
+	if not (unit and instructor):
+		return False
+	for row in _instructor_rows(unit, route):
+		if row.instructor == instructor:
+			return claim_slot(row.cap_row, enforce_ceiling=False)
+	return False
 
 
 def capacity_for(unit: str, route: str, instructor: str) -> dict | None:
-    """This instructor's (max, current) for the route, or None if unwired.
+	"""This instructor's (max, current) for the route, or None if unwired.
 
-    So a caller that may exceed a ceiling can say by how much, rather than
-    learning only that something was refused.
-    """
-    for row in _instructor_rows(unit, route):
-        if row.instructor == instructor:
-            return {
-                "max_students": row.max_students or 0,
-                "current_students": row.current_students or 0,
-            }
-    return None
+	So a caller that may exceed a ceiling can say by how much, rather than
+	learning only that something was refused.
+	"""
+	for row in _instructor_rows(unit, route):
+		if row.instructor == instructor:
+			return {
+				"max_students": row.max_students or 0,
+				"current_students": row.current_students or 0,
+			}
+	return None
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def instructors_in_unit(doctype, txt, searchfield, start, page_len, filters):
-    """Link-picker query: instructors who are active members of a unit (transitive
-    for an interdepartment). Used to scope CP reader pickers to the project's unit."""
-    # Desk link-picker, reached only from `culminating_project.js`.
-    # Ungated it was a staff directory for anybody signed in (p010 H19).
-    guards.require_grader(include_registrar=True)
-    unit = (filters or {}).get("unit")
-    units = _resolve_units(unit) if unit else []
-    if not units:
-        return []
-    return frappe.db.sql(
-        """
+	"""Link-picker query: instructors who are active members of a unit (transitive
+	for an interdepartment). Used to scope CP reader pickers to the project's unit."""
+	# Desk link-picker, reached only from `culminating_project.js`.
+	# Ungated it was a staff directory for anybody signed in (p010 H19).
+	guards.require_grader(include_registrar=True)
+	unit = (filters or {}).get("unit")
+	units = _resolve_units(unit) if unit else []
+	if not units:
+		return []
+	return frappe.db.sql(
+		"""
         SELECT DISTINCT m.instructor, i.instructor_name
         FROM `tabAcademic Unit Membership` m
         JOIN `tabInstructor` i ON i.name = m.instructor
@@ -243,37 +238,37 @@ def instructors_in_unit(doctype, txt, searchfield, start, page_len, filters):
         ORDER BY i.instructor_name
         LIMIT %(start)s, %(page_len)s
         """,
-        {
-            "units": tuple(units),
-            "txt": f"%{txt}%",
-            "start": start,
-            "page_len": page_len,
-        },
-    )
+		{
+			"units": tuple(units),
+			"txt": f"%{txt}%",
+			"start": start,
+			"page_len": page_len,
+		},
+	)
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def capability_holders(doctype, txt, searchfield, start, page_len, filters):
-    """Link-picker query: instructors who hold a capability (filters.route) with
-    remaining capacity. Wide net across ALL units by default; pass filters.unit to
-    narrow to that unit (transitive). Used for the CP advisor picker — the gate is
-    'qualified' (holds the capability), optionally narrowed to the unit."""
-    # Desk link-picker, reached only from `culminating_project.js`.
-    # Ungated it was a staff directory for anybody signed in (p010 H19).
-    guards.require_grader(include_registrar=True)
-    f = filters or {}
-    route = f.get("route")
-    if not route:
-        return []
-    unit = f.get("unit")
-    params = {"route": route, "txt": f"%{txt}%", "start": start, "page_len": page_len}
-    unit_clause = ""
-    if unit:
-        params["units"] = tuple(_resolve_units(unit))
-        unit_clause = "AND m.unit IN %(units)s"
-    return frappe.db.sql(
-        f"""
+	"""Link-picker query: instructors who hold a capability (filters.route) with
+	remaining capacity. Wide net across ALL units by default; pass filters.unit to
+	narrow to that unit (transitive). Used for the CP advisor picker — the gate is
+	'qualified' (holds the capability), optionally narrowed to the unit."""
+	# Desk link-picker, reached only from `culminating_project.js`.
+	# Ungated it was a staff directory for anybody signed in (p010 H19).
+	guards.require_grader(include_registrar=True)
+	f = filters or {}
+	route = f.get("route")
+	if not route:
+		return []
+	unit = f.get("unit")
+	params = {"route": route, "txt": f"%{txt}%", "start": start, "page_len": page_len}
+	unit_clause = ""
+	if unit:
+		params["units"] = tuple(_resolve_units(unit))
+		unit_clause = "AND m.unit IN %(units)s"
+	return frappe.db.sql(
+		f"""
         SELECT DISTINCT m.instructor, i.instructor_name
         FROM `tabAcademic Unit Membership` m
         JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
@@ -287,24 +282,24 @@ def capability_holders(doctype, txt, searchfield, start, page_len, filters):
         ORDER BY i.instructor_name
         LIMIT %(start)s, %(page_len)s
         """,  # nosec B608 -- interpolates a clause built from constants in this function
-        params,
-    )
+		params,
+	)
 
 
 def holds_capability(instructor: str, route: str, unit: str | None = None) -> bool:
-    """True if the instructor holds an active capability for ``route`` — anywhere,
-    or within ``unit`` (transitive) when given. The 'qualified' gate for advisor
-    assignment."""
-    if not instructor:
-        return False
-    params = {"instructor": instructor, "route": route}
-    unit_clause = ""
-    if unit:
-        params["units"] = tuple(_resolve_units(unit))
-        unit_clause = "AND m.unit IN %(units)s"
-    return bool(
-        frappe.db.sql(
-            f"""
+	"""True if the instructor holds an active capability for ``route`` — anywhere,
+	or within ``unit`` (transitive) when given. The 'qualified' gate for advisor
+	assignment."""
+	if not instructor:
+		return False
+	params = {"instructor": instructor, "route": route}
+	unit_clause = ""
+	if unit:
+		params["units"] = tuple(_resolve_units(unit))
+		unit_clause = "AND m.unit IN %(units)s"
+	return bool(
+		frappe.db.sql(
+			f"""
             SELECT 1
             FROM `tabAcademic Unit Membership` m
             JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
@@ -313,39 +308,39 @@ def holds_capability(instructor: str, route: str, unit: str | None = None) -> bo
               AND fc.routes_to = %(route)s AND fc.is_active = 1 {unit_clause}
             LIMIT 1
             """,  # nosec B608 -- interpolates a clause built from constants in this function
-            params,
-        )
-    )
+			params,
+		)
+	)
 
 
 def is_member(unit: str, instructor: str) -> bool:
-    """True if the instructor has an active membership in the unit (transitive
-    for an interdepartment). Used for reader-scope checks."""
-    if not (unit and instructor):
-        return False
-    units = _resolve_units(unit)
-    return bool(
-        frappe.db.exists(
-            "Academic Unit Membership",
-            {"unit": ("in", units), "instructor": instructor, "is_active": 1},
-        )
-    )
+	"""True if the instructor has an active membership in the unit (transitive
+	for an interdepartment). Used for reader-scope checks."""
+	if not (unit and instructor):
+		return False
+	units = _resolve_units(unit)
+	return bool(
+		frappe.db.exists(
+			"Academic Unit Membership",
+			{"unit": ("in", units), "instructor": instructor, "is_active": 1},
+		)
+	)
 
 
 def release_capability(unit: str, instructor: str, route: str) -> None:
-    """Decrement an instructor's assigned count for ``route`` when an assignment
-    is withdrawn or changed."""
-    if not (unit and instructor):
-        return
-    for row in _instructor_rows(unit, route):
-        if row.instructor == instructor and (row.current_students or 0) > 0:
-            frappe.db.set_value(
-                "Academic Unit Capability",
-                row.cap_row,
-                "current_students",
-                row.current_students - 1,
-            )
-            return
+	"""Decrement an instructor's assigned count for ``route`` when an assignment
+	is withdrawn or changed."""
+	if not (unit and instructor):
+		return
+	for row in _instructor_rows(unit, route):
+		if row.instructor == instructor and (row.current_students or 0) > 0:
+			frappe.db.set_value(
+				"Academic Unit Capability",
+				row.cap_row,
+				"current_students",
+				row.current_students - 1,
+			)
+			return
 
 
 # ---------------------------------------------------------------------------
@@ -354,21 +349,17 @@ def release_capability(unit: str, instructor: str, route: str) -> None:
 
 
 def current_instructor(user: str | None = None) -> str | None:
-    return frappe.db.get_value(
-        "Instructor", {"user": user or frappe.session.user}, "name"
-    )
+	return frappe.db.get_value("Instructor", {"user": user or frappe.session.user}, "name")
 
 
 def has_full_access(user: str | None = None) -> bool:
-    return bool(
-        FACULTY_FULL_ACCESS_ROLES & set(frappe.get_roles(user or frappe.session.user))
-    )
+	return bool(FACULTY_FULL_ACCESS_ROLES & set(frappe.get_roles(user or frappe.session.user)))
 
 
 def wired_instructors(unit: str, route: str) -> set:
-    """Every instructor wired to (unit, route), ignoring capacity (transitive for
-    an interdepartment). Used for authorization and worklist routing."""
-    return {r.instructor for r in _instructor_rows(unit, route)}
+	"""Every instructor wired to (unit, route), ignoring capacity (transitive for
+	an interdepartment). Used for authorization and worklist routing."""
+	return {r.instructor for r in _instructor_rows(unit, route)}
 
 
 # ---------------------------------------------------------------------------
@@ -384,20 +375,20 @@ TRAINING_OVERSIGHT_ROUTE = "Oversees Unit Training"
 
 
 def persons_with_capacity(unit: str, route: str) -> set:
-    """Every Person wired to (unit, route), ignoring capacity and instructor status
-    (transitive for an interdepartment). The person-keyed counterpart to
-    ``wired_instructors``."""
-    return {r.person for r in _capability_rows(unit, route) if r.person}
+	"""Every Person wired to (unit, route), ignoring capacity and instructor status
+	(transitive for an interdepartment). The person-keyed counterpart to
+	``wired_instructors``."""
+	return {r.person for r in _capability_rows(unit, route) if r.person}
 
 
 def units_with_capacity(person: str, route: str) -> set:
-    """The units where ``person`` holds an active capability for ``route`` — direct
-    memberships only (no interdepartment/parent expansion; callers expand as needed,
-    e.g. via ``academic_unit.descendant_units`` for org rollup)."""
-    if not person:
-        return set()
-    rows = frappe.db.sql(
-        """
+	"""The units where ``person`` holds an active capability for ``route`` — direct
+	memberships only (no interdepartment/parent expansion; callers expand as needed,
+	e.g. via ``academic_unit.descendant_units`` for org rollup)."""
+	if not person:
+		return set()
+	rows = frappe.db.sql(
+		"""
         SELECT DISTINCT m.unit
         FROM `tabAcademic Unit Membership` m
         JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
@@ -405,25 +396,25 @@ def units_with_capacity(person: str, route: str) -> set:
         WHERE m.person = %(person)s AND m.is_active = 1
           AND fc.routes_to = %(route)s AND fc.is_active = 1
         """,
-        {"person": person, "route": route},
-    )
-    return {r[0] for r in rows}
+		{"person": person, "route": route},
+	)
+	return {r[0] for r in rows}
 
 
 def holds_unit_capacity(person: str, route: str, unit: str | None = None) -> bool:
-    """True if ``person`` holds an active capability for ``route`` — anywhere, or within
-    ``unit`` (transitive) when given. Person-keyed, so it covers non-instructor holders.
-    """
-    if not person:
-        return False
-    params = {"person": person, "route": route}
-    unit_clause = ""
-    if unit:
-        params["units"] = tuple(_resolve_units(unit))
-        unit_clause = "AND m.unit IN %(units)s"
-    return bool(
-        frappe.db.sql(
-            f"""
+	"""True if ``person`` holds an active capability for ``route`` — anywhere, or within
+	``unit`` (transitive) when given. Person-keyed, so it covers non-instructor holders.
+	"""
+	if not person:
+		return False
+	params = {"person": person, "route": route}
+	unit_clause = ""
+	if unit:
+		params["units"] = tuple(_resolve_units(unit))
+		unit_clause = "AND m.unit IN %(units)s"
+	return bool(
+		frappe.db.sql(
+			f"""
             SELECT 1
             FROM `tabAcademic Unit Membership` m
             JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
@@ -432,36 +423,36 @@ def holds_unit_capacity(person: str, route: str, unit: str | None = None) -> boo
               AND fc.routes_to = %(route)s AND fc.is_active = 1 {unit_clause}
             LIMIT 1
             """,  # nosec B608 -- interpolates a clause built from constants in this function
-            params,
-        )
-    )
+			params,
+		)
+	)
 
 
 def require_unit_capacity(person: str, route: str, unit: str) -> None:
-    """Raise PermissionError unless ``person`` holds ``route`` for ``unit`` — a
-    full-access role, or a member wired to the unit with that capacity."""
-    if has_full_access():
-        return
-    if person and unit and holds_unit_capacity(person, route, unit):
-        return
-    frappe.throw(
-        _("You are not authorized to perform this for this unit."),
-        frappe.PermissionError,
-    )
+	"""Raise PermissionError unless ``person`` holds ``route`` for ``unit`` — a
+	full-access role, or a member wired to the unit with that capacity."""
+	if has_full_access():
+		return
+	if person and unit and holds_unit_capacity(person, route, unit):
+		return
+	frappe.throw(
+		_("You are not authorized to perform this for this unit."),
+		frappe.PermissionError,
+	)
 
 
 def org_footprint(person: str) -> dict:
-    """A Person's organizational footprint (ADR 062): every Academic Unit membership with its
-    capabilities, plus — when HRMS is enabled — the Employee's department and reports-to. Lets a
-    manager confirm someone is wired into the units/capacities that drive their access and training.
+	"""A Person's organizational footprint (ADR 062): every Academic Unit membership with its
+	capabilities, plus — when HRMS is enabled — the Employee's department and reports-to. Lets a
+	manager confirm someone is wired into the units/capacities that drive their access and training.
 
-    Plain helper (no permission gate); callers gate (the whitelisted wrapper below, or aretenic's
-    team-scope-gated endpoint).
-    """
-    if not person:
-        return {}
-    memberships = frappe.db.sql(
-        """
+	Plain helper (no permission gate); callers gate (the whitelisted wrapper below, or aretenic's
+	team-scope-gated endpoint).
+	"""
+	if not person:
+		return {}
+	memberships = frappe.db.sql(
+		"""
         SELECT m.name AS membership, m.unit AS unit, m.is_active AS is_active,
                au.unit_type AS unit_type, au.parent_unit AS parent_unit
         FROM `tabAcademic Unit Membership` m
@@ -469,145 +460,138 @@ def org_footprint(person: str) -> dict:
         WHERE m.person = %(person)s
         ORDER BY m.is_active DESC, m.unit
         """,
-        {"person": person},
-        as_dict=True,
-    )
-    cap_rows = (
-        frappe.get_all(
-            "Academic Unit Capability",
-            filters={"parent": ["in", [m.membership for m in memberships]]},
-            fields=["parent", "capability", "max_students", "current_students"],
-        )
-        if memberships
-        else []
-    )
-    fc = (
-        {
-            f.name: f
-            for f in frappe.get_all(
-                "Faculty Capability",
-                filters={"name": ["in", list({c.capability for c in cap_rows})]},
-                fields=["name", "capability_name", "routes_to"],
-            )
-        }
-        if cap_rows
-        else {}
-    )
-    caps_by_m: dict = {}
-    for c in cap_rows:
-        meta = fc.get(c.capability, frappe._dict())
-        caps_by_m.setdefault(c.parent, []).append(
-            {
-                "capability": meta.get("capability_name") or c.capability,
-                "routes_to": meta.get("routes_to"),
-                "max_students": c.max_students,
-                "current_students": c.current_students,
-            }
-        )
+		{"person": person},
+		as_dict=True,
+	)
+	cap_rows = (
+		frappe.get_all(
+			"Academic Unit Capability",
+			filters={"parent": ["in", [m.membership for m in memberships]]},
+			fields=["parent", "capability", "max_students", "current_students"],
+		)
+		if memberships
+		else []
+	)
+	fc = (
+		{
+			f.name: f
+			for f in frappe.get_all(
+				"Faculty Capability",
+				filters={"name": ["in", list({c.capability for c in cap_rows})]},
+				fields=["name", "capability_name", "routes_to"],
+			)
+		}
+		if cap_rows
+		else {}
+	)
+	caps_by_m: dict = {}
+	for c in cap_rows:
+		meta = fc.get(c.capability, frappe._dict())
+		caps_by_m.setdefault(c.parent, []).append(
+			{
+				"capability": meta.get("capability_name") or c.capability,
+				"routes_to": meta.get("routes_to"),
+				"max_students": c.max_students,
+				"current_students": c.current_students,
+			}
+		)
 
-    units = [
-        {
-            "unit": m.unit,
-            "unit_type": m.unit_type,
-            "parent_unit": m.parent_unit,
-            "is_active": m.is_active,
-            "capabilities": caps_by_m.get(m.membership, []),
-        }
-        for m in memberships
-    ]
-    out = {"person": person, "units": units, "department": None, "reports_to": None}
+	units = [
+		{
+			"unit": m.unit,
+			"unit_type": m.unit_type,
+			"parent_unit": m.parent_unit,
+			"is_active": m.is_active,
+			"capabilities": caps_by_m.get(m.membership, []),
+		}
+		for m in memberships
+	]
+	out = {"person": person, "units": units, "department": None, "reports_to": None}
 
-    if frappe.db.get_single_value(
-        "Seminary Settings", "hrms_enable"
-    ) and frappe.db.exists("DocType", "Employee"):
-        user = frappe.db.get_value("Person", person, "user")
-        emp = (
-            frappe.db.get_value(
-                "Employee",
-                {"user_id": user},
-                ["department", "reports_to"],
-                as_dict=True,
-            )
-            if user
-            else None
-        )
-        if emp:
-            out["department"] = emp.department
-            if emp.reports_to:
-                mgr_user = frappe.db.get_value("Employee", emp.reports_to, "user_id")
-                out["reports_to"] = (
-                    mgr_user
-                    and frappe.db.get_value("Person", {"user": mgr_user}, "full_name")
-                ) or frappe.db.get_value("Employee", emp.reports_to, "employee_name")
-    return out
+	if frappe.db.get_single_value("Seminary Settings", "hrms_enable") and frappe.db.exists(
+		"DocType", "Employee"
+	):
+		user = frappe.db.get_value("Person", person, "user")
+		emp = (
+			frappe.db.get_value(
+				"Employee",
+				{"user_id": user},
+				["department", "reports_to"],
+				as_dict=True,
+			)
+			if user
+			else None
+		)
+		if emp:
+			out["department"] = emp.department
+			if emp.reports_to:
+				mgr_user = frappe.db.get_value("Employee", emp.reports_to, "user_id")
+				out["reports_to"] = (
+					mgr_user and frappe.db.get_value("Person", {"user": mgr_user}, "full_name")
+				) or frappe.db.get_value("Employee", emp.reports_to, "employee_name")
+	return out
 
 
 @frappe.whitelist()
 def person_org_footprint(person: str) -> dict:
-    """Whitelisted footprint for desk use: visible to full-access roles, the person themselves, or
-    anyone with Person read permission. Other consumers (e.g. aretenic) call ``org_footprint`` behind
-    their own gate."""
-    own = frappe.db.get_value("Person", {"user": frappe.session.user}, "name")
-    if not (
-        has_full_access()
-        or person == own
-        or frappe.has_permission("Person", "read", person)
-    ):
-        frappe.throw(
-            _("Not permitted to view this person's footprint."), frappe.PermissionError
-        )
-    return org_footprint(person)
+	"""Whitelisted footprint for desk use: visible to full-access roles, the person themselves, or
+	anyone with Person read permission. Other consumers (e.g. aretenic) call ``org_footprint`` behind
+	their own gate."""
+	own = frappe.db.get_value("Person", {"user": frappe.session.user}, "name")
+	if not (has_full_access() or person == own or frappe.has_permission("Person", "read", person)):
+		frappe.throw(_("Not permitted to view this person's footprint."), frappe.PermissionError)
+	return org_footprint(person)
 
 
 def require_capability(unit: str, route: str) -> None:
-    """Raise PermissionError unless the caller may perform ``route`` for ``unit``
-    — a full-access role, or an instructor wired to the unit with that capability."""
-    if has_full_access():
-        return
-    inst = current_instructor()
-    if unit and inst and inst in wired_instructors(unit, route):
-        return
-    frappe.throw(
-        _("You are not authorized to perform this for this academic unit."),
-        frappe.PermissionError,
-    )
+	"""Raise PermissionError unless the caller may perform ``route`` for ``unit``
+	— a full-access role, or an instructor wired to the unit with that capability."""
+	if has_full_access():
+		return
+	inst = current_instructor()
+	if unit and inst and inst in wired_instructors(unit, route):
+		return
+	frappe.throw(
+		_("You are not authorized to perform this for this academic unit."),
+		frappe.PermissionError,
+	)
 
 
 @frappe.whitelist()
 def get_unit_roster(unit: str, public: bool = False) -> list:
-    """Read-only roster of a unit's faculty and their capabilities — for an
-    Academic Interdepartment this is the transitive union of its member units
-    (ADR 059). Display only: this never stores or copies any rows.
+	"""Read-only roster of a unit's faculty and their capabilities — for an
+	Academic Interdepartment this is the transitive union of its member units
+	(ADR 059). Display only: this never stores or copies any rows.
 
-    With public=True (the website "Our Team" page, ADR 061), people flagged
-    `Person.block_from_web` are excluded and each entry is enriched with the
-    member's photo, short bio, and whether they chair the unit — for rich cards.
-    """
-    public = frappe.parse_json(public) if isinstance(public, str) else public
-    # `public=False` is the *internal* projection, and it ignores
-    # `Person.block_from_web` -- a flag the school set to keep somebody off the
-    # directory. Ungated, any logged-in user could ask for it and get bios and
-    # photos of exactly the people who had been excluded (p010 H19, p005a
-    # A01-23). The internal view is now staff-only; everybody else gets the
-    # website projection whether they ask for it or not, so no caller loses a
-    # page -- they lose the rows that were never meant to be on it.
-    if not (guards.is_school_role() or guards.instructor_tier() == "record"):
-        public = True
-    units = _resolve_units(unit)
-    if not units:
-        return []
+	With public=True (the website "Our Team" page, ADR 061), people flagged
+	`Person.block_from_web` are excluded and each entry is enriched with the
+	member's photo, short bio, and whether they chair the unit — for rich cards.
+	"""
+	public = frappe.parse_json(public) if isinstance(public, str) else public
+	# `public=False` is the *internal* projection, and it ignores
+	# `Person.block_from_web` -- a flag the school set to keep somebody off the
+	# directory. Ungated, any logged-in user could ask for it and get bios and
+	# photos of exactly the people who had been excluded (p010 H19, p005a
+	# A01-23). The internal view is now staff-only; everybody else gets the
+	# website projection whether they ask for it or not, so no caller loses a
+	# page -- they lose the rows that were never meant to be on it.
+	if not (guards.is_school_role() or guards.instructor_tier() == "record"):
+		public = True
+	units = _resolve_units(unit)
+	if not units:
+		return []
 
-    chair_by_unit = dict(
-        frappe.get_all(
-            "Academic Unit",
-            filters={"name": ("in", units)},
-            fields=["name", "chair"],
-            as_list=True,
-        )
-    )
+	chair_by_unit = dict(
+		frappe.get_all(
+			"Academic Unit",
+			filters={"name": ("in", units)},
+			fields=["name", "chair"],
+			as_list=True,
+		)
+	)
 
-    rows = frappe.db.sql(
-        """
+	rows = frappe.db.sql(
+		"""
         SELECT m.unit, m.person, m.person_name, m.instructor, m.web_order AS member_order,
                i.instructor_name, i.profileimage, i.shortbio, p.image AS person_image,
                p.salutation, p.position, p.web_bio,
@@ -621,204 +605,204 @@ def get_unit_roster(unit: str, public: bool = False) -> list:
         WHERE m.unit IN %(units)s AND m.is_active = 1
         ORDER BY m.person_name
         """,
-        {"units": tuple(units)},
-        as_dict=True,
-    )
-    roster = {}
-    for r in rows:
-        if public and r.block_from_web:
-            continue
-        entry = roster.setdefault(
-            (r.unit, r.person),
-            {
-                "unit": r.unit,
-                "person": r.person,
-                "person_name": r.person_name,
-                "salutation": r.salutation,
-                "position": r.position,
-                "instructor": r.instructor,
-                "member_order": r.member_order or 0,
-                "photo": r.profileimage or r.person_image,
-                "short_bio": r.web_bio or r.shortbio,
-                "is_chair": bool(r.person and r.person == chair_by_unit.get(r.unit)),
-                "capabilities": [],
-            },
-        )
-        if r.capability_name:
-            entry["capabilities"].append(
-                {
-                    "capability": r.capability_name,
-                    "routes_to": r.routes_to,
-                    "max_students": r.max_students,
-                    "current_students": r.current_students,
-                }
-            )
+		{"units": tuple(units)},
+		as_dict=True,
+	)
+	roster = {}
+	for r in rows:
+		if public and r.block_from_web:
+			continue
+		entry = roster.setdefault(
+			(r.unit, r.person),
+			{
+				"unit": r.unit,
+				"person": r.person,
+				"person_name": r.person_name,
+				"salutation": r.salutation,
+				"position": r.position,
+				"instructor": r.instructor,
+				"member_order": r.member_order or 0,
+				"photo": r.profileimage or r.person_image,
+				"short_bio": r.web_bio or r.shortbio,
+				"is_chair": bool(r.person and r.person == chair_by_unit.get(r.unit)),
+				"capabilities": [],
+			},
+		)
+		if r.capability_name:
+			entry["capabilities"].append(
+				{
+					"capability": r.capability_name,
+					"routes_to": r.routes_to,
+					"max_students": r.max_students,
+					"current_students": r.current_students,
+				}
+			)
 
-    # Members with an explicit web_order come first in that order; the rest fall
-    # back to chair-first, then alphabetical (SQL already ordered by name).
-    def _sort_key(e):
-        if e["member_order"] > 0:
-            return (0, e["member_order"], e["person_name"] or "")
-        return (1, 0 if e["is_chair"] else 1, e["person_name"] or "")
+	# Members with an explicit web_order come first in that order; the rest fall
+	# back to chair-first, then alphabetical (SQL already ordered by name).
+	def _sort_key(e):
+		if e["member_order"] > 0:
+			return (0, e["member_order"], e["person_name"] or "")
+		return (1, 0 if e["is_chair"] else 1, e["person_name"] or "")
 
-    return sorted(roster.values(), key=_sort_key)
+	return sorted(roster.values(), key=_sort_key)
 
 
 def faculty_context(user: str | None = None) -> dict:
-    """The caller's faculty footprint for the portal: the units they are wired to
-    and the capability routes they hold. Drives which worklist tabs show."""
-    inst = current_instructor(user)
-    if not inst:
-        return {"instructor": None, "units": [], "capabilities": []}
-    rows = frappe.db.sql(
-        """
+	"""The caller's faculty footprint for the portal: the units they are wired to
+	and the capability routes they hold. Drives which worklist tabs show."""
+	inst = current_instructor(user)
+	if not inst:
+		return {"instructor": None, "units": [], "capabilities": []}
+	rows = frappe.db.sql(
+		"""
         SELECT DISTINCT m.unit, fc.routes_to
         FROM `tabAcademic Unit Membership` m
         JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
         JOIN `tabFaculty Capability` fc ON fc.name = c.capability
         WHERE m.instructor = %s AND m.is_active = 1 AND fc.is_active = 1
         """,
-        inst,
-        as_dict=True,
-    )
-    return {
-        "instructor": inst,
-        "units": sorted({r.unit for r in rows}),
-        "capabilities": sorted({r.routes_to for r in rows}),
-    }
+		inst,
+		as_dict=True,
+	)
+	return {
+		"instructor": inst,
+		"units": sorted({r.unit for r in rows}),
+		"capabilities": sorted({r.routes_to for r in rows}),
+	}
 
 
 @frappe.whitelist()
 def get_my_faculty_worklist(route: str | None = None) -> dict:
-    """Open items routed to the caller: pending Manual-Verification SGRs and
-    pending Placement Assessments in the units they are wired to, plus any
-    culminating projects awaiting their sign-off. Full-access roles see all
-    (except project reviews, which are always reader-scoped). Pass a route to
-    scope to one."""
-    full = has_full_access()
-    inst = current_instructor()
-    out = {}
-    if route in (None, MANUAL_VERIFICATION_ROUTE):
-        out[MANUAL_VERIFICATION_ROUTE] = _manual_verification_worklist(full, inst)
-    if route in (None, PLACEMENT_EXAMINER_ROUTE):
-        out[PLACEMENT_EXAMINER_ROUTE] = _placement_worklist(full, inst)
-    if route in (None, PROJECT_REVIEW_KEY) and shows_project_reviews(inst):
-        out[PROJECT_REVIEW_KEY] = _project_review_worklist(inst)
-    return out
+	"""Open items routed to the caller: pending Manual-Verification SGRs and
+	pending Placement Assessments in the units they are wired to, plus any
+	culminating projects awaiting their sign-off. Full-access roles see all
+	(except project reviews, which are always reader-scoped). Pass a route to
+	scope to one."""
+	full = has_full_access()
+	inst = current_instructor()
+	out = {}
+	if route in (None, MANUAL_VERIFICATION_ROUTE):
+		out[MANUAL_VERIFICATION_ROUTE] = _manual_verification_worklist(full, inst)
+	if route in (None, PLACEMENT_EXAMINER_ROUTE):
+		out[PLACEMENT_EXAMINER_ROUTE] = _placement_worklist(full, inst)
+	if route in (None, PROJECT_REVIEW_KEY) and shows_project_reviews(inst):
+		out[PROJECT_REVIEW_KEY] = _project_review_worklist(inst)
+	return out
 
 
 def shows_project_reviews(inst: str | None, capabilities: set | None = None) -> bool:
-    """Whether the Project Reviews section belongs on this user's worklist.
+	"""Whether the Project Reviews section belongs on this user's worklist.
 
-    Capability first, mirroring Verifications and Placement Exams: holding
-    `Thesis/CP Advisor` *is* the statement that culminating projects are your
-    work, so an empty list is the useful answer ("nothing awaiting you") rather
-    than a vanished section. Gating on assignment instead hid the section from
-    exactly the people the capability was wired for.
+	Capability first, mirroring Verifications and Placement Exams: holding
+	`Thesis/CP Advisor` *is* the statement that culminating projects are your
+	work, so an empty list is the useful answer ("nothing awaiting you") rather
+	than a vanished section. Gating on assignment instead hid the section from
+	exactly the people the capability was wired for.
 
-    Reader slots still count on their own, because this module's doctrine is
-    that manual entry wins: an advisor may be set straight on the project
-    without ever holding the capability, and they still have reviews to do.
-    """
-    if not inst:
-        return False
-    if capabilities is None:
-        capabilities = set(faculty_context()["capabilities"])
-    if THESIS_CP_ADVISOR_ROUTE in capabilities:
-        return True
-    return is_project_reader(inst)
+	Reader slots still count on their own, because this module's doctrine is
+	that manual entry wins: an advisor may be set straight on the project
+	without ever holding the capability, and they still have reviews to do.
+	"""
+	if not inst:
+		return False
+	if capabilities is None:
+		capabilities = set(faculty_context()["capabilities"])
+	if THESIS_CP_ADVISOR_ROUTE in capabilities:
+		return True
+	return is_project_reader(inst)
 
 
 def is_project_reader(inst: str | None) -> bool:
-    """Whether this instructor occupies a reader slot on any culminating project.
+	"""Whether this instructor occupies a reader slot on any culminating project.
 
-    Deliberately cheap (one indexed existence query): it runs on every portal
-    boot via `has_faculty_worklist`, so it must not walk milestones. It is the
-    fallback behind `shows_project_reviews`, not the primary test — capability
-    is. External Examiners are excluded by construction: they are not
-    Instructors (ADR 059) and keep the Culminating Project page instead.
-    """
-    if not inst:
-        return False
-    return bool(
-        frappe.get_all(
-            "Culminating Project",
-            or_filters={
-                "advisor": inst,
-                "second_reader": inst,
-                "third_reader": inst,
-            },
-            pluck="name",
-            limit=1,
-        )
-    )
+	Deliberately cheap (one indexed existence query): it runs on every portal
+	boot via `has_faculty_worklist`, so it must not walk milestones. It is the
+	fallback behind `shows_project_reviews`, not the primary test — capability
+	is. External Examiners are excluded by construction: they are not
+	Instructors (ADR 059) and keep the Culminating Project page instead.
+	"""
+	if not inst:
+		return False
+	return bool(
+		frappe.get_all(
+			"Culminating Project",
+			or_filters={
+				"advisor": inst,
+				"second_reader": inst,
+				"third_reader": inst,
+			},
+			pluck="name",
+			limit=1,
+		)
+	)
 
 
 def _project_review_worklist(inst):
-    """Culminating projects where this reader has something to do right now.
+	"""Culminating projects where this reader has something to do right now.
 
-    Reuses `get_my_culminating_projects`, so "needs action" is computed in
-    exactly one place — `culminating_project._needs_action`, which already knows
-    that a milestone awaiting the student's submission is the student's ball and
-    not the reader's. The external-reader rows that call returns carry no
-    `needs_action` key and so drop out here, which is what ADR 074 wants.
-    """
-    from seminary.seminary.doctype.culminating_project.culminating_project import (
-        get_my_culminating_projects,
-    )
+	Reuses `get_my_culminating_projects`, so "needs action" is computed in
+	exactly one place — `culminating_project._needs_action`, which already knows
+	that a milestone awaiting the student's submission is the student's ball and
+	not the reader's. The external-reader rows that call returns carry no
+	`needs_action` key and so drop out here, which is what ADR 074 wants.
+	"""
+	from seminary.seminary.doctype.culminating_project.culminating_project import (
+		get_my_culminating_projects,
+	)
 
-    rows = get_my_culminating_projects().get("advisor_projects") or []
-    return [r for r in rows if r.get("needs_action")]
+	rows = get_my_culminating_projects().get("advisor_projects") or []
+	return [r for r in rows if r.get("needs_action")]
 
 
 def has_faculty_worklist(user: str | None = None, context: dict | None = None) -> bool:
-    """Whether the Faculty Worklist page would render any section for this user.
+	"""Whether the Faculty Worklist page would render any section for this user.
 
-    The sidebar link and the page must agree (ADR 074); before this existed the
-    link hand-checked two capabilities while the page rendered three sections,
-    so a mentor-only user had no way to reach their own queue.
+	The sidebar link and the page must agree (ADR 074); before this existed the
+	link hand-checked two capabilities while the page rendered three sections,
+	so a mentor-only user had no way to reach their own queue.
 
-    Ordered cheapest-first: capabilities are already in memory, the reader check
-    is one indexed query, and only a user with neither pays for the mentee
-    resolution. Competency work needs no separate check — it is reachable only
-    through a section the instructor teaches, and `mentees_of` resolves those
-    same students, so a non-empty mentee list is implied by any competency item.
-    """
-    context = context if context is not None else faculty_context(user)
-    inst = context.get("instructor")
-    if not inst:
-        return False
-    caps = set(context.get("capabilities") or [])
-    if {MANUAL_VERIFICATION_ROUTE, PLACEMENT_EXAMINER_ROUTE} & caps:
-        return True
-    # Same call the page makes, so the link and the section cannot disagree.
-    if shows_project_reviews(inst, caps):
-        return True
+	Ordered cheapest-first: capabilities are already in memory, the reader check
+	is one indexed query, and only a user with neither pays for the mentee
+	resolution. Competency work needs no separate check — it is reachable only
+	through a section the instructor teaches, and `mentees_of` resolves those
+	same students, so a non-empty mentee list is implied by any competency item.
+	"""
+	context = context if context is not None else faculty_context(user)
+	inst = context.get("instructor")
+	if not inst:
+		return False
+	caps = set(context.get("capabilities") or [])
+	if {MANUAL_VERIFICATION_ROUTE, PLACEMENT_EXAMINER_ROUTE} & caps:
+		return True
+	# Same call the page makes, so the link and the section cannot disagree.
+	if shows_project_reviews(inst, caps):
+		return True
 
-    from seminary.seminary import cbe
+	from seminary.seminary import cbe
 
-    return bool(cbe.mentees_of(inst))
+	return bool(cbe.mentees_of(inst))
 
 
 def _filter_routed(rows, full, inst, route):
-    """Keep rows whose owning unit routes to the caller (cache wired sets per unit)."""
-    if full:
-        return rows
-    if not inst:
-        return []
-    cache, out = {}, []
-    for r in rows:
-        unit = r.get("unit")
-        if unit not in cache:
-            cache[unit] = wired_instructors(unit, route)
-        if inst in cache[unit]:
-            out.append(r)
-    return out
+	"""Keep rows whose owning unit routes to the caller (cache wired sets per unit)."""
+	if full:
+		return rows
+	if not inst:
+		return []
+	cache, out = {}, []
+	for r in rows:
+		unit = r.get("unit")
+		if unit not in cache:
+			cache[unit] = wired_instructors(unit, route)
+		if inst in cache[unit]:
+			out.append(r)
+	return out
 
 
 def _manual_verification_worklist(full, inst):
-    rows = frappe.db.sql(
-        """
+	rows = frappe.db.sql(
+		"""
         SELECT sgr.parent AS program_enrollment, sgr.name AS sgr,
                sgr.requirement_name, sgr.status, gri.academic_unit AS unit,
                gri.default_staff_evidence_required AS staff_evidence_required,
@@ -831,14 +815,14 @@ def _manual_verification_worklist(full, inst):
           AND sgr.status NOT IN ('Fulfilled', 'Waived')
           AND IFNULL(sgr.waived, 0) = 0
         """,
-        as_dict=True,
-    )
-    return _filter_routed(rows, full, inst, MANUAL_VERIFICATION_ROUTE)
+		as_dict=True,
+	)
+	return _filter_routed(rows, full, inst, MANUAL_VERIFICATION_ROUTE)
 
 
 def _placement_worklist(full, inst):
-    rows = frappe.db.sql(
-        """
+	rows = frappe.db.sql(
+		"""
         SELECT pa.parent AS program_enrollment, pa.assessment,
                pa.status, a.academic_unit AS unit,
                a.default_staff_evidence_required AS staff_evidence_required,
@@ -848,6 +832,6 @@ def _placement_worklist(full, inst):
         WHERE a.academic_unit IS NOT NULL AND a.academic_unit != ''
           AND pa.status != 'Scored'
         """,
-        as_dict=True,
-    )
-    return _filter_routed(rows, full, inst, PLACEMENT_EXAMINER_ROUTE)
+		as_dict=True,
+	)
+	return _filter_routed(rows, full, inst, PLACEMENT_EXAMINER_ROUTE)

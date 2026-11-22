@@ -21,39 +21,39 @@ gated until the next save recomputes it. Idempotent.
 import frappe
 
 _MAP = {
-    "Proposal Submitted": "Active",
-    "Proposal Approved": "Active",
-    "Drafting": "Active",
-    "Revisions Required": "Active",
-    "Approved": "Under Review",
-    "Defended": "Under Review",
+	"Proposal Submitted": "Active",
+	"Proposal Approved": "Active",
+	"Drafting": "Active",
+	"Revisions Required": "Active",
+	"Approved": "Under Review",
+	"Defended": "Under Review",
 }
 
 
 def execute():
-    rows = frappe.db.sql(
-        "SELECT name, workflow_state FROM `tabCulminating Project`",
-        as_dict=True,
-    )
-    for row in rows:
-        target = _MAP.get(row.workflow_state)
-        if target and target != row.workflow_state:
-            frappe.db.set_value(
-                "Culminating Project",
-                row.name,
-                "workflow_state",
-                target,
-                update_modified=False,
-            )
+	rows = frappe.db.sql(
+		"SELECT name, workflow_state FROM `tabCulminating Project`",
+		as_dict=True,
+	)
+	for row in rows:
+		target = _MAP.get(row.workflow_state)
+		if target and target != row.workflow_state:
+			frappe.db.set_value(
+				"Culminating Project",
+				row.name,
+				"workflow_state",
+				target,
+				update_modified=False,
+			)
 
-    # Projects created before the milestone model have no mandatory milestones.
-    frappe.db.sql(
-        """UPDATE `tabCulminating Project` cp
+	# Projects created before the milestone model have no mandatory milestones.
+	frappe.db.sql(
+		"""UPDATE `tabCulminating Project` cp
            SET cp.milestones_complete = 1
            WHERE NOT EXISTS (
                SELECT 1 FROM `tabCulminating Project Milestone` m
                WHERE m.parent = cp.name AND m.parenttype = 'Culminating Project'
            )"""
-    )
-    frappe.db.commit()
-    print(f"Reconciled {len(rows)} Culminating Project workflow states.")
+	)
+	frappe.db.commit()
+	print(f"Reconciled {len(rows)} Culminating Project workflow states.")

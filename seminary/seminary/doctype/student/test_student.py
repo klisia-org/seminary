@@ -6,122 +6,116 @@ import unittest
 import frappe
 
 from seminary.seminary.doctype.program.test_program import (
-    make_program_and_linked_courses,
+	make_program_and_linked_courses,
 )
 
 # The three identities the old test_records.json offered, which dependent
 # doctypes still link to by email.
 TEST_STUDENTS = (
-    ("_Test", "Student Name", "_test_student@example.com"),
-    ("_Test", "Student Name 1", "_test_student_1@example.com"),
-    ("_Test", "Student Name 2", "_test_student_2@example.com"),
+	("_Test", "Student Name", "_test_student@example.com"),
+	("_Test", "Student Name 1", "_test_student_1@example.com"),
+	("_Test", "Student Name 2", "_test_student_2@example.com"),
 )
 
 
 def _make_test_records():
-    """Build the Student test records Person-first (ADR 068).
+	"""Build the Student test records Person-first (ADR 068).
 
-    This replaces `test_records.json`, which was ERPNext's: identity typed
-    straight onto the Student (`first_name`, `student_email_id`, `gender`,
-    `blood_group`) beside a `program` link to a course that no longer exists.
-    Every one of those fields is a `fetch_from person.*` mirror now and
-    `person` is reqd, so the fixture could not insert at all — which is why
-    several modules in this app carry an `IGNORE_TEST_RECORD_DEPENDENCIES` list
-    naming "Student" purely to get past it.
+	This replaces `test_records.json`, which was ERPNext's: identity typed
+	straight onto the Student (`first_name`, `student_email_id`, `gender`,
+	`blood_group`) beside a `program` link to a course that no longer exists.
+	Every one of those fields is a `fetch_from person.*` mirror now and
+	`person` is reqd, so the fixture could not insert at all — which is why
+	several modules in this app carry an `IGNORE_TEST_RECORD_DEPENDENCIES` list
+	naming "Student" purely to get past it.
 
-    `create_student` below is already the Person-first path; this just runs it
-    for the three identities the JSON used to declare.
-    """
-    for first, last, email in TEST_STUDENTS:
-        existing = get_student(email)
-        if existing:
-            yield ("loaded", existing)
-            continue
-        yield (
-            "created",
-            create_student({"first_name": first, "last_name": last, "email": email}),
-        )
+	`create_student` below is already the Person-first path; this just runs it
+	for the three identities the JSON used to declare.
+	"""
+	for first, last, email in TEST_STUDENTS:
+		existing = get_student(email)
+		if existing:
+			yield ("loaded", existing)
+			continue
+		yield (
+			"created",
+			create_student({"first_name": first, "last_name": last, "email": email}),
+		)
 
 
 class TestStudent(unittest.TestCase):
-    def setUp(self):
-        create_student(
-            {
-                "first_name": "_Test Name",
-                "last_name": "_Test Last Name",
-                "email": "_test_student@example.com",
-            }
-        )
-        make_program_and_linked_courses(
-            "_Test Program 1", ["_Test Course 1", "_Test Course 2"]
-        )
+	def setUp(self):
+		create_student(
+			{
+				"first_name": "_Test Name",
+				"last_name": "_Test Last Name",
+				"email": "_test_student@example.com",
+			}
+		)
+		make_program_and_linked_courses("_Test Program 1", ["_Test Course 1", "_Test Course 2"])
 
-    def test_create_student_user(self):
-        self.assertTrue(bool(frappe.db.exists("User", "_test_student@example.com")))
-        frappe.db.rollback()
+	def test_create_student_user(self):
+		self.assertTrue(bool(frappe.db.exists("User", "_test_student@example.com")))
+		frappe.db.rollback()
 
-    def test_enroll_in_program(self):
-        student = get_student("_test_student@example.com")
-        enrollment = student.enroll_in_program("_Test Program 1")
-        test_enrollment = frappe.get_all(
-            "Program Enrollment",
-            filters={"student": student.name, "program": "_Test Program 1"},
-        )
-        self.assertTrue(len(test_enrollment))
-        self.assertEqual(test_enrollment[0]["name"], enrollment.name)
-        frappe.db.rollback()
+	def test_enroll_in_program(self):
+		student = get_student("_test_student@example.com")
+		enrollment = student.enroll_in_program("_Test Program 1")
+		test_enrollment = frappe.get_all(
+			"Program Enrollment",
+			filters={"student": student.name, "program": "_Test Program 1"},
+		)
+		self.assertTrue(len(test_enrollment))
+		self.assertEqual(test_enrollment[0]["name"], enrollment.name)
+		frappe.db.rollback()
 
-    def test_get_pgmenrollments(self):
-        # Renamed from get_program_enrollments, and it now returns a list of
-        # dicts rather than a program-keyed mapping.
-        student = get_student("_test_student@example.com")
-        student.enroll_in_program("_Test Program 1")
-        rows = student.get_pgmenrollments()
-        self.assertIn("_Test Program 1", [r["program"] for r in rows])
-        frappe.db.rollback()
+	def test_get_pgmenrollments(self):
+		# Renamed from get_program_enrollments, and it now returns a list of
+		# dicts rather than a program-keyed mapping.
+		student = get_student("_test_student@example.com")
+		student.enroll_in_program("_Test Program 1")
+		rows = student.get_pgmenrollments()
+		self.assertIn("_Test Program 1", [r["program"] for r in rows])
+		frappe.db.rollback()
 
-    def tearDown(self):
-        # Scoped to this test's own student. The original swept *every* Program
-        # Enrollment on the site, which would have destroyed a school's records
-        # the first time anyone ran the suite outside a throwaway database.
-        student = get_student("_test_student@example.com")
-        if student:
-            for entry in frappe.db.get_all(
-                "Program Enrollment", filters={"student": student.name}
-            ):
-                doc = frappe.get_doc("Program Enrollment", entry.name)
-                if doc.docstatus == 1:
-                    doc.cancel()
-                doc.delete()
-        frappe.db.rollback()
+	def tearDown(self):
+		# Scoped to this test's own student. The original swept *every* Program
+		# Enrollment on the site, which would have destroyed a school's records
+		# the first time anyone ran the suite outside a throwaway database.
+		student = get_student("_test_student@example.com")
+		if student:
+			for entry in frappe.db.get_all("Program Enrollment", filters={"student": student.name}):
+				doc = frappe.get_doc("Program Enrollment", entry.name)
+				if doc.docstatus == 1:
+					doc.cancel()
+				doc.delete()
+		frappe.db.rollback()
 
 
 def create_student(student_dict):
-    """Person first, then the Student (ADR 068 §1).
+	"""Person first, then the Student (ADR 068 §1).
 
-    The identity fields this used to set are `fetch_from person.*` mirrors now,
-    so building a Student from them directly would produce a record with no
-    name and no email — and `person` is required.
-    """
-    from seminary.seminary import intake
-    from seminary.seminary.person import ensure_person
+	The identity fields this used to set are `fetch_from person.*` mirrors now,
+	so building a Student from them directly would produce a record with no
+	name and no email — and `person` is required.
+	"""
+	from seminary.seminary import intake
+	from seminary.seminary.person import ensure_person
 
-    student = get_student(student_dict["email"])
-    if not student:
-        person = ensure_person(
-            student_dict["email"],
-            first_name=student_dict["first_name"],
-            last_name=student_dict["last_name"],
-        )
-        student = intake.make_student(person)
-    return student
+	student = get_student(student_dict["email"])
+	if not student:
+		person = ensure_person(
+			student_dict["email"],
+			first_name=student_dict["first_name"],
+			last_name=student_dict["last_name"],
+		)
+		student = intake.make_student(person)
+	return student
 
 
 def get_student(email):
-    try:
-        student_id = frappe.get_all("Student", {"student_email_id": email}, ["name"])[
-            0
-        ].name
-        return frappe.get_doc("Student", student_id)
-    except IndexError:
-        return None
+	try:
+		student_id = frappe.get_all("Student", {"student_email_id": email}, ["name"])[0].name
+		return frappe.get_doc("Student", student_id)
+	except IndexError:
+		return None

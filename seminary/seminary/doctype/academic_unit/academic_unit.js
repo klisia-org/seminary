@@ -29,16 +29,25 @@ function show_member_roster(frm) {
 				.map((m) => {
 					const caps = (m.capabilities || [])
 						.map((c) => {
-							const cap = m.unit !== frm.doc.name ? `${c.capability} (${m.unit})` : c.capability;
+							const cap =
+								m.unit !== frm.doc.name
+									? `${c.capability} (${m.unit})`
+									: c.capability;
 							const load =
 								c.max_students > 0
-									? ` <span style="color:${c.current_students >= c.max_students ? "var(--red-500)" : "var(--ink-gray-5)"}">${c.current_students || 0}/${c.max_students}</span>`
+									? ` <span style="color:${
+											c.current_students >= c.max_students
+												? "var(--red-500)"
+												: "var(--ink-gray-5)"
+									  }">${c.current_students || 0}/${c.max_students}</span>`
 									: "";
 							return `${frappe.utils.escape_html(cap)}${load}`;
 						})
 						.join(", ");
 					const who = frappe.utils.escape_html(m.person_name || m.person);
-					const role = m.instructor ? "" : ` <i style="color:var(--ink-gray-5)">(${__("non-instructor")})</i>`;
+					const role = m.instructor
+						? ""
+						: ` <i style="color:var(--ink-gray-5)">(${__("non-instructor")})</i>`;
 					return `<tr><td>${who}${role}</td><td>${caps || "—"}</td></tr>`;
 				})
 				.join("");
@@ -59,7 +68,9 @@ function governance_lock(frm) {
 	frm.set_df_property("chair", "read_only", locked ? 1 : 0);
 	if (locked) {
 		frm.set_intro(
-			__("The chair and members of this body follow its seats in the governance record. How the website shows them is kept here."),
+			__(
+				"The chair and members of this body follow its seats in the governance record. How the website shows them is kept here."
+			),
 			"blue"
 		);
 	}

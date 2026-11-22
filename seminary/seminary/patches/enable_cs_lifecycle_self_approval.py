@@ -10,27 +10,26 @@ Run via bench migrate (registered in patches.txt) or directly:
 
 import frappe
 
-
 WORKFLOW_NAME = "Course Schedule Lifecycle"
 ACTIONS = {"Open Enrollment", "Close Enrollment", "Begin Grading"}
 
 
 def execute():
-    if not frappe.db.exists("Workflow", WORKFLOW_NAME):
-        print(f"{WORKFLOW_NAME} not found. Skipping.")
-        return
+	if not frappe.db.exists("Workflow", WORKFLOW_NAME):
+		print(f"{WORKFLOW_NAME} not found. Skipping.")
+		return
 
-    workflow = frappe.get_doc("Workflow", WORKFLOW_NAME)
-    changed = False
-    for transition in workflow.transitions:
-        if transition.action in ACTIONS and not transition.allow_self_approval:
-            transition.allow_self_approval = 1
-            changed = True
+	workflow = frappe.get_doc("Workflow", WORKFLOW_NAME)
+	changed = False
+	for transition in workflow.transitions:
+		if transition.action in ACTIONS and not transition.allow_self_approval:
+			transition.allow_self_approval = 1
+			changed = True
 
-    if not changed:
-        print("Self-approval already enabled. Skipping.")
-        return
+	if not changed:
+		print("Self-approval already enabled. Skipping.")
+		return
 
-    workflow.save(ignore_permissions=True)
-    frappe.db.commit()
-    print(f"Enabled self-approval on {WORKFLOW_NAME} transitions.")
+	workflow.save(ignore_permissions=True)
+	frappe.db.commit()
+	print(f"Enabled self-approval on {WORKFLOW_NAME} transitions.")

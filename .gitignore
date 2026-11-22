@@ -20,3 +20,4 @@ docs/node_modules
 # validation harness outputs (site-specific fixture names)
 scripts/p006_validation/fx.json
 scripts/p007_validation/fx1.json
+.frappe-semgrep/

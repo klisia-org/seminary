@@ -1,16 +1,16 @@
 // Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Seminary Settings', {
-	onload: function(frm) {
+frappe.ui.form.on("Seminary Settings", {
+	onload: function (frm) {
 		frm.set_query("current_academic_term", (doc) => {
 			return {
 				filters: {
-					"academic_year": doc.current_academic_year
-				}
-			}
+					academic_year: doc.current_academic_year,
+				},
+			};
 		});
-	}
+	},
 });
 function toggle_financial_backend(frm) {
 	frappe.call({
@@ -41,7 +41,9 @@ function check_and_toggle_payment_gateway(frm) {
 					frm.set_df_property("payment_gateway", "reqd", 0);
 					frappe.msgprint({
 						title: __("Payments App Not Installed"),
-						message: __("To enable online payments, please install Frappe Payments on this site."),
+						message: __(
+							"To enable online payments, please install Frappe Payments on this site."
+						),
 						indicator: "orange",
 					});
 				}
@@ -53,52 +55,62 @@ function check_and_toggle_payment_gateway(frm) {
 	}
 }
 
-frappe.ui.form.on('Seminary Settings', {
-    refresh: function(frm) {
-        check_and_toggle_payment_gateway(frm);
-        toggle_financial_backend(frm);
+frappe.ui.form.on("Seminary Settings", {
+	refresh: function (frm) {
+		check_and_toggle_payment_gateway(frm);
+		toggle_financial_backend(frm);
 
-        if (!frm.doc.demo_data_installed && !frm.doc.no_more_demo) {
-            frm.add_custom_button(__('Install Demo Data'), () => {
-                frappe.confirm(
-                    'This will create sample programs, courses, students, and enrollments. Continue?',
-                    () => {
-                        frappe.call({
-                            method: 'seminary.demo.install_demo',
-                            freeze: true,
-                            freeze_message: __('Installing demo data...'),
-                            callback: (r) => frm.reload_doc()
-                        });
-                    }
-                );
-            }, __('Demo'));
-        } else if (frm.doc.demo_data_installed) {
-            frm.add_custom_button(__('Remove Demo Data'), () => {
-                frappe.confirm(
-                    '<strong>This will permanently delete all demo records.</strong> Continue?',
-                    () => {
-                        frappe.call({
-                            method: 'seminary.demo.remove_demo',
-                            freeze: true,
-                            freeze_message: __('Removing demo data...'),
-                            callback: (r) => frm.reload_doc()
-                        });
-                    }
-                );
-            }, __('Demo'));
-        } else {
+		if (!frm.doc.demo_data_installed && !frm.doc.no_more_demo) {
+			frm.add_custom_button(
+				__("Install Demo Data"),
+				() => {
+					frappe.confirm(
+						"This will create sample programs, courses, students, and enrollments. Continue?",
+						() => {
+							frappe.call({
+								method: "seminary.demo.install_demo",
+								freeze: true,
+								freeze_message: __("Installing demo data..."),
+								callback: (r) => frm.reload_doc(),
+							});
+						}
+					);
+				},
+				__("Demo")
+			);
+		} else if (frm.doc.demo_data_installed) {
+			frm.add_custom_button(
+				__("Remove Demo Data"),
+				() => {
+					frappe.confirm(
+						"<strong>This will permanently delete all demo records.</strong> Continue?",
+						() => {
+							frappe.call({
+								method: "seminary.demo.remove_demo",
+								freeze: true,
+								freeze_message: __("Removing demo data..."),
+								callback: (r) => frm.reload_doc(),
+							});
+						}
+					);
+				},
+				__("Demo")
+			);
 		}
 
 		// Withdrawal Workflow button
-		frm.add_custom_button(__("Configure Withdrawal Workflow"), function() {
-			frappe.set_route('List', 'Workflow', {
-				document_type: 'Withdrawal Request'
-			});
-		}, __('Withdrawal'));
+		frm.add_custom_button(
+			__("Configure Withdrawal Workflow"),
+			function () {
+				frappe.set_route("List", "Workflow", {
+					document_type: "Withdrawal Request",
+				});
+			},
+			__("Withdrawal")
+		);
+	},
 
-    },
-
-    portal_payment_enable: function(frm) {
-        check_and_toggle_payment_gateway(frm);
-    }
+	portal_payment_enable: function (frm) {
+		check_and_toggle_payment_gateway(frm);
+	},
 });

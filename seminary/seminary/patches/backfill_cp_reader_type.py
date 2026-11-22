@@ -11,17 +11,17 @@ import frappe
 
 
 def execute():
-    for field, type_field in (
-        ("second_reader", "second_reader_type"),
-        ("third_reader", "third_reader_type"),
-    ):
-        if not frappe.db.has_column("Culminating Project", type_field):
-            continue
-        frappe.db.sql(
-            f"""
+	for field, type_field in (
+		("second_reader", "second_reader_type"),
+		("third_reader", "third_reader_type"),
+	):
+		if not frappe.db.has_column("Culminating Project", type_field):
+			continue
+		frappe.db.sql(
+			f"""
             UPDATE `tabCulminating Project`
             SET `{type_field}` = 'Instructor'
             WHERE IFNULL(`{field}`, '') != '' AND IFNULL(`{type_field}`, '') = ''
             """  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
-        )
-    frappe.db.commit()
+		)
+	frappe.db.commit()

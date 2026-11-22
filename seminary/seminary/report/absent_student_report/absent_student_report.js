@@ -1,15 +1,14 @@
 // Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-
 frappe.query_reports["Absent Student Report"] = {
-	"filters": [
+	filters: [
 		{
-			"fieldname":"date",
-			"label": __("Date"),
-			"fieldtype": "Date",
-			"default": frappe.datetime.get_today(),
-			"reqd": 1
-		}
-	]
-}
+			fieldname: "date",
+			label: __("Date"),
+			fieldtype: "Date",
+			default: frappe.datetime.get_today(),
+			reqd: 1,
+		},
+	],
+};

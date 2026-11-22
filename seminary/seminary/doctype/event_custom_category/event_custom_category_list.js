@@ -17,14 +17,32 @@ function open_cohort_dialog(category) {
 		title: __("Create Cohort Event") + ": " + category,
 		size: "large",
 		fields: [
-			{ fieldname: "program", fieldtype: "Link", options: "Program", label: __("Program (optional)") },
+			{
+				fieldname: "program",
+				fieldtype: "Link",
+				options: "Program",
+				label: __("Program (optional)"),
+			},
 			{ fieldname: "col", fieldtype: "Column Break" },
-			{ fieldname: "only_candidates", fieldtype: "Check", label: __("Graduation candidates only") },
-			{ fieldname: "within_days", fieldtype: "Int", label: __("Within N days of max graduation") },
+			{
+				fieldname: "only_candidates",
+				fieldtype: "Check",
+				label: __("Graduation candidates only"),
+			},
+			{
+				fieldname: "within_days",
+				fieldtype: "Int",
+				label: __("Within N days of max graduation"),
+			},
 			{ fieldname: "load", fieldtype: "Button", label: __("Load Students") },
 			{ fieldname: "candidates", fieldtype: "HTML" },
 			{ fieldname: "sb", fieldtype: "Section Break" },
-			{ fieldname: "starts_on", fieldtype: "Datetime", label: __("Event Date / Time"), reqd: 1 },
+			{
+				fieldname: "starts_on",
+				fieldtype: "Datetime",
+				label: __("Event Date / Time"),
+				reqd: 1,
+			},
 			{ fieldname: "location", fieldtype: "Data", label: __("Location") },
 		],
 		primary_action_label: __("Create Event"),
@@ -72,7 +90,9 @@ function open_cohort_dialog(category) {
 		html +=
 			'<label style="font-weight:600;display:block;margin-bottom:6px"><input type="checkbox" class="cohort-all"> ' +
 			__("Select all") +
-			" (" + rows.length + ")</label>";
+			" (" +
+			rows.length +
+			")</label>";
 		rows.forEach((row) => {
 			html +=
 				'<label style="display:block"><input type="checkbox" class="cohort-cand" value="' +

@@ -22,24 +22,24 @@ NEW = "Program Cohort"
 
 
 def execute():
-    if not frappe.db.has_column("Competency Framework Evaluator", "assignment_source"):
-        return
-    rows = frappe.get_all(
-        "Competency Framework Evaluator",
-        filters={"assignment_source": OLD},
-        fields=["name", "parent", "instructor_category"],
-    )
-    if not rows:
-        return
-    frappe.db.set_value(
-        "Competency Framework Evaluator",
-        {"assignment_source": OLD},
-        {"assignment_source": NEW, "evaluates": ""},
-        update_modified=False,
-    )
-    frappe.db.commit()
-    for r in rows:
-        print(
-            "Competency Framework %s: evaluator %s now needs a Cohort Type before "
-            "it grants anything." % (r.parent, r.instructor_category)
-        )
+	if not frappe.db.has_column("Competency Framework Evaluator", "assignment_source"):
+		return
+	rows = frappe.get_all(
+		"Competency Framework Evaluator",
+		filters={"assignment_source": OLD},
+		fields=["name", "parent", "instructor_category"],
+	)
+	if not rows:
+		return
+	frappe.db.set_value(
+		"Competency Framework Evaluator",
+		{"assignment_source": OLD},
+		{"assignment_source": NEW, "evaluates": ""},
+		update_modified=False,
+	)
+	frappe.db.commit()
+	for r in rows:
+		print(
+			"Competency Framework %s: evaluator %s now needs a Cohort Type before "
+			"it grants anything." % (r.parent, r.instructor_category)
+		)

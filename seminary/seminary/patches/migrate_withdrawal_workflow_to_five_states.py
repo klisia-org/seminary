@@ -30,83 +30,81 @@ authoritative.
 import frappe
 
 _NON_TERMINAL = (
-    "Draft",
-    "Submitted",
-    "Academic Review",
-    "Academically Approved",
-    "Financial Review",
-    "Financially Approved",
+	"Draft",
+	"Submitted",
+	"Academic Review",
+	"Academically Approved",
+	"Financial Review",
+	"Financially Approved",
 )
 
 
 def _compute_refund_due(row):
-    """1 when a refund is possible: a rule with refunds applies and not free."""
-    if row.is_free or not row.withdrawal_rule:
-        return 0
-    has_refund = frappe.db.get_value(
-        "Withdrawal Rules", row.withdrawal_rule, "has_refund"
-    )
-    if not has_refund:
-        return 0
-    refund_rows = frappe.db.count("Withdrawal Refunds", {"parent": row.withdrawal_rule})
-    return 1 if refund_rows else 0
+	"""1 when a refund is possible: a rule with refunds applies and not free."""
+	if row.is_free or not row.withdrawal_rule:
+		return 0
+	has_refund = frappe.db.get_value("Withdrawal Rules", row.withdrawal_rule, "has_refund")
+	if not has_refund:
+		return 0
+	refund_rows = frappe.db.count("Withdrawal Refunds", {"parent": row.withdrawal_rule})
+	return 1 if refund_rows else 0
 
 
 def execute():
-    rows = frappe.db.sql(
-        """SELECT name, workflow_state, is_free, withdrawal_rule
+	rows = frappe.db.sql(
+		"""SELECT name, workflow_state, is_free, withdrawal_rule
            FROM `tabWithdrawal Request`""",
-        as_dict=True,
-    )
-    if not rows:
-        print("No Withdrawal Request rows to migrate.")
-        return
+		as_dict=True,
+	)
+	if not rows:
+		print("No Withdrawal Request rows to migrate.")
+		return
 
-    remap = {
-        "Submitted": "Academic Review",
-        "Academically Approved": "Financial Review",
-        "Financially Approved": "Completed",
-    }
-    counts = {"refund_due": 0, "remapped": 0, "completed_finalized": 0}
+	remap = {
+		"Submitted": "Academic Review",
+		"Academically Approved": "Financial Review",
+		"Financially Approved": "Completed",
+	}
+	counts = {"refund_due": 0, "remapped": 0, "completed_finalized": 0}
 
-    for row in rows:
-        # Recompute the gate field for anything still in flight.
-        if row.workflow_state in _NON_TERMINAL:
-            refund_due = _compute_refund_due(row)
-            if refund_due:
-                counts["refund_due"] += 1
-            frappe.db.set_value(
-                "Withdrawal Request",
-                row.name,
-                "refund_due",
-                refund_due,
-                update_modified=False,
-            )
+	for row in rows:
+		# Recompute the gate field for anything still in flight.
+		if row.workflow_state in _NON_TERMINAL:
+			refund_due = _compute_refund_due(row)
+			if refund_due:
+				counts["refund_due"] += 1
+			frappe.db.set_value(
+				"Withdrawal Request",
+				row.name,
+				"refund_due",
+				refund_due,
+				update_modified=False,
+			)
 
-        target = remap.get(row.workflow_state)
-        if not target:
-            continue
-        frappe.db.set_value(
-            "Withdrawal Request",
-            row.name,
-            "workflow_state",
-            target,
-            update_modified=False,
-        )
-        counts["remapped"] += 1
+		target = remap.get(row.workflow_state)
+		if not target:
+			continue
+		frappe.db.set_value(
+			"Withdrawal Request",
+			row.name,
+			"workflow_state",
+			target,
+			update_modified=False,
+		)
+		counts["remapped"] += 1
 
-        # A 'Financially Approved' request had its refund applied but never ran
-        # completion. Finalize it now (idempotent for program separations).
-        if target == "Completed":
-            from seminary.seminary.withdrawal import process_completion
+		# A 'Financially Approved' request had its refund applied but never ran
+		# completion. Finalize it now (idempotent for program separations).
+		if target == "Completed":
+			from seminary.seminary.withdrawal import process_completion
 
-            doc = frappe.get_doc("Withdrawal Request", row.name)
-            process_completion(doc)
-            counts["completed_finalized"] += 1
+			doc = frappe.get_doc("Withdrawal Request", row.name)
+			process_completion(doc)
+			counts["completed_finalized"] += 1
 
-    frappe.db.commit()
-    print(
-        f"Withdrawal workflow migration: remapped={counts['remapped']}, "
-        f"refund_due set on {counts['refund_due']} in-flight request(s), "
-        f"finalized {counts['completed_finalized']} completed separation(s)."
-    )
+	frappe.db.commit()
+	print(
+		f"Withdrawal workflow migration: remapped={counts['remapped']}, "
+		f"refund_due set on {counts['refund_due']} in-flight request(s), "
+		f"finalized {counts['completed_finalized']} completed separation(s)."
+	)

@@ -18,23 +18,23 @@ ANY_ALUMNUS = "Any alumnus"
 
 
 def execute():
-    unbound = frappe.get_all(
-        "Cohort Type",
-        filters={
-            "leader_eligibility": ALUMNUS,
-            "program": ["is", "not set"],
-            "program_level": ["is", "not set"],
-        },
-        pluck="name",
-    )
-    for name in unbound:
-        # `db.set_value`, not a save: the row is being brought up to the rule,
-        # and running the rest of validation on a type nobody has opened would
-        # refuse the correction for some unrelated setting.
-        frappe.db.set_value(
-            "Cohort Type",
-            name,
-            "leader_eligibility",
-            ANY_ALUMNUS,
-            update_modified=False,
-        )
+	unbound = frappe.get_all(
+		"Cohort Type",
+		filters={
+			"leader_eligibility": ALUMNUS,
+			"program": ["is", "not set"],
+			"program_level": ["is", "not set"],
+		},
+		pluck="name",
+	)
+	for name in unbound:
+		# `db.set_value`, not a save: the row is being brought up to the rule,
+		# and running the rest of validation on a type nobody has opened would
+		# refuse the correction for some unrelated setting.
+		frappe.db.set_value(
+			"Cohort Type",
+			name,
+			"leader_eligibility",
+			ANY_ALUMNUS,
+			update_modified=False,
+		)

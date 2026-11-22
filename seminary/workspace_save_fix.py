@@ -25,17 +25,17 @@ from frappe.desk.doctype.workspace.workspace import is_workspace_manager
 
 @frappe.whitelist()
 def save_page(name, public, new_widgets, blocks):
-    public = frappe.parse_json(public)
+	public = frappe.parse_json(public)
 
-    doc = frappe.get_doc("Workspace", name)
-    if not (is_workspace_manager() or doc.for_user == frappe.session.user):
-        return
+	doc = frappe.get_doc("Workspace", name)
+	if not (is_workspace_manager() or doc.for_user == frappe.session.user):
+		return
 
-    if not doc.type:
-        doc.type = "Workspace"
+	if not doc.type:
+		doc.type = "Workspace"
 
-    doc.content = blocks
+	doc.content = blocks
 
-    save_new_widget(doc, name, blocks, new_widgets)
+	save_new_widget(doc, name, blocks, new_widgets)
 
-    return {"name": name, "public": public, "label": doc.label}
+	return {"name": name, "public": public, "label": doc.label}

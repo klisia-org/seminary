@@ -16,49 +16,39 @@ import frappe
 
 
 def link_donor(person_name, donor):
-    """Set the canonical Donor.person and mirror Person.donor, first-link-wins
-    on each side (never overwrites an existing link). Used by the backfill
-    patch and any other server-side linker."""
-    if not person_name or not donor:
-        return
-    if frappe.db.has_column("Donor", "person") and not frappe.db.get_value(
-        "Donor", donor, "person"
-    ):
-        frappe.db.set_value(
-            "Donor", donor, "person", person_name, update_modified=False
-        )
-    if frappe.db.has_column("Person", "donor") and not frappe.db.get_value(
-        "Person", person_name, "donor"
-    ):
-        frappe.db.set_value(
-            "Person", person_name, "donor", donor, update_modified=False
-        )
+	"""Set the canonical Donor.person and mirror Person.donor, first-link-wins
+	on each side (never overwrites an existing link). Used by the backfill
+	patch and any other server-side linker."""
+	if not person_name or not donor:
+		return
+	if frappe.db.has_column("Donor", "person") and not frappe.db.get_value("Donor", donor, "person"):
+		frappe.db.set_value("Donor", donor, "person", person_name, update_modified=False)
+	if frappe.db.has_column("Person", "donor") and not frappe.db.get_value("Person", person_name, "donor"):
+		frappe.db.set_value("Person", person_name, "donor", donor, update_modified=False)
 
 
 def on_donor_update(doc, method=None):
-    """Mirror the canonical Donor.person link onto Person.donor."""
-    if not frappe.db.has_column("Person", "donor"):
-        return
+	"""Mirror the canonical Donor.person link onto Person.donor."""
+	if not frappe.db.has_column("Person", "donor"):
+		return
 
-    person = doc.get("person")
+	person = doc.get("person")
 
-    # If this Donor was re-pointed to a different Person, clear the stale mirror.
-    before = doc.get_doc_before_save()
-    old_person = before.get("person") if before else None
-    if old_person and old_person != person:
-        if frappe.db.get_value("Person", old_person, "donor") == doc.name:
-            frappe.db.set_value(
-                "Person", old_person, "donor", None, update_modified=False
-            )
+	# If this Donor was re-pointed to a different Person, clear the stale mirror.
+	before = doc.get_doc_before_save()
+	old_person = before.get("person") if before else None
+	if old_person and old_person != person:
+		if frappe.db.get_value("Person", old_person, "donor") == doc.name:
+			frappe.db.set_value("Person", old_person, "donor", None, update_modified=False)
 
-    if person and frappe.db.get_value("Person", person, "donor") != doc.name:
-        frappe.db.set_value("Person", person, "donor", doc.name, update_modified=False)
+	if person and frappe.db.get_value("Person", person, "donor") != doc.name:
+		frappe.db.set_value("Person", person, "donor", doc.name, update_modified=False)
 
 
 def on_donor_trash(doc, method=None):
-    """Drop the reverse mirror when its Donor is deleted."""
-    if not frappe.db.has_column("Person", "donor"):
-        return
-    person = doc.get("person")
-    if person and frappe.db.get_value("Person", person, "donor") == doc.name:
-        frappe.db.set_value("Person", person, "donor", None, update_modified=False)
+	"""Drop the reverse mirror when its Donor is deleted."""
+	if not frappe.db.has_column("Person", "donor"):
+		return
+	person = doc.get("person")
+	if person and frappe.db.get_value("Person", person, "donor") == doc.name:
+		frappe.db.set_value("Person", person, "donor", None, update_modified=False)

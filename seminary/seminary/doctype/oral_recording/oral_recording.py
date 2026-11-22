@@ -11,4 +11,4 @@ from frappe.model.document import Document
 
 
 class OralRecording(Document):
-    pass
+	pass

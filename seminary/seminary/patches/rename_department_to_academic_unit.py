@@ -17,19 +17,16 @@ TARGETS = (("Course", "tabCourse"), ("Program", "tabProgram"))
 
 
 def execute():
-    for doctype, table in TARGETS:
-        if not frappe.db.table_exists(doctype):
-            continue
-        columns = frappe.db.get_table_columns(doctype)
-        if "department" in columns and "academic_unit" not in columns:
-            frappe.db.sql_ddl(
-                f"ALTER TABLE `{table}` "
-                f"CHANGE `department` `academic_unit` varchar(140)"
-            )
-        # Null stale HR Department values — the Link now points at Academic Unit.
-        if "academic_unit" in frappe.db.get_table_columns(doctype):
-            frappe.db.sql(
-                f"UPDATE `{table}` SET `academic_unit` = NULL"  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
-            )
+	for doctype, table in TARGETS:
+		if not frappe.db.table_exists(doctype):
+			continue
+		columns = frappe.db.get_table_columns(doctype)
+		if "department" in columns and "academic_unit" not in columns:
+			frappe.db.sql_ddl(f"ALTER TABLE `{table}` CHANGE `department` `academic_unit` varchar(140)")
+		# Null stale HR Department values — the Link now points at Academic Unit.
+		if "academic_unit" in frappe.db.get_table_columns(doctype):
+			frappe.db.sql(
+				f"UPDATE `{table}` SET `academic_unit` = NULL"  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
+			)
 
-    frappe.db.commit()
+	frappe.db.commit()

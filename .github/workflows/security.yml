@@ -56,13 +56,15 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install detect-secrets==1.5.0
-      # Same exclusions as `.pre-commit-config.yaml`, and no baseline file:
-      # a baseline is a second thing to keep honest, and there is nothing to
-      # baseline -- this scan is clean today. Fails if that stops being true.
+      # Same exclusions as `.pre-commit-config.yaml`, but stricter: it ignores
+      # the pre-commit baseline, since this scan is clean today. Fails if that
+      # stops being true. The baseline files themselves hold hashes, so skip them.
       - name: detect-secrets
         run: |
           detect-secrets scan \
             --exclude-files 'README\.md' \
+            --exclude-files '\.secrets\.baseline' \
+            --exclude-files '\.bandit-baseline\.json' \
             --exclude-files 'seminary/public/frontend/assets/.*' \
             --exclude-files 'seminary/public/dist/.*' \
             --exclude-files '(^|.*/)\.history/.*' \

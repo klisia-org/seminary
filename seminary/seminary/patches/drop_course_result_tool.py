@@ -9,8 +9,6 @@ import frappe
 
 
 def execute():
-    if frappe.db.exists("DocType", "Course Result Tool"):
-        frappe.delete_doc(
-            "DocType", "Course Result Tool", force=True, ignore_missing=True
-        )
-    frappe.db.delete("Singles", {"doctype": "Course Result Tool"})
+	if frappe.db.exists("DocType", "Course Result Tool"):
+		frappe.delete_doc("DocType", "Course Result Tool", force=True, ignore_missing=True)
+	frappe.db.delete("Singles", {"doctype": "Course Result Tool"})

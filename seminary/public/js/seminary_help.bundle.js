@@ -39,7 +39,7 @@ function seminary_render_local_notes(frm) {
 	}
 
 	frappe.call({
-		method: 'seminary.seminary.doctype.seminary_help_entry.seminary_help_entry.get_help_entry',
+		method: "seminary.seminary.doctype.seminary_help_entry.seminary_help_entry.get_help_entry",
 		args: { document_type: doctype },
 		async: true,
 		callback: function (r) {
@@ -51,7 +51,7 @@ function seminary_render_local_notes(frm) {
 
 function seminary_show_notes_section(frm, entry) {
 	// Refresh fires repeatedly — drop any prior panel before re-adding.
-	frm.layout.wrapper.find('.seminary-local-notes-panel').remove();
+	frm.layout.wrapper.find(".seminary-local-notes-panel").remove();
 
 	if (!entry || !entry.local_notes) {
 		return;
@@ -61,17 +61,17 @@ function seminary_show_notes_section(frm, entry) {
 		<div class="seminary-local-notes-panel">
 			<div class="seminary-ln-head">
 				<span class="seminary-ln-title">
-					${frappe.utils.icon('es-line-book', 'sm')} ${__('Local Notes')}
+					${frappe.utils.icon("es-line-book", "sm")} ${__("Local Notes")}
 				</span>
-				<span class="seminary-ln-caret">${frappe.utils.icon('es-line-down', 'sm')}</span>
+				<span class="seminary-ln-caret">${frappe.utils.icon("es-line-down", "sm")}</span>
 			</div>
 			<div class="seminary-ln-body"></div>
 		</div>
 	`);
 	// Set notes via .html() rather than template interpolation so the markup is
 	// not re-parsed/escaped oddly inside the template literal.
-	$panel.find('.seminary-ln-body').html(entry.local_notes);
-	$panel.find('.seminary-ln-head').on('click', () => $panel.toggleClass('collapsed'));
+	$panel.find(".seminary-ln-body").html(entry.local_notes);
+	$panel.find(".seminary-ln-head").on("click", () => $panel.toggleClass("collapsed"));
 
 	frm.layout.wrapper.prepend($panel);
 }

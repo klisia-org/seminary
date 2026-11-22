@@ -9,13 +9,13 @@ from frappe.model.document import Document
 
 
 class OralActivity(Document):
-    def validate(self):
-        from seminary.seminary import oral
+	def validate(self):
+		from seminary.seminary import oral
 
-        try:
-            steps = json.loads(self.oral_steps or "[]")
-        except ValueError:
-            frappe.throw(_("Processing Steps must be a list."))
-        self.oral_steps = json.dumps([s for s in oral.PIPELINE if s in steps])
-        if self.mode != "Conversation":
-            self.group_size = 0
+		try:
+			steps = json.loads(self.oral_steps or "[]")
+		except ValueError:
+			frappe.throw(_("Processing Steps must be a list."))
+		self.oral_steps = json.dumps([s for s in oral.PIPELINE if s in steps])
+		if self.mode != "Conversation":
+			self.group_size = 0

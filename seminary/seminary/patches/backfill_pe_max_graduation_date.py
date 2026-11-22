@@ -13,8 +13,8 @@ from frappe.utils import add_days
 
 
 def execute():
-    rows = frappe.db.sql(
-        """SELECT pe.name AS pe_name,
+	rows = frappe.db.sql(
+		"""SELECT pe.name AS pe_name,
                   pe.enrollment_date,
                   pgm.max_time_enrolled
            FROM `tabProgram Enrollment` pe
@@ -24,23 +24,23 @@ def execute():
              AND COALESCE(pgm.max_time_enrolled, 0) > 0
              AND COALESCE(pgm.is_ongoing, 0) = 0
              AND pe.enrollment_date IS NOT NULL""",
-        as_dict=True,
-    )
-    if not rows:
-        print("No Program Enrollments need max_graduation_date backfill.")
-        return
+		as_dict=True,
+	)
+	if not rows:
+		print("No Program Enrollments need max_graduation_date backfill.")
+		return
 
-    for row in rows:
-        years = float(row.max_time_enrolled or 0)
-        days = int(round(years * 365.25))
-        max_date = add_days(row.enrollment_date, days)
-        frappe.db.set_value(
-            "Program Enrollment",
-            row.pe_name,
-            "max_graduation_date",
-            max_date,
-            update_modified=False,
-        )
+	for row in rows:
+		years = float(row.max_time_enrolled or 0)
+		days = round(years * 365.25)
+		max_date = add_days(row.enrollment_date, days)
+		frappe.db.set_value(
+			"Program Enrollment",
+			row.pe_name,
+			"max_graduation_date",
+			max_date,
+			update_modified=False,
+		)
 
-    frappe.db.commit()
-    print(f"Backfilled max_graduation_date on {len(rows)} Program Enrollment(s).")
+	frappe.db.commit()
+	print(f"Backfilled max_graduation_date on {len(rows)} Program Enrollment(s).")

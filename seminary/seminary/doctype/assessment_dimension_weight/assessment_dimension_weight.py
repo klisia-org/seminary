@@ -15,53 +15,49 @@ from seminary.seminary import cbe
 
 
 class AssessmentDimensionWeight(Document):
-    def validate(self):
-        self.set_context()
-        self.validate_dimension()
-        self.validate_unique()
+	def validate(self):
+		self.set_context()
+		self.validate_dimension()
+		self.validate_unique()
 
-    def set_context(self):
-        row = frappe.db.get_value(
-            "Scheduled Course Assess Criteria",
-            self.assess_criteria,
-            ["parent", "course_competency"],
-            as_dict=True,
-        )
-        if row:
-            self.course_schedule = row.parent
-            self.course_competency = row.course_competency
+	def set_context(self):
+		row = frappe.db.get_value(
+			"Scheduled Course Assess Criteria",
+			self.assess_criteria,
+			["parent", "course_competency"],
+			as_dict=True,
+		)
+		if row:
+			self.course_schedule = row.parent
+			self.course_competency = row.course_competency
 
-    def validate_dimension(self):
-        if not self.course_competency:
-            frappe.throw(
-                _(
-                    "Assessment {0} is not linked to a competency, so it has no "
-                    "dimensions to weight."
-                ).format(self.assess_criteria)
-            )
-        allowed = {
-            d.dimension_code: d.dimension
-            for d in cbe.dimensions_of(self.course_competency)
-        }
-        self.dimension = cbe.assert_known_dimension(
-            allowed, self.dimension_code, competency=self.course_competency
-        )
+	def validate_dimension(self):
+		if not self.course_competency:
+			frappe.throw(
+				_("Assessment {0} is not linked to a competency, so it has no dimensions to weight.").format(
+					self.assess_criteria
+				)
+			)
+		allowed = {d.dimension_code: d.dimension for d in cbe.dimensions_of(self.course_competency)}
+		self.dimension = cbe.assert_known_dimension(
+			allowed, self.dimension_code, competency=self.course_competency
+		)
 
-    def validate_unique(self):
-        # Compared after the fact rather than filtered on `name != self.name`:
-        # autoname has already stamped a new doc with the colliding name, so
-        # that filter would hide the very record being looked for.
-        duplicate = frappe.db.get_value(
-            "Assessment Dimension Weight",
-            {
-                "assess_criteria": self.assess_criteria,
-                "dimension_code": self.dimension_code,
-            },
-            "name",
-        )
-        if duplicate and (self.is_new() or duplicate != self.name):
-            frappe.throw(
-                _("This assessment already has a weight for {0} ({1}).").format(
-                    self.dimension_code, duplicate
-                )
-            )
+	def validate_unique(self):
+		# Compared after the fact rather than filtered on `name != self.name`:
+		# autoname has already stamped a new doc with the colliding name, so
+		# that filter would hide the very record being looked for.
+		duplicate = frappe.db.get_value(
+			"Assessment Dimension Weight",
+			{
+				"assess_criteria": self.assess_criteria,
+				"dimension_code": self.dimension_code,
+			},
+			"name",
+		)
+		if duplicate and (self.is_new() or duplicate != self.name):
+			frappe.throw(
+				_("This assessment already has a weight for {0} ({1}).").format(
+					self.dimension_code, duplicate
+				)
+			)

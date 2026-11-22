@@ -64,7 +64,11 @@ const METHODS = "seminary.seminary.doctype.bulk_course_enrollment.bulk_course_en
 function run(frm, method) {
 	const call = () =>
 		frappe
-			.call({ method: METHODS + method, args: { name: frm.doc.name }, freeze: true })
+			.call({
+				method: METHODS + method,
+				args: { name: frm.doc.name },
+				freeze: true,
+			})
 			.then(() => frm.reload_doc());
 	return frm.is_dirty() ? frm.save().then(call) : call();
 }
@@ -90,7 +94,11 @@ function confirm_enroll(frm) {
 	frappe.confirm(message, () => {
 		const go = () =>
 			frappe
-				.call({ method: METHODS + "enroll", args: { name: frm.doc.name }, freeze: true })
+				.call({
+					method: METHODS + "enroll",
+					args: { name: frm.doc.name },
+					freeze: true,
+				})
 				.then((r) => {
 					frappe.show_alert({
 						message: __("{0} enrollments queued.", [r.message]),

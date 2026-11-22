@@ -15,23 +15,23 @@ import frappe
 
 
 def execute():
-    rows = frappe.db.sql(
-        "SELECT name FROM `tabGraduation Requirement Item` WHERE docstatus = 0",
-        as_dict=True,
-    )
-    if not rows:
-        print("No draft Graduation Requirement Item rows to submit.")
-        return
+	rows = frappe.db.sql(
+		"SELECT name FROM `tabGraduation Requirement Item` WHERE docstatus = 0",
+		as_dict=True,
+	)
+	if not rows:
+		print("No draft Graduation Requirement Item rows to submit.")
+		return
 
-    for row in rows:
-        frappe.db.set_value(
-            "Graduation Requirement Item",
-            row.name,
-            "docstatus",
-            1,
-            update_modified=False,
-        )
+	for row in rows:
+		frappe.db.set_value(
+			"Graduation Requirement Item",
+			row.name,
+			"docstatus",
+			1,
+			update_modified=False,
+		)
 
-    frappe.db.commit()
-    frappe.cache().delete_value("_seminary_grad_link_doctypes")
-    print(f"Submitted {len(rows)} Graduation Requirement Item row(s).")
+	frappe.db.commit()
+	frappe.cache().delete_value("_seminary_grad_link_doctypes")
+	print(f"Submitted {len(rows)} Graduation Requirement Item row(s).")

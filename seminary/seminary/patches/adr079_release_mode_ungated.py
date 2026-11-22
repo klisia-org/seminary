@@ -13,13 +13,11 @@ NEW = "Ungated"
 
 
 def execute():
-    frappe.db.sql(
-        "UPDATE `tabCompetency Framework` SET content_release_mode = %s "
-        "WHERE content_release_mode = %s",
-        (NEW, OLD),
-    )
-    frappe.db.sql(
-        "UPDATE `tabCourse Schedule` SET content_release_override = %s "
-        "WHERE content_release_override = %s",
-        (NEW, OLD),
-    )
+	frappe.db.sql(
+		"UPDATE `tabCompetency Framework` SET content_release_mode = %s WHERE content_release_mode = %s",
+		(NEW, OLD),
+	)
+	frappe.db.sql(
+		"UPDATE `tabCourse Schedule` SET content_release_override = %s WHERE content_release_override = %s",
+		(NEW, OLD),
+	)

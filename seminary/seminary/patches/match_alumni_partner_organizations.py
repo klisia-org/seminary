@@ -11,40 +11,38 @@ import frappe
 
 
 def execute():
-    profiles = frappe.get_all(
-        "Alumni Profile",
-        filters={
-            "current_organization": ("is", "set"),
-            "current_partner_organization": ("is", "not set"),
-        },
-        fields=["name", "current_organization"],
-    )
-    if not profiles:
-        return
+	profiles = frappe.get_all(
+		"Alumni Profile",
+		filters={
+			"current_organization": ("is", "set"),
+			"current_partner_organization": ("is", "not set"),
+		},
+		fields=["name", "current_organization"],
+	)
+	if not profiles:
+		return
 
-    orgs = frappe.get_all("Partner Organization", fields=["name", "organization_name"])
-    by_name = {}
-    for org in orgs:
-        key = (org.organization_name or "").strip().lower()
-        if not key:
-            continue
-        # An ambiguous name matches nothing rather than the first one seen.
-        by_name[key] = None if key in by_name else org.name
+	orgs = frappe.get_all("Partner Organization", fields=["name", "organization_name"])
+	by_name = {}
+	for org in orgs:
+		key = (org.organization_name or "").strip().lower()
+		if not key:
+			continue
+		# An ambiguous name matches nothing rather than the first one seen.
+		by_name[key] = None if key in by_name else org.name
 
-    matched = 0
-    for profile in profiles:
-        org = by_name.get((profile.current_organization or "").strip().lower())
-        if not org:
-            continue
-        frappe.db.set_value(
-            "Alumni Profile",
-            profile.name,
-            "current_partner_organization",
-            org,
-            update_modified=False,
-        )
-        matched += 1
+	matched = 0
+	for profile in profiles:
+		org = by_name.get((profile.current_organization or "").strip().lower())
+		if not org:
+			continue
+		frappe.db.set_value(
+			"Alumni Profile",
+			profile.name,
+			"current_partner_organization",
+			org,
+			update_modified=False,
+		)
+		matched += 1
 
-    print(
-        "  alumni linked to a partner organization: %d of %d" % (matched, len(profiles))
-    )
+	print("  alumni linked to a partner organization: %d of %d" % (matched, len(profiles)))

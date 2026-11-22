@@ -18,16 +18,14 @@ MILE_COUNTRIES = ("United States", "Liberia", "Myanmar", "United Kingdom")
 
 
 def execute():
-    # Not `db.has_column`: Seminary Settings is a Single, so there is no
-    # `tabSeminary Settings` to look a column up in and the check raises rather
-    # than returning False.
-    if not frappe.get_meta("Seminary Settings").get_field("distance_unit"):
-        return
-    if frappe.db.get_single_value("Seminary Settings", "distance_unit"):
-        return
+	# Not `db.has_column`: Seminary Settings is a Single, so there is no
+	# `tabSeminary Settings` to look a column up in and the check raises rather
+	# than returning False.
+	if not frappe.get_meta("Seminary Settings").get_field("distance_unit"):
+		return
+	if frappe.db.get_single_value("Seminary Settings", "distance_unit"):
+		return
 
-    country = frappe.db.get_default("country") or frappe.db.get_single_value(
-        "System Settings", "country"
-    )
-    unit = "Miles" if country in MILE_COUNTRIES else "Kilometres"
-    frappe.db.set_single_value("Seminary Settings", "distance_unit", unit)
+	country = frappe.db.get_default("country") or frappe.db.get_single_value("System Settings", "country")
+	unit = "Miles" if country in MILE_COUNTRIES else "Kilometres"
+	frappe.db.set_single_value("Seminary Settings", "distance_unit", unit)

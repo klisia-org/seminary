@@ -101,9 +101,10 @@ frappe.query_reports["Orphan Graduation Requirements"] = {
 				return;
 			}
 			frappe.confirm(
-				__("Withdraw the linked document for {0} selected row(s) and drop the requirement?", [
-					pairs.length,
-				]),
+				__(
+					"Withdraw the linked document for {0} selected row(s) and drop the requirement?",
+					[pairs.length]
+				),
 				() =>
 					runBatch(
 						report,

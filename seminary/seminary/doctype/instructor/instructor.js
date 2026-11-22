@@ -1,14 +1,13 @@
 frappe.ui.form.on("Instructor", {
-	refresh: function(frm) {
-
+	refresh: function (frm) {
 		render_open_commitments(frm);
 
-		frm.set_query("academic_term", "instructor_log", function(_doc, cdt, cdn) {
+		frm.set_query("academic_term", "instructor_log", function (_doc, cdt, cdn) {
 			let d = locals[cdt][cdn];
 			return {
 				filters: {
-					"academic_year": d.academic_year
-				}
+					academic_year: d.academic_year,
+				},
 			};
 		});
 
@@ -16,29 +15,29 @@ frappe.ui.form.on("Instructor", {
 
 		// console.log("Heatmap Data:", timeline_data);  // Add this line to verify the data being passed to the heatmap component
 
-
-		frm.set_query("course", "instructor_log", function(_doc, cdt, cdn) {
+		frm.set_query("course", "instructor_log", function (_doc, cdt, cdn) {
 			let d = locals[cdt][cdn];
 			return {
 				query: "seminary.seminary.doctype.program_enrollment.program_enrollment.get_program_courses",
 				filters: {
-					"program": d.program
-				}
+					program: d.program,
+				},
 			};
 		});
 	},
-	onload: function(frm) {
+	onload: function (frm) {
 		let name = frm.doc.name;
 		console.log(name);
 		if (!frm.is_new()) {
-			frm.call({method: "seminary.seminary.doctype.instructor.instructor.update_instructorlog", args: {doc: name}});
+			frm.call({
+				method: "seminary.seminary.doctype.instructor.instructor.update_instructorlog",
+				args: { doc: name },
+			});
 		}
 		console.log("Instructor Log updated");
 		frm.refresh();
-			}
-
-	}
-);
+	},
+});
 
 // What this instructor is still carrying — open sections, cohorts they lead,
 // culminating projects they advise (ADR 066 §7.1). The registrar's answer to
@@ -53,12 +52,12 @@ function render_open_commitments(frm) {
 		return;
 	}
 	frappe.call({
-		method: 'seminary.seminary.instructor_load.instructor_commitments',
+		method: "seminary.seminary.instructor_load.instructor_commitments",
 		args: { instructor: frm.doc.name },
-		callback: function(r) {
+		callback: function (r) {
 			const res = r.message || {};
 			wrapper.$wrapper.html(
-				res.html || `<p class="text-muted">${__('Nothing currently assigned.')}</p>`
+				res.html || `<p class="text-muted">${__("Nothing currently assigned.")}</p>`
 			);
 		},
 	});

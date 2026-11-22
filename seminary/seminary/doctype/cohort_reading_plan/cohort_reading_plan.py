@@ -7,8 +7,8 @@ from seminary.seminary.discipleship import reading_plans
 
 
 class CohortReadingPlan(Document):
-    def validate(self):
-        reading_plans.validate_run(self)
+	def validate(self):
+		reading_plans.validate_run(self)
 
-    def on_trash(self):
-        reading_plans.delete_run_progress(self)
+	def on_trash(self):
+		reading_plans.delete_run_progress(self)
