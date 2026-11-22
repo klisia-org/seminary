@@ -1,0 +1,44 @@
+# Shared CI check, kept the same in every app by a sync script: change the shared copy.
+name: Pre-commit
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: pre-commit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    name: Pre-commit (lint, format, security)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Semgrep compares against the branch's base, so it needs the history.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - run: pip install pre-commit
+
+      - name: Run every hook on every file
+        env:
+          # Hooks that need a local bench or docs install.
+          SKIP: docs-check-sources,software-manual-check
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # A new branch has no "before": compare with its parent instead.
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE=$(git rev-parse HEAD~1)
+          fi
+          SEMGREP_BASELINE_REF="$BASE" pre-commit run --all-files --show-diff-on-failure
