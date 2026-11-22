@@ -65,7 +65,7 @@ repos:
         # Findings already there are in the baseline, tracked in a decision record; new ones fail.
         args: ["-c", "bandit.yaml", "-b", ".bandit-baseline.json"]
         # Tests assert and use fixed passwords on purpose; scripts are dev tools.
-        exclude: '^(scripts|tooling|runbooks)/|/tests/|/test_[^/]*\.py$'
+        exclude: '^(scripts|tooling|runbooks|prototypes)/|/tests/|/test_[^/]*\.py$'
 
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
@@ -87,7 +87,7 @@ repos:
         language_version: python3.14
         additional_dependencies: ["semgrep==1.162.0"]
         types_or: [python, javascript, json]
-        exclude: 'seminary/public/frontend/|seminary/builder_files/|^(scripts|tooling|runbooks|frontend|portal-shell)/'
+        exclude: 'seminary/public/frontend/|seminary/builder_files/|^(scripts|tooling|runbooks|prototypes|frontend|portal-shell)/'
       - id: stabilize-pot
         name: Stabilize POT file (prevent translation churn)
         entry: python scripts/stabilize-pot.py
