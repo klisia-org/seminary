@@ -14,6 +14,9 @@ fi
 # Only findings a change introduces fail: the ones already there are tracked in a decision record
 # and fixed in their own pass. Locally that is against HEAD; CI passes the branch's base.
 BASELINE=()
+# `git commit` hands hooks its index, which would also become the index of the worktree semgrep
+# makes for the baseline. Pre-commit has set unstaged changes aside, so the files are the commit.
+unset GIT_INDEX_FILE
 BASE="${SEMGREP_BASELINE_REF:-HEAD}"
 if git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null; then
 	# A formatting sweep between the base and HEAD moves every old finding, so semgrep would see
