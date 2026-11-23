@@ -75,17 +75,18 @@ class TestRoutesListed(IntegrationTestCase):
 		self.assertEqual(visits[0]["path"], "/seminary/development-plans")
 
 	def test_query_is_filled_from_samples(self):
+		sample = "letter_token"
 		route = {
 			"path": "/recommender-form/:name",
 			"as": ["student"],
 			"params": {"name": "letter"},
-			"query": {"token": "token"},
+			"query": {"token": sample},
 		}
 		found = {"student_user": "s@example.test", "letter": "RL-1"}
-		visits, missed = a.plan({"portal": [route]}, found={**found, "token": "a b"})
+		visits, missed = a.plan({"portal": [route]}, found={**found, sample: "a b"})
 		self.assertEqual(visits[0]["path"], "/seminary/recommender-form/RL-1?token=a+b")
 		visits, missed = a.plan({"portal": [route]}, found=found)
-		self.assertEqual((visits, missed[0]["why"]), ([], "No token on this site."))
+		self.assertEqual((visits, missed[0]["why"]), ([], "No letter_token on this site."))
 
 
 RULES = {
