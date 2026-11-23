@@ -3,7 +3,7 @@ import re
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_datetime, now_datetime, strip_html
+from frappe.utils import escape_html, get_datetime, now_datetime, strip_html
 
 from seminary.seminary.author_templates import has_markers, render_author_text
 from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
@@ -342,7 +342,13 @@ def build_letters_pdf(doc):
 
 	letters = _collect_letters(doc)
 	pages = "".join(f'<div style="page-break-after:always">{l}</div>' for l in letters)
-	return get_pdf(comms.pdf_html(pages)), len(letters)
+	return get_pdf(comms.pdf_html(pages), title=_letters_title(doc)), len(letters)
+
+
+def _letters_title(doc):
+	"""The letters PDF's name: the subject, unless it is personalised per recipient."""
+	subject = (doc.subject or "").strip()
+	return subject if subject and not has_markers(subject) else doc.name
 
 
 def _attach_letters_pdf(doc):
@@ -387,16 +393,57 @@ def _resolve_letter_head(doc):
 	)
 	if not name:
 		return None
-	return frappe.db.get_value("Letter Head", name, ["content", "footer"], as_dict=True)
+	return frappe.db.get_value("Letter Head", name, ["name", "content", "footer"], as_dict=True)
 
 
 def _wrap_letterhead(letter_head, message):
 	"""Wrap a (rendered) message in the resolved letter head for the printed PDF."""
 	if not letter_head:
 		return message
-	head = f'<div class="letter-head">{letter_head.content}</div>' if letter_head.content else ""
-	foot = f'<div class="letter-head-footer">{letter_head.footer}</div>' if letter_head.footer else ""
+	content = _letterhead_alt(letter_head.content, letter_head.get("name"), logo=True)
+	footer = _letterhead_alt(letter_head.footer, letter_head.get("name"), logo=False)
+	head = f'<div class="letter-head">{content}</div>' if content else ""
+	foot = f'<div class="letter-head-footer">{footer}</div>' if footer else ""
 	return f"{head}{message}{foot}"
+
+
+_IMG = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
+_ALT = re.compile(r"""\salt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""", re.IGNORECASE)
+
+
+def _letterhead_alt(html, letter_head_name=None, logo=True):
+	"""Alt text for a letter head's images, for a screen reader (ADR 104 §5). The first
+	image in the head is taken as the school's logo and named after the school; the
+	others, and the footer's, are decoration (alt=""). Alt text someone wrote, even alt="",
+	is kept; the one Frappe writes for an image letter head (the Letter Head's name) is not."""
+	if not html:
+		return html
+	school = escape_html(school_name())
+	seen = []
+
+	def repl(match):
+		tag = match.group(0)
+		first = not seen
+		seen.append(tag)
+		alt = _ALT.search(tag)
+		if alt:
+			value = next((g for g in alt.groups() if g is not None), "")
+			if not letter_head_name or value != letter_head_name:
+				return tag
+			tag = tag[: alt.start()] + tag[alt.end() :]
+		text = school if logo and first else ""
+		return re.sub(r"^<img\b", f'<img alt="{text}"', tag, flags=re.IGNORECASE)
+
+	return _IMG.sub(repl, html)
+
+
+def school_name():
+	"""The school's name as the site states it."""
+	return (
+		frappe.db.get_single_value("Website Settings", "app_name")
+		or frappe.db.get_single_value("System Settings", "app_name")
+		or ""
+	)
 
 
 def _render(template, ctx, html=False):

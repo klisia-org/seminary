@@ -20,8 +20,8 @@
           </p>
           <template v-else>
             <div v-if="studentProjects.length > 1" class="mb-4">
-              <label class="text-sm font-medium text-ink-gray-6 mb-1 block">{{ __('Project') }}</label>
-              <select :aria-label="__('Project')" v-model="selectedStudent"
+              <label for="culminating-project-select" class="text-sm font-medium text-ink-gray-6 mb-1 block">{{ __('Project') }}</label>
+              <select id="culminating-project-select" v-model="selectedStudent"
                 class="border border-outline-gray-2 bg-surface-white text-ink-gray-9 rounded-md px-3 py-2 text-sm w-full max-w-md">
                 <option v-for="p in studentProjects" :key="p.name" :value="p.name">{{ p.project_title }}</option>
               </select>

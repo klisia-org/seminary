@@ -16,6 +16,7 @@
 				<input ref="input" v-model="typed" type="text"
 					class="w-full border-0 bg-transparent px-0 py-2.5 text-sm text-ink-gray-8 shadow-none focus:outline-none focus:ring-0"
 					:placeholder="__('Type a book or reference, e.g. Jn 11, Rom 8:28')"
+					:aria-label="__('Type a book or reference, e.g. Jn 11, Rom 8:28')"
 					@keyup.enter="pickTyped" />
 			</div>
 			<div class="flex gap-1 px-3 pt-2">

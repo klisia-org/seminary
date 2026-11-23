@@ -4,10 +4,10 @@
         <!-- Read-only: just render HTML -->
         <SafeHtml v-if="!editable" :html="content" class="prose-sm py-2 px-2 min-h-[7rem]" />
         <!-- Lazy placeholder until user clicks -->
-        <div v-else-if="lazy && !activated" @click="activate"
-            class="border rounded-md py-2 px-2 min-h-[7rem] text-sm text-ink-gray-4 cursor-text">
+        <button v-else-if="lazy && !activated" type="button" @click="activate"
+            class="flex w-full items-start border rounded-md py-2 px-2 min-h-[7rem] text-left text-sm text-ink-gray-4 cursor-text">
             {{ placeholder || __('Click to write...') }}
-        </div>
+        </button>
         <!-- Active editor -->
         <div v-else class="border rounded-md">
             <div class="flex gap-1 p-1 border-b bg-surface-gray-2 rounded-t-md flex-wrap">

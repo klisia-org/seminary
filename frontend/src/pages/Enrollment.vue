@@ -5,8 +5,8 @@
     <div class="px-5 py-4">
       <!-- PE Selector -->
       <div v-if="enrollments.data && enrollments.data.length > 1" class="mb-4">
-        <label class="text-sm font-medium text-ink-gray-6 mb-1 block">{{ __('Program Enrollment') }}</label>
-        <select :aria-label="__('Program Enrollment')" v-model="selectedPE" @change="loadCourses"
+        <label for="enrollment-program-select" class="text-sm font-medium text-ink-gray-6 mb-1 block">{{ __('Program Enrollment') }}</label>
+        <select id="enrollment-program-select" v-model="selectedPE" @change="loadCourses"
           class="border border-outline-gray-2 bg-surface-white text-ink-gray-9 rounded-md px-3 py-2 text-sm w-full max-w-md">
           <option v-for="pe in activeEnrollments" :key="pe.name" :value="pe.name">
             {{ pe.program }}
@@ -26,22 +26,22 @@
           <table class="w-full text-sm">
             <thead class="bg-surface-gray-1 text-ink-gray-6">
               <tr>
-                <th class="text-left px-3 py-2 font-medium">{{ __('Course') }}</th>
-                <th class="text-left px-3 py-2 font-medium">{{ __('Credits') }}</th>
-                <th class="text-left px-3 py-2 font-medium">{{ __('Status') }}</th>
-                <th class="text-right px-3 py-2 font-medium"></th>
+                <th scope="col" class="text-left px-3 py-2 font-medium">{{ __('Course') }}</th>
+                <th scope="col" class="text-left px-3 py-2 font-medium">{{ __('Credits') }}</th>
+                <th scope="col" class="text-left px-3 py-2 font-medium">{{ __('Status') }}</th>
+                <th scope="col" class="text-right px-3 py-2 font-medium"><span class="sr-only">{{ __('Actions') }}</span></th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="cei in sortedEnrollments" :key="cei.name"
                 :class="['Withdrawn', 'Unseated'].includes(cei.status) ? 'text-ink-gray-4 line-through' : ''">
-                <td class="px-3 py-2">
+                <th scope="row" class="px-3 py-2 text-left font-normal">
                   <div>{{ cei.course_data }}</div>
                   <div v-if="cei.categories && cei.categories.length" class="flex flex-wrap gap-1 mt-1">
                     <Badge v-for="(cat, idx) in cei.categories" :key="idx" size="sm"
                       :theme="badgeTheme(cat.type)" :label="badgeLabel(cat)" />
                   </div>
-                </td>
+                </th>
                 <td class="px-3 py-2">{{ cei.credits || '-' }}</td>
                 <td class="px-3 py-2">
                   <div class="flex flex-col gap-0.5">
@@ -78,7 +78,7 @@
             </tbody>
             <tfoot v-if="totalCredits > 0" class="bg-surface-gray-1">
               <tr>
-                <td class="px-3 py-2 font-medium text-ink-gray-7">{{ __('Total') }}</td>
+                <th scope="row" class="px-3 py-2 text-left font-medium text-ink-gray-7">{{ __('Total') }}</th>
                 <td class="px-3 py-2 font-medium text-ink-gray-7">{{ totalCredits }}</td>
                 <td colspan="2"></td>
               </tr>

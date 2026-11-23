@@ -21,10 +21,8 @@
       </div>
       <!-- Existing Student Filter -->
       <div>
-        <label for="studentDropdown" class="block text-sm font-medium text-ink-gray-7">
-          {{ __('Student') }}
-        </label>
-        <Link id="studentDropdown" doctype="User" v-model="member" :placeholder="__('Student')" />
+        <!-- Link draws its own label, tied to the control it opens. -->
+        <Link doctype="User" v-model="member" :label="__('Student')" :placeholder="__('Student')" />
       </div>
 
       <!-- Existing Status Filter -->

@@ -97,6 +97,7 @@
 							<span v-if="!s.start_utc" class="text-ink-red-3">{{ s.reason }}</span>
 							<div v-else class="flex items-center gap-2">
 								<input type="datetime-local" class="rounded border-outline-gray-2 text-sm"
+									:aria-label="__('Start of {0}').format(s.label)"
 									:value="toInput(s.start_utc)" @change="(e) => moveSlot(s, e.target.value)" />
 								<span class="text-ink-gray-5">{{ __('{0} min').format(c.length) }}</span>
 							</div>
@@ -164,7 +165,7 @@
 		<Dialog v-model="showMove" :options="{ title: __('Move the meeting') }">
 			<template #body-content>
 				<div class="space-y-2">
-					<input v-model="moveForm.start" type="datetime-local" class="w-full rounded border-outline-gray-2 text-sm" />
+					<input v-model="moveForm.start" type="datetime-local" :aria-label="__('New start time')" class="w-full rounded border-outline-gray-2 text-sm" />
 					<FormControl v-model.number="moveForm.length" type="number" min="5" :label="__('Minutes')" />
 					<p class="text-xs text-ink-gray-5">{{ __('Its members are told the new time.') }}</p>
 				</div>

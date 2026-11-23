@@ -10,8 +10,13 @@ success criterion in the four terms of an Accessibility Conformance Report.
 
 axe-core decides only part of WCAG. A criterion supports only when its axe rules pass on
 every visited route and its manual row, when it has one, says so (§5).
+
+Another app that draws its own pages runs the same check on them by passing a `Target`:
+its own router, portal path, docs/accessibility folder, roles and scope. Every function
+here takes `target=None`, which means Seminary's own pages.
 """
 
+import dataclasses
 import datetime
 import json
 import os
@@ -24,9 +29,8 @@ import frappe
 import yaml
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DOCS = os.path.join(ROOT, "docs", "accessibility")
+#: The browser side is shared by every app that runs the check.
 RUNNER = os.path.join(ROOT, "scripts", "axe")
-ROUTER = os.path.join(ROOT, "frontend", "src", "router.js")
 
 TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 STANDARD = "WCAG 2.2 Level AA"
@@ -41,9 +45,13 @@ DOES_NOT = "Does Not Support"
 NOT_APPLICABLE = "Not Applicable"
 RESULTS = (SUPPORTS, PARTIAL, DOES_NOT, NOT_APPLICABLE)
 
-SCOPE = "The student, instructor, staff and partner portal, and the public website pages Seminary renders."
+SCOPE = (
+	"The student, instructor, staff and partner portal, the public website pages Seminary renders, "
+	"and the PDFs Seminary generates: announcement letters, signed agreements and mailing labels."
+)
 OUT_OF_SCOPE = (
-	"Frappe Desk and its sign-in page; files and packages schools upload (SCORM, PDF, video) "
+	"Frappe Desk and its sign-in page; Desk print formats printed through Frappe's print view, "
+	"such as the diploma; files and packages schools upload (SCORM, PDF, video) "
 	"and the content instructors write; "
 	"third-party pages such as payment gateways and meeting providers."
 )
@@ -111,33 +119,95 @@ CRITERIA = [
 AUTOMATED = {"3.1.1"}
 
 
+@dataclasses.dataclass
+class Target:
+	"""The pages one app draws, and how to visit them."""
+
+	app: str
+	product: str
+	#: The portal's mount point; routes.yaml paths are relative to it.
+	portal_base: str
+	#: The router source, relative to the app's repository root.
+	router: str
+	scope: str
+	out_of_scope: str
+	#: role -> the sample key holding that role's user.
+	role_users: dict
+	#: role -> how the report names it ("an Institutional Quality Manager"); default "a <role>".
+	role_labels: dict = dataclasses.field(default_factory=dict)
+	#: () -> {sample key: value}, the samples the app finds before routes.yaml's own.
+	builtin_samples: object = None
+	#: (target) -> [path], for a router the default pattern can't read.
+	router_paths: object = None
+	#: Selectors removed before axe runs.
+	remove: tuple = ("style#portal-theme",)
+	#: How the report names the signed-out visits.
+	guest_label: str = "signed out on the public pages"
+	#: Signed-out visits need Seminary's public website on (it is switched on for the run).
+	needs_public_website: bool = True
+	#: () -> (visits, not visited), for an app that plans its visits itself; default `plan`.
+	planner: object = None
+
+	@property
+	def root(self):
+		return os.path.abspath(frappe.get_app_path(self.app, ".."))
+
+	@property
+	def docs(self):
+		return os.path.join(self.root, "docs", "accessibility")
+
+
+def _seminary():
+	return Target(
+		app="seminary",
+		product="Seminary",
+		portal_base="/seminary",
+		router="frontend/src/router.js",
+		scope=SCOPE,
+		out_of_scope=OUT_OF_SCOPE,
+		role_users=ROLE_USERS,
+		builtin_samples=_builtin_samples,
+	)
+
+
+def _target(target):
+	return target or _seminary()
+
+
 def sc_tag(criterion):
 	"""axe-core's tag for a success criterion: 1.4.10 -> wcag1410."""
 	return "wcag" + criterion.replace(".", "")
 
 
-def _load(name):
+def _load(name, target=None):
 	# nosemgrep: frappe-security-file-traversal -- a fixed file of the app's docs
-	with open(os.path.join(DOCS, name)) as fh:
+	with open(os.path.join(_target(target).docs, name)) as fh:
 		return yaml.safe_load(fh) or {}
 
 
 # ---------------------------------------------------------------- routes
 
 
-def router_paths():
+def router_paths(target=None):
 	"""Every path the portal router declares, except the catch-all."""
+	target = _target(target)
+	if target.router_paths:
+		return target.router_paths(target)
 	# nosemgrep: frappe-security-file-traversal -- the app's own router source
-	with open(ROUTER) as fh:
+	with open(os.path.join(target.root, target.router)) as fh:
 		text = fh.read()
-	return [p for p in re.findall(r"path\s*:\s*['\"]([^'\"]+)['\"]", text) if "catchAll" not in p]
+	return [
+		p
+		for p in re.findall(r"path\s*:\s*['\"]([^'\"]+)['\"]", text)
+		if "catchAll" not in p and "pathMatch" not in p
+	]
 
 
-def unlisted_routes(spec=None):
+def unlisted_routes(spec=None, target=None):
 	"""Router paths routes.yaml doesn't mention (§3)."""
-	spec = spec or _load("routes.yaml")
+	spec = spec or _load("routes.yaml", target)
 	listed = {r["path"] for r in spec.get("portal") or []}
-	return [p for p in router_paths() if p not in listed]
+	return [p for p in router_paths(target) if p not in listed]
 
 
 def _course():
@@ -216,10 +286,11 @@ def _builtin_samples():
 	return s
 
 
-def samples(spec=None):
+def samples(spec=None, target=None):
 	"""The records the routes open, picked from the site (see routes.yaml)."""
-	spec = spec or _load("routes.yaml")
-	s = _builtin_samples()
+	target = _target(target)
+	spec = spec or _load("routes.yaml", target)
+	s = target.builtin_samples() if target.builtin_samples else {}
 	for key, rule in (spec.get("samples") or {}).items():
 		if "value" in rule:
 			s[key] = str(rule["value"])
@@ -249,23 +320,26 @@ ROLE_USERS = {
 	"instructor": "instructor_user",
 	"registrar": "registrar",
 	"partner": "partner",
+	"alumnus": "alumnus",
 }
 
 
-def plan(spec=None, found=None):
+def plan(spec=None, found=None, target=None):
 	"""(visits, not visited): what to open, as whom, and what had no sample."""
-	from urllib.parse import quote
+	from urllib.parse import quote, urlencode
 
-	spec = spec or _load("routes.yaml")
-	found = found if found is not None else samples(spec)
+	target = _target(target)
+	spec = spec or _load("routes.yaml", target)
+	found = found if found is not None else samples(spec, target)
 	visits, missed = [], []
 	for route in spec.get("portal") or []:
 		if route.get("skip"):
 			missed.append({"route": route["path"], "why": route["skip"]})
 			continue
 		for role in route.get("as") or []:
-			user = found.get(ROLE_USERS[role])
-			if not user:
+			# `guest`: a portal page a signed-out visitor opens, e.g. from a link with a token.
+			user = None if role == "guest" else found.get(target.role_users[role])
+			if role != "guest" and not user:
 				missed.append({"route": route["path"], "as": role, "why": f"No {role} on this site."})
 				continue
 			path, gap = route["path"], None
@@ -278,10 +352,15 @@ def plan(spec=None, found=None):
 				else:
 					gap = key or name
 					break
+			# A page opened from an emailed link reads its key from the query string.
+			query = {name: found.get(key) for name, key in (route.get("query") or {}).items()}
+			gap = gap or next((route["query"][n] for n, v in query.items() if v is None), None)
+			if query and not gap:
+				path += "?" + urlencode(query)
 			if gap:
 				missed.append({"route": route["path"], "as": role, "why": f"No {gap} on this site."})
 				continue
-			visits.append({"key": f"{role} {route['path']}", "path": "/seminary" + path, "user": user})
+			visits.append({"key": f"{role} {route['path']}", "path": target.portal_base + path, "user": user})
 	for path in spec.get("website") or []:
 		visits.append({"key": f"guest {path}", "path": path, "user": None})
 	return visits, missed
@@ -330,7 +409,8 @@ def _runner():
 	node = shutil.which("node")
 	if not node:
 		raise RuntimeError("The accessibility check needs Node.")
-	if not os.path.isdir(os.path.join(RUNNER, "node_modules", "axe-core")):
+	packages = ("axe-core", os.path.join("@guidepup", "virtual-screen-reader"))
+	if not all(os.path.isdir(os.path.join(RUNNER, "node_modules", p)) for p in packages):
 		yarn = shutil.which("yarn")
 		if not yarn:
 			raise RuntimeError("The accessibility check needs yarn to install its packages.")
@@ -340,17 +420,34 @@ def _runner():
 	return node
 
 
-def check(visits, base=None):
-	"""Run axe-core on `visits` ({key, path, user}) and return its report."""
+def _cookies(user, sid, base):
+	"""The cookies a signed-in browser carries."""
+	user_type = frappe.db.get_value("User", user, "user_type")
+	return [
+		{"name": "sid", "value": sid, "url": base},
+		{"name": "user_id", "value": user, "url": base},
+		{"name": "system_user", "value": "yes" if user_type == "System User" else "no", "url": base},
+	]
+
+
+def check(visits, base=None, target=None):
+	"""Run axe-core on `visits` ({key, path, user}) and return its report.
+
+	A visit may carry `url` instead of `path` for a page outside the site, such as a
+	plain host page for an embedded widget, and `steps` to run before axe (see
+	scripts/axe/check.mjs), such as submitting an empty form to check its errors.
+	"""
 	from frappe.utils.print_utils import find_or_download_chromium_executable
 
 	base = base or base_url()
 	node = _runner()
-	sids, job = {}, {"tags": TAGS, "remove": ["style#portal-theme"], "visits": []}
+	sids, job = {}, {"tags": TAGS, "remove": list(_target(target).remove), "visits": []}
 	# The public pages answer 404 while the public website is off; switch it on for
 	# the run only, without the side effects of saving Seminary Settings.
-	website_off = any(not v["user"] for v in visits) and not frappe.db.get_single_value(
-		"Seminary Settings", "public_website"
+	website_off = (
+		_target(target).needs_public_website
+		and any(not v["user"] for v in visits)
+		and not frappe.db.get_single_value("Seminary Settings", "public_website")
 	)
 	if website_off:
 		frappe.db.set_single_value("Seminary Settings", "public_website", 1)
@@ -360,17 +457,14 @@ def check(visits, base=None):
 			if v["user"]:
 				if v["user"] not in sids:
 					sids[v["user"]] = _session(v["user"])
-				user_type = frappe.db.get_value("User", v["user"], "user_type")
-				cookies = [
-					{"name": "sid", "value": sids[v["user"]], "url": base},
-					{"name": "user_id", "value": v["user"], "url": base},
-					{
-						"name": "system_user",
-						"value": "yes" if user_type == "System User" else "no",
-						"url": base,
-					},
-				]
-			job["visits"].append({"key": v["key"], "url": base + v["path"], "cookies": cookies})
+				cookies = _cookies(v["user"], sids[v["user"]], base)
+			url = v.get("url") or base + v["path"]
+			row = {"key": v["key"], "url": url, "cookies": cookies, "steps": v.get("steps") or []}
+			if v.get("journey"):
+				row["journey"] = v["journey"]
+			if v.get("keep_theme"):
+				row["keep_theme"] = True
+			job["visits"].append(row)
 		frappe.db.commit()  # nosemgrep -- the browser reads the sessions from another connection
 		tmp = tempfile.mkdtemp()
 		job_path, out = os.path.join(tmp, "job.json"), os.path.join(tmp, "axe.json")
@@ -406,6 +500,115 @@ def check(visits, base=None):
 		frappe.db.commit()  # nosemgrep -- remove the sessions the browser used
 
 
+def themed(visits=None, target=None):
+	"""The visits routes.yaml lists under `themed`, measured again with the school's theme (102b).
+
+	The main run leaves the theme out, since a theme is checked when it is saved; this pass
+	catches a colour the theme derives that the save check can't see. Empty when no installed
+	app supplies a theme."""
+	from seminary.seminary.portal_theme import get_portal_theme
+
+	target = _target(target)
+	if not get_portal_theme():
+		return []
+	if visits is None:
+		visits, _missed = target.planner() if target.planner else plan(target=target)
+	keys = _load("routes.yaml", target).get("themed") or []
+	return [{**v, "key": f"{v['key']}, school theme", "keep_theme": True} for v in visits if v["key"] in keys]
+
+
+# ---------------------------------------------------------------- screen-reader journeys
+
+
+def journeys(visits=None, target=None):
+	"""(journey visits, not run) from docs/accessibility/journeys.yaml (decision 102a).
+
+	Each journey names a visit from `plan()` by its key ("instructor /courses/:courseName"),
+	optional `steps` to run first, and the screen reader's `moves` (see scripts/axe/check.mjs).
+	A journey whose visit has no sample on this site is listed as not run."""
+	target = _target(target)
+	if not os.path.exists(os.path.join(target.docs, "journeys.yaml")):
+		return [], []
+	if visits is None:
+		visits, _missed = target.planner() if target.planner else plan(target=target)
+	by_key = {v["key"]: v for v in visits}
+	runs, missed = [], []
+	for j in _load("journeys.yaml", target) or []:
+		visit = by_key.get(j["visit"])
+		if not visit:
+			missed.append({"journey": j["key"], "why": f"{j['visit']} is not visited on this site."})
+			continue
+		runs.append(
+			{
+				**visit,
+				"key": f"journey: {j['key']}",
+				"steps": j.get("steps") or visit.get("steps") or [],
+				"journey": j["moves"],
+			}
+		)
+	return runs, missed
+
+
+def journey_failures(report):
+	"""What each journey didn't hear, or heard and mustn't have."""
+	out = []
+	for row in report["visits"]:
+		if "journey" not in row["key"]:
+			continue
+		if row.get("error"):
+			out.append(f"{row['key']}: {row['error']}")
+		for failure in row.get("failures") or []:
+			out.append(f"{row['key']}: {failure}")
+	return out
+
+
+def export_journeys(out, target=None, base=None):
+	"""Write the journeys, with sessions to sign in with, for the NVDA script (102a §4).
+
+	    bench --site <site> execute seminary.seminary.accessibility.export_journeys \
+	        --kwargs "{'out': '/path/journeys.json'}"
+
+	`target` may be a dotted path to another app's target function. The sessions last an hour;
+	end them sooner with `end_exported_sessions`."""
+	if isinstance(target, str):
+		target = frappe.get_attr(target)()
+	base = base or base_url()
+	runs, missed = journeys(target=target)
+	sids = {}
+	rows = []
+	for run in runs:
+		cookies = []
+		if run["user"]:
+			if run["user"] not in sids:
+				sids[run["user"]] = _session(run["user"])
+			cookies = _cookies(run["user"], sids[run["user"]], base)
+		rows.append(
+			{
+				"key": run["key"],
+				"url": run.get("url") or base + run["path"],
+				"cookies": cookies,
+				"steps": run["steps"],
+				"moves": run["journey"],
+			}
+		)
+	frappe.db.commit()  # nosemgrep -- the Windows browser reads the sessions from another connection
+	# nosemgrep: frappe-security-file-traversal -- a path the person running it chose
+	with open(out, "w") as fh:
+		json.dump(
+			{"base": base, "sessions": list(sids.values()), "journeys": rows, "not_run": missed}, fh, indent=1
+		)
+	return out
+
+
+def end_exported_sessions(path):
+	"""End the sessions `export_journeys` wrote to `path`."""
+	# nosemgrep: frappe-security-file-traversal -- a path the person running it chose
+	with open(path) as fh:
+		for sid in json.load(fh).get("sessions") or []:
+			_end_session(sid)
+	frappe.db.commit()  # nosemgrep -- the sessions are gone for every connection
+
+
 def blocking(report):
 	"""Lines naming each serious or critical violation, for a test message."""
 	lines = []
@@ -422,8 +625,8 @@ def blocking(report):
 # ---------------------------------------------------------------- the conformance file
 
 
-def _manual_rows():
-	rows = _load("manual.yaml")
+def _manual_rows(target=None):
+	rows = _load("manual.yaml", target)
 	return {str(r["id"]): r for r in rows or []}
 
 
@@ -436,10 +639,11 @@ def _fresh(row, today):
 	return (today - when).days <= MANUAL_VALID_DAYS
 
 
-def conformance(report, missed=(), today=None, version=None, commit=None):
+def conformance(report, missed=(), today=None, version=None, commit=None, target=None):
 	"""The conformance file (docs/accessibility/README.md) from a run and manual.yaml."""
+	target = _target(target)
 	today = today or datetime.date.today()
-	manual = _manual_rows()
+	manual = _manual_rows(target)
 	visits = [v for v in report.get("visits", []) if not v.get("error")]
 	rule_tags = {rid: set(r["tags"]) for rid, r in (report.get("rules") or {}).items()}
 	rows = []
@@ -496,15 +700,15 @@ def conformance(report, missed=(), today=None, version=None, commit=None):
 	axe_version = next((v.get("axe_version") for v in report.get("visits", []) if v.get("axe_version")), "")
 	return {
 		"format": 1,
-		"product": "Seminary",
-		"version": version or _version(),
-		"commit": commit or _commit(),
+		"product": target.product,
+		"version": version or _version(target),
+		"commit": commit or _commit(target),
 		"date": today.isoformat(),
 		"standard": STANDARD,
-		"scope": SCOPE,
-		"out_of_scope": OUT_OF_SCOPE,
+		"scope": target.scope,
+		"out_of_scope": target.out_of_scope,
 		"evaluation_methods": (
-			f"axe-core {axe_version} in Chromium on {len(visits)} pages, {_roles(visits)}; "
+			f"axe-core {axe_version} in Chromium on {len(visits)} pages, {_roles(visits, target)}; "
 			"manual review of the criteria axe-core can't decide."
 		),
 		"not_visited": list(missed),
@@ -512,45 +716,48 @@ def conformance(report, missed=(), today=None, version=None, commit=None):
 	}
 
 
-def _roles(visits):
+def _article(role):
+	return f"an {role}" if role[0].lower() in "aeiou" else f"a {role}"
+
+
+def _roles(visits, target=None):
 	"""'signed in as a student and an instructor, and signed out' from the visit keys."""
+	target = _target(target)
 	seen = {v["key"].split(" ", 1)[0] for v in visits}
-	signed_in = [f"a {r}" if r[0] not in "aeiou" else f"an {r}" for r in ROLE_USERS if r in seen]
+	signed_in = [target.role_labels.get(r) or _article(r) for r in target.role_users if r in seen]
 	parts = []
 	if signed_in:
 		names = signed_in[0] if len(signed_in) == 1 else ", ".join(signed_in[:-1]) + " and " + signed_in[-1]
 		parts.append("signed in as " + names)
 	if "guest" in seen:
-		parts.append("signed out on the public pages")
+		parts.append(target.guest_label)
 	return ", and ".join(parts) or "no pages visited"
 
 
-def _version():
-	from seminary import __version__
-
-	return __version__
+def _version(target=None):
+	return frappe.get_attr(_target(target).app + ".__version__")
 
 
-def _commit():
+def _commit(target=None):
 	git = shutil.which("git")
 	if not git:
 		return ""
 	r = subprocess.run(  # nosec B603 B607 -- a fixed tool and an argument list, no shell
-		[git, "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, timeout=30
+		[git, "rev-parse", "HEAD"], cwd=_target(target).root, capture_output=True, text=True, timeout=30
 	)
 	return r.stdout.strip()
 
 
-def write_conformance(report=None, missed=None):
+def write_conformance(report=None, missed=None, target=None):
 	"""Run the check if needed and write docs/accessibility/conformance.json.
 
 	bench --site <site> execute seminary.seminary.accessibility.write_conformance
 	"""
 	if report is None:
-		visits, missed = plan()
-		report = check(visits)
-	data = conformance(report, missed or [])
-	path = os.path.join(DOCS, "conformance.json")
+		visits, missed = plan(target=target)
+		report = check(visits, target=target)
+	data = conformance(report, missed or [], target=target)
+	path = os.path.join(_target(target).docs, "conformance.json")
 	# nosemgrep: frappe-security-file-traversal -- the app's docs/accessibility/conformance.json
 	with open(path, "w") as fh:
 		json.dump(data, fh, indent=1, ensure_ascii=False)

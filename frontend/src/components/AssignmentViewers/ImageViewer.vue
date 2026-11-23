@@ -3,6 +3,7 @@
 		{{ __('No image attached.') }}
 	</div>
 	<div v-else class="space-y-2">
+		<!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -- a pin goes where the pointer clicks; from the keyboard the same comment is added, unpinned, in the comment box beside the file -->
 		<div
 			ref="wrapperEl"
 			class="image-wrapper relative border rounded-md overflow-hidden bg-surface-white select-none"
@@ -26,6 +27,8 @@
 				@click.stop="emitJump(pin)"
 				@mouseenter="$emit('active-changed', pin.name)"
 				@mouseleave="$emit('active-changed', null)"
+				@focus="$emit('active-changed', pin.name)"
+				@blur="$emit('active-changed', null)"
 			>
 				{{ i + 1 }}
 			</button>

@@ -5,8 +5,8 @@
     <div class="px-5 py-4">
       <!-- PE Selector -->
       <div v-if="enrollments.data && enrollments.data.length > 1" class="mb-4">
-        <label class="text-sm font-medium text-ink-gray-6 mb-1 block">{{ __('Program Enrollment') }}</label>
-        <select :aria-label="__('Program Enrollment')" v-model="selectedPE" @change="loadAudit"
+        <label for="program-audit-enrollment" class="text-sm font-medium text-ink-gray-6 mb-1 block">{{ __('Program Enrollment') }}</label>
+        <select id="program-audit-enrollment" v-model="selectedPE" @change="loadAudit"
           class="border border-outline-gray-2 bg-surface-white text-ink-gray-9 rounded-md px-3 py-2 text-sm w-full max-w-md">
           <option v-for="pe in enrollments.data" :key="pe.name" :value="pe.name">
             {{ pe.program }} {{ pe.pgmenrol_active ? '' : '(Inactive)' }}

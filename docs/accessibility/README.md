@@ -6,13 +6,30 @@ covers the scope and how it is checked.
 | File | Kept by | What it holds |
 |---|---|---|
 | `routes.yaml` | contributors | every portal route, the role that visits it and the sample record it opens |
+| `journeys.yaml` | contributors | a few tasks, and what a screen reader must hear on the way through them |
 | `manual.yaml` | a person | one row per criterion that axe-core can't decide, with what to check |
 | `conformance.json` | the test suite | the result, written by `seminary.seminary.tests.test_accessibility` |
 
+The PDFs Seminary generates through `seminary.pdf.render` (announcement letters, signed
+agreements, mailing labels) are in scope too. Decision 104 covers how they are tagged, and
+`seminary.seminary.tests.test_pdf_accessibility` checks each one. Desk print formats printed
+through Frappe's print view, such as the diploma, and documents people upload are not.
+
 The criteria list is `CRITERIA` in `seminary/seminary/accessibility.py`; axe-core's own
 tags map its rules to criteria. The browser side is `scripts/axe/check.mjs`, whose
-packages (`puppeteer-core`, `axe-core`) install into `scripts/axe` on the first run,
+packages (`puppeteer-core`, `axe-core`, the virtual screen reader) install into `scripts/axe` on the first run,
 never with the app.
+
+Each journey in `journeys.yaml` is walked by a virtual screen reader
+(`@guidepup/virtual-screen-reader`) in the same browser, signed in the same way, and fails the
+test when a phrase it must hear isn't heard (decision 102a). It hears changes to live regions
+that are on the page from the start, but not alerts added later, such as toasts. Those, and how
+a real screen reader words things, are checked with NVDA on a Windows machine:
+`scripts/screen-reader/README.md`.
+
+Another app that draws its own pages can run the same check on them: it passes a `Target`
+(its router, portal path, `docs/accessibility/` folder, roles and scope) to the functions in
+`accessibility.py` and keeps its own `routes.yaml`, `manual.yaml` and `conformance.json`.
 
 Regenerate the report on a test site before each release to `main`:
 

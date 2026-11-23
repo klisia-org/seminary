@@ -187,12 +187,23 @@ CONTRAST_PAIRS = (
 	("--ink-blue-link", "--surface-white"),
 	("--portal-brand", "--surface-white"),
 	("--ink-white", "--surface-gray-7"),
+	# Muted and faint text (`text-ink-gray-5`, `text-ink-gray-4`) on every surface they are drawn
+	# on (102b): they are 12px hints and labels, so they need 4.5:1 like body text.
+	*(
+		(text, background)
+		for text in ("--ink-gray-5", "--ink-gray-4")
+		for background in ("--surface-white", "--surface-cards", "--surface-menu-bar", "--surface-gray-2")
+	),
+	# Blue badges and notes: their text on frappe-ui's blue fill, which no theme sets.
+	("--ink-blue-2", "--surface-blue-1"),
+	("--ink-blue-3", "--surface-blue-1"),
 )
 
 #: frappe-ui 0.1.261's own values (tailwind/colors.json; the same in the built CSS), used
-#: for the side of a pair a theme leaves unset. `--ink-blue-link` is left out on purpose:
-#: frappe-ui's light value is itself below 4.5:1 on white, so filling it in would refuse
-#: a theme for a colour the school never chose. `--portal-brand` has no default.
+#: for the side of a pair a theme leaves unset. `--ink-blue-link`, `--ink-gray-5` and
+#: `--ink-gray-4` are left out on purpose:
+#: frappe-ui's light values are themselves below 4.5:1 on white, so filling them in would
+#: refuse a theme for a colour the school never chose. `--portal-brand` has no default.
 FRAPPE_UI_DEFAULTS = {
 	"light": {
 		"--ink-gray-9": "#171717",
@@ -202,6 +213,9 @@ FRAPPE_UI_DEFAULTS = {
 		"--surface-white": "#ffffff",
 		"--surface-cards": "#ffffff",
 		"--surface-gray-7": "#171717",
+		"--surface-menu-bar": "#f8f8f8",
+		"--surface-gray-2": "#f3f3f3",
+		"--surface-blue-1": "#f2f9ff",
 	},
 	"dark": {
 		"--ink-gray-9": "#f8f8f8",
@@ -211,6 +225,9 @@ FRAPPE_UI_DEFAULTS = {
 		"--surface-white": "#0f0f0f",
 		"--surface-cards": "#1c1c1c",
 		"--surface-gray-7": "#f8f8f8",
+		"--surface-menu-bar": "#0f0f0f",
+		"--surface-gray-2": "#2b2b2b",
+		"--surface-blue-1": "#0e2037",
 	},
 }
 

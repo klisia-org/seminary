@@ -7,6 +7,7 @@
 			target="_blank"
 			rel="noopener"
 			:title="item.channel_name"
+			:aria-label="item.channel_name"
 			:class="iconClass"
 		>
 			<SafeHtml :html="item.svg_icon" as="span" profile="svg" class="inline-block h-full w-full [&>svg]:h-full [&>svg]:w-full" />

@@ -13,13 +13,16 @@ import { userLanguage } from './i18n.js'
 const messages = shallowRef({})
 const cacheKey = () => 'portal-shell:translations:' + userLanguage()
 
-export function __(message) {
+const fill = (text, args) =>
+  text.replace(/{(\d+)}/g, (match, n) => (typeof args[n] !== 'undefined' ? args[n] : match))
+
+// Both forms work: Frappe's `__('{0} new', [count])`, and this plugin's older
+// `__('{0} new').format(count)`.
+export function __(message, replace) {
   const translated = messages.value[message] || message
+  if (Array.isArray(replace)) return fill(translated, replace)
   if (!/{\d+}/.test(message)) return translated
-  return {
-    format: (...args) =>
-      translated.replace(/{(\d+)}/g, (match, n) => (typeof args[n] !== 'undefined' ? args[n] : match)),
-  }
+  return { format: (...args) => fill(translated, args) }
 }
 
 // One fetch per page: seminary mounts small sub-apps (editor tools) that each install the

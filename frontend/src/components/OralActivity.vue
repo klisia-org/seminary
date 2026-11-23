@@ -110,7 +110,7 @@
 					@finished="state.reload()" />
 				<div v-if="state.data.allow_upload" class="space-y-1">
 					<div class="text-sm text-ink-gray-6">{{ __('Or upload a recording made elsewhere:') }}</div>
-					<input type="file" accept="audio/*" class="text-sm" :disabled="uploading" @change="upload" />
+					<input type="file" accept="audio/*" class="text-sm" :aria-label="__('Or upload a recording made elsewhere:')" :disabled="uploading" @change="upload" />
 					<p class="text-xs text-ink-gray-5">
 						{{ __('An uploaded file is marked with the time it was uploaded, not when it was recorded.') }}
 					</p>

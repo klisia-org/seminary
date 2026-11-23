@@ -14,7 +14,8 @@
       <span class="grid h-5 w-6 flex-shrink-0 place-items-center">
         <slot name="icon">
           <!-- A portal theme's brand colour marks the active item; without one it is unchanged (p017). -->
-          <component :is="icon" class="h-4.5 w-4.5"
+          <!-- The label names the button; the icon is decoration (102a). -->
+          <component :is="icon" class="h-4.5 w-4.5" aria-hidden="true"
             :class="isActive ? 'text-[color:var(--portal-brand,var(--ink-gray-7))]' : 'text-ink-gray-7'" />
         </slot>
       </span>

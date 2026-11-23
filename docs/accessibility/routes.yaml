@@ -13,7 +13,13 @@
 #   instructor   an Instructor of it, and instructor_user, their user
 #   registrar    a user with Seminary Manager who is not Administrator
 #   partner      a user linked to a partner organisation through a Partner Contact
-# A route whose sample is missing on the site is listed as not visited.
+# A route whose sample is missing on the site is listed as not visited. `query` fills
+# the query string from samples the same way, for a page opened by an emailed link.
+# A test site gets a sample for every route from
+#   bench --site <site> execute seminary.seminary.accessibility_seed.seed
+#
+# `themed` lists visits measured a second time with the school's portal theme in place
+# (decision 102b): the main run leaves the theme out.
 
 samples:
   one: {value: "1"}
@@ -35,8 +41,25 @@ samples:
   oral_of_submission:
     {doctype: Oral Activity Submission, filters: {name: $oral_submission}, field: oral_activity}
   partner_org: {doctype: Partner Organization}
-  job: {doctype: Job Opening, filters: {status: Open}}
-  internship: {doctype: Internship}
+  alumnus: {doctype: Alumni Profile, field: user}
+  job: {doctype: Partner Job Opening, filters: {status: Open, publish: 1}}
+  internship: {doctype: Internship Position, filters: {status: Open, publish: 1}}
+  my_internship: {doctype: Internship Application, filters: {student: $student}}
+  partner_own_org:
+    {doctype: Partner Contact, filters: {portal_user: $partner, parenttype: Partner Organization}, field: parent}
+  partner_job: {doctype: Partner Job Opening, filters: {partner_org: $partner_own_org}}
+  job_application:
+    {doctype: Partner Job Application, filters: {partner_org: $partner_own_org, status: ["!=", Draft]}}
+  job_of_application:
+    {doctype: Partner Job Application, filters: {name: $job_application}, field: job_opening}
+  partner_internship: {doctype: Internship Position, filters: {partner_org: $partner_own_org}}
+  internship_applicant:
+    {doctype: Internship Application, filters: {partner_org: $partner_own_org, status: ["!=", Draft]}}
+  internship_of_applicant:
+    {doctype: Internship Application, filters: {name: $internship_applicant}, field: internship_position}
+  recommendation: {doctype: Recommendation Letter, filters: {student: $student, docstatus: ["!=", 2]}}
+  recommendation_token:
+    {doctype: Recommendation Letter, filters: {name: $recommendation}, field: request_token}
 
 portal:
   - {path: /desk/seminary, skip: Opens Desk, which is out of scope.}
@@ -46,7 +69,7 @@ portal:
   - {path: "/jobs/:jobName/apply", as: [student], params: {jobName: job}}
   - {path: /internships, as: [student]}
   - {path: /my-internships, as: [student]}
-  - {path: "/my-internships/:name", skip: Needs an internship placement of the student's own.}
+  - {path: "/my-internships/:name", as: [student], params: {name: my_internship}}
   - {path: "/internships/:name", as: [student], params: {name: internship}}
   - {path: /partner, as: [partner]}
   - {path: /partner/profile, as: [partner]}
@@ -54,13 +77,17 @@ portal:
   - {path: /partner/jobs, as: [partner]}
   - {path: /partner/jobs/new, as: [partner]}
   - {path: "/partner/jobs/:name/edit", skip: Same form as New Job Posting.}
-  - {path: "/partner/jobs/:name", skip: Needs a posting of the partner's own.}
-  - {path: "/partner/jobs/:name/applications/:appName", skip: Needs an application to the partner's posting.}
+  - {path: "/partner/jobs/:name", as: [partner], params: {name: partner_job}}
+  - path: "/partner/jobs/:name/applications/:appName"
+    as: [partner]
+    params: {name: job_of_application, appName: job_application}
   - {path: /partner/internships, as: [partner]}
   - {path: /partner/internships/new, as: [partner]}
   - {path: "/partner/internships/:name/edit", skip: Same form as New Internship Posting.}
-  - {path: "/partner/internships/:name", skip: Needs a posting of the partner's own.}
-  - {path: "/partner/internships/:name/applicants/:appName", skip: Needs an applicant to the partner's posting.}
+  - {path: "/partner/internships/:name", as: [partner], params: {name: partner_internship}}
+  - path: "/partner/internships/:name/applicants/:appName"
+    as: [partner]
+    params: {name: internship_of_applicant, appName: internship_applicant}
   - {path: /partner/interns, as: [partner]}
   - {path: /grades, as: [student]}
   - {path: "/development-plans/:student?", as: [student]}
@@ -144,12 +171,16 @@ portal:
   - {path: /reading-plans, as: [student]}
   - {path: /requirements, as: [student]}
   - {path: /preferences, as: [student]}
-  - {path: /alumni, as: [student]}
-  - {path: /alumni/directory, as: [student]}
-  - {path: /alumni/organizations, as: [student]}
-  - {path: "/alumni/organizations/:name", as: [student], params: {name: partner_org}}
-  - {path: /alumni/profile, as: [student]}
-  - {path: "/recommender-form/:name", skip: Opens only with a recommender's emailed token.}
+  - {path: /alumni, as: [student, alumnus]}
+  - {path: /alumni/directory, as: [student, alumnus]}
+  - {path: /alumni/organizations, as: [student, alumnus]}
+  - {path: "/alumni/organizations/:name", as: [student, alumnus], params: {name: partner_org}}
+  - {path: /alumni/profile, as: [student, alumnus]}
+  # The recommender opens it signed out, from an emailed link carrying the token.
+  - path: "/recommender-form/:name"
+    as: [guest]
+    params: {name: recommendation}
+    query: {token: recommendation_token}
 
 # The public pages Seminary renders, visited signed out.
 website:
@@ -158,3 +189,8 @@ website:
   - /our-team
   - /what-we-believe
   - /student-applicant/new
+
+themed:
+  - student /courses
+  - student /courses/:courseName/withdraw
+  - instructor /courses/:courseName

@@ -105,8 +105,8 @@
           <RubricGrading v-if="currentSubmission" submission-doctype="Discussion Submission"
             :submission="currentSubmission" @active="(a) => (rubricActive = a)" @graded="onRubricGraded" />
           <template v-if="gradeMode !== 'competency' && !rubricActive">
-            <label class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Grade') }}</label>
-            <input v-model="grade" type="text" inputmode="decimal" :disabled="gradeLocked"
+            <label for="discussion-grade" class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Grade') }}</label>
+            <input id="discussion-grade" v-model="grade" type="text" inputmode="decimal" :disabled="gradeLocked"
               class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm text-sm mb-3"
               :class="gradeLocked ? '!bg-surface-gray-2 text-ink-gray-5 cursor-not-allowed' : 'focus:border-outline-blue-1 focus:ring-outline-blue-1'" />
             <Button :variant="gradeLocked ? 'subtle' : 'solid'" @click="gradeLocked ? unlockGrade() : saveGrade()" class="w-full">

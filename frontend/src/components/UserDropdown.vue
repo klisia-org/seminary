@@ -2,6 +2,8 @@
 	<div class="w-full">
 		<!-- A portal theme may lay the logo out wide (p017); compact is the default. -->
 		<div v-if="isWide" @click="dropdownOpen = !dropdownOpen"
+			role="button" tabindex="0" :aria-expanded="dropdownOpen"
+			@keydown.enter.prevent="dropdownOpen = !dropdownOpen" @keydown.space.prevent="dropdownOpen = !dropdownOpen"
 			class="w-full rounded-xl px-3 pt-3 pb-2 text-ink-gray-9 transition-colors duration-200 ease-in-out cursor-pointer"
 			:class="dropdownOpen ? 'bg-surface-white shadow-sm ring-1 ring-outline-gray-1' : 'hover:bg-surface-gray-2'">
 			<img :src="activeLogo" :alt="seminarySettings?.name || 'Seminary'"
@@ -19,6 +21,8 @@
 			</div>
 		</div>
 		<div v-else @click="dropdownOpen = !dropdownOpen"
+			role="button" tabindex="0" :aria-expanded="dropdownOpen"
+			@keydown.enter.prevent="dropdownOpen = !dropdownOpen" @keydown.space.prevent="dropdownOpen = !dropdownOpen"
 			class="flex w-full items-center rounded-xl text-ink-gray-9 transition-colors duration-200 ease-in-out cursor-pointer"
 			:class="[
 				ROW_HEIGHT[logoSize],

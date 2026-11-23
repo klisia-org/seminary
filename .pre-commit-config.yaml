@@ -95,4 +95,24 @@ repos:
         always_run: true
         pass_filenames: false
 
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.44.0
+    hooks:
+      - id: eslint
+        alias: eslint-accessibility
+        name: eslint (accessibility, .vue)
+        types: [vue]
+        args: ["--no-eslintrc", "-c", ".eslintrc-a11y.json", "--quiet"]
+        additional_dependencies:
+          - eslint@8.44.0
+          - eslint-plugin-vuejs-accessibility@2.4.1
+          # The plugin requires it without declaring it.
+          - globals@13.24.0
+          - vue-eslint-parser@9.4.3
+          # Its comment-directive rule is what reads eslint-disable comments in templates.
+          - eslint-plugin-vue@9.33.0
+          - "@typescript-eslint/parser@6.21.0"
+          - typescript@5.4.5
+        exclude: 'node_modules|seminary/public/'
+
   # ---- app-specific hooks below (kept by sync.py) ----

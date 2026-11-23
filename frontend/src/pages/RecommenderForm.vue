@@ -30,17 +30,18 @@
           {{ __('This link expires on') }} {{ request.data.token_expires_on }}.
         </p>
 
-        <label class="block text-sm font-medium text-ink-gray-7 mb-2">{{ __('Your Letter') }}</label>
-        <textarea v-model="body" rows="10"
+        <label for="recommender-letter" class="block text-sm font-medium text-ink-gray-7 mb-2">{{ __('Your Letter') }}</label>
+        <textarea id="recommender-letter" v-model="body" rows="10"
           class="w-full border border-outline-gray-2 rounded-md p-3 text-sm bg-surface-white text-ink-gray-9 mb-4"
           :placeholder="__('Write your recommendation here...')"></textarea>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-ink-gray-7 mb-2">
+          <div id="recommender-attach-label" class="block text-sm font-medium text-ink-gray-7 mb-2">
             {{ __('Or attach a signed letter (optional)') }}
-          </label>
-          <input ref="fileInput" type="file" class="hidden" @change="onFilePicked" />
+          </div>
+          <input ref="fileInput" type="file" class="hidden" aria-hidden="true" tabindex="-1" @change="onFilePicked" />
           <button class="text-ink-blue-3 hover:underline text-sm"
+            aria-describedby="recommender-attach-label"
             :disabled="uploading"
             @click="fileInput?.click()">
             {{ uploading ? __('Uploading...') : (attachmentUrl ? __('Replace attachment') : __('Choose file')) }}

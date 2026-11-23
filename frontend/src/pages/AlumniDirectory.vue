@@ -12,6 +12,7 @@
 				type="search"
 				class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none"
 				:placeholder="__('Search')"
+				:aria-label="__('Search')"
 			/>
 		</div>
 	</div>
@@ -84,74 +85,80 @@
 		</p>
 
 		<ul class="divide-y divide-outline-gray-1">
-			<li
-				v-for="alum in rows"
-				:key="alum.name"
-				class="flex cursor-pointer items-start gap-4 py-4 hover:bg-surface-gray-1"
-				@click="openProfile(alum)"
-			>
-				<img
-					v-if="alum.image"
-					:src="alum.image"
-					:alt="alum.full_name"
-					class="size-12 shrink-0 rounded-full object-cover"
-				/>
+			<li v-for="alum in rows" :key="alum.name">
+				<!-- The row opens the profile; it stays a list item for screen readers, so the
+				     button role sits on this wrapper, not on the <li>. -->
 				<div
-					v-else
-					class="grid size-12 shrink-0 place-items-center rounded-full bg-surface-gray-2 text-base font-semibold text-ink-gray-7"
+					class="flex cursor-pointer items-start gap-4 py-4 hover:bg-surface-gray-1"
+					role="button"
+					tabindex="0"
+					@click="openProfile(alum)"
+					@keydown.enter.self.prevent="openProfile(alum)"
+					@keydown.space.self.prevent="openProfile(alum)"
 				>
-					{{ initials(alum.full_name) }}
-				</div>
-
-				<div class="min-w-0 flex-1">
-					<div class="flex flex-wrap items-baseline gap-2">
-						<span class="font-semibold text-ink-gray-8">{{ alum.full_name }}</span>
-						<span v-if="alum.graduations?.length" class="text-xs text-ink-gray-5">
-							{{ __('Class of') }}
-							{{ alum.graduations.map((g) => g.class_year).filter(Boolean).join(', ') }}
-						</span>
-					</div>
-
+					<img
+						v-if="alum.image"
+						:src="alum.image"
+						:alt="alum.full_name"
+						class="size-12 shrink-0 rounded-full object-cover"
+					/>
 					<div
-						v-if="alum.current_role || alum.current_organization || alum.partner_organization"
-						class="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm text-ink-gray-6"
+						v-else
+						class="grid size-12 shrink-0 place-items-center rounded-full bg-surface-gray-2 text-base font-semibold text-ink-gray-7"
 					>
-						<span v-if="alum.current_role">{{ alum.current_role }}</span>
-						<span v-if="alum.current_role && (alum.current_organization || alum.partner_organization)">
-							&nbsp;·&nbsp;
-						</span>
-						<!-- A badge only where the seminary knows the organization
-						     and lists it; otherwise the person's own words. -->
-						<router-link
-							v-if="alum.partner_organization"
-							:to="`/alumni/organizations/${alum.partner_organization.name}`"
-							class="rounded bg-surface-blue-2 px-1.5 py-0.5 text-xs font-medium text-ink-blue-3 hover:underline"
-							@click.stop
+						{{ initials(alum.full_name) }}
+					</div>
+
+					<div class="min-w-0 flex-1">
+						<div class="flex flex-wrap items-baseline gap-2">
+							<span class="font-semibold text-ink-gray-8">{{ alum.full_name }}</span>
+							<span v-if="alum.graduations?.length" class="text-xs text-ink-gray-5">
+								{{ __('Class of') }}
+								{{ alum.graduations.map((g) => g.class_year).filter(Boolean).join(', ') }}
+							</span>
+						</div>
+
+						<div
+							v-if="alum.current_role || alum.current_organization || alum.partner_organization"
+							class="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm text-ink-gray-6"
 						>
-							{{ alum.partner_organization.organization_name }}
-						</router-link>
-						<span v-else-if="alum.current_organization">{{ alum.current_organization }}</span>
+							<span v-if="alum.current_role">{{ alum.current_role }}</span>
+							<span v-if="alum.current_role && (alum.current_organization || alum.partner_organization)">
+								&nbsp;·&nbsp;
+							</span>
+							<!-- A badge only where the seminary knows the organization
+							     and lists it; otherwise the person's own words. -->
+							<router-link
+								v-if="alum.partner_organization"
+								:to="`/alumni/organizations/${alum.partner_organization.name}`"
+								class="rounded bg-surface-blue-2 px-1.5 py-0.5 text-xs font-medium text-ink-blue-3 hover:underline"
+								@click.stop
+							>
+								{{ alum.partner_organization.organization_name }}
+							</router-link>
+							<span v-else-if="alum.current_organization">{{ alum.current_organization }}</span>
+						</div>
+
+						<div v-if="alum.graduations?.length || alum.city" class="mt-1 text-xs text-ink-gray-5">
+							<span v-if="alum.graduations?.length">
+								{{ alum.graduations.map((g) => g.program).join(' · ') }}
+							</span>
+							<span v-if="alum.graduations?.length && alum.city">&nbsp;·&nbsp;</span>
+							<span v-if="alum.city">{{ alum.city }}</span>
+						</div>
 					</div>
 
-					<div v-if="alum.graduations?.length || alum.city" class="mt-1 text-xs text-ink-gray-5">
-						<span v-if="alum.graduations?.length">
-							{{ alum.graduations.map((g) => g.program).join(' · ') }}
-						</span>
-						<span v-if="alum.graduations?.length && alum.city">&nbsp;·&nbsp;</span>
-						<span v-if="alum.city">{{ alum.city }}</span>
-					</div>
+					<a
+						v-if="alum.linkedin_url"
+						:href="safeUrl(alum.linkedin_url)"
+						target="_blank"
+						rel="noopener"
+						class="shrink-0 text-xs text-ink-blue-3 hover:underline"
+						@click.stop
+					>
+						LinkedIn
+					</a>
 				</div>
-
-				<a
-					v-if="alum.linkedin_url"
-					:href="safeUrl(alum.linkedin_url)"
-					target="_blank"
-					rel="noopener"
-					class="shrink-0 text-xs text-ink-blue-3 hover:underline"
-					@click.stop
-				>
-					LinkedIn
-				</a>
 			</li>
 		</ul>
 

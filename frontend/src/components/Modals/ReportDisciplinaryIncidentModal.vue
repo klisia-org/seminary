@@ -25,7 +25,7 @@
         <template v-else>
           <!-- Subject -->
           <div v-if="mode === 'course'" class="space-y-1.5">
-            <label class="block text-xs text-ink-gray-5">
+            <label :for="`${uid}-student`" class="block text-xs text-ink-gray-5">
               {{ __('Student') }} <span class="text-ink-red-3">*</span>
             </label>
             <div v-if="prefillCei" class="rounded-md bg-surface-gray-1 p-2 text-sm text-ink-gray-7">
@@ -33,6 +33,8 @@
             </div>
             <Autocomplete
               v-else
+              :id="`${uid}-student`"
+              :label="__('Student')"
               :options="ceiOptions"
               :modelValue="cei"
               :placeholder="__('Select a student')"
@@ -49,10 +51,12 @@
 
           <!-- Reason -->
           <div class="space-y-1.5">
-            <label class="block text-xs text-ink-gray-5">
+            <label :for="`${uid}-reason`" class="block text-xs text-ink-gray-5">
               {{ __('Disciplinary reason') }} <span class="text-ink-red-3">*</span>
             </label>
             <Autocomplete
+              :id="`${uid}-reason`"
+              :label="__('Disciplinary reason')"
               :options="reasonOptions"
               :modelValue="selectedReason"
               :placeholder="__('Select a reason')"
@@ -93,7 +97,7 @@
             :rows="4"
           />
           <div class="space-y-1.5">
-            <label class="block text-xs text-ink-gray-5">{{ __('Attachment') }}</label>
+            <div class="block text-xs text-ink-gray-5">{{ __('Attachment') }}</div>
             <FileUploader :validate-file="validateFileSize" @success="(f) => (evidenceAttach = f.file_url)">
               <template #default="{ uploading, openFileSelector }">
                 <Button :loading="uploading" @click="openFileSelector">
@@ -116,11 +120,12 @@
 
 <script setup>
 import { Dialog, FormControl, FileUploader, Button, call, toast } from 'frappe-ui'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, useId } from 'vue'
 import { uploadLimits, validateFileSize } from '@/utils'
 import Autocomplete from '@/components/Controls/Autocomplete.vue'
 
 const show = defineModel({ default: false })
+const uid = useId()
 
 const props = defineProps({
   mode: { type: String, default: 'course' }, // 'course' | 'assessment' | 'record'

@@ -10,10 +10,11 @@
                     {{ __('Edit') }}
                 </Button>
             </div>
-            <div v-else @click="activate"
-                class="border rounded-md py-2 px-2 min-h-[7rem] text-sm text-ink-gray-4 cursor-text prose-sm">
+            <button v-else :id="buttonId" type="button" @click="activate"
+                :aria-labelledby="labelledby ? `${labelledby} ${buttonId}` : undefined"
+                class="flex w-full items-start border rounded-md py-2 px-2 min-h-[7rem] text-left text-sm text-ink-gray-4 cursor-text prose-sm">
                 {{ placeholder || __('Click to write...') }}
-            </div>
+            </button>
         </div>
 
         <!-- Inline mode (inside Dialogs — already teleported to body by Dialog) -->
@@ -50,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, watch, provide, onMounted, onBeforeUnmount, nextTick, computed, shallowRef } from 'vue'
+import { ref, watch, provide, onMounted, onBeforeUnmount, nextTick, computed, shallowRef, useId } from 'vue'
 import { Button } from 'frappe-ui'
 
 const props = defineProps({
@@ -59,12 +60,15 @@ const props = defineProps({
     id: { type: String, default: '' },
     editable: { type: Boolean, default: true },
     teleport: { type: Boolean, default: true },
+    // The id of the element that names this editor (its visible label).
+    labelledby: { type: String, default: '' },
     // Override how inline images upload (e.g. to force private uploads). When
     // null the editor's default (public) upload is used.
     uploadFunction: { type: Function, default: null },
 })
 
 const emit = defineEmits(['change'])
+const buttonId = useId()
 
 const editor = ref(null)
 const active = ref(false)
@@ -117,6 +121,11 @@ async function activate() {
     editor.value = new Editor({
         content: props.content || '',
         editable: props.editable,
+        editorProps: {
+            attributes: props.labelledby
+                ? { role: 'textbox', 'aria-multiline': 'true', 'aria-labelledby': props.labelledby }
+                : {},
+        },
         extensions: getTextEditorExtensions({
             placeholder: props.placeholder,
             uploadFunction: props.uploadFunction || undefined,

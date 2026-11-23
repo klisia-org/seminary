@@ -95,6 +95,7 @@
 						rows="4"
 						class="w-full rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
 						:placeholder="__('Write a message...')"
+						:aria-label="__('Write a message...')"
 					/>
 					<p class="mt-1 text-xs text-ink-gray-5">
 						{{ __('They will see your name and can reply from their inbox. Your contact details are not shared.') }}

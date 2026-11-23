@@ -51,7 +51,8 @@ class TestRoutesListed(IntegrationTestCase):
 			with self.subTest(path=r["path"]):
 				self.assertTrue(r.get("skip") or r.get("as"), "Give `as` or `skip`.")
 				for role in r.get("as") or []:
-					self.assertIn(role, a.ROLE_USERS)
+					# `guest`: opened signed out, e.g. from a link with a token.
+					self.assertIn(role, {*a.ROLE_USERS, "guest"})
 
 	def test_a_missing_sample_is_listed_as_not_visited(self):
 		spec = {
@@ -73,6 +74,20 @@ class TestRoutesListed(IntegrationTestCase):
 		visits, _ = a.plan(spec, found={"student_user": "s@example.test"})
 		self.assertEqual(visits[0]["path"], "/seminary/development-plans")
 
+	def test_query_is_filled_from_samples(self):
+		sample = "letter_token"
+		route = {
+			"path": "/recommender-form/:name",
+			"as": ["student"],
+			"params": {"name": "letter"},
+			"query": {"token": sample},
+		}
+		found = {"student_user": "s@example.test", "letter": "RL-1"}
+		visits, missed = a.plan({"portal": [route]}, found={**found, sample: "a b"})
+		self.assertEqual(visits[0]["path"], "/seminary/recommender-form/RL-1?token=a+b")
+		visits, missed = a.plan({"portal": [route]}, found=found)
+		self.assertEqual((visits, missed[0]["why"]), ([], "No letter_token on this site."))
+
 
 RULES = {
 	"image-alt": {"tags": ["wcag2a", "wcag111"], "help": ""},
@@ -88,7 +103,7 @@ class TestConformance(IntegrationTestCase):
 
 	def _conformance(self, report, manual):
 		original = a._manual_rows
-		a._manual_rows = lambda: manual
+		a._manual_rows = lambda target=None: manual
 		self.addCleanup(setattr, a, "_manual_rows", original)
 		return a.conformance(report, today=datetime.date(2026, 11, 22), version="1.0.0", commit="abc")
 
@@ -172,3 +187,25 @@ class TestPortalAccessibility(IntegrationTestCase):
 		problems = a.blocking(report)
 		self.assertEqual(problems, [], "\n".join(problems))
 		frappe.logger("seminary").info(f"accessibility: {len(visits)} pages, {len(missed)} not visited")
+
+	def test_screen_reader_journeys_hear_what_they_must(self):
+		"""102a: the virtual screen reader walks each journey in journeys.yaml."""
+		base = a.base_url()
+		if not _served(base + "/login"):
+			self.skipTest(f"The site is not served at {base}: start the bench to run the journeys.")
+		runs, missed = a.journeys()
+		if not runs:
+			self.skipTest("No journey has a visit on this site: " + "; ".join(m["why"] for m in missed))
+		failures = a.journey_failures(a.check(runs))
+		self.assertEqual(failures, [], "\n".join(failures))
+
+	def test_pages_with_the_school_theme_have_no_serious_violations(self):
+		"""102b: a few pages again with the school's theme, which the main run leaves out."""
+		base = a.base_url()
+		if not _served(base + "/login"):
+			self.skipTest(f"The site is not served at {base}: start the bench to check its pages.")
+		visits = a.themed()
+		if not visits:
+			self.skipTest("No school theme on this site, or none of the themed pages has a sample.")
+		problems = a.blocking(a.check(visits))
+		self.assertEqual(problems, [], "\n".join(problems))

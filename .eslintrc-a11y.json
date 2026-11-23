@@ -1,0 +1,32 @@
+{
+	"root": true,
+	"parser": "vue-eslint-parser",
+	"parserOptions": {
+		"ecmaVersion": 2022,
+		"sourceType": "module",
+		"parser": {
+			"ts": "@typescript-eslint/parser"
+		}
+	},
+	"plugins": [
+		"vue",
+		"vuejs-accessibility"
+	],
+	"extends": [
+		"plugin:vuejs-accessibility/recommended"
+	],
+	"rules": {
+		"vue/comment-directive": "error",
+		"vuejs-accessibility/label-has-for": [
+			"error",
+			{
+				"required": {
+					"some": [
+						"nesting",
+						"id"
+					]
+				}
+			}
+		]
+	}
+}

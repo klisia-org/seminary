@@ -6,7 +6,7 @@
 					<img
 						v-if="config.brand.logoUrl"
 						:src="config.brand.logoUrl"
-						:alt="config.brand.name"
+						alt=""
 						class="portal-header__logo"
 					/>
 					<span class="portal-header__brand-name">{{ config.brand.name }}</span>

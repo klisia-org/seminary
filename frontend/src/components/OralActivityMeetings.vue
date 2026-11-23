@@ -3,7 +3,7 @@
 		<div class="flex items-center justify-between gap-2">
 			<div class="font-semibold text-ink-gray-9">{{ __('Captured meetings') }}</div>
 			<Button size="sm" @click="openAdd">
-				<template #prefix><Video class="h-4 w-4" /></template>
+				<template #prefix><VideoIcon class="h-4 w-4" /></template>
 				{{ __('Capture a meeting') }}
 			</Button>
 		</div>
@@ -99,7 +99,7 @@
 import { Badge, Button, Dialog, FormControl, call, createResource, toast } from 'frappe-ui'
 import { userLocale } from '@seminary/portal-shell'
 import { computed, reactive, ref, watch } from 'vue'
-import { Video } from 'lucide-vue-next'
+import { Video as VideoIcon } from 'lucide-vue-next'
 import OralPlayer from '@/components/OralPlayer.vue'
 
 const props = defineProps({

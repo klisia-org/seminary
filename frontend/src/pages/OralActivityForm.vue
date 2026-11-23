@@ -59,10 +59,11 @@
 			</p>
 		</div>
 
-		<label for="oral-prompt" class="block text-lg font-medium text-ink-gray-7 mb-4">
+		<!-- Not a <label>: the editor is not a form field a label can point to. -->
+		<div id="oral-prompt-label" class="block text-lg font-medium text-ink-gray-7 mb-4">
 			{{ __('Prompt') }}
-		</label>
-		<RichTextEditor :teleport="false" id="oral-prompt" :content="activity.prompt || ''"
+		</div>
+		<RichTextEditor :teleport="false" id="oral-prompt" labelledby="oral-prompt-label" :content="activity.prompt || ''"
 			@change="(val) => (activity.prompt = val)"
 			:placeholder="__('What should the students talk about?')" />
 		<ContentIssues ref="promptChecker" class="mt-2" :issues="promptIssues" :actionLabel="__('Save anyway')" />

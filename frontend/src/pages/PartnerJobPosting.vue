@@ -17,7 +17,7 @@
 		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 			<div class="relative w-full sm:w-64">
 				<Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-gray-4" />
-				<input v-model="query" type="search" :placeholder="__('Search applicant')"
+				<input v-model="query" type="search" :placeholder="__('Search applicant')" :aria-label="__('Search applicant')"
 					class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none" />
 			</div>
 			<select :aria-label="__('Status')" v-model="status" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8 focus:outline-none">

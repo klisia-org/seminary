@@ -3,7 +3,7 @@
 """Guest endpoints for the external recommender portal.
 
 The recommender receives an email containing a tokenized link
-(/recommender-form/<rl_name>?token=<token>). These endpoints validate the
+(/seminary/recommender-form/<rl_name>?token=<token>). These endpoints validate the
 token without requiring a Frappe login and let the recommender retrieve the
 request details and submit their letter.
 """

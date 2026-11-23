@@ -11,6 +11,7 @@
 				type="search"
 				class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none"
 				:placeholder="__('Search name, type, city')"
+				:aria-label="__('Search name, type, city')"
 			/>
 		</div>
 	</div>

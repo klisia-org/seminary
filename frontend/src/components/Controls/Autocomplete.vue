@@ -7,6 +7,7 @@
 						<!-- Named by `label`, or else the placeholder, so the trigger is never
 						     a nameless button (102 §9). -->
 						<button
+							:id="id"
 							type="button"
 							class="flex w-full items-center justify-between focus:outline-none"
 							:class="inputClasses"
@@ -169,6 +170,11 @@ const props = defineProps({
 		type: Boolean,
 		default: true,
 	},
+	// Put on the trigger so a visible label can point to it with `for`.
+	id: {
+		type: String,
+		default: undefined,
+	},
 	// The field's name for assistive technology; Link passes its own label.
 	label: {
 		type: String,
@@ -184,10 +190,11 @@ const search = ref(null)
 const attrs = useAttrs()
 
 const triggerLabel = computed(() => {
-	const name = props.label || props.placeholder
-	if (!name) return undefined
+	// The name starts with the label and contains what the button shows (WCAG 2.5.3).
 	const chosen = selectedValue.value ? displayValue(selectedValue.value) : ''
-	return chosen ? `${name}: ${chosen}` : name
+	const shown = chosen || props.placeholder
+	if (!props.label) return shown || undefined
+	return shown ? `${props.label}: ${shown}` : props.label
 })
 const slots = useSlots()
 

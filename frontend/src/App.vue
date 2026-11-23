@@ -32,10 +32,12 @@ import { pageTitle } from '@/utils/pageTitles'
 import { useScreenSize } from './utils/composables'
 import DesktopLayout from './components/DesktopLayout.vue'
 import MobileLayout from './components/MobileLayout.vue'
-import { useRouter } from 'vue-router'
+import GuestLayout from './components/GuestLayout.vue'
+import { useRoute, useRouter } from 'vue-router'
 import { posthogSettings } from '@/telemetry'
 
 const router = useRouter()
+const route = useRoute()
 
 // Page titles, the route announcement and focus on navigation (102 §9, WCAG 2.4.2,
 // 2.4.3, 4.1.3). The first load keeps the browser's own focus; later navigations
@@ -62,6 +64,9 @@ const screenSize = useScreenSize()
 const { userResource } = usersStore()
 
 const Layout = computed(() => {
+  // Until the first route resolves its meta is unknown: the portal shell would mount for a
+  // moment and load signed-in data, even on a guest page.
+  if (!route.matched.length || route.meta?.guest) return GuestLayout
   if (screenSize.isMobile) return MobileLayout
   return DesktopLayout
 })

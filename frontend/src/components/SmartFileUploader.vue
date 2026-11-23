@@ -22,6 +22,7 @@
 			ref="input"
 			type="file"
 			class="hidden"
+			:aria-label="__('Upload files')"
 			:accept="acceptAttr"
 			:multiple="false"
 			@change="onFileSelected"

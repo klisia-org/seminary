@@ -116,9 +116,9 @@
 				<tbody>
 					<tr v-for="row in tableData.rows" :key="row.name" class="border-b">
 						<td class="py-2 px-3">
-							<a class="text-ink-blue-3 hover:underline cursor-pointer" @click="openInvoicePDF(row)">
+							<button type="button" class="text-left text-ink-blue-3 hover:underline cursor-pointer" @click="openInvoicePDF(row)">
 								{{ row.name }}
-							</a>
+							</button>
 							<div class="text-xs text-ink-gray-5">{{ row.posting_date }}</div>
 						</td>
 						<td class="py-2 px-3">

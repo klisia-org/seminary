@@ -9,6 +9,7 @@
                     :value="filled[blankIndexOf(idx)]"
                     @input="(e) => onInput(blankIndexOf(idx), e.target.value)"
                     :disabled="readOnly"
+                    :aria-label="__('Missing word {0}').format(blankIndexOf(idx) + 1)"
                     type="text"
                     :size="Math.max(tok.replace(STRIP_NON_ALNUM, '').length, 4)"
                     class="bg-surface-amber-2 border-b-2 border-outline-amber-1 px-1 rounded-sm text-center focus:outline-none focus:border-outline-amber-2"

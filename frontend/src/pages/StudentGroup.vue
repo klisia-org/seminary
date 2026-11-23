@@ -219,8 +219,8 @@
           <div class="px-4 py-3 space-y-3">
             <!-- Leader picker (student-led mode, not yet created) -->
             <div v-if="!includeInstructorAsLeader && !g.existing_cohort">
-              <label class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Cohort leader') }}</label>
-              <FormControl type="select" :placeholder="__('Choose a student to lead…')"
+              <label :for="'cohort-leader-' + g.student_group.replace(/\W/g, '-')" class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Cohort leader') }}</label>
+              <FormControl :id="'cohort-leader-' + g.student_group.replace(/\W/g, '-')" type="select" :placeholder="__('Choose a student to lead…')"
                 :options="leaderOptions(g)" v-model="groupLeaders[g.student_group]" />
             </div>
             <div v-else-if="includeInstructorAsLeader && !g.existing_cohort" class="text-sm text-ink-gray-6">

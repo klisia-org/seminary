@@ -67,7 +67,12 @@
 			v-for="msg in messages"
 			:key="msg.name"
 			class="cursor-pointer rounded-lg border border-outline-gray-1 bg-surface-white p-4 shadow-sm"
+			role="button"
+			tabindex="0"
+			:aria-expanded="expanded.has(msg.name)"
 			@click="toggle(msg)"
+			@keydown.enter.self.prevent="toggle(msg)"
+			@keydown.space.self.prevent="toggle(msg)"
 		>
 			<header class="flex items-baseline justify-between gap-3">
 				<div class="flex min-w-0 items-center gap-2">
@@ -159,6 +164,7 @@
 						type="text"
 						class="mb-1.5"
 						:placeholder="__('Search recipients...')"
+						:aria-label="__('Search recipients...')"
 						@input="(v) => (recipientSearch = v)"
 					/>
 					<div
@@ -234,8 +240,8 @@
 					</div>
 				</div>
 				<div>
-					<div class="mb-1.5 text-sm text-ink-gray-5">{{ __('Subject') }}</div>
-					<Input type="text" v-model="compose.subject" />
+					<label for="inbox-compose-subject" class="mb-1.5 block text-sm text-ink-gray-5">{{ __('Subject') }}</label>
+					<Input id="inbox-compose-subject" type="text" v-model="compose.subject" />
 				</div>
 				<div>
 					<div class="mb-1.5 text-sm text-ink-gray-5">
@@ -296,10 +302,11 @@
 
 	<Dialog v-model="showReply" :options="replyDialogOptions">
 		<template #body-content>
-			<div class="mb-1.5 text-sm text-ink-gray-5">
+			<label for="inbox-reply-text" class="mb-1.5 block text-sm text-ink-gray-5">
 				{{ __('Reply to') }} {{ replyTo?.sender_name }}
-			</div>
+			</label>
 			<textarea
+				id="inbox-reply-text"
 				v-model="replyText"
 				rows="5"
 				class="w-full rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-8 focus:ring-0"

@@ -12,43 +12,63 @@
 			'border-2 rounded-md py-2 px-2': showOutline && outline.data?.length,
 		}">
 			<template v-for="(chapter, index) in outline.data" :key="chapter.name">
+			<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a pointer shortcut: each chapter's Move menu does the same by keyboard -->
 			<div v-if="props.allowEdit"
 				class="mx-2 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
 				@dragover.prevent="onChapterDragOver($event)" @drop.prevent="onChapterDrop($event, index)">
 			</div>
 			<Disclosure v-slot="{ open }" :defaultOpen="openChapterDetail(chapter.idx)">
-				<!-- Rendered as a div, not the default button: Firefox and Safari do
-				     not reliably start a native drag from a <button>. role/tabindex
-				     keep it keyboard-operable — headlessui already wires the
-				     click/keydown handlers and aria-expanded. -->
-				<DisclosureButton as="div" role="button" tabindex="0"
-					class="flex w-full items-center p-2 group"
+				<!-- The row is what drags; the disclosure inside it stays a div with
+				     role/tabindex, not a button: Firefox and Safari do not reliably
+				     start a native drag from a <button>. headlessui wires its
+				     click/keydown handlers and aria-expanded. The chapter's actions
+				     sit beside it, not inside it, so no button holds another. -->
+				<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a pointer shortcut: the Move menu in this row does the same by keyboard -->
+				<div class="flex w-full items-center group"
 					:class="{ 'cursor-grab': props.allowEdit }" :draggable="props.allowEdit"
 					@dragstart="onChapterDragStart($event, chapter, index)" @dragend="onChapterDragFinish">
-					<!-- The chevron used to be hidden on a SCORM chapter because
-					     such a chapter had nothing to expand. Its SCOs are its
-					     lessons now (p009 §2.10), so it expands like any other. -->
-					<ChevronRight :class="{
-						'rotate-90 transform duration-200': open,
-						'duration-200': !open,
-						open: index == 1,
-					}" class="h-4 w-4 text-ink-gray-9 stroke-1" />
-					<div class="ml-2 text-left text-base font-medium leading-5 text-ink-gray-9">
-						{{ chapter.chapter_title }}
-					</div>
-					<div v-if="props.allowEdit" class="ml-auto flex items-center space-x-4">
+					<DisclosureButton as="div" role="button" tabindex="0"
+						class="flex flex-1 items-center p-2">
+						<!-- The chevron used to be hidden on a SCORM chapter because
+						     such a chapter had nothing to expand. Its SCOs are its
+						     lessons now (p009 §2.10), so it expands like any other. -->
+						<ChevronRight :class="{
+							'rotate-90 transform duration-200': open,
+							'duration-200': !open,
+							open: index == 1,
+						}" class="h-4 w-4 text-ink-gray-9 stroke-1" />
+						<div class="ml-2 text-left text-base font-medium leading-5 text-ink-gray-9">
+							{{ chapter.chapter_title }}
+						</div>
+					</DisclosureButton>
+					<!-- Shown on hover and on focus (decision 103): hidden
+					     controls can't take focus. -->
+					<div v-if="props.allowEdit"
+						class="ml-auto flex items-center gap-1 pr-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
 						<Tooltip :text="__('Edit Chapter')" placement="bottom">
-							<FilePenLine @click.prevent="openChapterModal(chapter)"
-								class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible" />
+							<button type="button" :aria-label="__('Edit Chapter')"
+								class="rounded-md p-1 text-ink-gray-9 hover:bg-surface-gray-2"
+								@click="openChapterModal(chapter)">
+								<FilePenLine class="h-4 w-4" aria-hidden="true" />
+							</button>
 						</Tooltip>
 						<Tooltip v-if="!holdsReflection(chapter)" :text="__('Delete Chapter')" placement="bottom">
-							<Trash2 @click.prevent="trashChapter(chapter.name)"
-								class="h-4 w-4 text-ink-red-3 invisible group-hover:visible" />
+							<button type="button" :aria-label="__('Delete Chapter')"
+								class="rounded-md p-1 text-ink-red-3 hover:bg-surface-red-1"
+								@click="trashChapter(chapter.name)">
+								<Trash2 class="h-4 w-4" aria-hidden="true" />
+							</button>
 						</Tooltip>
-						<GripVertical class="h-4 w-4 text-ink-gray-5 invisible group-hover:visible"
-							aria-hidden="true" />
+						<Dropdown v-if="chapterMoves(index).length" :options="chapterMoves(index)">
+							<button type="button" :data-move="`chapter:${chapter.name}`"
+								:aria-label="__('Move {0}', [chapter.chapter_title])"
+								class="rounded-md p-1 text-ink-gray-6 hover:bg-surface-gray-2">
+								<ArrowUpDown class="h-4 w-4" aria-hidden="true" />
+							</button>
+						</Dropdown>
+						<GripVertical class="h-4 w-4 text-ink-gray-5" aria-hidden="true" />
 					</div>
-				</DisclosureButton>
+				</div>
 				<!-- p009 §2.10: a SCO *is* a lesson, so a SCORM chapter expands
 				     like any other. This panel used to be suppressed for one,
 				     because before p009 such a chapter genuinely had nothing
@@ -108,10 +128,12 @@
 						     out of one would keep a `scorm_sco_identifier` its
 						     new chapter has no package for, and nothing would
 						     play it. -->
+						<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a pointer shortcut: each lesson's Move menu does the same by keyboard -->
 						<div v-if="props.allowEdit && !chapter.is_scorm_package"
 							class="ml-8 mr-4 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
 							@dragover.prevent="onDragOver($event)" @drop.prevent="onDrop($event, chapter, lessonIndex)">
 						</div>
+						<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a pointer shortcut: the Move menu on this card does the same by keyboard -->
 						<div class="group ml-8 mr-4 rounded-lg border border-outline-gray-2 bg-surface-white p-4 transition hover:border-outline-gray-3"
 							:class="{
 								'bg-surface-selected': isActiveLesson(lesson.number),
@@ -211,13 +233,23 @@
 										</div>
 									</div>
 								</router-link>
-								<div v-if="props.allowEdit && !reflectionOf(lesson)" class="ml-auto hidden items-center group-hover:flex">
+								<div v-if="props.allowEdit && !reflectionOf(lesson) && !chapter.is_scorm_package"
+									class="ml-auto flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+									<Dropdown v-if="lessonMoves(chapter, lessonIndex).length"
+										:options="lessonMoves(chapter, lessonIndex)">
+										<button type="button" :data-move="`lesson:${lesson.name}`"
+											:aria-label="__('Move {0}', [lesson.lesson_title])"
+											class="rounded-md p-1 text-ink-gray-6 hover:bg-surface-gray-2">
+											<ArrowUpDown class="h-4 w-4" aria-hidden="true" />
+										</button>
+									</Dropdown>
 									<GripVertical class="h-4 w-4 text-ink-gray-5" aria-hidden="true" />
 								</div>
 							</div>
 						</div>
 					</div>
 					</template>
+					<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a pointer shortcut: a lesson's Move menu moves it to the end of any chapter -->
 					<div v-if="props.allowEdit && !chapter.is_scorm_package"
 						class="ml-8 mr-4 mt-2 rounded-md border border-dashed border-outline-gray-3 p-3 text-sm text-ink-gray-5 transition hover:border-outline-gray-4 hover:text-ink-gray-7"
 						@dragover.prevent="onDragOver($event)"
@@ -243,6 +275,7 @@
 				</DisclosurePanel>
 			</Disclosure>
 			</template>
+			<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a pointer shortcut: a chapter's Move menu does the same by keyboard -->
 			<div v-if="props.allowEdit && outline.data?.length"
 				class="mx-2 mt-2 rounded-md border border-dashed border-outline-gray-3 p-3 text-sm text-ink-gray-5 transition hover:border-outline-gray-4 hover:text-ink-gray-7"
 				@dragover.prevent="onChapterDragOver($event)"
@@ -255,8 +288,8 @@
 		:chapterDetail="getCurrentChapter()" />
 </template>
 <script setup>
-import { Button, createResource, Tooltip, toast } from 'frappe-ui'
-import { inject, ref } from 'vue'
+import { Button, createResource, Dropdown, Tooltip, toast } from 'frappe-ui'
+import { inject, nextTick, ref } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
 	Check,
@@ -272,6 +305,7 @@ import {
 	Trash2,
 	FileUp,
 	GripVertical,
+	ArrowUpDown,
 	Lock,
 	Sprout,
 	Compass,
@@ -392,8 +426,10 @@ const updateLessonIndex = createResource({
 		}
 	},
 	onSuccess(data) {
-		outline.reload()
-		toast.success(__('Lesson moved successfully'))
+		reloadAndFocus()
+		toast.success(moveMessage.value || __('Lesson moved successfully'))
+		moveMessage.value = ''
+
 		const refiled = refiledMessage(data?.refiled)
 		if (refiled) toast.info(refiled, { duration: 10 })
 	},
@@ -413,8 +449,10 @@ const updateChapterIndex = createResource({
 		}
 	},
 	onSuccess() {
-		outline.reload()
-		toast.success(__('Chapter moved successfully'))
+		reloadAndFocus()
+		toast.success(moveMessage.value || __('Chapter moved successfully'))
+		moveMessage.value = ''
+
 	},
 	onError(err) {
 		toast.error(err.messages?.[0] || err.message || __('Could not move the chapter'))
@@ -626,5 +664,76 @@ const onChapterDrop = (event, targetIndex) => {
 
 const onChapterDragFinish = () => {
 	draggedChapter.value = null
+}
+
+// Decision 103: every drag has a keyboard route through the Move menus. They
+// call the same endpoints as a drop, with the 1-based position it would send.
+const moveMessage = ref('')
+const focusAfterMove = ref('')
+
+async function reloadAndFocus() {
+	await outline.reload()
+	await nextTick()
+	const [kind, name, fallback] = focusAfterMove.value.split('|')
+	focusAfterMove.value = ''
+	if (!kind) return
+	const target =
+		document.querySelector(`[data-move="${kind}:${CSS.escape(name)}"]`) ||
+		(fallback && document.querySelector(`[data-move="chapter:${CSS.escape(fallback)}"]`))
+	target?.focus()
+}
+
+function moveChapter(chapter, idx) {
+	moveMessage.value = __('Moved to position {0}', [idx])
+	focusAfterMove.value = `chapter|${chapter.name}`
+	updateChapterIndex.submit({ chapter: chapter.name, idx })
+}
+
+function moveLesson(lesson, source, target, idx) {
+	moveMessage.value = __('Moved to position {0} in {1}', [idx, target.chapter_title])
+	focusAfterMove.value = `lesson|${lesson.name}|${target.name}`
+	updateLessonIndex.submit({
+		lesson: lesson.name,
+		sourceChapter: source.name,
+		targetChapter: target.name,
+		idx,
+	})
+}
+
+const chapterMoves = (index) => {
+	const chapters = outline.data || []
+	const chapter = chapters[index]
+	const moves = []
+	if (index > 0) moves.push({ label: __('Move up'), onClick: () => moveChapter(chapter, index) })
+	if (index < chapters.length - 1) {
+		moves.push({ label: __('Move down'), onClick: () => moveChapter(chapter, index + 2) })
+	}
+	return moves
+}
+
+const lessonMoves = (chapter, lessonIndex) => {
+	const lessons = chapter.lessons || []
+	const lesson = lessons[lessonIndex]
+	const moves = []
+	if (lessonIndex > 0) {
+		moves.push({ label: __('Move up'), onClick: () => moveLesson(lesson, chapter, chapter, lessonIndex) })
+	}
+	if (lessonIndex < lessons.length - 1) {
+		moves.push({
+			label: __('Move down'),
+			onClick: () => moveLesson(lesson, chapter, chapter, lessonIndex + 2),
+		})
+	}
+	const others = (outline.data || []).filter((c) => c.name !== chapter.name && !c.is_scorm_package)
+	if (others.length) {
+		moves.push({
+			group: __('Move to the end of'),
+			items: others.map((c) => ({
+				label: c.chapter_title,
+				onClick: () => moveLesson(lesson, chapter, c, (c.lessons?.length || 0) + 1),
+			})),
+		})
+	}
+	return moves
 }
 </script>

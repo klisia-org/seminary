@@ -11,6 +11,7 @@
       </span>
     </div>
 
+    <!-- eslint-disable-next-line vuejs-accessibility/media-has-caption -- audio-only recording; its transcript is shown below it -->
     <audio v-if="rec.data.audio" ref="audio" :src="rec.data.audio" controls preload="metadata" class="w-full"
       @timeupdate="now = $event.target.currentTime" />
     <div v-else-if="rec.data.audio_deleted_on" class="text-xs text-ink-gray-5">
@@ -47,7 +48,7 @@
 
     <div v-if="rec.data.transcript.length" class="max-h-64 overflow-y-auto space-y-1 text-sm">
       <button v-for="(seg, i) in rec.data.transcript" :key="i" type="button"
-        class="block w-full text-left rounded px-1 hover:bg-surface-gray-2"
+        class="block w-full min-h-6 text-left rounded px-1 py-0.5 hover:bg-surface-gray-2"
         :class="isCurrent(seg) ? 'bg-surface-blue-1' : ''" @click="seek(seg.start)">
         <span class="text-xs text-ink-gray-5 mr-2">{{ clock(seg.start) }}</span>
         <span v-if="seg.speaker && rec.data.speakers.length > 1" class="text-xs font-medium mr-1">{{ speakerName(seg.speaker) }}:</span>

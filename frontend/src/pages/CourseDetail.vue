@@ -76,7 +76,7 @@
 							rel="noopener noreferrer" class="no-underline">
 							<Badge theme="green" size="lg" class="cursor-pointer hover:opacity-80 transition-opacity">
 								<template #prefix>
-									<Video class="h-3.5 w-3.5" />
+									<VideoIcon class="h-3.5 w-3.5" />
 								</template>
 								{{ __('Join Online') }}
 							</Badge>
@@ -176,7 +176,7 @@ import ContactChannelIcons from '@/components/ContactChannelIcons.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
 import AnnouncementModal from '../components/Modals/AnnouncementModal.vue'
-import { Send, MapPin, CalendarDays, Clock, MonitorPlay, Video, ClipboardCheck } from 'lucide-vue-next'
+import { Send, MapPin, CalendarDays, Clock, MonitorPlay, Video as VideoIcon, ClipboardCheck } from 'lucide-vue-next'
 import Announcements from '../components/Announcements.vue'
 import ImprovementActionsPanel from '@/components/ImprovementActionsPanel.vue'
 import FeedbackStatusPanel from '@/components/FeedbackStatusPanel.vue'

@@ -25,19 +25,19 @@
 				class="group flex w-full min-h-[44px] cursor-pointer items-center rounded-lg text-ink-gray-8 transition-colors duration-200 hover:bg-surface-gray-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
 				:class="isSidebarCollapsed ? 'justify-center px-0 py-2' : 'justify-start px-3 py-2'">
 				<span class="grid h-5 w-6 flex-shrink-0 place-items-center">
-					<Sun v-if="theme === 'dark'" class="h-4.5 w-4.5 text-ink-gray-7" />
-					<Moon v-else class="h-4.5 w-4.5 text-ink-gray-7" />
+					<Sun v-if="theme === 'dark'" class="h-4.5 w-4.5 text-ink-gray-7" aria-hidden="true" />
+					<Moon v-else class="h-4.5 w-4.5 text-ink-gray-7" aria-hidden="true" />
 				</span>
 				<span class="flex-shrink-0 text-base transition-all duration-200"
 					:class="isSidebarCollapsed ? 'ml-0 w-0 overflow-hidden opacity-0' : 'ml-3 w-auto opacity-100'">
 					{{ theme === 'dark' ? __('Light mode') : __('Dark mode') }}
 				</span>
 			</button>
-			<SidebarLink :label="isSidebarCollapsed ? 'Expand' : 'Collapse'" :isCollapsed="isSidebarCollapsed"
+			<SidebarLink :label="isSidebarCollapsed ? __('Expand') : __('Collapse')" :isCollapsed="isSidebarCollapsed"
 				@click="isSidebarCollapsed = !isSidebarCollapsed">
 				<template #icon>
 					<span class="grid h-5 w-6 flex-shrink-0 place-items-center">
-						<component :is="collapseIcon"
+						<component :is="collapseIcon" aria-hidden="true"
 							class="h-4.5 w-4.5 text-ink-gray-7 transition-transform duration-300" />
 					</span>
 				</template>

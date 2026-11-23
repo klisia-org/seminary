@@ -3,29 +3,9 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import frappeui from 'frappe-ui/vite'
 
-// frappe-ui components replaced with a patched copy (decision 102 §9): the file under
-// node_modules/frappe-ui/src, mapped to the copy in src/overrides.
-const FRAPPE_UI_OVERRIDES = {
-	'components/TextEditor/Menu.vue': 'src/overrides/frappe-ui/TextEditorMenu.vue',
-	'components/Button/Button.vue': 'src/overrides/frappe-ui/Button.vue',
-	'components/ListView/ListRow.vue': 'src/overrides/frappe-ui/ListRow.vue',
-	'components/ListView/ListHeader.vue': 'src/overrides/frappe-ui/ListHeader.vue',
-}
-function frappeUiOverrides() {
-	const root = path.resolve(__dirname, 'node_modules/frappe-ui/src') + '/'
-	return {
-		name: 'seminary-frappe-ui-overrides',
-		enforce: 'pre',
-		async resolveId(source, importer, options) {
-			if (!importer || !source.includes('.vue') || !importer.includes('/frappe-ui/src/')) return null
-			const resolved = await this.resolve(source, importer, { ...options, skipSelf: true })
-			const id = resolved?.id?.split('?')[0]
-			if (!id || !id.startsWith(root)) return null
-			const target = FRAPPE_UI_OVERRIDES[id.slice(root.length)]
-			return target ? path.resolve(__dirname, target) : null
-		},
-	}
-}
+// frappe-ui components replaced with a patched copy (decision 102 §9); the plugin lives
+// in its own file so another portal on the same frappe-ui can use the same copies.
+import { frappeUiOverrides } from './frappe-ui-overrides.js'
 
 // https://vitejs.dev/config/
 export default defineConfig({

@@ -122,20 +122,25 @@ def render_labels_pdf(recipients, model=None):
 		"margin-right": "0mm",
 		"margin-bottom": "0mm",
 	}
-	return get_pdf(html, options=options), len(placed), omitted
+	return get_pdf(html, options=options, title=frappe._("Mailing labels")), len(placed), omitted
 
 
 def _labels_html(entries, spec):
+	"""One list of addresses per sheet, laid on the label grid with CSS grid, so a
+	screen reader reads the labels in order (ADR 104 §5) and each sits on its label."""
 	per_page = spec["cols"] * spec["rows"]
 	cell_w, cell_h = spec["cell_w"], spec["cell_h"]
 	css = f"""
     <style>
       * {{ box-sizing: border-box; }}
       body {{ margin: 0; font-family: Arial, sans-serif; }}
-      table.labels {{ border-collapse: collapse; table-layout: fixed; }}
-      table.labels td {{
-        width: {cell_w}mm; height: {cell_h}mm;
-        padding: 3mm 4mm; overflow: hidden; vertical-align: middle;
+      ul.labels {{
+        display: grid; grid-template-columns: repeat({spec["cols"]}, {cell_w}mm);
+        grid-auto-rows: {cell_h}mm; list-style: none; margin: 0; padding: 0;
+      }}
+      ul.labels li {{
+        display: flex; flex-direction: column; justify-content: safe center;
+        padding: 3mm 4mm; overflow: hidden;
         font-size: 10pt; line-height: 1.25;
       }}
       .page {{ page-break-after: always; }}
@@ -148,17 +153,11 @@ def _labels_html(entries, spec):
 	pages = []
 	for start in range(0, len(entries), per_page):
 		chunk = entries[start : start + per_page]
-		cells = []
-		for e in chunk:
-			block = "<br>".join(escape_html(line) for line in e["lines"])
-			cells.append(f"<td>{block}</td>")
-		# pad the final page so the grid stays rectangular
-		while len(cells) % spec["cols"]:
-			cells.append("<td></td>")
-		rows_html = ""
-		for i in range(0, len(cells), spec["cols"]):
-			rows_html += "<tr>" + "".join(cells[i : i + spec["cols"]]) + "</tr>"
-		pages.append(f'<div class="page"><table class="labels">{rows_html}</table></div>')
+		items = "".join(
+			"<li><span>" + "<br>".join(escape_html(line) for line in e["lines"]) + "</span></li>"
+			for e in chunk
+		)
+		pages.append(f'<div class="page"><ul class="labels">{items}</ul></div>')
 	return css + "".join(pages)
 
 

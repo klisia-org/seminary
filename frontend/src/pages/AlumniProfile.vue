@@ -26,40 +26,43 @@
 
 	<form v-else class="mx-auto w-full max-w-2xl space-y-5 p-5" @submit.prevent="onSave">
 		<div class="grid gap-4 sm:grid-cols-2">
-			<Field :label="__('Full name')">
+			<label class="block">
+				<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Full name') }}</span>
 				<input v-model="form.full_name" type="text" class="field-input" />
-			</Field>
-			<Field :label="__('LinkedIn URL')">
+			</label>
+			<label class="block">
+				<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('LinkedIn URL') }}</span>
 				<input v-model="form.linkedin_url" type="url" class="field-input" />
-			</Field>
+			</label>
 			<!-- ADR 077: this is *employment* -- where this person works. It may
 			     have nothing to do with the seminary, and saying so must never
 			     require standing up a Partner Organization. Representing an
 			     organization as a partner is a different fact, shown below. -->
-			<Field :label="__('Current role')" :description="__('Where you work. Classmates can find you by it.')">
+			<label class="block">
+				<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Current role') }}</span>
 				<input v-model="form.current_role" type="text" class="field-input" />
-			</Field>
-			<Field :label="__('Current organization')">
+			</label>
+			<label class="block">
+				<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Current organization') }}</span>
 				<input v-model="form.current_organization" type="text" class="field-input" />
-			</Field>
+			</label>
 			<!-- The free text above stays whatever the alumnus wrote; this only
 			     adds a link when the seminary already knows the organization,
 			     which is what turns it into a badge in the directory. -->
-			<Field
-				v-if="partnerOrgs.data?.length"
-				:label="__('Is that one of our partner organizations?')"
-			>
+			<label v-if="partnerOrgs.data?.length" class="block">
+				<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Is that one of our partner organizations?') }}</span>
 				<select :aria-label="__('Is that one of our partner organizations?')" v-model="form.current_partner_organization" class="field-input">
 					<option value="">{{ __('Not listed') }}</option>
 					<option v-for="org in partnerOrgs.data" :key="org.name" :value="org.name">
 						{{ org.organization_name }}
 					</option>
 				</select>
-			</Field>
+			</label>
 			<!-- Representation, not employment: derived from the Partner Contact
 			     rows, never retyped here. Editing the role or ending the
 			     relationship happens where the relationship lives (ADR 077). -->
-			<Field v-if="myOrgRoles.length" :label="__('You act for')">
+			<div v-if="myOrgRoles.length" class="block">
+				<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('You act for') }}</span>
 				<ul class="flex flex-col gap-1">
 					<li v-for="o in myOrgRoles" :key="o.name" class="text-sm text-ink-gray-7">
 						{{ o.organization_name }}<span v-if="o.role_at_org"> — {{ o.role_at_org }}</span>
@@ -68,21 +71,24 @@
 				<router-link to="/alumni" class="mt-1 inline-block text-xs text-ink-blue-3 hover:underline">
 					{{ __('Manage these in My Organizations') }}
 				</router-link>
-			</Field>
-			<Field :label="__('City')">
+			</div>
+			<label class="block">
+				<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('City') }}</span>
 				<input v-model="form.city" type="text" class="field-input" />
-			</Field>
-			<Field :label="__('Country')">
+			</label>
+			<label class="block">
+				<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Country') }}</span>
 				<input v-model="form.country" type="text" class="field-input" />
-			</Field>
+			</label>
 		</div>
 
-		<Field :label="__('Bio')">
+		<label class="block">
+			<span class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Bio') }}</span>
 			<textarea v-model="form.bio" rows="5" class="field-input" />
 			<p class="mt-1 text-xs text-ink-gray-5">
 				{{ __('Shown to other alumni when they open your profile in the directory. Nobody else sees it.') }}
 			</p>
-		</Field>
+		</label>
 
 		<section class="space-y-3 rounded-md border border-outline-gray-1 p-4">
 			<h3 class="text-sm font-semibold text-ink-gray-8">
@@ -123,7 +129,7 @@
 
 			<p class="text-xs text-ink-gray-5">
 				{{ __('Your contact details are separate: you choose them one at a time in Preferences, and nothing is shown until you do.') }}
-				<router-link to="/preferences" class="text-ink-blue-link hover:text-ink-blue-3">
+				<router-link to="/preferences" class="text-ink-blue-link underline hover:text-ink-blue-3">
 					{{ __('Open Preferences') }}
 				</router-link>
 			</p>
@@ -162,7 +168,7 @@
 
 <script setup>
 import AlumniHeader from '@/components/AlumniHeader.vue'
-import { reactive, ref, computed, h } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { Button, Dialog, createResource } from 'frappe-ui'
 import { UserX } from 'lucide-vue-next'
 import CareerProfileFields from '@/components/CareerProfileFields.vue'
@@ -256,12 +262,6 @@ async function onSave() {
 	}
 }
 
-const Field = (props, { slots }) =>
-	h('label', { class: 'block' }, [
-		h('span', { class: 'mb-1 block text-xs font-medium text-ink-gray-6' }, props.label),
-		slots.default?.(),
-	])
-Field.props = ['label']
 </script>
 
 <style scoped>

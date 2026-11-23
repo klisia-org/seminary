@@ -22,6 +22,7 @@
 
 			<!-- Recorded clip preview -->
 			<div v-show="phase === 'recorded' || phase === 'uploading'">
+				<!-- eslint-disable-next-line vuejs-accessibility/media-has-caption -- plays back the clip the user has just recorded, before upload; no captions exist for it yet -->
 				<video ref="playbackRef" controls playsinline
 					class="w-full rounded-md bg-black aspect-video object-cover"></video>
 			</div>
