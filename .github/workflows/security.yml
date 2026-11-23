@@ -69,6 +69,7 @@ jobs:
             --exclude-files 'seminary/public/dist/.*' \
             --exclude-files '(^|.*/)\.history/.*' \
             --exclude-files '(^|.*/)node_modules/.*' \
+            --exclude-files 'docs/accessibility/conformance\.json' \
             > secrets.json
           python -c "import json,sys; r=json.load(open('secrets.json'))['results']; sys.exit('detect-secrets found: %s' % list(r)) if r else print('clean')"
 

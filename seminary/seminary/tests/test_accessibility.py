@@ -13,9 +13,9 @@ SEMINARY_WRITE_CONFORMANCE=1 (see docs/accessibility/README.md).
 
 import datetime
 import os
-import urllib.request
 
 import frappe
+import requests
 from frappe.tests import IntegrationTestCase
 
 from seminary.seminary import accessibility as a
@@ -23,9 +23,8 @@ from seminary.seminary import accessibility as a
 
 def _served(url):
 	try:
-		with urllib.request.urlopen(url, timeout=10) as r:
-			return r.status == 200
-	except Exception:
+		return requests.get(url, timeout=10).status_code == 200
+	except requests.RequestException:
 		return False
 
 
