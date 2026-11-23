@@ -4,7 +4,8 @@ msgstr ""
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-11-23 16:10-0609\n"
 "PO-Revision-Date: 2026-11-24 00:12+0000\n"
-"Last-Translator: GitHub webhook <noreply-webhook-github@weblate.org>\n"
+"Last-Translator: Automatic translation add-on <noreply-addon-"
+"autotranslate@weblate.org>\n"
 "Language-Team: Spanish <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/es/>\n"
 "Language: es\n"
@@ -30497,10 +30498,8 @@ msgstr "Modalidad"
 #: seminary/public/frontend/assets/OralActivityForm-M3Ga0XlV.js:1
 #: seminary/seminary/doctype/cohort_meeting/cohort_meeting.json:70
 #: seminary/seminary/doctype/oral_activity/oral_activity.json:46
-#, fuzzy
-#| msgid "Moderate"
 msgid "Mode"
-msgstr "Moderado"
+msgstr "Modo"
 
 #. Option for the 'Spiritual Formation Value' (Select) field in DocType
 #. 'Student Internship Feedback'
