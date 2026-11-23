@@ -47,6 +47,17 @@ def _category(name, of_record):
 				"is_instructor_of_record": 1 if of_record else 0,
 			}
 		).insert(ignore_permissions=True)
+	elif of_record:
+		# The category outlives the run, and the site is used by hand between
+		# runs: set what these tests rely on rather than trust what is there.
+		# An instructor of record also edits the course (decisions/105).
+		frappe.db.set_value(
+			"Instructor Category",
+			name,
+			{"is_instructor_of_record": 1, "may_edit_content": 1, "may_grade": 1},
+		)
+	else:
+		frappe.db.set_value("Instructor Category", name, "is_instructor_of_record", 0)
 	return name
 
 

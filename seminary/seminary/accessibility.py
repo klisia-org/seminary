@@ -256,7 +256,11 @@ def _builtin_samples():
 			select ins.name, ins.user from `tabCourse Schedule Instructors` i
 			join `tabInstructor` ins on ins.name = i.instructor
 			join `tabUser` u on u.name = ins.user and u.enabled = 1
-			where i.parent = %s order by i.idx limit 1
+			left join `tabInstructor Category` ic on ic.name = i.instructor_category
+			where i.parent = %s
+			-- The instructor journeys edit the outline, so prefer someone whose
+			-- role on the section allows it (decisions/105).
+			order by coalesce(ic.may_edit_content, 1) desc, i.idx limit 1
 			""",
 			course.name,
 			as_dict=True,

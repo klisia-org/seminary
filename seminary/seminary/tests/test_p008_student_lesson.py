@@ -44,6 +44,11 @@ KNOWN_SWEEP_PAIRS = {
 	("seminary.seminary.doctype.course.course.bulk_add_courses_to_program", "Program"),
 	("seminary.seminary.doctype.question.question.refresh_scripture_text", "Question"),
 	("seminary.seminary.doctype.question.question.replace_matching_items", "Question"),
+	# decisions/106: the same Question save, and QTI import, which checks write
+	# on the quiz or exam before it creates questions or deletes the upload.
+	("seminary.seminary.doctype.question.question.save_question", "Question"),
+	("seminary.seminary.qti.import_questions", "File"),
+	("seminary.seminary.qti.import_questions", "Open Question"),
 	(
 		"seminary.seminary.doctype.term_admission.term_admission.refresh_programs",
 		"Term Admission",

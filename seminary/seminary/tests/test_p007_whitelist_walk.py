@@ -987,6 +987,12 @@ G6_OWN_RULE = {
 	# seminary.seminary.doctype.question.question
 	"seminary.seminary.doctype.question.question.refresh_scripture_text",
 	"seminary.seminary.doctype.question.question.replace_matching_items",
+	# decisions/106: the Question's DocPerm refuses the save.
+	"seminary.seminary.doctype.question.question.save_question",
+	# seminary.seminary.qti
+	# decisions/106: write permission on the quiz or exam, and only the
+	# uploader's own File.
+	"seminary.seminary.qti.import_questions",
 	# seminary.seminary.doctype.recommendation_letter.recommendation_letter
 	"seminary.seminary.doctype.recommendation_letter.recommendation_letter.regenerate_token",
 	# seminary.seminary.doctype.term_admission.term_admission
