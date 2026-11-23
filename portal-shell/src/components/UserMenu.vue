@@ -5,12 +5,14 @@
 			class="portal-user-menu__trigger"
 			:aria-expanded="open"
 			aria-haspopup="menu"
+			:aria-label="__('Account, {0}', [user.full_name || user.email])"
 			@click="open = !open"
 		>
-			<span v-if="user.image" class="portal-user-menu__avatar">
-				<img :src="user.image" :alt="user.full_name" />
+			<!-- The button's name says whose account it is; initials alone ("Z") said nothing (102a). -->
+			<span v-if="user.image" class="portal-user-menu__avatar" aria-hidden="true">
+				<img :src="user.image" alt="" />
 			</span>
-			<span v-else class="portal-user-menu__avatar portal-user-menu__avatar--initials">
+			<span v-else class="portal-user-menu__avatar portal-user-menu__avatar--initials" aria-hidden="true">
 				{{ initials }}
 			</span>
 		</button>

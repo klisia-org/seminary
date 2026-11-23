@@ -61,7 +61,7 @@
 						</Tooltip>
 						<Dropdown v-if="chapterMoves(index).length" :options="chapterMoves(index)">
 							<button type="button" :data-move="`chapter:${chapter.name}`"
-								:aria-label="__('Move {0}', [chapter.chapter_title])"
+								:aria-label="__('Move {0}', [chapter.chapter_title])" @click="focusFirstMove"
 								class="rounded-md p-1 text-ink-gray-6 hover:bg-surface-gray-2">
 								<ArrowUpDown class="h-4 w-4" aria-hidden="true" />
 							</button>
@@ -238,7 +238,7 @@
 									<Dropdown v-if="lessonMoves(chapter, lessonIndex).length"
 										:options="lessonMoves(chapter, lessonIndex)">
 										<button type="button" :data-move="`lesson:${lesson.name}`"
-											:aria-label="__('Move {0}', [lesson.lesson_title])"
+											:aria-label="__('Move {0}', [lesson.lesson_title])" @click="focusFirstMove"
 											class="rounded-md p-1 text-ink-gray-6 hover:bg-surface-gray-2">
 											<ArrowUpDown class="h-4 w-4" aria-hidden="true" />
 										</button>
@@ -681,6 +681,18 @@ async function reloadAndFocus() {
 		document.querySelector(`[data-move="${kind}:${CSS.escape(name)}"]`) ||
 		(fallback && document.querySelector(`[data-move="chapter:${CSS.escape(fallback)}"]`))
 	target?.focus()
+}
+
+// The menu opens with its first item focused however it is opened. reka-ui does that only for
+// a key press; a click, and Enter from a screen reader in browse mode (which arrives as one),
+// left the focus on the menu itself, one Down press short of the first move.
+function focusFirstMove(event) {
+	const trigger = event.currentTarget
+	requestAnimationFrame(() => {
+		if (trigger.getAttribute('aria-expanded') !== 'true') return
+		const menu = document.getElementById(trigger.getAttribute('aria-controls'))
+		menu?.querySelector('[role="menuitem"]')?.focus()
+	})
 }
 
 function moveChapter(chapter, idx) {

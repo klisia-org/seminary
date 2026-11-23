@@ -42,7 +42,23 @@ machine, and it fills manual rows rather than gating a commit.
 - The first journeys found sidebar and empty-state icons read out as "graphics-document". They
   now have `aria-hidden`. The portal-shell journey must not hear any icon.
 - `export_journeys` and `end_exported_sessions` in `accessibility.py` give the NVDA script its
-  URLs and sessions. The script is `scripts/screen-reader/nvda.mjs` (Guidepup 0.40.0), and it
-  hasn't been run on Windows yet.
+  URLs and sessions. The script is `scripts/screen-reader/nvda.mjs` (Guidepup 0.40.0).
+- The first NVDA runs, on 2026-11-23, showed that NVDA reads only the window in front, and
+  Windows won't put Chrome back in front once another window has taken it. So the script opens
+  Chrome before NVDA and never asks for the front. It moves the focus out of the address bar
+  with F6, and reports the window NVDA read. Guidepup's NVDA opens its Speech Viewer at start
+  and doesn't save settings, so the README says to turn the viewer off in that copy's
+  `nvda.ini`. A session that has ended stops the journey rather than typing into the login form.
+- NVDA starts browse mode on the first item, and runs out of landmarks at the page's end, so the
+  icon check is a journey of its own from the top. The script sends key presses as real keys
+  and asks NVDA what has the focus after each focus move, click or key press.
+- NVDA heard what the virtual reader didn't:
+  - an unnamed "button, clickable" in every sidebar item, from the tooltip around its icon,
+    which is now on only when the sidebar is collapsed;
+  - "star" for a required field, which now has `aria-required` with the asterisk hidden;
+  - the Move menu focused on itself when opened by Enter in browse mode, which arrives as a
+    click, so the menu now focuses its first item however it opens, and the journey opens it by
+    a click too;
+  - the account menu named only by initials, now "Account" and the person's name.
 - An app that plans its own visits passes `planner` on its `Target`, so its journeys use its
   plan.

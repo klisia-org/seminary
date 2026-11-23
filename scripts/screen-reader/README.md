@@ -25,6 +25,12 @@ npx @guidepup/setup
 `@guidepup/setup` installs a copy of NVDA that Guidepup can drive and sets Windows up for it.
 Close any other running NVDA before a run.
 
+That copy opens NVDA's Speech Viewer when it starts, and the viewer takes the focus from
+Chrome. It doesn't save settings changed while it runs, so turn the viewer off in its settings
+file instead: in `%LOCALAPPDATA%\guidepup\nvda\all\<version>\extracted\userConfig\nvda.ini`,
+under `[speechViewer]`, set `showSpeechViewerAtStartup = False`. Guidepup reads NVDA's speech
+through NVDA Remote, not the viewer. Do it again after running `@guidepup/setup` again.
+
 ## Each run
 
 1. **In WSL**, export the journeys with sessions to sign in with. The sessions last an hour.
@@ -36,10 +42,11 @@ Close any other running NVDA before a run.
 
    Another app's journeys: add `'target': '<app>.accessibility.target'` to the kwargs.
 
-2. **On Windows**, run them. Close NVDA's Speech Viewer first (NVDA menu, Tools): Guidepup reads
-   NVDA's speech without it, and its window can take the focus from Chrome. Chrome opens, and
-   NVDA speaks. Don't use the keyboard or mouse until it closes. If the report says NVDA left
-   Chrome, something else took the focus; run it again.
+2. **On Windows**, within the hour, run them from a terminal window, and close other windows
+   first. Chrome opens, then NVDA starts and speaks. NVDA reads whichever window is in front,
+   and Windows won't put Chrome back in front once another window has taken it: don't use the
+   keyboard or mouse until Chrome closes. If the report says the page didn't have the keyboard focus,
+   something took the focus; run it again.
 
    ```powershell
    node nvda.mjs journeys.json report.md

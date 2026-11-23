@@ -38,8 +38,9 @@
 
       <!-- Withdrawal Reason -->
       <div class="space-y-2">
-        <label for="withdrawal-reason" class="block text-sm font-medium text-ink-gray-7">{{ __('Reason for Withdrawal') }} *</label>
+        <label for="withdrawal-reason" class="block text-sm font-medium text-ink-gray-7">{{ __('Reason for Withdrawal') }} <span aria-hidden="true">*</span></label>
         <FormControl id="withdrawal-reason" type="select" v-model="form.withdrawal_reason" :options="reasonOptions"
+          aria-required="true"
           :placeholder="__('Select a reason...')" />
         <SafeHtml v-if="selectedReasonDetails?.student_instructions"
           class="text-sm text-ink-blue-2 bg-surface-blue-1 rounded-lg p-3 border border-outline-blue-1"

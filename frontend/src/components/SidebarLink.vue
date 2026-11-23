@@ -10,7 +10,9 @@
     ]"
     @click="handleClick"
   >
-    <Tooltip :text="label" placement="right">
+    <!-- Only collapsed, when the label is hidden: the tooltip's handlers make NVDA read the
+         icon as an unnamed "button, clickable" inside the button (102a). -->
+    <Tooltip :text="label" placement="right" :disabled="!isCollapsed">
       <span class="grid h-5 w-6 flex-shrink-0 place-items-center">
         <slot name="icon">
           <!-- A portal theme's brand colour marks the active item; without one it is unchanged (p017). -->

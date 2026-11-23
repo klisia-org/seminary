@@ -1,1 +1,0 @@
-import{un as e}from"./vendor-CeBc1Zh_.js";import{ir as t}from"./frappe-ui-mHsIT1v3.js";import{n}from"./router-DCwQPhR9.js";var r=e(`settings`,()=>{let{isLoggedIn:e}=n();return{isSettingsOpen:t(!1)}});export{r as t};
