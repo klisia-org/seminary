@@ -562,12 +562,21 @@ class _Importer:
 
 	# --- chapters + lessons ----------------------------------------------
 	def import_chapters_and_lessons(self, cs):
+		from seminary.seminary import content_release
+
 		n_chapters = n_lessons = 0
+		day_shift = content_release.start_shift(
+			(self.m.get("source") or {}).get("start_date"), cs.c_datestart
+		)
+		chapter_map = {}
+		pending_prereqs = []
 		for cidx, chrec in enumerate(self.m.get("chapters") or [], start=1):
 			ch = frappe.new_doc("Course Schedule Chapter")
 			ch.coursesc = cs.name
 			ch.update(self._rw(_only(chrec.get("fields"), CHAPTER_FIELDS)))
 			ch.course_competency = self.competency_map.get(chrec.get("competency_code"))
+			if isinstance(chrec.get("release"), dict):
+				content_release.copy_release(chrec["release"], ch, day_shift)
 			if chrec.get("scorm_media") and chrec["scorm_media"] in self.url_map:
 				ch.scorm_package = frappe.db.get_value(
 					"File", {"file_url": self.url_map[chrec["scorm_media"]]}, "name"
@@ -575,6 +584,10 @@ class _Importer:
 			ch.flags.ignore_permissions = True
 			ch.insert(ignore_mandatory=True)
 			n_chapters += 1
+			if chrec.get("src_name"):
+				chapter_map[chrec["src_name"]] = ch.name
+			if chrec.get("prerequisites"):
+				pending_prereqs.append((ch.name, chrec["prerequisites"]))
 			self._reextract_scorm(ch)
 
 			for lidx, lsrc in enumerate(chrec.get("lessons") or [], start=1):
@@ -607,6 +620,13 @@ class _Importer:
 					"chapter": ch.name,
 				}
 			).insert(ignore_permissions=True)
+
+		for new_name, rows in pending_prereqs:
+			self.warnings.extend(
+				content_release.insert_prerequisites(
+					new_name, rows, chapter_map, lambda q: self.a_map.get(q) if q else None
+				)
+			)
 		return n_chapters, n_lessons
 
 	def _rewrite_lesson_fields(self, fields):

@@ -439,6 +439,11 @@ STAFF_ONLY = {
 	"seminary.seminary.deadlines.save_late_policy",
 	"seminary.seminary.deadlines.save_override",
 	"seminary.seminary.deadlines.delete_override",
+	# --- Chapter release (decisions/107): the same gate as 082's overrides.
+	"seminary.seminary.content_release.get_release_options",
+	"seminary.seminary.content_release.get_chapter_overrides",
+	"seminary.seminary.content_release.save_chapter_override",
+	"seminary.seminary.content_release.delete_chapter_override",
 	"seminary.seminary.deadlines.set_late_adjustment",
 	"seminary.seminary.deadlines.get_student_dates",
 	"seminary.seminary.deadlines.excused_due",
@@ -1077,6 +1082,7 @@ KWARG_OVERRIDES = {
 	"seminary.setup_progress.get_progress": {"group": "Seminary"},
 	"seminary.seminary.absence_decisions.record_absence_decisions": {"decisions": "[]"},
 	"seminary.seminary.deadlines.save_override": {"data": "{}"},
+	"seminary.seminary.content_release.save_chapter_override": {"data": "{}"},
 	"seminary.seminary.deadlines.save_late_policy": {"policy": "{}"},
 	"seminary.seminary.deadlines.excused_due": {"students": "[]", "date": "2026-01-01"},
 	# An invalid status is refused before the org gate is reached.

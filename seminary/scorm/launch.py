@@ -44,6 +44,10 @@ def launch(chapter: str) -> dict:
 	# Staff, readers, the registrar tier, and a student on the active roster of
 	# a published section -- `is_enrolled` already encodes all of it (p007 §8.1).
 	require_enrolled(row.coursesc)
+	# Release dates and prerequisites (decisions/107).
+	from seminary.seminary.content_release import require_chapter_open
+
+	require_chapter_open(row.coursesc, chapter)
 
 	host = frappe.conf.get("scorm_delivery_host")
 	if not host:

@@ -94,6 +94,18 @@
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-6">
 					<LessonContent :content="lesson.data.instructor_notes" />
 				</div>
+				<!-- A locked chapter (decisions/107) sends the title and why,
+				     never the content. -->
+				<div v-if="lesson.data.locked" role="note"
+					class="mt-5 flex items-start gap-2 rounded-lg border border-outline-gray-2 bg-surface-gray-1 p-4 text-ink-gray-7">
+					<Lock class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+					<div>
+						<div class="font-medium">{{ __('This lesson is not open yet') }}</div>
+						<ul class="mt-1 space-y-1 text-sm">
+							<li v-for="reason in lesson.data.reasons" :key="reason">{{ reason }}</li>
+						</ul>
+					</div>
+				</div>
 				<div v-if="lesson.data.due_date" class="rounded-md bg-surface-green-1 text-ink-green-3 p-2 mt-2">
 					{{ __('Due: ') + new Intl.DateTimeFormat(user.data.language || 'en-US', {
 						dateStyle: 'medium'
@@ -169,7 +181,7 @@ import { createResource, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, watch, inject, ref, onMounted, onBeforeUnmount } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ChevronLeft, ChevronRight, FileText, GraduationCap } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, FileText, GraduationCap, Lock } from 'lucide-vue-next'
 import { getEditorTools, updateDocumentTitle } from '../utils'
 import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
@@ -276,7 +288,7 @@ const renderEditor = (holder, content, course = null,  courseName = null, lesson
 	})
 }
 const markProgress = () => {
-	if (user.data && lesson.data && !lesson.data.progress) {
+	if (user.data && lesson.data && !lesson.data.progress && !lesson.data.locked) {
 		progress.submit()
 	}
 }

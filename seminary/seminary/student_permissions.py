@@ -72,6 +72,8 @@ CONFIG = {
 	"Student Attendance": (None, "course"),
 	# A student reads their own extensions; staff their sections' (decisions/082).
 	"Student Due Date Override": (("student", "student"), "course"),
+	# Same for a chapter's own opening (decisions/107).
+	"Student Chapter Release Override": (("student", "student"), "course"),
 	# Moments and the instructor-only step results are the section staff's
 	# (decisions/100 §6). Oral Recording itself has its own rule in oral.py:
 	# it belongs to every student on it, not to one field.
@@ -96,6 +98,7 @@ WRITE_ACTIONS = {
 	"Oral Activity Submission": GRADE,
 	"Quiz Submission": GRADE,
 	"Student Due Date Override": GRADE,
+	"Student Chapter Release Override": GRADE,
 	"Oral Moment": GRADE,
 	"Oral Step Result": GRADE,
 }
@@ -114,6 +117,7 @@ MENTOR_STUDENT_FIELD = {
 	"SCORM Attempt": ("member", "user"),
 	"Student Attendance": ("student", "student"),
 	"Student Due Date Override": ("student", "student"),
+	"Student Chapter Release Override": ("student", "student"),
 }
 
 

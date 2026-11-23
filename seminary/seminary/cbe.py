@@ -1325,13 +1325,12 @@ def content_release_mode(course_schedule, framework=None):
 	return mode
 
 
-def visible_outline(roster):
-	"""Which chapters and activities are open to this student, and why not.
+def competency_locks(roster, chapters=None):
+	"""The CBE self-assessment lock on each chapter, and why.
 
-	Gating is decided here rather than in the page: a locked activity has to
-	refuse a submission too, and a rule enforced only in the Vue layer is not a
-	rule. The reason travels with the lock because a lock the student cannot
-	explain is worse than no lock at all.
+	Only the competency part of the rule: `content_release.visible_outline`
+	combines it with release dates and prerequisites (decisions/107), and
+	everything that decides what a student may open asks that, not this.
 
 	Falls back to no gating whenever the course has not mapped competencies onto
 	chapters, since there would be nothing to gate on.
@@ -1343,7 +1342,7 @@ def visible_outline(roster):
 	)
 	framework = framework_doc(roster_doc.course_sc)
 	mode = content_release_mode(roster_doc.course_sc, framework)
-	chapters = _mapped_chapters(roster_doc.course_sc)
+	chapters = chapters if chapters is not None else _mapped_chapters(roster_doc.course_sc)
 	mapped = [c for c in chapters if c.course_competency]
 
 	result = {"mode": mode, "gated": False, "chapters": {}}
@@ -1383,49 +1382,19 @@ def visible_outline(roster):
 	return result
 
 
+def visible_outline(roster):
+	"""Every lock on this student's chapters (decisions/107)."""
+	from seminary.seminary import content_release
+
+	return content_release.visible_outline(roster)
+
+
 def _chapter_for_competency(course_schedule, competency):
 	return frappe.db.get_value(
 		"Course Schedule Chapter",
 		{"coursesc": course_schedule, "course_competency": competency},
 		"name",
 	)
-
-
-def assert_activity_unlocked(doc, method=None):
-	"""Refuse a submission for an activity the student has not unlocked.
-
-	Hooked onto every submission doctype. Without it the gate would live only in
-	the outline, and a direct call would walk straight past it.
-	"""
-	course_schedule = getattr(doc, "coursesc", None) or getattr(doc, "course", None)
-	criteria = getattr(doc, "course_assess", None)
-	student = getattr(doc, "student", None)
-	if not (course_schedule and criteria and student):
-		return
-	if not framework_for(course_schedule):
-		return
-
-	competency = frappe.db.get_value("Scheduled Course Assess Criteria", criteria, "course_competency")
-	if not competency:
-		return
-	chapter = _chapter_for_competency(course_schedule, competency)
-	if not chapter:
-		return
-
-	roster = frappe.db.get_value(
-		"Scheduled Course Roster",
-		{"course_sc": course_schedule, "student": student},
-		"name",
-	)
-	if not roster:
-		return
-
-	state = visible_outline(roster)["chapters"].get(chapter) or {}
-	if state.get("activities_locked"):
-		frappe.throw(
-			_("This activity is not open yet. {0}").format(state.get("reason") or ""),
-			frappe.PermissionError,
-		)
 
 
 # ---------------------------------------------------------------- escalation

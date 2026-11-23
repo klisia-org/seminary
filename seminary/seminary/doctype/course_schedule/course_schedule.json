@@ -72,6 +72,7 @@
   "course_description_for_lms",
   "chapters",
   "content_release_override",
+  "notify_on_release",
   "meeting_dates_tab",
   "meeting_dates_section",
   "cs_meetinfo",
@@ -579,6 +580,13 @@
    "options": "\nUngated\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed"
   },
   {
+   "default": "1",
+   "fieldname": "notify_on_release",
+   "fieldtype": "Check",
+   "label": "Notify Students When a Chapter Opens",
+   "description": "Sends each student an in-app notice when a chapter's release date passes (decisions/107)."
+  },
+  {
    "description": "This will appear on the course card and on the very top of the first page on the LMS.",
    "fieldname": "short_introduction",
    "fieldtype": "Small Text",
@@ -766,7 +774,7 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-11-23 09:00:00.000000",
+ "modified": "2026-11-23 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

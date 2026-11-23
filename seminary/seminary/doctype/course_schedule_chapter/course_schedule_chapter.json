@@ -18,7 +18,12 @@
   "scorm_section",
   "is_scorm_package",
   "scorm_package",
-  "scorm_package_ref"
+  "scorm_package_ref",
+  "release_section",
+  "release_type",
+  "release_on",
+  "release_offset_days",
+  "prerequisites"
  ],
  "fields": [
   {
@@ -101,12 +106,47 @@
    "fieldtype": "Link",
    "label": "Competency",
    "options": "Course Competency"
+  },
+  {
+   "fieldname": "release_section",
+   "fieldtype": "Section Break",
+   "label": "Release",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "release_type",
+   "fieldtype": "Select",
+   "label": "Opens",
+   "options": "Always open\nOn a date\nDays after start",
+   "default": "Always open",
+   "description": "When students can open this chapter (decisions/107). Days after start counts from the section's start date, or from each student's enrolment in an open-ended section."
+  },
+  {
+   "fieldname": "release_on",
+   "fieldtype": "Datetime",
+   "label": "Opens On",
+   "depends_on": "eval:doc.release_type=='On a date'",
+   "mandatory_depends_on": "eval:doc.release_type=='On a date'"
+  },
+  {
+   "fieldname": "release_offset_days",
+   "fieldtype": "Int",
+   "label": "Days After Start",
+   "depends_on": "eval:doc.release_type=='Days after start'",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "prerequisites",
+   "fieldtype": "Table",
+   "label": "Prerequisites",
+   "options": "Chapter Prerequisite",
+   "description": "Every row must be met before the chapter opens."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-17 11:39:05.583146",
+ "modified": "2026-11-23 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Chapter",

@@ -253,12 +253,20 @@ def lesson_captions(lesson):
 
 
 @frappe.whitelist()
-def save_progress(lesson, chapter, course):
+def save_progress(lesson: str, chapter: str | None, course: str):
 	membership = frappe.db.exists(
 		"Scheduled Course Roster",
 		{"course_sc": course, "stuemail_rc": frappe.session.user},
 	)
 	if not membership:
+		return 0
+
+	# A locked chapter's lessons cannot be completed: completing one is what
+	# opens the next chapter (decisions/107).
+	from seminary.seminary import content_release
+
+	# The lesson's own chapter, not the one the caller names.
+	if content_release.chapter_locked(course, frappe.db.get_value("Course Lesson", lesson, "chapter")):
 		return 0
 
 	frappe.db.set_value("Scheduled Course Roster", membership, "current_lesson", lesson)

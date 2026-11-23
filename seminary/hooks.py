@@ -374,6 +374,7 @@ permission_query_conditions = {
 	"Course Lesson": "seminary.seminary.student_permissions.query_course_lesson",
 	"Student Attendance": "seminary.seminary.student_permissions.query_student_attendance",
 	"Student Due Date Override": "seminary.seminary.student_permissions.query_student_due_date_override",
+	"Student Chapter Release Override": "seminary.seminary.student_permissions.query_student_chapter_release_override",
 	"Oral Recording": "seminary.seminary.oral.get_permission_query_conditions",
 	"Oral Defense Question": "seminary.seminary.oral_defense.get_permission_query_conditions",
 	"Oral Moment": "seminary.seminary.student_permissions.query_oral_moment",
@@ -439,6 +440,7 @@ has_permission = {
 	"Course Lesson": "seminary.seminary.student_permissions.has_permission_course_lesson",
 	"Student Attendance": "seminary.seminary.student_permissions.has_permission_student_attendance",
 	"Student Due Date Override": "seminary.seminary.student_permissions.has_permission_student_due_date_override",
+	"Student Chapter Release Override": "seminary.seminary.student_permissions.has_permission_student_chapter_release_override",
 	"Oral Recording": "seminary.seminary.oral.has_permission",
 	"Oral Defense Question": "seminary.seminary.oral_defense.has_permission",
 	"Oral Moment": "seminary.seminary.student_permissions.has_permission_oral_moment",
@@ -558,15 +560,15 @@ doc_events = {
 	# Cut-offs and late timestamps (decisions/082) are checked in validate, so
 	# every path a student can reach -- portal endpoints and frappe.client --
 	# meets them.
-	# before_insert on every submission: content gating (ADR 065) has to refuse
-	# the submission itself, not only hide the activity in the outline.
+	# before_insert on every submission: content gating (ADR 065, decisions/107)
+	# has to refuse the submission itself, not only hide the activity in the outline.
 	"Quiz Submission": {
-		"before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+		"before_insert": "seminary.seminary.content_release.assert_activity_unlocked",
 		"validate": "seminary.seminary.deadlines.guard_submission",
 		"on_update": "seminary.seminary.api.quizresult_to_card",
 	},
 	"Assignment Submission": {
-		"before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+		"before_insert": "seminary.seminary.content_release.assert_activity_unlocked",
 		"validate": "seminary.seminary.deadlines.guard_submission",
 		"on_update": [
 			"seminary.seminary.api.quizresult_to_card",
@@ -575,7 +577,7 @@ doc_events = {
 		],
 	},
 	"Exam Submission": {
-		"before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+		"before_insert": "seminary.seminary.content_release.assert_activity_unlocked",
 		"validate": "seminary.seminary.deadlines.guard_submission",
 		"on_update": "seminary.seminary.api.quizresult_to_card",
 	},
@@ -583,7 +585,7 @@ doc_events = {
 		"on_update": "seminary.seminary.api.quizresult_to_card",
 		"validate": "seminary.seminary.deadlines.guard_submission",
 		"before_insert": [
-			"seminary.seminary.cbe.assert_activity_unlocked",
+			"seminary.seminary.content_release.assert_activity_unlocked",
 			"seminary.seminary.api.sanitize_submission",
 		],
 		"before_save": "seminary.seminary.api.sanitize_submission",
@@ -591,7 +593,7 @@ doc_events = {
 	"Oral Activity Submission": {
 		"on_update": "seminary.seminary.api.quizresult_to_card",
 		"validate": "seminary.seminary.deadlines.guard_submission",
-		"before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+		"before_insert": "seminary.seminary.content_release.assert_activity_unlocked",
 	},
 	"Discussion Submission Replies": {
 		"before_insert": "seminary.seminary.api.sanitize_reply",
@@ -847,6 +849,8 @@ scheduler_events = {
 		"seminary.tasks.hourly",
 		# Meeting polls: remind non-voters, tell the leader it closed (101).
 		"seminary.seminary.discipleship.meetings.hourly",
+		# "Chapter X is now open" once its release date passes (decisions/107 §8).
+		"seminary.seminary.content_release.notify_opened_chapters",
 	],
 	# 	"weekly": [
 	# 		"seminary.tasks.weekly"

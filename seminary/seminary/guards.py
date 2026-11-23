@@ -562,6 +562,7 @@ COURSE_FIELD = {
 	"Course Enrollment Individual": "coursesc_ce",
 	"Course Folder": "course_schedule",
 	"Student Due Date Override": "course_schedule",
+	"Student Chapter Release Override": "course_schedule",
 	# Oral assessment (decisions/100).
 	"Oral Recording": "course_schedule",
 	"Oral Defense Question": "course",
