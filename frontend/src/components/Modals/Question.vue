@@ -38,9 +38,9 @@
 				</div>
 				<div v-if="questionType == 'new' || editMode" class="space-y-2">
 					<div>
-						<label class="block text-xs text-ink-gray-5 mb-1">
+						<div class="block text-xs text-ink-gray-5 mb-1">
 							{{ __('Question') }}
-						</label>
+						</div>
 						<TextEditor
 							:content="question.question"
 							@change="(val) => (question.question = val)"
@@ -118,10 +118,10 @@
 							v-model="question.scripture_bible_id"
 							:description="__('Leave blank to use the language default from Bible API Settings.')"
 						/>
-						<div class="space-y-2">
-							<label class="block text-xs text-ink-gray-5">
+						<div class="space-y-2" role="group" :aria-labelledby="`${uid}-references`">
+							<div :id="`${uid}-references`" class="block text-xs text-ink-gray-5">
 								{{ __('References to match') }} ({{ question.matching_items.length }})
-							</label>
+							</div>
 							<div
 								v-for="(item, idx) in question.matching_items"
 								:key="idx"
@@ -130,6 +130,7 @@
 								<FormControl
 									v-model="item.reference"
 									:placeholder="__('e.g. Jn 3:16')"
+									:aria-label="__('Reference {0}').format(idx + 1)"
 									class="flex-1"
 								/>
 								<Button variant="ghost" @click="removeMatchingItem(idx)" :label="__('Remove')" />
@@ -186,11 +187,12 @@
 </template>
 <script setup>
 import { Button, Dialog, FormControl, TextEditor, call, createResource, toast } from 'frappe-ui'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch, useId } from 'vue'
 import Link from '@/components/Controls/Link.vue'
 
 const show = defineModel()
 const quiz = defineModel('quiz')
+const uid = useId()
 
 const defaultExistingQuestion = () => ({
 	question: '',

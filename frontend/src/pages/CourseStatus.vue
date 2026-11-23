@@ -170,7 +170,7 @@
                   <td class="px-3 py-2">{{ simWeightLabel(a) }}</td>
                   <td class="px-3 py-2 text-right">
                     <div class="inline-flex items-center gap-1">
-                      <input type="number" :min="0" :max="a.maxGrade"
+                      <input type="number" :min="0" :max="a.maxGrade" :aria-label="__('Score for {0}').format(a.title)"
                         v-model.number="simScores[a.key]"
                         class="w-16 rounded border border-outline-amber-2 bg-surface-white text-ink-gray-9 px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-outline-amber-2" />
                       <span class="text-ink-gray-4">/ {{ a.maxGrade }}</span>

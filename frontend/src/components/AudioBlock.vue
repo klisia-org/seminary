@@ -3,6 +3,7 @@
 		<!-- <audio width="100%" controls controlsList="nodownload" class="mb-4">
 			<source :src="encodeURI(file)" type="audio/mp3" />
 		</audio> -->
+		<!-- eslint-disable-next-line vuejs-accessibility/media-has-caption -- audio-only: what it needs is a transcript in the lesson text, and an audio element shows no caption track -->
 		<audio @ended="handleAudioEnd" controlsList="nodownload" class="mb-4">
 			<source :src="encodeURI(file)" type="audio/mp3" />
 		</audio>

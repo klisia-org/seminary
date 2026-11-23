@@ -125,27 +125,27 @@
 					<div>
 						<div class="mb-1.5 text-xs text-ink-gray-5">{{ __('Times to offer') }}</div>
 						<div v-for="(o, i) in form.options" :key="i" class="mb-2 flex flex-wrap items-center gap-2">
-							<input v-model="o.date" type="date" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
-							<input v-model="o.from" type="time" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+							<input v-model="o.date" type="date" :aria-label="__('Time {0}: date').format(i + 1)" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+							<input v-model="o.from" type="time" :aria-label="__('Time {0}: start').format(i + 1)" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 							<span class="text-ink-gray-5">–</span>
-							<input v-model="o.to" type="time" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+							<input v-model="o.to" type="time" :aria-label="__('Time {0}: end').format(i + 1)" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 							<button v-if="form.options.length > 1" type="button" class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Remove')" @click="form.options.splice(i, 1)"><X class="h-4 w-4" /></button>
 						</div>
 						<Button size="sm" :label="__('Add a time')" @click="addOption" />
 					</div>
 					<div class="flex flex-wrap items-center gap-2 text-sm">
 						<span class="text-ink-gray-6">{{ __('Poll closes') }}</span>
-						<input v-model="form.closes_date" type="date" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
-						<input v-model="form.closes_time" type="time" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+						<input v-model="form.closes_date" type="date" :aria-label="__('Poll closes: date')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+						<input v-model="form.closes_time" type="time" :aria-label="__('Poll closes: time')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 					</div>
 				</template>
 
 				<template v-else>
 					<div class="flex flex-wrap items-center gap-2">
-						<input v-model="form.date" type="date" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
-						<input v-model="form.from" type="time" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+						<input v-model="form.date" type="date" :aria-label="__('Date')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+						<input v-model="form.from" type="time" :aria-label="__('Start time')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 						<span class="text-ink-gray-5">–</span>
-						<input v-model="form.to" type="time" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+						<input v-model="form.to" type="time" :aria-label="__('End time')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 					</div>
 					<div class="flex flex-wrap items-center gap-2 text-sm">
 						<span class="text-ink-gray-6">{{ __('Repeat') }}</span>
@@ -157,9 +157,9 @@
 						</select>
 						<template v-if="form.repeat">
 							<span class="text-ink-gray-6">{{ __('until') }}</span>
-							<input v-model="form.until" type="date" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+							<input v-model="form.until" type="date" :aria-label="__('Repeat until')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 							<span class="text-ink-gray-6">{{ __('or') }}</span>
-							<input v-model.number="form.count" type="number" min="2" max="52" class="w-20 rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+							<input v-model.number="form.count" type="number" :aria-label="__('Number of times')" min="2" max="52" class="w-20 rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 							<span class="text-ink-gray-6">{{ __('times') }}</span>
 						</template>
 					</div>
@@ -193,10 +193,10 @@
 	<Dialog v-model="showMove" :options="{ title: __('Move the meeting') }">
 		<template #body-content>
 			<div class="flex flex-wrap items-center gap-2">
-				<input v-model="move.date" type="date" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
-				<input v-model="move.from" type="time" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+				<input v-model="move.date" type="date" :aria-label="__('Date')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+				<input v-model="move.from" type="time" :aria-label="__('Start time')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 				<span class="text-ink-gray-5">–</span>
-				<input v-model="move.to" type="time" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
+				<input v-model="move.to" type="time" :aria-label="__('End time')" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm" />
 			</div>
 		</template>
 		<template #actions>

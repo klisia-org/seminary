@@ -2,6 +2,7 @@
 
 **Date:** 2026-11-22
 **Status:** Accepted 2026-11-22; implemented 2026-11-22
+**Amended by:** 102a (screen-reader journeys), 102b (themed colours, a sample for every route)
 **Delivers:** LMS-ACC-01 (Partial; Yes once the manual review in docs/accessibility/manual.yaml is done)
 **Related:** 061a (bar colours from WCAG luminance), 075 (`PageTabs`), 093a (public home page)
 

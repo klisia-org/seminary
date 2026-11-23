@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<label class="block mb-1" :class="labelClasses" v-if="label">
+		<label :for="inputId" class="block mb-1" :class="labelClasses" v-if="label">
 			{{ label }}
 			<span class="text-ink-red-3" v-if="required">*</span>
 		</label>
@@ -25,6 +25,7 @@
 						<template #target="{ togglePopover }">
 							<ComboboxInput
 								ref="search"
+								:id="inputId"
 								class="search-input form-input w-full focus-visible:!ring-0"
 								type="text"
 								:aria-label="label ? __('Search {0}').format(label) : __('Search')"
@@ -91,7 +92,7 @@ import {
 	ComboboxOption,
 } from '@headlessui/vue'
 import { createResource, Popover, Button } from 'frappe-ui'
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, useId } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import { X } from 'lucide-vue-next'
 
@@ -125,6 +126,7 @@ const props = defineProps({
 })
 
 const values = defineModel()
+const inputId = useId()
 
 const emails = ref([])
 const search = ref(null)

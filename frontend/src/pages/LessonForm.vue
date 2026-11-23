@@ -120,6 +120,7 @@
 							{{ __('Drag a block here from the panel, click one to add it, or type / in the line below.') }}
 						</p>
 					</div>
+					<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a drop target for dragged blocks only; keyboard users add the same blocks by activating them in the panel or typing / in the editor -->
 					<div ref="dropZone" class="relative rounded-lg transition-colors"
 						:class="{ 'lesson-dropzone--active bg-surface-blue-1': draggingTool }"
 						@dragover.capture="onDragOver" @dragleave="onDragLeave" @drop.capture="onDrop">

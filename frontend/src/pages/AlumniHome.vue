@@ -148,6 +148,7 @@
 				v-model="startName"
 				type="text"
 				:placeholder="__('What is it called?')"
+				:aria-label="__('What is it called?')"
 				@keyup.enter="submitStart"
 			/>
 			<p class="mt-3 text-xs text-ink-gray-5">

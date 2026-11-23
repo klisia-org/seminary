@@ -12,18 +12,21 @@
 					{{ __('Assessment: due {0}, cut-off {1}.').format(fmt(assessment?.due_date), fmt(assessment?.cutoff_date)) }}
 				</p>
 				<div class="grid gap-3 sm:grid-cols-2">
-					<div>
-						<label class="text-xs text-ink-gray-5">{{ __('Due date') }}</label>
+					<!-- eslint-disable-next-line vuejs-accessibility/label-has-for -- the label wraps the date picker, whose text input it names -->
+					<label class="block">
+						<span class="text-xs text-ink-gray-5">{{ __('Due date') }}</span>
 						<DateTimePicker v-model="form.due_date" variant="subtle" />
-					</div>
-					<div>
-						<label class="text-xs text-ink-gray-5">{{ __('Cut-off') }}</label>
+					</label>
+					<!-- eslint-disable-next-line vuejs-accessibility/label-has-for -- the label wraps the date picker, whose text input it names -->
+					<label class="block">
+						<span class="text-xs text-ink-gray-5">{{ __('Cut-off') }}</span>
 						<DateTimePicker v-model="form.cutoff_date" variant="subtle" />
-					</div>
-					<div v-if="dates.replies_due_date !== null && dates.replies_due_date !== undefined">
-						<label class="text-xs text-ink-gray-5">{{ __('Replies due') }}</label>
+					</label>
+					<!-- eslint-disable-next-line vuejs-accessibility/label-has-for -- the label wraps the date picker, whose text input it names -->
+					<label class="block" v-if="dates.replies_due_date !== null && dates.replies_due_date !== undefined">
+						<span class="text-xs text-ink-gray-5">{{ __('Replies due') }}</span>
 						<DateTimePicker v-model="form.replies_due_date" variant="subtle" />
-					</div>
+					</label>
 					<FormControl v-if="['Quiz', 'Exam'].includes(assessment?.type)" type="number"
 						v-model="form.extra_minutes" :label="__('Extra minutes')" />
 					<FormControl v-if="assessment?.type === 'Quiz'" type="number"

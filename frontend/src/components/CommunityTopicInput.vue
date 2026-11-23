@@ -1,5 +1,6 @@
 <template>
 	<div class="relative" @focusout="onFocusOut">
+		<!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -- a click on the box only moves focus to the input inside it, which the keyboard reaches directly -->
 		<div class="flex min-h-[2.5rem] flex-wrap items-center gap-1.5 rounded-lg border bg-surface-white px-2 py-1.5"
 			:class="open ? 'border-outline-gray-4' : 'border-outline-gray-2'"
 			@click="inputEl?.focus()">
@@ -14,6 +15,7 @@
 			<input ref="inputEl" v-model="query" type="text"
 				class="min-w-[6rem] flex-1 border-0 bg-transparent p-0.5 text-sm text-ink-gray-8 focus:outline-none focus:ring-0"
 				:placeholder="modelValue.length ? '' : __('e.g. grading')"
+				:aria-label="__('Topics')"
 				@focus="open = true"
 				@input="onInput"
 				@keydown="onKeydown" />
@@ -23,7 +25,7 @@
 			<li v-for="(o, i) in options" :key="o.key">
 				<button type="button" class="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm"
 					:class="i === active ? 'bg-surface-gray-2' : 'hover:bg-surface-gray-2'"
-					@mousedown.prevent="choose(o)" @mouseenter="active = i">
+					@mousedown.prevent="choose(o)" @mouseenter="active = i" @focus="active = i">
 					<span class="truncate text-ink-gray-8">{{ o.create ? __('Create "#{0}"').format(o.topic) : '#' + o.topic }}</span>
 					<span v-if="!o.create" class="ml-3 shrink-0 text-xs text-ink-gray-5">
 						{{ o.posts === 1 ? __('used in 1 post') : __('used in {0} posts').format(o.posts) }}

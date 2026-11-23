@@ -1,6 +1,6 @@
 <template>
 	<div class="border-2 rounded-md min-w-80">
-		<iframe v-if="course.data.video_link" :src="video_link" class="rounded-t-md min-h-56 w-full" />
+		<iframe v-if="course.data.video_link" :src="video_link" :title="__('Course video')" class="rounded-t-md min-h-56 w-full" />
 		<div class="p-5">
 			<div v-if="course.data.membership" class="space-y-2">
 				<router-link :to="{

@@ -5,7 +5,7 @@
 	Desk-configurable via Website Settings top bar (`top_bar_items`).
 	Rendered by base.html with the full page context (values=_context_dict).
 -#}
-<nav class="sem-navbar">
+<nav class="sem-navbar" aria-label="{{ _('Main') }}">
 	<div class="container">
 		<a class="sem-navbar__brand" href="{{ (home_page or '/') | abs_url }}">
 			{%- if branding and branding.website_logo -%}

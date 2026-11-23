@@ -2,6 +2,7 @@
 	<!-- The course tile's image, framed by a focus point and zoom (ADR 080).
 	     The same component draws the tile and the editor preview, so what the
 	     instructor frames is what the course list shows. -->
+	<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- the pointer handlers act only when editable, and then the frame has role application, tabindex and arrow-key handling -->
 	<div
 		ref="box"
 		class="relative overflow-hidden bg-surface-gray-2"

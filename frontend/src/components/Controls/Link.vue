@@ -1,11 +1,12 @@
 <template>
 	<div class="space-y-1.5">
-		<label class="block" :class="labelClasses" v-if="attrs.label">
+		<label :for="fieldId" class="block" :class="labelClasses" v-if="attrs.label">
 			{{ attrs.label }}
 			<span class="text-ink-red-3" v-if="attrs.required">*</span>
 		</label>
 		<Autocomplete
 			ref="autocomplete"
+			:id="fieldId"
 			:options="options.data"
 			v-model="value"
 			:size="attrs.size || 'sm'"
@@ -66,7 +67,7 @@ import Autocomplete from '@/components/Controls/Autocomplete.vue'
 import { watchDebounced } from '@vueuse/core'
 import { createResource, Button } from 'frappe-ui'
 import { Plus, X } from 'lucide-vue-next'
-import { useAttrs, computed, ref } from 'vue'
+import { useAttrs, computed, ref, useId } from 'vue'
 
 const props = defineProps({
 	doctype: {
@@ -89,6 +90,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'change'])
 const attrs = useAttrs()
+const fieldId = useId()
 const valuePropPassed = computed(() => 'value' in attrs)
 
 const value = computed({

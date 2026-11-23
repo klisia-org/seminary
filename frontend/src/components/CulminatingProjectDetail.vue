@@ -53,7 +53,7 @@
             class="text-ink-gray-4 hover:text-ink-red-3"><X class="h-3 w-3" /></button>
         </span>
         <a v-if="canManageCommittee && committeeEmails" :href="`mailto:${committeeEmails}`"
-          :title="__('Email all committee members')" class="text-ink-gray-4 hover:text-ink-blue-link">
+          :title="__('Email all committee members')" :aria-label="__('Email all committee members')" class="text-ink-gray-4 hover:text-ink-blue-link">
           <Mail class="h-4 w-4" />
         </a>
         <Button v-if="canManageCommittee" size="sm" variant="ghost" @click="openAddMember">
@@ -66,7 +66,7 @@
       <div v-if="!cp.data.viewer.can_submit && cp.data.student_name" class="flex items-center gap-2 text-sm">
         <span class="text-ink-gray-5">{{ __('Student') }}:</span>
         <span class="text-ink-gray-8 font-medium">{{ cp.data.student_name }}</span>
-        <a v-if="cp.data.student_email" :href="`mailto:${cp.data.student_email}`" :title="__('Email student')"
+        <a v-if="cp.data.student_email" :href="`mailto:${cp.data.student_email}`" :title="__('Email student')" :aria-label="__('Email student')"
           class="text-ink-gray-4 hover:text-ink-blue-link"><Mail class="h-4 w-4" /></a>
       </div>
 
@@ -85,20 +85,24 @@
         <Disclosure v-for="m in cp.data.milestones" :key="m.row" v-slot="{ open }"
           :defaultOpen="m.row === cp.data.active_milestone" as="div"
           class="border border-outline-gray-2 rounded-md mb-2 bg-surface-white">
-          <DisclosureButton class="flex w-full items-center gap-2 p-3 text-left">
-            <ChevronRight class="h-4 w-4 text-ink-gray-6 shrink-0" :class="{ 'rotate-90': open }" />
-            <span class="font-medium text-ink-gray-8">
-              {{ m.milestone_name }}<span v-if="m.mandatory" class="text-ink-red-3 ml-0.5">*</span>
-            </span>
-            <span v-if="m.description" @click.stop="openInfo(m)" :title="__('Instructions')"
+          <!-- The Instructions button sits beside the toggle, not inside it: a button can't hold another. -->
+          <div class="flex w-full items-center gap-2 p-3">
+            <DisclosureButton class="flex items-center gap-2 text-left">
+              <ChevronRight class="h-4 w-4 text-ink-gray-6 shrink-0" :class="{ 'rotate-90': open }" />
+              <span class="font-medium text-ink-gray-8">
+                {{ m.milestone_name }}<span v-if="m.mandatory" class="text-ink-red-3 ml-0.5">*</span>
+              </span>
+            </DisclosureButton>
+            <button v-if="m.description" type="button" @click="openInfo(m)" :title="__('Instructions')"
+              :aria-label="__('Instructions')"
               class="text-ink-gray-4 hover:text-ink-blue-link cursor-pointer shrink-0">
               <Info class="h-4 w-4" />
-            </span>
+            </button>
             <Badge class="ml-auto shrink-0" :theme="statusTheme(m.status)" :label="m.status" />
             <span class="text-xs shrink-0" :class="isOverdue(m) ? 'text-ink-red-3 font-semibold' : 'text-ink-gray-4'">
               {{ m.due_date || '—' }}
             </span>
-          </DisclosureButton>
+          </div>
           <DisclosurePanel class="px-4 pb-4 pt-1 space-y-3 border-t border-outline-gray-1">
             <!-- Sign-off requirements -->
             <div v-if="m.required_roles.length">

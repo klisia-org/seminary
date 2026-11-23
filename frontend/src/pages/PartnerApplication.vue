@@ -63,9 +63,16 @@
 			</ul>
 			<div class="rounded-lg border border-outline-gray-2 bg-surface-gray-1 p-3">
 				<div class="mb-1 text-sm font-medium text-ink-gray-7">{{ app.data.my_review ? __('Your review') : __('Add your review') }}</div>
-				<div class="flex items-center gap-1">
-					<button v-for="n in 5" :key="n" type="button" @click="myRating = n / 5">
-						<Star class="size-5" :class="myRating * 5 >= n ? 'fill-ink-amber-3 text-ink-amber-3' : 'text-ink-gray-4'" />
+				<div class="flex items-center gap-1" role="group" :aria-label="__('Rating')">
+					<button
+						v-for="n in 5"
+						:key="n"
+						type="button"
+						:aria-label="n === 1 ? __('1 star') : __('{0} stars', [n])"
+						:aria-pressed="Math.round(myRating * 5) === n"
+						@click="myRating = n / 5"
+					>
+						<Star class="size-5" aria-hidden="true" :class="myRating * 5 >= n ? 'fill-ink-amber-3 text-ink-amber-3' : 'text-ink-gray-4'" />
 					</button>
 				</div>
 				<FormControl type="textarea" class="mt-2" :label="__('Notes')" v-model="myNotes" :rows="3" />

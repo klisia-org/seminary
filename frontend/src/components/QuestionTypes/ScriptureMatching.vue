@@ -21,7 +21,12 @@
                         'ring-2 ring-outline-blue-1': selectedRefIdx === element.idx,
                         'cursor-not-allowed': readOnly,
                     }"
+                    role="button"
+                    tabindex="0"
+                    :aria-pressed="selectedRefIdx === element.idx"
                     @click="onClickRef(element.idx)"
+                    @keydown.enter.prevent="onClickRef(element.idx)"
+                    @keydown.space.prevent="onClickRef(element.idx)"
                 >
                     {{ element.label }}
                 </div>
@@ -40,7 +45,11 @@
                 v-for="(slot, slotIdx) in slots"
                 :key="slotIdx"
                 class="border rounded-md p-3 bg-surface-gray-2"
+                role="button"
+                tabindex="0"
                 @click="onClickSlot(slotIdx)"
+                @keydown.enter.prevent="onClickSlot(slotIdx)"
+                @keydown.space.prevent="onClickSlot(slotIdx)"
             >
                 <div class="text-sm text-ink-gray-9 leading-snug mb-2">
                     {{ shuffledTexts[slotIdx]?.text }}

@@ -61,6 +61,7 @@ declare module 'vue' {
     FeedbackStatusPanel: typeof import('./src/components/FeedbackStatusPanel.vue')['default']
     FolderBlock: typeof import('./src/components/FolderBlock.vue')['default']
     FolderPlugin: typeof import('./src/components/FolderPlugin.vue')['default']
+    GuestLayout: typeof import('./src/components/GuestLayout.vue')['default']
     HelpWidget: typeof import('./src/components/HelpWidget.vue')['default']
     ImageViewer: typeof import('./src/components/AssignmentViewers/ImageViewer.vue')['default']
     ImprovementActionsPanel: typeof import('./src/components/ImprovementActionsPanel.vue')['default']

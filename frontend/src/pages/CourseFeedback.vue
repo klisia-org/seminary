@@ -65,13 +65,14 @@
 				</h3>
 
 				<div v-for="q in block.questions" :key="q.name" class="mb-5">
-					<label class="block text-sm font-medium text-ink-gray-8">
+					<label :id="fieldId(q) + '-label'" :for="choiceTypes.includes(q.item_type) ? undefined : fieldId(q)"
+						class="block text-sm font-medium text-ink-gray-8">
 						{{ q.prompt }}
 						<span v-if="q.is_required" class="text-ink-red-4">*</span>
 					</label>
 					<p v-if="q.help_text" class="mt-0.5 text-xs text-ink-gray-5">{{ q.help_text }}</p>
 
-					<div v-if="['Likert', 'NPS'].includes(q.item_type)" class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+					<div v-if="['Likert', 'NPS'].includes(q.item_type)" role="radiogroup" :aria-labelledby="fieldId(q) + '-label'" class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
 						<label v-for="p in q.scale" :key="p.value"
 							class="flex items-center gap-1.5 text-sm text-ink-gray-7">
 							<input type="radio" :name="q.name" :value="p.value" v-model="answers[q.name]" />
@@ -79,7 +80,7 @@
 						</label>
 					</div>
 
-					<div v-else-if="q.item_type === 'Yes-No'" class="mt-2 flex gap-4">
+					<div v-else-if="q.item_type === 'Yes-No'" role="radiogroup" :aria-labelledby="fieldId(q) + '-label'" class="mt-2 flex gap-4">
 						<label class="flex items-center gap-1.5 text-sm text-ink-gray-7">
 							<input type="radio" :name="q.name" value="1" v-model="answers[q.name]" />
 							{{ __('Yes') }}
@@ -90,7 +91,7 @@
 						</label>
 					</div>
 
-					<div v-else-if="q.item_type === 'Single Choice'" class="mt-2 space-y-1">
+					<div v-else-if="q.item_type === 'Single Choice'" role="radiogroup" :aria-labelledby="fieldId(q) + '-label'" class="mt-2 space-y-1">
 						<label v-for="o in q.options" :key="o.option_code"
 							class="flex items-center gap-1.5 text-sm text-ink-gray-7">
 							<input type="radio" :name="q.name" :value="o.option_code" v-model="answers[q.name]" />
@@ -98,7 +99,7 @@
 						</label>
 					</div>
 
-					<div v-else-if="q.item_type === 'Multi Choice'" class="mt-2 space-y-1">
+					<div v-else-if="q.item_type === 'Multi Choice'" role="group" :aria-labelledby="fieldId(q) + '-label'" class="mt-2 space-y-1">
 						<label v-for="o in q.options" :key="o.option_code"
 							class="flex items-center gap-1.5 text-sm text-ink-gray-7">
 							<input type="checkbox" :value="o.option_code" v-model="multi[q.name]" />
@@ -106,11 +107,11 @@
 						</label>
 					</div>
 
-					<input v-else-if="['Numeric', 'Rating'].includes(q.item_type)" type="number"
+					<input v-else-if="['Numeric', 'Rating'].includes(q.item_type)" :id="fieldId(q)" type="number"
 						class="mt-2 w-32 rounded border border-outline-gray-2 px-2 py-1 text-sm"
 						:min="q.min_value" :max="q.max_value" v-model="answers[q.name]" />
 
-					<textarea v-else rows="3" v-model="answers[q.name]"
+					<textarea v-else :id="fieldId(q)" rows="3" v-model="answers[q.name]"
 						class="mt-2 w-full rounded border border-outline-gray-2 px-2 py-1 text-sm" />
 				</div>
 			</div>
@@ -144,6 +145,11 @@ const user = inject('$user')
 const hasAretenic = computed(() => !!user?.data?.has_aretenic)
 
 const answers = reactive({})
+
+// Questions answered by one field get a label tied to it; choice questions
+// name their group with the same text instead.
+const choiceTypes = ['Likert', 'NPS', 'Yes-No', 'Single Choice', 'Multi Choice']
+const fieldId = (q) => 'feedback-' + String(q.name).replace(/[^\w-]/g, '-')
 const multi = reactive({})
 const submitted = ref(false)
 const error = ref('')

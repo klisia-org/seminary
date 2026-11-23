@@ -1,4 +1,5 @@
 import os
+import re
 import socket
 from typing import Optional
 from urllib.parse import urlparse
@@ -10,10 +11,20 @@ from seminary.seminary import portal_theme
 
 DEV_SERVER_ENV_KEY = "SEMINARY_DEV_SERVER_URL"
 
+#: Portal routes a signed-out visitor may open, when the link carries a token. The recommender
+#: form is reached from an emailed link, and every request the page makes checks the token
+#: (seminary.seminary.recommender); without one, a guest goes to the sign-in page as before.
+GUEST_ROUTES = (re.compile(r"^/seminary/recommender-form/[^/]+/?$"),)
+
+
+def _guest_may_open():
+	path = frappe.request.path if getattr(frappe, "request", None) else ""
+	return bool(frappe.form_dict.get("token")) and any(r.match(path) for r in GUEST_ROUTES)
+
 
 def get_context(context):
 	"""Get context for seminary frontend page."""
-	if frappe.session.user == "Guest":
+	if frappe.session.user == "Guest" and not _guest_may_open():
 		frappe.local.flags.redirect_location = "/login?redirect-to=/seminary/"
 		raise frappe.Redirect
 

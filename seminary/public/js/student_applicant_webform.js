@@ -267,3 +267,34 @@ frappe.ready(function () {
         timer = setTimeout(nameControls, 200);
     }).observe(document.body, { childList: true, subtree: true });
 });
+
+// Landmarks told apart (WCAG 1.3.1): the web form is one form, named by its title.
+// Frappe lays out each column of fields in a <form> of its own; those are layout, not
+// further forms, so they leave the landmark list. Each date field's calendar has a
+// <nav> for its month arrows; it is named after its field.
+frappe.ready(function () {
+    if (!window.frappe || !frappe.web_form) return;
+    function nameLandmarks() {
+        var title = frappe.web_form_doc && frappe.web_form_doc.title;
+        var main = document.querySelector("form.web-form");
+        if (main && title && !main.getAttribute("aria-label")) main.setAttribute("aria-label", __(title));
+        document.querySelectorAll("form.web-form form:not([role])").forEach(function (column) {
+            column.setAttribute("role", "none");
+        });
+        var fields = frappe.web_form.fields_dict || {};
+        Object.keys(fields).forEach(function (key) {
+            var field = fields[key];
+            var label = field && field.df && field.df.label;
+            var picker = field && field.datepicker && field.datepicker.$datepicker;
+            if (!label || !picker) return;
+            picker.find("nav").attr("aria-label", __("{0} calendar", [__(label)]));
+        });
+    }
+    nameLandmarks();
+    // Fields drawn later (a section shown, a page turned) are handled on the next change.
+    var timer = null;
+    new MutationObserver(function () {
+        clearTimeout(timer);
+        timer = setTimeout(nameLandmarks, 200);
+    }).observe(document.body, { childList: true, subtree: true });
+});

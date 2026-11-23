@@ -7,13 +7,13 @@
 						{{ __('Subject') }}
 						<span class="text-ink-red-3">*</span>
 					</div>
-					<Input type="text" v-model="announcement.subject" />
+					<Input type="text" v-model="announcement.subject" :aria-label="__('Subject')" />
 				</div>
 				<div class="">
 					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Reply To') }}
 					</div>
-					<Input type="text" v-model="announcement.replyTo" />
+					<Input type="text" v-model="announcement.replyTo" :aria-label="__('Reply To')" />
 				</div>
 				<div class="mb-4">
 					<div class="mb-1.5 text-sm text-ink-gray-5">

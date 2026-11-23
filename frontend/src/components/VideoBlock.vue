@@ -1,5 +1,6 @@
 <template>
 	<div ref="videoContainer" class="video-block group relative">
+		<!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -- a click on the video is a mouse shortcut for the Play button below, which the keyboard reaches -->
 		<video
 			@timeupdate="updateTime"
 			@ended="videoEnded"
@@ -22,7 +23,7 @@
 			/>
 		</video>
 		<div
-			class="flex items-center space-x-2 bg-surface-gray-3 rounded-md p-0.5 absolute bottom-3 w-[98%] left-0 right-0 mx-auto invisible group-hover:visible group-focus-within:visible"
+			class="flex items-center space-x-2 bg-surface-gray-3 rounded-md p-0.5 absolute bottom-3 w-[98%] left-0 right-0 mx-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
 		>
 			<!-- The click is on the button, not its icon, so Enter and Space work (102 §9). -->
 			<Button :aria-label="playing ? __('Pause') : __('Play')" variant="ghost" @click="playing ? pauseVideo() : playVideo()">

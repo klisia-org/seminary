@@ -18,6 +18,7 @@
 				v-model="newText"
 				rows="3"
 				:placeholder="pendingAnchor ? __('Comment on this spot…') : __('Add a general comment…')"
+				:aria-label="pendingAnchor ? __('Comment on this spot…') : __('Add a general comment…')"
 				class="w-full border rounded-md p-2 text-sm focus:outline-none focus:ring focus:ring-outline-gray-modals"
 			></textarea>
 			<div class="flex justify-end">
@@ -38,6 +39,7 @@
 			<div v-if="!comments.length" class="p-4 text-sm text-ink-gray-5 text-center">
 				{{ __('No comments yet.') }}
 			</div>
+			<!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -- the row is a larger mouse target for the button in its header, which the keyboard reaches -->
 			<div
 				v-for="c in comments"
 				:key="c.name"
@@ -51,11 +53,14 @@
 				@click="$emit('jump', c)"
 				@mouseenter="$emit('active-changed', c.name)"
 				@mouseleave="$emit('active-changed', null)"
+				@focusin="$emit('active-changed', c.name)"
+				@focusout="$emit('active-changed', null)"
 			>
-				<div class="flex items-center justify-between mb-1">
-					<div class="font-medium text-ink-gray-7 truncate">{{ c.author_name }}</div>
-					<div class="text-xs text-ink-gray-4 shrink-0 ml-2">{{ formatTime(c.creation) }}</div>
-				</div>
+				<button type="button" class="flex w-full items-center justify-between mb-1 text-left"
+					@click.stop="$emit('jump', c)">
+					<span class="font-medium text-ink-gray-7 truncate">{{ c.author_name }}</span>
+					<span class="text-xs text-ink-gray-4 shrink-0 ml-2">{{ formatTime(c.creation) }}</span>
+				</button>
 				<div v-if="c.anchor_type !== 'General'" class="text-xs text-ink-blue-2 mb-1">
 					📍 {{ anchorLabel(c) }}
 				</div>
@@ -67,6 +72,7 @@
 				<div v-else @click.stop>
 					<textarea
 						v-model="editText"
+						:aria-label="__('Edit comment')"
 						rows="3"
 						class="w-full border rounded-md p-2 text-sm"
 					></textarea>

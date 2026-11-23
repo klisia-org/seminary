@@ -610,7 +610,8 @@ def _slot(name, label, escaped=False):
 
 def _signed_line(name, when, image=None):
 	if image and _PNG_DATA_URL.match(image):
-		top = f"<img src='{image}' style='display:block;height:60px'>"
+		alt = escape_html(_("Signature of {0}").format(name or ""))
+		top = f"<img src='{image}' alt='{alt}' style='display:block;height:60px'>"
 	else:
 		top = "<span style='display:block;height:60px'></span>"
 	caption = "{0}<br>{1}".format(
@@ -650,13 +651,15 @@ def _letterhead():
 	name = frappe.db.get_single_value("Seminary Settings", "letterhead")
 	if not name:
 		return None
-	return frappe.db.get_value("Letter Head", name, ["content", "footer"], as_dict=True)
+	return frappe.db.get_value("Letter Head", name, ["name", "content", "footer"], as_dict=True)
 
 
 def _evidence_html(rows):
+	# An empty cell is left out of a tagged PDF's table, which then has a short row (104 §5):
+	# a missing value prints as a dash.
 	cells = "".join(
-		f"<tr><th style='text-align:left;padding:2px 8px 2px 0'>{escape_html(k)}</th>"
-		f"<td style='padding:2px 0'>{escape_html(str(v or ''))}</td></tr>"
+		f"<tr><th scope='row' style='text-align:left;padding:2px 8px 2px 0'>{escape_html(k)}</th>"
+		f"<td style='padding:2px 0'>{escape_html(str(v)) if v not in (None, '') else '–'}</td></tr>"
 		for k, v in rows
 	)
 	return f"<table style='font-size:9pt;border-collapse:collapse'>{cells}</table>"
@@ -671,12 +674,14 @@ def _pdf(title, html, evidence_blocks):
 
 	evidence = "".join(
 		f"<div style='margin-top:16px;border-top:1px solid #999;padding-top:8px'>"
-		f"<p style='font-size:9pt;margin:0 0 4px'><b>{escape_html(heading)}</b></p>"
+		f"<h2 style='font-size:9pt;margin:0 0 4px'>{escape_html(heading)}</h2>"
 		f"{_evidence_html(rows)}</div>"
 		for heading, rows in evidence_blocks
 	)
-	page = f"<h2>{escape_html(title)}</h2>{html}{evidence}"
-	return get_pdf(comms.pdf_html(_wrap_letterhead(_letterhead(), page)))
+	# The agreement's name is the document's one top heading, printed at the size it
+	# always had (ADR 104 §5).
+	page = f"<h1 style='font-size:1.5em;margin:0.83em 0'>{escape_html(title)}</h1>{html}{evidence}"
+	return get_pdf(comms.pdf_html(_wrap_letterhead(_letterhead(), page)), title=title)
 
 
 def _save_pdf(content, doc, fieldname, suffix):

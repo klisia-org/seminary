@@ -37,35 +37,35 @@
 
 					<!-- Editable: Mobile -->
 					<div>
-						<label class="text-sm text-ink-gray-6">{{ __('Mobile Number') }}</label>
-						<input v-model="editMobile" type="text"
+						<label :for="`${uid}-mobile-number`" class="text-sm text-ink-gray-6">{{ __('Mobile Number') }}</label>
+						<input :id="`${uid}-mobile-number`" v-model="editMobile" type="text"
 							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 					</div>
 
 					<!-- Editable: Address -->
-					<div class="flex flex-col gap-2">
-						<label class="text-sm text-ink-gray-6">{{ __('Address') }}</label>
-						<input v-model="editAddr.address_line_1" type="text" :placeholder="__('Address Line 1')"
+					<div class="flex flex-col gap-2" role="group" :aria-labelledby="`${uid}-address`">
+						<span :id="`${uid}-address`" class="text-sm text-ink-gray-6">{{ __('Address') }}</span>
+						<input v-model="editAddr.address_line_1" type="text" :placeholder="__('Address Line 1')" :aria-label="__('Address Line 1')"
 							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
-						<input v-model="editAddr.address_line_2" type="text" :placeholder="__('Address Line 2')"
+						<input v-model="editAddr.address_line_2" type="text" :placeholder="__('Address Line 2')" :aria-label="__('Address Line 2')"
 							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						<div class="grid grid-cols-3 gap-2">
-							<input v-model="editAddr.city" type="text" :placeholder="__('City')"
+							<input v-model="editAddr.city" type="text" :placeholder="__('City')" :aria-label="__('City')"
 								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
-							<input v-model="editAddr.state" type="text" :placeholder="__('State')"
+							<input v-model="editAddr.state" type="text" :placeholder="__('State')" :aria-label="__('State')"
 								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
-							<input v-model="editAddr.pincode" type="text" :placeholder="__('Pincode')"
+							<input v-model="editAddr.pincode" type="text" :placeholder="__('Pincode')" :aria-label="__('Pincode')"
 								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						</div>
-						<input v-model="editAddr.country" type="text" :placeholder="__('Country')"
+						<input v-model="editAddr.country" type="text" :placeholder="__('Country')" :aria-label="__('Country')"
 							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 					</div>
 
 					<!-- Editable: Tax ID. Label, placeholder and mask come from
 					     the country's rule, so this markup names no country. -->
 					<div class="flex flex-col gap-1">
-						<label class="text-sm text-ink-gray-6">{{ __(taxId.label.value) }}</label>
-						<input v-model="editTaxId" type="text" :placeholder="taxId.placeholder.value"
+						<label :for="`${uid}-tax-id`" class="text-sm text-ink-gray-6">{{ __(taxId.label.value) }}</label>
+						<input :id="`${uid}-tax-id`" v-model="editTaxId" type="text" :placeholder="taxId.placeholder.value"
 							@input="onTaxIdInput" @blur="taxId.validate(editTaxId)"
 							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						<p v-if="taxId.error.value" class="text-xs text-ink-red-3">
@@ -78,8 +78,8 @@
 
 					<!-- Appearance preference -->
 					<div>
-						<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
-						<div class="mt-1 flex gap-2 px-1">
+						<span :id="`${uid}-appearance-1`" class="text-sm text-ink-gray-6">{{ __('Appearance') }}</span>
+						<div class="mt-1 flex gap-2 px-1" role="group" :aria-labelledby="`${uid}-appearance-1`">
 							<button type="button" @click="setTheme('light')"
 								:class="theme === 'light' ? 'ring-2 ring-outline-blue-1' : ''"
 								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
@@ -95,8 +95,8 @@
 
 					<!-- Preferred Bible version -->
 						<div v-if="bibles.length" class="mb-3">
-							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
-							<select :aria-label="__('Preferred Bible')" v-model="selectedBible"
+							<label :for="`${uid}-preferred-bible`" class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
+							<select :id="`${uid}-preferred-bible`" :aria-label="__('Preferred Bible')" v-model="selectedBible"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
@@ -104,8 +104,8 @@
 						</div>
 						<!-- Language preference -->
 					<div>
-						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
-						<select :aria-label="__('Language')" v-model="selectedLanguage"
+						<label :for="`${uid}-language`" class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
+						<select :id="`${uid}-language`" :aria-label="__('Language')" v-model="selectedLanguage"
 							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 							<option value="">{{ __('Default') }}</option>
 							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
@@ -172,17 +172,17 @@
 					</div>
 					<div class="flex flex-col gap-3">
 						<div>
-							<label class="text-sm text-ink-gray-6">{{ __('Name') }}</label>
-							<input v-model="editName" type="text"
+							<label :for="`${uid}-name`" class="text-sm text-ink-gray-6">{{ __('Name') }}</label>
+							<input :id="`${uid}-name`" v-model="editName" type="text"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						</div>
 						<div>
-							<label class="text-sm text-ink-gray-6">{{ __('Short Bio') }}</label>
-							<input v-model="editShortbio" type="text"
+							<label :for="`${uid}-short-bio`" class="text-sm text-ink-gray-6">{{ __('Short Bio') }}</label>
+							<input :id="`${uid}-short-bio`" v-model="editShortbio" type="text"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						</div>
 						<div>
-							<label class="text-sm text-ink-gray-6 mb-1 block">{{ __('Bio') }}</label>
+							<span class="text-sm text-ink-gray-6 mb-1 block">{{ __('Bio') }}</span>
 							<LightEditor
 								id="instructor-bio"
 								:content="editBio"
@@ -192,8 +192,8 @@
 						</div>
 						<!-- Appearance preference -->
 						<div>
-							<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
-							<div class="mt-1 flex gap-2 px-1">
+							<span :id="`${uid}-appearance-2`" class="text-sm text-ink-gray-6">{{ __('Appearance') }}</span>
+							<div class="mt-1 flex gap-2 px-1" role="group" :aria-labelledby="`${uid}-appearance-2`">
 								<button type="button" @click="setTheme('light')"
 									:class="theme === 'light' ? 'ring-2 ring-outline-blue-1' : ''"
 									class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
@@ -208,8 +208,8 @@
 						</div>
 						<!-- Preferred Bible version -->
 						<div v-if="bibles.length" class="mb-3">
-							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
-							<select :aria-label="__('Preferred Bible')" v-model="selectedBible"
+							<label :for="`${uid}-preferred-bible-2`" class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
+							<select :id="`${uid}-preferred-bible-2`" :aria-label="__('Preferred Bible')" v-model="selectedBible"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
@@ -217,8 +217,8 @@
 						</div>
 						<!-- Language preference -->
 						<div>
-							<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
-							<select :aria-label="__('Language')" v-model="selectedLanguage"
+							<label :for="`${uid}-language-2`" class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
+							<select :id="`${uid}-language-2`" :aria-label="__('Language')" v-model="selectedLanguage"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
@@ -233,18 +233,18 @@
 						<div class="border-t border-outline-gray-1 pt-3 mt-1">
 							<p class="text-sm font-semibold text-ink-gray-7 mb-2">{{ __('Communication Preferences') }}</p>
 							<div>
-								<label class="text-sm text-ink-gray-6">{{ __('E-mail for student contact') }}</label>
-								<input v-model="editProfEmail" type="email"
+								<label :for="`${uid}-e-mail-for-student-conta`" class="text-sm text-ink-gray-6">{{ __('E-mail for student contact') }}</label>
+								<input :id="`${uid}-e-mail-for-student-conta`" v-model="editProfEmail" type="email"
 									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 							</div>
 							<div class="mt-2">
-								<label class="text-sm text-ink-gray-6">{{ __('Phone for messaging') }}</label>
-								<input v-model="editPhoneMessage" type="tel"
+								<label :for="`${uid}-phone-for-messaging`" class="text-sm text-ink-gray-6">{{ __('Phone for messaging') }}</label>
+								<input :id="`${uid}-phone-for-messaging`" v-model="editPhoneMessage" type="tel"
 									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 							</div>
 							<div class="mt-2">
-								<label class="text-sm text-ink-gray-6">{{ __('WhatsApp number') }}</label>
-								<input v-model="editWhatsapp" type="tel" placeholder="+15551234567"
+								<label :for="`${uid}-whatsapp-number`" class="text-sm text-ink-gray-6">{{ __('WhatsApp number') }}</label>
+								<input :id="`${uid}-whatsapp-number`" v-model="editWhatsapp" type="tel" placeholder="+15551234567"
 									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 								<p class="mt-1 text-xs text-ink-gray-4">
 									{{ __('Shown as a WhatsApp contact icon. Other channels (e.g. Telegram) are managed on your Communication Preferences page.') }}
@@ -276,8 +276,8 @@
 					</div>
 					<!-- Appearance preference -->
 					<div>
-						<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
-						<div class="mt-1 flex gap-2 px-1">
+						<span :id="`${uid}-appearance-3`" class="text-sm text-ink-gray-6">{{ __('Appearance') }}</span>
+						<div class="mt-1 flex gap-2 px-1" role="group" :aria-labelledby="`${uid}-appearance-3`">
 							<button type="button" @click="setTheme('light')"
 								:class="theme === 'light' ? 'ring-2 ring-outline-blue-1' : ''"
 								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
@@ -292,8 +292,8 @@
 					</div>
 					<!-- Preferred Bible version -->
 						<div v-if="bibles.length" class="mb-3">
-							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
-							<select :aria-label="__('Preferred Bible')" v-model="selectedBible"
+							<label :for="`${uid}-preferred-bible-3`" class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
+							<select :id="`${uid}-preferred-bible-3`" :aria-label="__('Preferred Bible')" v-model="selectedBible"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
@@ -301,8 +301,8 @@
 						</div>
 						<!-- Language preference -->
 					<div>
-						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
-						<select :aria-label="__('Language')" v-model="selectedLanguage"
+						<label :for="`${uid}-language-3`" class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
+						<select :id="`${uid}-language-3`" :aria-label="__('Language')" v-model="selectedLanguage"
 							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 							<option value="">{{ __('Default') }}</option>
 							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
@@ -322,7 +322,7 @@
 
 <script setup>
 import { Dialog, Avatar, FeatherIcon, FileUploader, createResource, toast } from 'frappe-ui'
-import { ref, computed, watch, watchEffect } from 'vue'
+import { ref, computed, watch, watchEffect, useId } from 'vue'
 import { validateFileSize } from '@/utils'
 import { usersStore } from '../stores/user'
 import LightEditor from '@/components/LightEditor.vue'
@@ -335,6 +335,7 @@ const { theme, setTheme } = useTheme()
 const { userResource } = usersStore()
 
 const showProfileDialog = defineModel({ default: false })
+const uid = useId()
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 const isStudent = ref(false)

@@ -1,11 +1,11 @@
 <template>
 	<div v-if="youtube">
-		<iframe class="youtube-video" :src="getYouTubeVideoSource(youtube.split('/').pop())" width="100%" height="400"
+		<iframe class="youtube-video" :src="getYouTubeVideoSource(youtube.split('/').pop())" :title="__('Lesson video')" width="100%" height="400"
 			frameborder="0" allowfullscreen></iframe>
 	</div>
 	<div v-for="block in content?.split('\n\n')">
 		<div v-if="block.includes('{{ YouTubeVideo')">
-			<iframe class="youtube-video" :src="getYouTubeVideoSource(block)" width="100%" height="400" frameborder="0"
+			<iframe class="youtube-video" :src="getYouTubeVideoSource(block)" :title="__('Video')" width="100%" height="400" frameborder="0"
 				allowfullscreen></iframe>
 		</div>
 
@@ -18,15 +18,16 @@
 			</video>
 		</div>
 		<div v-else-if="block.includes('{{ PDF')">
-			<iframe :src="getPDFSource(block)" width="100%" height="700px" frameborder="0" allowfullscreen></iframe>
+			<iframe :src="getPDFSource(block)" :title="__('PDF document')" width="100%" height="700px" frameborder="0" allowfullscreen></iframe>
 		</div>
 		<div v-else-if="block.includes('{{ Audio')">
+			<!-- eslint-disable-next-line vuejs-accessibility/media-has-caption -- audio-only: what it needs is a transcript in the lesson text, and an audio element shows no caption track -->
 			<audio width="100%" controls controlsList="nodownload">
 				<source :src="getId(block)" type="audio/mp3" />
 			</audio>
 		</div>
 		<div v-else-if="block.includes('{{ Embed')">
-			<iframe width="100%" height="400" :src="getId(block)" frameborder="0" allowfullscreen>
+			<iframe width="100%" height="400" :src="getId(block)" :title="__('Embedded content')" frameborder="0" allowfullscreen>
 			</iframe>
 		</div>
 		<SafeHtml v-else :html="markdown.render(block)" />

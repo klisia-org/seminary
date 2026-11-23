@@ -33,7 +33,7 @@
     </div>
 
     <div v-if="folderAction === 'create'" class="mt-4 space-y-3">
-      <input type="text" v-model="newFolderName" :placeholder="__('Enter folder name')" />
+      <input type="text" v-model="newFolderName" :placeholder="__('Enter folder name')" :aria-label="__('Enter folder name')" />
       <FormControl
         type="select"
         v-model="scope"
@@ -75,7 +75,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <input type="text" v-model="newSubfolderName" :placeholder="__('New sub-folder name')"
+        <input type="text" v-model="newSubfolderName" :placeholder="__('New sub-folder name')" :aria-label="__('New sub-folder name')"
           class="flex-1 rounded border border-outline-gray-3 px-3 py-2 text-sm focus:border-outline-blue-1 focus:outline-none" />
         <Button size="sm" @click="createSubfolder">
           {{ __('Create Sub-folder') }}
@@ -149,12 +149,13 @@
         class="rounded-md border-2 border-dashed border-outline-gray-3 p-6 text-center text-sm transition-colors duration-200 hover:border-outline-gray-4"
         :class="{ 'bg-surface-blue-1 border-outline-blue-1 text-ink-blue-2': isDragActive }" @dragenter.prevent.stop="onDragEnter"
         @dragover.prevent.stop="onDragOver" @dragleave.prevent.stop="onDragLeave" @drop.prevent.stop="onDrop"
-        @click="triggerFileSelect">
+        @click="triggerFileSelect" role="button" tabindex="0"
+        @keydown.enter.prevent="triggerFileSelect" @keydown.space.prevent="triggerFileSelect">
         <p class="font-medium">{{ __('Drop files here or click to upload') }}</p>
         <p class="mt-1 text-ink-gray-6">
           {{ __('Files will be added to ') }} {{ currentFolderName }}
         </p>
-        <input ref="fileInputRef" type="file" class="hidden" multiple @change="uploadFiles" />
+        <input ref="fileInputRef" type="file" class="hidden" multiple :aria-label="__('Upload files')" @change="uploadFiles" />
       </div>
     </div>
   </div>

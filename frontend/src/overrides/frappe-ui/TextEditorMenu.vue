@@ -2,7 +2,7 @@
   frappe-ui 0.1.261's TextEditor toolbar (src/components/TextEditor/Menu.vue) with names
   on its buttons (decision 102 §9, WCAG 4.1.2): the grouped heading and list buttons show
   only an icon and had no name, and no button had type="button", so one inside a form
-  submitted it. vite.config.js swaps this file in for frappe-ui's own; keep it in step
+  submitted it. frappe-ui-overrides.js swaps this file in for frappe-ui's own; keep it in step
   with that file if frappe-ui is ever upgraded.
 -->
 <template>

@@ -62,7 +62,7 @@
 							:class="s.is_today ? 'border-outline-gray-4 bg-surface-gray-1' : 'border-outline-gray-1'">
 							<div class="flex flex-wrap items-center gap-2">
 								<input v-if="run.is_member && run.status !== 'Cancelled'" type="checkbox" class="rounded"
-									:checked="s.read" :title="s.read ? __('Mark as unread') : __('Mark as read')"
+									:checked="s.read" :aria-label="`${__('Step {0}').format(s.step)} ${s.label}`" :title="s.read ? __('Mark as unread') : __('Mark as read')"
 									@change="toggleRead(run, s, $event.target.checked)" />
 								<span class="w-14 shrink-0 text-xs text-ink-gray-5">{{ __('Step {0}').format(s.step) }}</span>
 								<span class="text-sm font-medium" :class="s.read ? 'text-ink-gray-5 line-through' : 'text-ink-gray-9'">{{ s.label }}</span>

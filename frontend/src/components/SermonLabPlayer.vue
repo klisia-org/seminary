@@ -8,7 +8,7 @@
 			<span class="whitespace-nowrap rounded bg-surface-gray-2 px-2 py-1 text-xs text-ink-gray-7">
 				📍 {{ fmt(pendingTime) }}
 			</span>
-			<Input v-model="commentText" type="text" :placeholder="__('Add a note at this moment…')"
+			<Input v-model="commentText" type="text" :placeholder="__('Add a note at this moment…')" :aria-label="__('Add a note at this moment…')"
 				class="flex-1" @keyup.enter="postComment" />
 			<Button :aria-label="__('Post comment')" variant="solid" :loading="addComment.loading" @click="postComment">
 				<Send class="h-4 w-4" />

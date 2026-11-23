@@ -5837,12 +5837,46 @@ def announcement_letters_pdf(name):
 
 
 @frappe.whitelist()
-def preview_announcement_letter(name):
+def preview_announcement_letter(name: str):
 	"""Render the printed letter (subject + message wrapped in the letter head)
 	to a PDF so staff can preview/print the 'newsletter'. Personalization tokens
 	are resolved against the first real recipient (or a sample). Returns
 	{file_url}."""
 	from seminary.pdf import render as get_pdf
+
+	frappe.has_permission("Seminary Announcement", "write", throw=True)
+	doc = frappe.get_doc("Seminary Announcement", name)
+	doc.check_permission("write")  # it writes a File (p007 §2.6)
+
+	html, title = _letter_preview_html(doc)
+	pdf = get_pdf(html, title=title)
+
+	for old in frappe.get_all(
+		"File",
+		filters={
+			"attached_to_doctype": "Seminary Announcement",
+			"attached_to_name": name,
+			"file_name": ("like", "letter-%"),
+		},
+		pluck="name",
+	):
+		frappe.delete_doc("File", old, ignore_permissions=True, force=True)
+	f = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": f"letter-{name}.pdf",
+			"attached_to_doctype": "Seminary Announcement",
+			"attached_to_name": name,
+			"is_private": 1,
+			"content": pdf,
+		}
+	).insert(ignore_permissions=True)
+	return {"file_url": f.file_url}
+
+
+def _letter_preview_html(doc):
+	"""(html, title) of the letter preview: the letter personalised for the first
+	recipient, or a sample one, under a caption saying whom it was made for."""
 	from seminary.seminary import comms
 	from seminary.seminary.doctype.seminary_announcement import (
 		seminary_announcement as sa,
@@ -5851,10 +5885,6 @@ def preview_announcement_letter(name):
 		resolve_recipients,
 	)
 	from seminary.seminary.person import find_person
-
-	frappe.has_permission("Seminary Announcement", "write", throw=True)
-	doc = frappe.get_doc("Seminary Announcement", name)
-	doc.check_permission("write")  # it writes a File (p007 §2.6)
 
 	resolved = (
 		resolve_recipients(doc)
@@ -5880,39 +5910,17 @@ def preview_announcement_letter(name):
 		ctx = sa._sample_context()
 		shown_for = _("sample recipient")
 
-	subject = frappe.utils.escape_html(sa._render(doc.subject or "", ctx))
+	subject = sa._render(doc.subject or "", ctx)
 	message = sa._render(doc.message or "", ctx)
 	caption = (
 		'<p style="color:#888;font-size:11px;margin-bottom:12px;">'
 		+ frappe.utils.escape_html(_("Preview — personalized for {0}").format(shown_for))
 		+ "</p>"
 	)
-	heading = f"<h1>{subject}</h1>" if subject and doc.print_subject_heading else ""
+	heading = f"<h1>{frappe.utils.escape_html(subject)}</h1>" if subject and doc.print_subject_heading else ""
 	body = caption + heading + message
 	html = comms.pdf_html(sa._wrap_letterhead(sa._resolve_letter_head(doc), body))
-	pdf = get_pdf(html)
-
-	for old in frappe.get_all(
-		"File",
-		filters={
-			"attached_to_doctype": "Seminary Announcement",
-			"attached_to_name": name,
-			"file_name": ("like", "letter-%"),
-		},
-		pluck="name",
-	):
-		frappe.delete_doc("File", old, ignore_permissions=True, force=True)
-	f = frappe.get_doc(
-		{
-			"doctype": "File",
-			"file_name": f"letter-{name}.pdf",
-			"attached_to_doctype": "Seminary Announcement",
-			"attached_to_name": name,
-			"is_private": 1,
-			"content": pdf,
-		}
-	).insert(ignore_permissions=True)
-	return {"file_url": f.file_url}
+	return html, subject or doc.name
 
 
 @frappe.whitelist()

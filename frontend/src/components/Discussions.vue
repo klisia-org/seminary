@@ -23,7 +23,9 @@
 	</div>
 	<div v-if="topics.data?.length && !singleThread">
 		<div v-if="showTopics" v-for="(topic, index) in topics.data" :key="index">
-			<div @click="showReplies(topic)" class="flex items-center cursor-pointer py-5 w-full"
+			<div @click="showReplies(topic)" role="button" tabindex="0"
+				@keydown.enter.prevent="showReplies(topic)" @keydown.space.prevent="showReplies(topic)"
+				class="flex items-center cursor-pointer py-5 w-full"
 				:class="{ 'border-b': index + 1 != topics.data.length }">
 				<UserAvatar :user="topic.user" size="2xl" class="mr-4" />
 				<div>

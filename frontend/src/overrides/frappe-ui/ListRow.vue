@@ -1,7 +1,7 @@
 <!--
   frappe-ui 0.1.261's ListView row (src/components/ListView/ListRow.vue), fixed for
   decision 102 §9: linked rows showed no content, selectable rows nested a checkbox in a
-  button, and the row checkbox had no name. vite.config.js swaps it in for frappe-ui's
+  button, and the row checkbox had no name. frappe-ui-overrides.js swaps it in for frappe-ui's
   own; keep it in step if frappe-ui is ever upgraded.
 -->
 <template>

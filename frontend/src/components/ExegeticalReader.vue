@@ -13,8 +13,8 @@
 
 		<!-- add a verse-anchored comment -->
 		<div v-if="canComment" class="flex flex-col gap-2 sm:flex-row sm:items-center">
-			<Input v-model="verseRef" type="text" :placeholder="__('Passage, e.g. Jn 3:16')" class="sm:w-40" />
-			<Input v-model="commentText" type="text" :placeholder="__('Your insight on this passage…')"
+			<Input v-model="verseRef" type="text" :placeholder="__('Passage, e.g. Jn 3:16')" :aria-label="__('Passage, e.g. Jn 3:16')" class="sm:w-40" />
+			<Input v-model="commentText" type="text" :placeholder="__('Your insight on this passage…')" :aria-label="__('Your insight on this passage…')"
 				class="flex-1" @keyup.enter="postVerseComment" />
 			<Button :aria-label="__('Post comment')" variant="solid" :loading="addComment.loading" @click="postVerseComment">
 				<Send class="h-4 w-4" />

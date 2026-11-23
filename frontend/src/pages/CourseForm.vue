@@ -123,7 +123,7 @@
 							<div class="flex items-center justify-between mb-1">
 								<div class="text-sm font-medium text-ink-gray-7">{{ __('Online Meetings') }}</div>
 								<Button size="sm" @click="openVirtualDialog()">
-									<template #prefix><Video class="h-4 w-4" /></template>
+									<template #prefix><VideoIcon class="h-4 w-4" /></template>
 									{{ __('Schedule a virtual meeting') }}
 								</Button>
 							</div>
@@ -160,7 +160,7 @@
 											:href="m.cs_web_meeting || course.web_meeting" target="_blank"
 											rel="noopener noreferrer" class="no-underline">
 											<Button size="sm" variant="subtle">
-												<template #prefix><Video class="h-4 w-4" /></template>
+												<template #prefix><VideoIcon class="h-4 w-4" /></template>
 												{{ __('Join') }}
 											</Button>
 										</a>
@@ -315,7 +315,7 @@ import {
 } from 'vue'
 import { updateDocumentTitle, uploadLimits, validateFileSize } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
-import { Image, Trash2, Video, X } from 'lucide-vue-next'
+import { Image, Trash2, Video as VideoIcon, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import CourseOutline from '@/components/CourseOutline.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'

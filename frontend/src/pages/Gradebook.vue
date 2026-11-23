@@ -76,14 +76,14 @@
         <thead>
           <!-- Assessment Titles Row -->
           <tr>
-            <th class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-2 px-2 py-2 sm:px-4 min-w-[180px]">
+            <th scope="col" class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-2 px-2 py-2 sm:px-4 min-w-[180px]">
               {{ __('Student') }}
             </th>
-            <th v-if="canSendSelected"
+            <th v-if="canSendSelected" scope="col"
               class="border border-outline-gray-2 bg-surface-gray-2 px-2 py-2 text-sm">
               {{ __('Send') }}
             </th>
-            <th v-for="assessment in sortedAssessments" :key="assessment.assessment_criteria"
+            <th v-for="assessment in sortedAssessments" :key="assessment.assessment_criteria" scope="col"
               :class="assessment.extracredit_scac ? 'bg-surface-blue-1' : 'bg-surface-gray-2'"
               class="border border-outline-gray-2 px-2 py-2 sm:px-4 min-w-[120px] text-sm">
               <div class="flex flex-col items-center gap-0.5">
@@ -122,22 +122,24 @@
               </div>
             </th>
             <!-- One subtotal per category (decisions/096). -->
-            <th v-for="cat in categories" :key="'cat-' + cat.category_code"
+            <th v-for="cat in categories" :key="'cat-' + cat.category_code" scope="col"
               class="border border-outline-gray-2 bg-surface-gray-3 px-2 py-2 sm:px-4 min-w-[100px] text-sm">
               {{ cat.title }}
             </th>
             <!-- The course grade (decisions/096a). -->
-            <th class="border border-outline-gray-2 bg-surface-gray-3 px-2 py-2 sm:px-4 min-w-[110px] text-sm">
+            <th scope="col" class="border border-outline-gray-2 bg-surface-gray-3 px-2 py-2 sm:px-4 min-w-[110px] text-sm">
               {{ __('Grade') }}
             </th>
           </tr>
 
           <!-- Weight Row -->
           <tr>
-            <td
-              class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-1 px-2 py-1 sm:px-4 text-xs text-ink-gray-5 font-medium">
+            <th scope="row"
+              class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-1 px-2 py-1 sm:px-4 text-left text-xs text-ink-gray-5 font-medium">
               {{ __('Weight') }}
-            </td>
+            </th>
+            <!-- Keeps the weights under their own columns when the Send column shows. -->
+            <td v-if="canSendSelected" class="border border-outline-gray-2 bg-surface-gray-1"></td>
             <td v-for="assessment in sortedAssessments" :key="'weight-' + assessment.assessment_criteria"
               :class="assessment.extracredit_scac ? 'bg-surface-blue-1' : 'bg-surface-gray-1'"
               class="border border-outline-gray-2 px-2 py-1 text-center text-xs text-ink-gray-5 font-medium">
@@ -163,8 +165,8 @@
 
         <tbody>
           <tr v-for="student in students" :key="student.student_card" class="hover:bg-surface-gray-1 transition-colors">
-            <!-- Student Name -->
-            <td class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-white px-2 py-2 sm:px-4">
+            <!-- Student Name: the row's header, so each grade cell is read with its student. -->
+            <th scope="row" class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-white px-2 py-2 sm:px-4 text-left font-normal">
               <div class="flex items-center justify-between gap-1">
                 <Tooltip
                   :text="`${__('Program')}: ${student.program_std_scr}\n${__('Audit')}: ${student.audit_bool ? __('Yes') : __('No')}\n${__('Active')}: ${student.active ? __('Yes') : __('No')}`"
@@ -182,7 +184,7 @@
                   </a>
                 </Tooltip>
               </div>
-            </td>
+            </th>
             <td v-if="canSendSelected"
               class="border border-outline-gray-2 px-2 py-2 text-center">
               <input v-if="student.active && !student.audit_bool" type="checkbox"

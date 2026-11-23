@@ -2,8 +2,8 @@
   frappe-ui 0.1.261's Button (src/components/Button/Button.vue) keeping the aria-label it
   is given (decision 102 §9, WCAG 4.1.2). frappe-ui sets its own aria-label after $attrs,
   from `label` and only for the icons it recognises (`lucide-` components), so an icon
-  button using lucide-vue-next lost the name passed to it. vite.config.js swaps this file
-  in for frappe-ui's own; keep it in step with that file if frappe-ui is ever upgraded.
+  button using lucide-vue-next lost the name passed to it. frappe-ui-overrides.js swaps this
+  file in for frappe-ui's own; keep it in step with that file if frappe-ui is ever upgraded.
 -->
 <template>
   <Tooltip :text="tooltip" :disabled="!tooltip?.length">
@@ -74,7 +74,29 @@ import { computed, useSlots, ref } from 'vue'
 import FeatherIcon from 'frappe-ui/src/components/FeatherIcon.vue'
 import LoadingIndicator from 'frappe-ui/src/components/LoadingIndicator.vue'
 import { useRouter } from 'vue-router'
-import type { ButtonProps, ThemeVariant } from '../../../node_modules/frappe-ui/src/components/Button/types'
+// frappe-ui's src/components/Button/types.ts, restated here: the SFC compiler reads a
+// props type from disk relative to this file, and another app's build can't count on
+// this folder's node_modules. `unknown` keeps the runtime check frappe-ui's own types
+// compile to (a component, or a router location, of any shape).
+type Theme = 'gray' | 'blue' | 'green' | 'red'
+type Variant = 'solid' | 'subtle' | 'outline' | 'ghost'
+interface ButtonProps {
+  theme?: Theme
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  variant?: Variant
+  label?: string
+  icon?: unknown
+  iconLeft?: unknown
+  iconRight?: unknown
+  tooltip?: string
+  loading?: boolean
+  loadingText?: string
+  disabled?: boolean
+  route?: unknown
+  link?: string
+  type?: 'button' | 'submit' | 'reset'
+}
+type ThemeVariant = `${Theme}-${Variant}`
 import Tooltip from 'frappe-ui/src/components/Tooltip/Tooltip.vue'
 
 defineOptions({ inheritAttrs: false })

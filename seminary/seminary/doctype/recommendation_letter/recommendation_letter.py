@@ -59,7 +59,7 @@ class RecommendationLetter(Document):
 		from seminary.seminary import comms
 		from seminary.seminary.person import find_person
 
-		portal_url = get_url(f"/recommender-form/{self.name}?token={self.request_token}")
+		portal_url = get_url(f"/seminary/recommender-form/{self.name}?token={self.request_token}")
 		student_name = frappe.db.get_value("Student", self.student, "student_name") or ""
 		dedupe_key = f"recommendation-request::{self.name}"
 		if resend:

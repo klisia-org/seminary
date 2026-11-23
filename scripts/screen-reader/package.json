@@ -1,0 +1,10 @@
+{
+  "name": "seminary-screen-reader",
+  "private": true,
+  "description": "Runs the accessibility journeys with NVDA through Guidepup, on a Windows machine, and records what NVDA said (decision 102a §4). Never installed by the app.",
+  "type": "module",
+  "dependencies": {
+    "@guidepup/guidepup": "0.40.0",
+    "puppeteer-core": "24.43.1"
+  }
+}

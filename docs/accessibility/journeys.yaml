@@ -1,0 +1,39 @@
+# What a screen reader must hear on a few tasks (decision 102a).
+#
+# visit: a key from the check's plan, "<role> <route>" as in routes.yaml.
+# steps: page steps to run first (as in check.mjs), when the visit's own aren't wanted.
+# moves: the screen reader's moves, in order (see scripts/axe/check.mjs):
+#   next / landmark: n, focus / click: selector, press: key, wait: ms, clear: true,
+#   hear: [part of a phrase...], not_hear: [part of a phrase...]
+# Match short parts of phrases: the virtual reader's wording can change between versions.
+
+- key: portal shell
+  visit: student /courses
+  moves:
+    - next: 1
+    - hear: ["link, Skip to content"]
+    - landmark: 4
+    - hear: ["main", "navigation, Main"]
+    - clear: true
+    - next: 30
+    # Icons inside a named control are decoration: a reader must not announce them.
+    - not_hear: ["graphics-document", "graphics-symbol"]
+
+- key: course outline move menu
+  visit: instructor /courses/:courseName
+  moves:
+    - focus: '[data-move^="lesson:"]'
+    - clear: true
+    - press: Enter
+    - wait: 300
+    - hear: ["menuitem, Move"]
+    - press: Escape
+    - hear: ["button, Move"]
+
+- key: withdrawal form labels
+  visit: student /courses/:courseName/withdraw
+  moves:
+    - focus: "#withdrawal-reason"
+    - hear: ["Reason for Withdrawal"]
+    - focus: "#withdrawal-comment"
+    - hear: ["Comment (optional)"]

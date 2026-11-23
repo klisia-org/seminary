@@ -1,6 +1,6 @@
 <!--
   frappe-ui 0.1.261's ListView header (src/components/ListView/ListHeader.vue) with a name
-  on its select-all checkbox (decision 102 §9, WCAG 1.3.1/4.1.2). vite.config.js swaps it
+  on its select-all checkbox (decision 102 §9, WCAG 1.3.1/4.1.2). frappe-ui-overrides.js swaps it
   in for frappe-ui's own; keep it in step if frappe-ui is ever upgraded.
 -->
 <template>

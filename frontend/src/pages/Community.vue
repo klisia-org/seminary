@@ -119,7 +119,7 @@
 				<div class="mb-3 flex flex-wrap items-center gap-2">
 					<div class="flex min-w-[12rem] flex-1 items-center gap-2 rounded-md border border-outline-gray-2 bg-surface-white px-2">
 						<Search class="h-4 w-4 text-ink-gray-4" />
-						<input v-model="searchQuery" type="text" :placeholder="__('Search posts or people')"
+						<input v-model="searchQuery" type="text" :placeholder="__('Search posts or people')" :aria-label="__('Search posts or people')"
 							class="w-full border-0 bg-transparent px-0 py-1.5 text-sm text-ink-gray-8 shadow-none focus:outline-none focus:ring-0" />
 						<button :aria-label="__('Clear search')" v-if="searchQuery" @click="searchQuery = ''"><X class="h-4 w-4 text-ink-gray-4" /></button>
 					</div>
@@ -313,7 +313,7 @@
 									<button :aria-label="__('Cancel reply')" @click="replyTo = null"><X class="h-3 w-3" /></button>
 								</div>
 								<div class="flex gap-2">
-									<Input v-model="replyText" type="text" :placeholder="__('Write a reply…')" class="flex-1"
+									<Input v-model="replyText" type="text" :placeholder="__('Write a reply…')" :aria-label="__('Write a reply…')" class="flex-1"
 										@keyup.enter="submitReply(post)" />
 									<Button :aria-label="__('Send reply')" variant="solid" :loading="addComment.loading" @click="submitReply(post)">
 										<Send class="h-4 w-4" />
@@ -333,7 +333,7 @@
 								</ul>
 							</div>
 							<div v-if="post.is_mine" class="mt-2 flex items-center gap-2">
-								<Input v-model="linkTarget" type="text" :placeholder="__('Link a post by ID (e.g. a journal)')" class="flex-1" />
+								<Input v-model="linkTarget" type="text" :placeholder="__('Link a post by ID (e.g. a journal)')" :aria-label="__('Link a post by ID (e.g. a journal)')" class="flex-1" />
 								<Button :label="__('Link')" :loading="linkPost.loading" @click="submitLink(post)" />
 							</div>
 
@@ -412,7 +412,7 @@
 					<label v-if="composeChannelKind === 'video_timestamp'" class="block">
 						<span class="mb-1.5 block text-sm font-medium text-ink-gray-7">{{ __('YouTube link') }}</span>
 						<div class="flex items-center gap-2">
-							<Video class="h-4 w-4 text-ink-gray-5" />
+							<VideoIcon class="h-4 w-4 text-ink-gray-5" />
 							<Input v-model="draft.video_url" type="text" :placeholder="__('Required for this channel')" class="flex-1" />
 						</div>
 					</label>
@@ -429,9 +429,9 @@
 						</div>
 						<CommunityTopicInput v-model="draft.topics" />
 					</div>
-					<label class="block">
+					<label for="community-draft-scripture" class="block">
 						<span class="mb-1.5 block text-sm text-ink-gray-7"><span class="font-medium">{{ __('Scripture') }}</span> <span class="text-ink-gray-5">({{ __('optional') }})</span></span>
-						<TextInput v-model="draft.scripture" type="text" size="md" :placeholder="__('e.g. Rom 8:28; Jn 3:16-18')">
+						<TextInput id="community-draft-scripture" v-model="draft.scripture" type="text" size="md" :placeholder="__('e.g. Rom 8:28; Jn 3:16-18')">
 							<template #prefix><BookOpen class="h-4 w-4 text-ink-gray-5" /></template>
 						</TextInput>
 					</label>
@@ -439,8 +439,8 @@
 					     cohort with, so the picker never promises an unreachable
 					     recipient and lineage size never matters. -->
 					<div v-if="draft.visibility === 'direct'" class="relative">
-						<div class="mb-1.5 text-sm font-medium text-ink-gray-7">{{ __('To') }}</div>
-						<Input v-model="recipientQuery" type="text"
+						<label for="community-recipient" class="mb-1.5 block text-sm font-medium text-ink-gray-7">{{ __('To') }}</label>
+						<Input id="community-recipient" v-model="recipientQuery" type="text"
 							:placeholder="__('Search someone in your cohorts…')"
 							@input="searchRecipients" />
 						<div v-if="draft.direct_recipient" class="mt-1 text-xs text-ink-gray-6">
@@ -505,7 +505,7 @@
 			<template #body-content>
 				<textarea v-model="answerNote" rows="3"
 					class="w-full rounded-md border border-outline-gray-2 bg-surface-white p-2 text-sm text-ink-gray-8"
-					:placeholder="__('Share how it was answered (optional)')"></textarea>
+					:placeholder="__('Share how it was answered (optional)')" :aria-label="__('Share how it was answered (optional)')"></textarea>
 			</template>
 			<template #actions>
 				<div class="flex justify-end gap-2">
@@ -519,14 +519,14 @@
 		<Dialog v-model="showEdit" :options="{ title: __('Edit post'), size: 'lg' }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
-					<Input v-model="editDraft.title" type="text" :placeholder="__('Title (optional)')" />
+					<Input v-model="editDraft.title" type="text" :placeholder="__('Title (optional)')" :aria-label="__('Title (optional)')" />
 					<div v-if="editDraft.channel_kind === 'video_timestamp'" class="flex items-center gap-2">
-						<Video class="h-4 w-4 text-ink-gray-5" />
-						<Input v-model="editDraft.video_url" type="text" :placeholder="__('YouTube link')" class="flex-1" />
+						<VideoIcon class="h-4 w-4 text-ink-gray-5" />
+						<Input v-model="editDraft.video_url" type="text" :placeholder="__('YouTube link')" :aria-label="__('YouTube link')" class="flex-1" />
 					</div>
 					<div class="flex items-center gap-2">
-						<label class="text-sm text-ink-gray-6">{{ __('Visibility') }}</label>
-						<select :aria-label="__('Visibility')" v-model="editDraft.visibility"
+						<label for="community-edit-visibility" class="text-sm text-ink-gray-6">{{ __('Visibility') }}</label>
+						<select id="community-edit-visibility" v-model="editDraft.visibility"
 							class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
 							<option value="cohort_only">{{ __('Cohort only') }}</option>
 							<option value="portal_users">{{ __('Whole community') }}</option>
@@ -535,7 +535,7 @@
 					</div>
 					<CommunityTopicInput v-model="editDraft.topics" />
 					<Input v-model="editDraft.scripture" type="text"
-						:placeholder="__('Scripture, e.g. Jn 3:16-18; Rom 8:28')" />
+						:placeholder="__('Scripture, e.g. Jn 3:16-18; Rom 8:28')" :aria-label="__('Scripture, e.g. Jn 3:16-18; Rom 8:28')" />
 					<RichTextEditor :key="'edit-' + editKey" :content="editDraft.content" :teleport="false"
 						:placeholder="__('Share something…')" @change="(v) => (editDraft.content = v)" />
 				</div>
@@ -552,10 +552,10 @@
 		<Dialog v-model="showBroadcast" :options="{ title: __('Message leaders') }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
-					<Input v-model="broadcastSubject" type="text" :placeholder="__('Subject')" />
+					<Input v-model="broadcastSubject" type="text" :placeholder="__('Subject')" :aria-label="__('Subject')" />
 					<textarea v-model="broadcastMessage" rows="4"
 						class="w-full rounded-md border border-outline-gray-2 bg-surface-white p-2 text-sm text-ink-gray-8"
-						:placeholder="__('Message to the leaders you oversee…')"></textarea>
+						:placeholder="__('Message to the leaders you oversee…')" :aria-label="__('Message to the leaders you oversee…')"></textarea>
 					<label class="flex items-center gap-1 text-sm text-ink-gray-6">
 						<input type="checkbox" v-model="broadcastEmail" class="rounded" />{{ __('Also send by email') }}
 					</label>
@@ -574,7 +574,7 @@
 		<Dialog v-model="showSplit" :options="{ title: __('Split cohort'), size: '3xl' }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
-					<Input v-model="splitName" type="text" :placeholder="__('New cohort name')" />
+					<Input v-model="splitName" type="text" :placeholder="__('New cohort name')" :aria-label="__('New cohort name')" />
 					<div class="grid grid-cols-2 gap-3">
 						<div class="rounded-md border border-outline-gray-2 p-2">
 							<div class="mb-1 text-xs font-medium text-ink-gray-6">{{ __('Stays in original') }}</div>
@@ -642,7 +642,7 @@
 							<Input
 								v-model="alumniQuery"
 								type="text"
-								:placeholder="__('Search alumni by name, role, organization or city')"
+								:placeholder="__('Search alumni by name, role, organization or city')" :aria-label="__('Search alumni by name, role, organization or city')"
 							/>
 							<p v-if="alumniSearch.loading" class="px-1 text-xs text-ink-gray-5">
 								{{ __('Searching...') }}
@@ -685,10 +685,10 @@
 							{{ __('Or invite someone who is not in the directory:') }}
 						</div>
 						<div class="flex flex-wrap items-center gap-2">
-							<Input v-model="inviteDraft.first_name" type="text" :placeholder="__('First name *')" class="w-32" />
-							<Input v-model="inviteDraft.last_name" type="text" :placeholder="__('Last name')" class="w-32" />
-							<Input v-model="inviteDraft.email" type="text" :placeholder="__('Email *')" class="w-48" @keyup.enter="inviteMember" />
-							<Input v-model="inviteDraft.mobile" type="text" :placeholder="__('Phone (optional)')" class="w-36" />
+							<Input v-model="inviteDraft.first_name" type="text" :placeholder="__('First name *')" :aria-label="__('First name *')" class="w-32" />
+							<Input v-model="inviteDraft.last_name" type="text" :placeholder="__('Last name')" :aria-label="__('Last name')" class="w-32" />
+							<Input v-model="inviteDraft.email" type="text" :placeholder="__('Email *')" :aria-label="__('Email *')" class="w-48" @keyup.enter="inviteMember" />
+							<Input v-model="inviteDraft.mobile" type="text" :placeholder="__('Phone (optional)')" :aria-label="__('Phone (optional)')" class="w-36" />
 							<Button variant="solid" :label="__('Invite')" :loading="inviteRes.loading" @click="inviteMember" />
 						</div>
 					</div>
@@ -749,7 +749,7 @@
 					</select>
 					<textarea v-model="reportDetail" rows="3"
 						class="w-full rounded-md border border-outline-gray-2 bg-surface-white p-2 text-sm text-ink-gray-8"
-						:placeholder="__('Anything the moderator should know (optional)')"></textarea>
+						:placeholder="__('Anything the moderator should know (optional)')" :aria-label="__('Anything the moderator should know (optional)')"></textarea>
 				</div>
 			</template>
 			<template #actions>
@@ -790,7 +790,7 @@ import { useRoute } from 'vue-router'
 import { Button, Dialog, Input, TextInput, createResource, debounce } from 'frappe-ui'
 import {
 	MessagesSquare, SquarePen, MessageCircle, Send, Pin, X,
-	Lock, Users, Globe, Mail, BookOpen, Check, Video, Flag, Shield, Ban, Pencil, Trash2,
+	Lock, Users, Globe, Mail, BookOpen, Check, Video as VideoIcon, Flag, Shield, Ban, Pencil, Trash2,
 	Bookmark, BookmarkCheck, UsersRound, Search, Plus, ChevronUp, User,
 } from 'lucide-vue-next'
 import { timeAgo, siteDate, createToast } from '@/utils'

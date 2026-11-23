@@ -38,8 +38,8 @@
 
       <!-- Withdrawal Reason -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-ink-gray-7">{{ __('Reason for Withdrawal') }} *</label>
-        <FormControl type="select" v-model="form.withdrawal_reason" :options="reasonOptions"
+        <label for="withdrawal-reason" class="block text-sm font-medium text-ink-gray-7">{{ __('Reason for Withdrawal') }} *</label>
+        <FormControl id="withdrawal-reason" type="select" v-model="form.withdrawal_reason" :options="reasonOptions"
           :placeholder="__('Select a reason...')" />
         <SafeHtml v-if="selectedReasonDetails?.student_instructions"
           class="text-sm text-ink-blue-2 bg-surface-blue-1 rounded-lg p-3 border border-outline-blue-1"
@@ -48,23 +48,23 @@
 
       <!-- Documentation Upload -->
       <div v-if="selectedReasonDetails?.requires_documentation" class="space-y-2">
-        <label class="block text-sm font-medium text-ink-gray-7">
+        <label for="withdrawal-documentation" class="block text-sm font-medium text-ink-gray-7">
           {{ selectedReasonDetails.documentation_label || __('Required Documentation') }} *
         </label>
-        <FormControl type="file" v-model="form.student_documentation" />
+        <FormControl id="withdrawal-documentation" type="file" v-model="form.student_documentation" />
       </div>
 
       <!-- Comment -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-ink-gray-7">{{ __('Comment (optional)') }}</label>
-        <FormControl type="textarea" v-model="form.student_comment" rows="4"
+        <label for="withdrawal-comment" class="block text-sm font-medium text-ink-gray-7">{{ __('Comment (optional)') }}</label>
+        <FormControl id="withdrawal-comment" type="textarea" v-model="form.student_comment" rows="4"
           :placeholder="__('Any additional information you would like to share...')" />
       </div>
 
       <!-- Withdrawal Scope -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-ink-gray-7">{{ __('Withdrawal Scope') }} *</label>
-        <FormControl type="select" v-model="form.withdrawal_scope" :options="scopeOptions" />
+        <label for="withdrawal-scope" class="block text-sm font-medium text-ink-gray-7">{{ __('Withdrawal Scope') }} *</label>
+        <FormControl id="withdrawal-scope" type="select" v-model="form.withdrawal_scope" :options="scopeOptions" />
         <p class="text-xs text-ink-gray-5">
           <span v-if="form.withdrawal_scope === 'Single Course'">{{ __('Only this course will be affected.') }}</span>
           <span v-else-if="form.withdrawal_scope === 'All Courses This Term'">{{ __('A withdrawal request will be created for all your courses this term.') }}</span>

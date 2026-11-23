@@ -26,7 +26,11 @@ frappeRequest({ url: '/api/method/seminary.seminary.api.get_school_abbr_logo' })
 let pinia = createPinia()
 let app = createApp(App)
 setConfig('resourceFetcher', frappeRequest)
-uploadLimits.fetch()
+// Signed in only: a guest page (the recommender form) uploads through its own endpoint.
+const signedIn = !['', 'Guest'].includes(
+	new URLSearchParams(document.cookie.split('; ').join('&')).get('user_id') || ''
+)
+if (signedIn) uploadLimits.fetch()
 
 // The only component allowed to render author HTML (p008 F1). Registered
 // globally so migrating a v-html site is a tag swap, not an import per file.

@@ -166,12 +166,12 @@
         </td>
         <td v-if="weightsApply" class="p-2 border" style="width: 10%;">
           <div v-if="criteria.extracredit_scac" class="mb-4 light-blue-bg p-2 rounded">
-            <FormControl v-model="criteria.fudgepoints_scac" :label="__('Fudge Points')" type="float" class="max-w-14ch"
+            <FormControl v-model="criteria.fudgepoints_scac" :label="__('Fudge Points')" type="number" step="any" class="max-w-14ch"
               :required="true" />
           </div>
           <div v-else class="mb-4">
             <FormControl v-model="criteria.weight_scac"
-              :label="categories.length ? __('% of category') : __('Weight')" type="float" class="max-w-14ch"
+              :label="categories.length ? __('% of category') : __('Weight')" type="number" step="any" class="max-w-14ch"
               :required="!categories.length" />
             <template v-if="categories.length">
               <p class="mt-1 text-xs text-ink-gray-5">
@@ -306,16 +306,25 @@
             <FormControl type="select" v-model="ovForm.student" :label="__('Student')"
               :options="rosterOptions" :disabled="!!ovForm.name" />
             <div>
-              <label class="text-xs text-ink-gray-5">{{ __('Due date') }}</label>
-              <DateTimePicker v-model="ovForm.due_date" variant="subtle" :formatter="formatDate" />
+              <!-- eslint-disable-next-line vuejs-accessibility/label-has-for -- the label wraps the date picker's own text input, which the rule can't see inside the component -->
+              <label class="block">
+                <span class="text-xs text-ink-gray-5">{{ __('Due date') }}</span>
+                <DateTimePicker v-model="ovForm.due_date" variant="subtle" :formatter="formatDate" />
+              </label>
             </div>
             <div>
-              <label class="text-xs text-ink-gray-5">{{ __('Cut-off') }}</label>
-              <DateTimePicker v-model="ovForm.cutoff_date" variant="subtle" :formatter="formatDate" />
+              <!-- eslint-disable-next-line vuejs-accessibility/label-has-for -- the label wraps the date picker's own text input, which the rule can't see inside the component -->
+              <label class="block">
+                <span class="text-xs text-ink-gray-5">{{ __('Cut-off') }}</span>
+                <DateTimePicker v-model="ovForm.cutoff_date" variant="subtle" :formatter="formatDate" />
+              </label>
             </div>
             <div v-if="twoDatesPossible(criteria)">
-              <label class="text-xs text-ink-gray-5">{{ __('Replies due') }}</label>
-              <DateTimePicker v-model="ovForm.replies_due_date" variant="subtle" :formatter="formatDate" />
+              <!-- eslint-disable-next-line vuejs-accessibility/label-has-for -- the label wraps the date picker's own text input, which the rule can't see inside the component -->
+              <label class="block">
+                <span class="text-xs text-ink-gray-5">{{ __('Replies due') }}</span>
+                <DateTimePicker v-model="ovForm.replies_due_date" variant="subtle" :formatter="formatDate" />
+              </label>
             </div>
             <FormControl v-if="['Quiz', 'Exam'].includes(criteria.type)" type="number"
               v-model="ovForm.extra_minutes" :label="__('Extra minutes')" />
@@ -367,7 +376,7 @@
                   <tr v-for="g in gradingCategories" :key="g.instructor_category">
                     <td class="p-1 pr-3">{{ g.instructor_category }}</td>
                     <td v-for="d in dimensions" :key="d.dimension_code" class="p-1 text-center">
-                      <input type="checkbox" :checked="cellGraded(g, d)"
+                      <input type="checkbox" :checked="cellGraded(g, d)" :aria-label="`${g.instructor_category}, ${d.dimension}`"
                         @change="setCell(g, d, $event.target.checked)" />
                     </td>
                   </tr>

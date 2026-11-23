@@ -32,7 +32,7 @@
         </div>
 
         <div v-if="courseToDoList.length === 0">
-          <PartyPopper class="size-20 mx-auto stroke-1 text-ink-gray-5 mt-5" />
+          <PartyPopper class="size-20 mx-auto stroke-1 text-ink-gray-5 mt-5" aria-hidden="true" />
           <h3 v-if="isStudent && !isInstructor" class="text-xl text-center font-semibold text-ink-gray-5 mt-5">
             {{ __('Congrats! No assessments to do!') }}</h3>
           <h3 v-if="isInstructor" class="text-xl text-center font-semibold text-ink-gray-5 mt-5">

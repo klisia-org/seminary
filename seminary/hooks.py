@@ -110,6 +110,15 @@ website_route_rules = [
 	{"from_route": "/seminary/<path:app_path>", "to_route": "seminary"},
 ]
 
+# Recommendation requests sent before the link moved under /seminary keep working.
+website_redirects = [
+	{
+		"source": r"/recommender-form/(.+)",
+		"target": r"/seminary/recommender-form/\1",
+		"forward_query_parameters": True,
+	},
+]
+
 # treeviews = ["Assessment Group"]
 
 calendars = [

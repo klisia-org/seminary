@@ -15,7 +15,7 @@
 		<div class="mt-4">
 			<div class="mb-1 text-sm text-ink-gray-7">{{ __('Logo') }}</div>
 			<div class="flex items-center gap-3">
-				<img v-if="form.image" :src="form.image" class="h-14 w-auto rounded border border-outline-gray-2" />
+				<img v-if="form.image" :src="form.image" :alt="__('Logo')" class="h-14 w-auto rounded border border-outline-gray-2" />
 				<FileUploader :upload-args="{ folder: 'Home/Attachments' }" @success="(f) => (form.image = f.file_url)">
 					<template #default="{ uploading, openFileSelector }">
 						<Button :loading="uploading" @click="openFileSelector">

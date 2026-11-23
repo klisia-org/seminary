@@ -19,7 +19,7 @@
 		<template v-else>
 			<!-- Skills -->
 			<div>
-				<label class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Skills') }}</label>
+				<label :for="`${uid}-skills`" class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Skills') }}</label>
 				<div v-if="form.skills.length" class="mb-2 flex flex-wrap gap-1.5">
 					<span
 						v-for="tag in form.skills"
@@ -32,7 +32,7 @@
 						</button>
 					</span>
 				</div>
-				<select :aria-label="__('Add a skill')"
+				<select :id="`${uid}-skills`" :aria-label="__('Add a skill')"
 					class="field-input"
 					:value="''"
 					@change="addSkill($event.target.value); $event.target.value = ''"
@@ -46,7 +46,7 @@
 
 			<!-- Résumé -->
 			<div>
-				<label class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Résumé') }}</label>
+				<div class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Résumé') }}</div>
 				<div class="flex flex-wrap items-center gap-2">
 					<FileUploader
 						:upload-args="{ folder: 'Home/Attachments', private: 1 }"
@@ -70,8 +70,9 @@
 			<!-- Preferred application contact -->
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<div>
-					<label class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Preferred email for applications') }}</label>
+					<label :for="`${uid}-email`" class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Preferred email for applications') }}</label>
 					<input
+						:id="`${uid}-email`"
 						v-model="form.preferred_application_email"
 						type="email"
 						class="field-input"
@@ -79,8 +80,9 @@
 					/>
 				</div>
 				<div>
-					<label class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Preferred phone for applications') }}</label>
+					<label :for="`${uid}-phone`" class="mb-1 block text-xs font-medium text-ink-gray-6">{{ __('Preferred phone for applications') }}</label>
 					<input
+						:id="`${uid}-phone`"
 						v-model="form.preferred_application_phone"
 						type="text"
 						class="field-input"
@@ -93,12 +95,14 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, useId } from 'vue'
 import { createResource, Button, FileUploader, toast } from 'frappe-ui'
 import { X } from 'lucide-vue-next'
 import { validateFileSize } from '@/utils'
 
 const FIELDS = ['resume', 'preferred_application_email', 'preferred_application_phone']
+
+const uid = useId()
 
 const loaded = ref(false)
 const hasPerson = ref(false)
