@@ -71,6 +71,8 @@ PORTAL_ONLY = {
 	"SCORM Package",
 	"Seminary Lesson Note",
 	"Student Due Date Override",
+	# Set from the chapter editor in the portal (decisions/107).
+	"Student Chapter Release Override",
 	"Student Group",
 	"Student Log",
 	# Oral assessment (decisions/100): recorded and graded in the portal.

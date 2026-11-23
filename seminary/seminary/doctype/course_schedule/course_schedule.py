@@ -1559,6 +1559,17 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name, folder_report=Non
 		folder_report = _new_folder_report()
 	folder_ctx = _FolderRemapContext(source_cs_name, target_cs_name, folder_report)
 
+	# Release dates move with the section; prerequisites are rewritten onto
+	# the copies once every chapter exists (decisions/107 §7).
+	from seminary.seminary import content_release
+
+	day_shift = content_release.start_shift(
+		frappe.db.get_value("Course Schedule", source_cs_name, "c_datestart"),
+		frappe.db.get_value("Course Schedule", target_cs_name, "c_datestart"),
+	)
+	chapter_map = {}
+	pending_prereqs = []
+
 	chapter_refs = frappe.get_all(
 		"Course Schedule Chapter Reference",
 		filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
@@ -1575,9 +1586,13 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name, folder_report=Non
 		new_chapter.chapter_title = src_chapter.chapter_title
 		for field in _CHAPTER_COPYABLE_FIELDS:
 			new_chapter.set(field, src_chapter.get(field))
+		content_release.copy_release(src_chapter, new_chapter, day_shift)
 		new_chapter.flags.ignore_permissions = True
 		new_chapter.insert()
 		n_chapters += 1
+		chapter_map[src_chapter.name] = new_chapter.name
+		if src_chapter.get("prerequisites"):
+			pending_prereqs.append((new_chapter.name, [r.as_dict() for r in src_chapter.prerequisites]))
 
 		if new_chapter.is_scorm_package and new_chapter.scorm_package:
 			# Same zip, so the unpack job's content-hash dedup adopts the
@@ -1640,6 +1655,16 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name, folder_report=Non
 		)
 		chapter_ref.flags.ignore_permissions = True
 		chapter_ref.insert()
+
+	# The template's assessment rows came across already, so its quizzes are
+	# this section's too.
+	target_quizzes = content_release.section_quizzes(target_cs_name)
+	for new_name, rows in pending_prereqs:
+		folder_report["warnings"].extend(
+			content_release.insert_prerequisites(
+				new_name, rows, chapter_map, lambda q: q if q in target_quizzes else None
+			)
+		)
 
 	return n_chapters, n_lessons, lesson_name_map
 

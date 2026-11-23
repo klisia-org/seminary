@@ -420,6 +420,9 @@ class _Exporter:
 				"course_code": self.cs.get("coursecode_cs"),
 				"course_schedule": self.cs.name,
 				"title": self.cs.get("title"),
+				# Fixed release dates move by the gap to the new section's
+				# start (decisions/107 §7).
+				"start_date": str(self.cs.c_datestart) if self.cs.get("c_datestart") else None,
 			},
 			"institution_deps": {
 				"grading_scale": self._grading_scale(),
@@ -494,6 +497,25 @@ class _Exporter:
 					else None
 				),
 			}
+			# Release settings and prerequisites (decisions/107). Prerequisites
+			# name source chapters and quizzes; the import rewrites both.
+			chrec["release"] = {
+				"release_type": ch.get("release_type"),
+				"release_on": str(ch.release_on) if ch.get("release_on") else None,
+				"release_offset_days": ch.get("release_offset_days") or 0,
+			}
+			chrec["prerequisites"] = []
+			for row in ch.get("prerequisites") or []:
+				chrec["prerequisites"].append(
+					{
+						"kind": row.kind,
+						"chapter": row.chapter,
+						"quiz": row.quiz,
+						"min_percentage": row.min_percentage,
+					}
+				)
+				if row.quiz:
+					self._ensure_activity("Quiz", row.quiz)
 			if ch.get("scorm_package"):
 				furl = frappe.db.get_value("File", ch.scorm_package, "file_url")
 				if furl:

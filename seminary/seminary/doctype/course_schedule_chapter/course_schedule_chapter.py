@@ -12,6 +12,13 @@ class CourseScheduleChapter(Document):
 	def validate(self):
 		self.validate_course_competency()
 		self.pin_reflection_lessons()
+		self.validate_release()
+
+	def validate_release(self):
+		"""Release date and prerequisites (decisions/107)."""
+		from seminary.seminary import content_release
+
+		content_release.validate_chapter(self)
 
 	def pin_reflection_lessons(self):
 		"""Reflection lessons stay where the framework put them, whatever order
@@ -66,7 +73,13 @@ class CourseScheduleChapter(Document):
 		from seminary.seminary import cbe_reflection
 
 		cbe_reflection.assert_chapter_deletable(self.name)
+		self._drop_release_references()
 		self._release_scorm_package()
+
+	def _drop_release_references(self):
+		"""Another chapter waiting on this one would wait forever, and an
+		override on it means nothing once it is gone (decisions/107)."""
+		_drop_release_references(self.name)
 
 	def _release_scorm_package(self):
 		"""Release the SCORM package this chapter was holding (p009 §2.13).
@@ -94,3 +107,13 @@ class CourseScheduleChapter(Document):
 			for enrollment in enrolled_members:
 				new_progress = get_course_progress(self.coursesc, enrollment.member)
 				frappe.db.set_value("Scheduled Course Roster", enrollment.name, "progress", new_progress)
+
+
+def _drop_release_references(chapter):
+	"""Shared with `api.delete_chapter`, which deletes without the controller."""
+	frappe.db.delete(
+		"Chapter Prerequisite",
+		{"parenttype": "Course Schedule Chapter", "chapter": chapter, "kind": "Complete chapter"},
+	)
+	frappe.db.delete("Chapter Prerequisite", {"parenttype": "Course Schedule Chapter", "parent": chapter})
+	frappe.db.delete("Student Chapter Release Override", {"chapter": chapter})

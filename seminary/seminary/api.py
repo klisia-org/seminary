@@ -905,6 +905,11 @@ def save_course(course: str, course_data: str | list | dict):
 			"web_meeting",
 			course_data.get("web_meeting"),
 		)
+		# "Chapter X is now open" notices (decisions/107 §8).
+		if "notify_on_release" in course_data:
+			frappe.db.set_value(
+				"Course Schedule", course, "notify_on_release", cint(course_data["notify_on_release"])
+			)
 
 		frappe.db.commit()
 		return {"success": True}
@@ -4842,6 +4847,7 @@ def upsert_chapter(
 	scorm_package: str | None,
 	name: str | None = None,
 	course_competency: str | None = None,
+	release: str | dict | None = None,
 ):
 	guards.require_section_capability(course, guards.CONTENT)
 	course_title = frappe.get_value("Course Schedule", course, "course")
@@ -4878,6 +4884,24 @@ def upsert_chapter(
 		_check_scorm_package(package_file)
 	previous_competency = chapter.course_competency
 	chapter.update(values)
+	# Absent leaves the release settings alone (decisions/107).
+	if release is not None:
+		release = frappe.parse_json(release) if isinstance(release, str) else release
+		chapter.release_type = release.get("release_type") or "Always open"
+		chapter.release_on = release.get("release_on") or None
+		chapter.release_offset_days = cint(release.get("release_offset_days"))
+		chapter.set(
+			"prerequisites",
+			[
+				{
+					"kind": row.get("kind"),
+					"chapter": row.get("chapter") or None,
+					"quiz": row.get("quiz") or None,
+					"min_percentage": row.get("min_percentage") or None,
+				}
+				for row in (release.get("prerequisites") or [])
+			],
+		)
 	chapter.save()
 	if package_file:
 		pin_scorm_package(chapter.name, package_file)
@@ -5056,6 +5080,11 @@ def delete_chapter(chapter: str):
 
 	cbe_reflection.assert_chapter_deletable(chapter)
 
+	from seminary.seminary.doctype.course_schedule_chapter.course_schedule_chapter import (
+		_drop_release_references,
+	)
+
+	_drop_release_references(chapter)
 	frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
 	frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
 	frappe.db.delete("Course Lesson", {"chapter": chapter})

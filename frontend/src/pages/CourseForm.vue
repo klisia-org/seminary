@@ -196,12 +196,17 @@
 					</div>
 
 					<div class="container border-t">
-						<div v-if="user.data?.is_moderator" class="text-lg font-semibold mt-5 mb-4">
+						<div class="text-lg font-semibold mt-5 mb-4">
 							{{ __('Settings') }}
 						</div>
 						<div class="grid grid-cols-2 gap-10 mb-4">
 							<div v-if="user.data?.is_moderator" class="flex flex-col space-y-4">
 								<FormControl type="checkbox" v-model="course.published" :label="__('Published')" />
+							</div>
+							<!-- decisions/107 §8 -->
+							<div class="flex flex-col space-y-4">
+								<FormControl type="checkbox" v-model="course.notify_on_release"
+									:label="__('Notify students when a chapter opens')" />
 							</div>
 						</div>
 					</div>
@@ -353,6 +358,7 @@ const course = reactive({
 	// Set by the registrar on Desk: online meetings get school-account links (051a).
 	school_meeting: 0,
 	content_release_override: '',
+	notify_on_release: 1,
 })
 
 // --- Content release (ADR 065) ---------------------------------------------

@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "creation": "2026-11-23 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "description": "Something a student must do before a chapter opens (decisions/107).",
+ "field_order": [
+  "kind",
+  "chapter",
+  "quiz",
+  "min_percentage"
+ ],
+ "fields": [
+  {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Complete chapter\nPass quiz",
+   "default": "Complete chapter",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "chapter",
+   "fieldtype": "Link",
+   "label": "Chapter",
+   "options": "Course Schedule Chapter",
+   "in_list_view": 1,
+   "depends_on": "eval:doc.kind=='Complete chapter'",
+   "mandatory_depends_on": "eval:doc.kind=='Complete chapter'"
+  },
+  {
+   "fieldname": "quiz",
+   "fieldtype": "Link",
+   "label": "Quiz",
+   "options": "Quiz",
+   "in_list_view": 1,
+   "depends_on": "eval:doc.kind=='Pass quiz'",
+   "mandatory_depends_on": "eval:doc.kind=='Pass quiz'"
+  },
+  {
+   "fieldname": "min_percentage",
+   "fieldtype": "Percent",
+   "label": "Minimum Score",
+   "in_list_view": 1,
+   "depends_on": "eval:doc.kind=='Pass quiz'",
+   "description": "Leave blank to use the quiz's own passing percentage."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-23 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Chapter Prerequisite",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

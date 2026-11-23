@@ -1,0 +1,188 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "hash",
+ "creation": "2026-11-23 12:00:00.000000",
+ "description": "A different opening for one student on one chapter: an earlier or later date, or prerequisites waived (decisions/107). Everything left blank follows the chapter.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course_schedule",
+  "chapter",
+  "chapter_title",
+  "column_break_a",
+  "student",
+  "student_name",
+  "release_section",
+  "open_from",
+  "waive_prerequisites",
+  "reason_section",
+  "reason",
+  "source"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "chapter",
+   "fieldtype": "Link",
+   "label": "Chapter",
+   "options": "Course Schedule Chapter",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "chapter_title",
+   "fieldtype": "Data",
+   "label": "Chapter Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "fetch_from": "student.student_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "release_section",
+   "fieldtype": "Section Break",
+   "label": "Release"
+  },
+  {
+   "fieldname": "open_from",
+   "fieldtype": "Datetime",
+   "label": "Opens On",
+   "description": "This student's own opening date, earlier or later than the chapter's. Leave blank to follow the chapter."
+  },
+  {
+   "fieldname": "waive_prerequisites",
+   "fieldtype": "Check",
+   "label": "Waive Prerequisites",
+   "default": "0",
+   "description": "Opens the chapter without its prerequisites and, in a competency-based section, without the previous self-assessment."
+  },
+  {
+   "fieldname": "reason_section",
+   "fieldtype": "Section Break",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Instructor\nRegistrar",
+   "default": "Instructor",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-23 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Chapter Release Override",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Program Chair"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Registrar"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Instructor"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

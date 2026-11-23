@@ -265,7 +265,12 @@ class TestP009Passback(_PassbackCase):
 		# The same cell holds a level (1-4) there, written by cbe; a percentage
 		# would be read back as a level (ADR 065 §7).
 		self._map()
-		with patch("seminary.seminary.cbe.framework_for", return_value="ZZT-framework"):
+		# Only the name is faked. Completing the lesson asks for the chapter's
+		# locks (decisions/107), which load the framework, so there is none to load.
+		with (
+			patch("seminary.seminary.cbe.framework_for", return_value="ZZT-framework"),
+			patch("seminary.seminary.cbe.framework_doc", return_value=None),
+		):
 			result = self._pass("100")
 		self.assertFalse(result["reported"])
 		self.assertEqual(self._cell().graded_card, 0)

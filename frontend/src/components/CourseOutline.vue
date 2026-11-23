@@ -37,9 +37,24 @@
 							'duration-200': !open,
 							open: index == 1,
 						}" class="h-4 w-4 text-ink-gray-9 stroke-1" />
-						<div class="ml-2 text-left text-base font-medium leading-5 text-ink-gray-9">
+						<div class="ml-2 text-left text-base font-medium leading-5"
+							:class="chapter.release?.locked ? 'text-ink-gray-5' : 'text-ink-gray-9'">
 							{{ chapter.chapter_title }}
 						</div>
+						<!-- Release date and prerequisites (decisions/107): a
+						     locked chapter stays in view, greyed out, and says why. -->
+						<template v-if="chapter.release?.locked">
+							<Lock class="ml-2 h-4 w-4 text-ink-gray-5" aria-hidden="true" />
+							<span class="sr-only">{{ __('Locked') }}</span>
+						</template>
+						<span v-if="chapter.release?.staff_note"
+							class="ml-2 rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6">
+							{{ chapter.release.staff_note }}
+						</span>
+						<span v-if="chapter.release?.has_prerequisites"
+							class="ml-2 rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6">
+							{{ __('Has prerequisites') }}
+						</span>
 					</DisclosureButton>
 					<!-- Shown on hover and on focus (decision 103): hidden
 					     controls can't take focus. -->
@@ -76,6 +91,13 @@
 				     condition behind, so the chevron turned and revealed an
 				     empty space -- the chapter title and nothing else. -->
 				<DisclosurePanel>
+					<div v-if="chapter.release?.locked" role="note"
+						class="ml-8 mr-4 mb-3 flex items-start gap-2 rounded-lg border border-outline-gray-2 bg-surface-gray-1 p-3 text-sm text-ink-gray-6">
+						<Lock class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+						<ul class="space-y-1">
+							<li v-for="reason in chapter.release.reasons" :key="reason">{{ reason }}</li>
+						</ul>
+					</div>
 					<!-- Competency guidance and lock state (ADR 065). The student
 					     reads what they are being formed into in the same place
 					     they do the work, and a lock always says why. -->
@@ -102,7 +124,7 @@
 								<SafeHtml class="ml-1 inline text-ink-gray-6" :html="d.demonstrated_by" as="dd" />
 							</div>
 						</dl>
-						<p v-if="competencyOf(chapter).reason" class="mt-2 text-xs text-ink-gray-6">
+						<p v-if="competencyOf(chapter).reason && !chapter.release?.locked" class="mt-2 text-xs text-ink-gray-6">
 							{{ competencyOf(chapter).reason }}
 						</p>
 						<!-- A lock links to the lesson that lifts it (ADR 079
@@ -116,11 +138,7 @@
 						</router-link>
 					</div>
 
-					<div v-if="competencyOf(chapter)?.locked" class="ml-8 mr-4 mb-4 text-sm text-ink-gray-5">
-						{{ __('The lessons in this chapter open once the previous self-assessment is in.') }}
-					</div>
-
-					<template v-else>
+					<template v-if="chapter.lessons">
 					<div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lesson.name" class="lesson-wrapper">
 						<!-- Not on a SCORM chapter: the manifest owns which SCOs
 						     exist and in what order, and `lessons.reconcile`
@@ -136,6 +154,7 @@
 						<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a pointer shortcut: the Move menu on this card does the same by keyboard -->
 						<div class="group ml-8 mr-4 rounded-lg border border-outline-gray-2 bg-surface-white p-4 transition hover:border-outline-gray-3"
 							:class="{
+								'opacity-60': chapter.release?.locked,
 								'bg-surface-selected': isActiveLesson(lesson.number),
 								'cursor-grab': props.allowEdit && !chapter.is_scorm_package && !reflectionOf(lesson),
 							}" :draggable="props.allowEdit && !chapter.is_scorm_package && !reflectionOf(lesson)"
@@ -159,14 +178,10 @@
 										</button>
 									</Tooltip>
 								</div>
-								<router-link class="flex-1" :to="{
-									name: 'Lesson',
-									params: {
-										courseName: courseName,
-										chapterNumber: lesson.number.split('.')[0],
-										lessonNumber: lesson.number.split('.')[1],
-									},
-								}">
+								<!-- A locked chapter's lessons are titles, not links. -->
+								<component :is="chapter.release?.locked ? 'div' : 'router-link'" class="flex-1"
+									:aria-disabled="chapter.release?.locked ? 'true' : undefined"
+									v-bind="chapter.release?.locked ? {} : { to: lessonRoute(lesson) }">
 									<div class="flex flex-col items-start gap-2 text-sm leading-5">
 										<div class="flex items-center gap-2">
 											<MonitorPlay v-if="lesson.icon === 'icon-youtube'"
@@ -197,9 +212,9 @@
 												{{ __('Graded') }}
 											</span>
 											<span
-												v-if="lesson.has_graded_activity && competencyOf(chapter)?.activities_locked"
+												v-if="lesson.has_graded_activity && chapter.release?.activities_locked && !chapter.release?.locked"
 												class="flex items-center gap-1 rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6"
-												:title="competencyOf(chapter).reason"
+												:title="(chapter.release.reasons || []).join(' ')"
 											>
 												<Lock class="h-3 w-3" />
 												{{ __('Locked') }}
@@ -232,7 +247,7 @@
 											{{ __('Due: ') + formatDate(lesson.due_date) }}
 										</div>
 									</div>
-								</router-link>
+								</component>
 								<div v-if="props.allowEdit && !reflectionOf(lesson) && !chapter.is_scorm_package"
 									class="ml-auto flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
 									<Dropdown v-if="lessonMoves(chapter, lessonIndex).length"
@@ -363,6 +378,11 @@ const competencyOf = (chapter) => competencies.data?.chapters?.[chapter.name]
 // badges, and what an instructor may not do to them, key off this.
 const reflectionOf = (lesson) => competencies.data?.reflections?.[lesson.name]
 const holdsReflection = (chapter) => (chapter.lessons || []).some((l) => reflectionOf(l))
+
+const lessonRoute = (lesson) => {
+	const [chapterNumber, lessonNumber] = lesson.number.split('.')
+	return { name: 'Lesson', params: { courseName: props.courseName, chapterNumber, lessonNumber } }
+}
 
 const unlockRoute = (competency) => {
 	const target = competency.unlock_lesson

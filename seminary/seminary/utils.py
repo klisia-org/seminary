@@ -785,10 +785,30 @@ def get_course_or_filters(filters):
 
 
 @frappe.whitelist()
-def get_course_outline(course, progress=False):
+def get_course_outline(course: str, progress: bool | int | str = False):
 	"""Returns the course outline."""
 	_require_published_or_enrolled(course)
 	outline = []
+
+	# Release dates, prerequisites and the CBE lock (decisions/107): a student
+	# gets a locked chapter's titles and why, never its lesson content. Staff
+	# get a line saying when students get it.
+	from seminary.seminary import content_release
+
+	gating = content_release.outline_for_user(course)
+	section = None if gating else content_release._section(course)
+	release_rows = (
+		{}
+		if gating
+		else {
+			c.name: c
+			for c in frappe.get_all(
+				"Course Schedule Chapter",
+				filters={"coursesc": course},
+				fields=["name", "release_type", "release_on", "release_offset_days"],
+			)
+		}
+	)
 
 	chapters = frappe.get_all(
 		"Course Schedule Chapter Reference",
@@ -819,6 +839,37 @@ def get_course_outline(course, progress=False):
 
 		chapter_details.lessons = get_lessons(course, chapter_details, progress=progress)
 
+		if gating:
+			state = gating["chapters"].get(chapter_details.name) or {}
+			chapter_details.release = {
+				"locked": bool(state.get("locked")),
+				"activities_locked": bool(state.get("activities_locked")),
+				"reasons": state.get("reasons") or [],
+				"opens_at": state.get("opens_at"),
+			}
+			if state.get("locked"):
+				for lesson in chapter_details.lessons:
+					for field in _LOCKED_LESSON_FIELDS:
+						lesson.pop(field, None)
+		else:
+			row = release_rows.get(chapter_details.name)
+			prerequisites = frappe.get_all(
+				"Chapter Prerequisite",
+				filters={"parent": chapter_details.name, "parenttype": "Course Schedule Chapter"},
+				fields=["kind", "chapter", "quiz", "min_percentage"],
+				order_by="idx asc",
+			)
+			chapter_details.release = {
+				"locked": False,
+				"staff_note": content_release.describe_release(row, section) if row else None,
+				"has_prerequisites": bool(prerequisites),
+				# What the chapter editor loads.
+				"release_type": row.release_type if row else None,
+				"release_on": row.release_on if row else None,
+				"release_offset_days": row.release_offset_days if row else 0,
+				"prerequisites": prerequisites,
+			}
+
 		if chapter_details.is_scorm_package:
 			chapter_details.scorm_package = frappe.db.get_value(
 				"File",
@@ -829,6 +880,20 @@ def get_course_outline(course, progress=False):
 
 		outline.append(chapter_details)
 	return outline
+
+
+# What a locked chapter's lessons do not carry to a student: everything but
+# the title, number and icon.
+_LOCKED_LESSON_FIELDS = (
+	"body",
+	"content",
+	"preview",
+	"youtube",
+	"instructor_content",
+	"quiz_id",
+	"assignment_id",
+	"exam",
+)
 
 
 @frappe.whitelist()
@@ -1210,6 +1275,32 @@ def get_lesson(course: str, chapter: str | int, lesson: str | int):
 		# Published and on the roster (p007 §8.1), or one of its mentors.
 		if not may_view_content(course):
 			return {}
+
+	# A locked chapter (decisions/107) sends its title and why, not its content.
+	from seminary.seminary import content_release
+
+	locked = content_release.chapter_locked(course, chapter_name)
+	if locked:
+		neighbours = get_neighbour_lesson(course, chapter, lesson)
+		return frappe._dict(
+			{
+				"name": lesson_name,
+				"locked": 1,
+				"reasons": locked.get("reasons") or [],
+				"lesson_title": frappe.db.get_value("Course Lesson", lesson_name, "lesson_title"),
+				"course_title": frappe.db.get_value("Course Schedule", course, "course"),
+				"chapter_name": chapter_name,
+				"next": neighbours["next"],
+				"prev": neighbours["prev"],
+				"instructors": _instructors(course),
+				"membership": frappe.db.get_value(
+					"Scheduled Course Roster",
+					{"stuemail_rc": frappe.session.user, "course_sc": course},
+					["name", "course_sc", "current_lesson", "progress", "stuemail_rc"],
+					as_dict=1,
+				),
+			}
+		)
 
 	lesson_details = frappe.db.get_value(
 		"Course Lesson",
