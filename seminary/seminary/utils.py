@@ -1167,7 +1167,7 @@ def get_chapters(course):
 
 
 @frappe.whitelist()
-def get_lesson(course, chapter, lesson):
+def get_lesson(course: str, chapter: str | int, lesson: str | int):
 	chapter_name = frappe.db.get_value(
 		"Course Schedule Chapter Reference",
 		{"parent": course, "idx": chapter},
@@ -1215,9 +1215,14 @@ def get_lesson(course, chapter, lesson):
 			"chapter",
 			"scorm_sco_identifier",
 			"scorm_orphaned",
+			"transcript",
 		],
 		as_dict=True,
 	)
+	# The player renders each as a <track> (102 §6).
+	from seminary.seminary.doctype.course_lesson.course_lesson import lesson_captions
+
+	lesson_details.captions = lesson_captions(lesson_details.name)
 	lesson_details["is_scorm_package"] = bool(
 		lesson_details.chapter
 		and frappe.db.get_value("Course Schedule Chapter", lesson_details.chapter, "is_scorm_package")
@@ -1574,7 +1579,7 @@ def get_lesson_count(course):
 
 
 @frappe.whitelist()
-def get_lesson_creation_details(course, chapter, lesson):
+def get_lesson_creation_details(course: str, chapter: str | int, lesson: str | int):
 	require_course_staff(course)
 	chapter_name = frappe.db.get_value(
 		"Course Schedule Chapter Reference",
@@ -1607,8 +1612,16 @@ def get_lesson_creation_details(course, chapter, lesson):
 				"assignment_id",
 				"exam",
 				"allow_discuss",
+				"transcript",
 			],
 			as_dict=1,
+		)
+		# The lesson form edits the caption rows and saves them back whole (102 §6).
+		lesson_details.captions = frappe.get_all(
+			"Course Lesson Caption",
+			filters={"parent": lesson_name, "parenttype": "Course Lesson", "parentfield": "captions"},
+			fields=["name", "language", "label", "caption_file"],
+			order_by="idx asc",
 		)
 
 	return {

@@ -1,0 +1,160 @@
+# The pages the accessibility test visits (decision 102 §3).
+#
+# Every path in frontend/src/router.js must appear under `portal`; the test fails
+# if one is missing. A route is visited as each role in `as`, with its `:params`
+# filled from `samples`. Give `skip` with a reason instead for a route that only
+# redirects or is never shown to people.
+#
+# Samples are picked from the site's own records, in the order written here, and
+# may use earlier ones as `$name`. The built-in samples are:
+#   course       a published Course Schedule with students, chapters and an instructor
+#   course_name  its Course
+#   student      a Student enrolled in it, and student_user, their user
+#   instructor   an Instructor of it, and instructor_user, their user
+#   registrar    a user with Seminary Manager who is not Administrator
+#   partner      a user linked to a partner organisation through a Partner Contact
+# A route whose sample is missing on the site is listed as not visited.
+
+samples:
+  one: {value: "1"}
+  quiz: {doctype: Quiz, filters: {course: $course_name}}
+  quiz_submission: {doctype: Quiz Submission, filters: {course: $course}}
+  assignment: {doctype: Assignment Activity, filters: {course: $course_name}}
+  assignment_submission: {doctype: Assignment Submission, filters: {course: $course}}
+  assignment_of_submission:
+    {doctype: Assignment Submission, filters: {name: $assignment_submission}, field: assignment}
+  exam: {doctype: Exam Activity, filters: {course: $course_name}}
+  exam_submission: {doctype: Exam Submission, filters: {course: $course}}
+  exam_of_submission: {doctype: Exam Submission, filters: {name: $exam_submission}, field: exam}
+  discussion: {doctype: Discussion Activity, filters: {course: $course_name}}
+  discussion_submission: {doctype: Discussion Submission, filters: {coursesc: $course}}
+  discussion_of_submission:
+    {doctype: Discussion Submission, filters: {name: $discussion_submission}, field: disc_activity}
+  oral: {doctype: Oral Activity, filters: {course: $course_name}}
+  oral_submission: {doctype: Oral Activity Submission, filters: {course: $course}}
+  oral_of_submission:
+    {doctype: Oral Activity Submission, filters: {name: $oral_submission}, field: oral_activity}
+  partner_org: {doctype: Partner Organization}
+  job: {doctype: Job Opening, filters: {status: Open}}
+  internship: {doctype: Internship}
+
+portal:
+  - {path: /desk/seminary, skip: Opens Desk, which is out of scope.}
+  - {path: /fees, as: [student]}
+  - {path: /jobs, as: [student]}
+  - {path: "/jobs/:jobName", as: [student], params: {jobName: job}}
+  - {path: "/jobs/:jobName/apply", as: [student], params: {jobName: job}}
+  - {path: /internships, as: [student]}
+  - {path: /my-internships, as: [student]}
+  - {path: "/my-internships/:name", skip: Needs an internship placement of the student's own.}
+  - {path: "/internships/:name", as: [student], params: {name: internship}}
+  - {path: /partner, as: [partner]}
+  - {path: /partner/profile, as: [partner]}
+  - {path: /partner/people, as: [partner]}
+  - {path: /partner/jobs, as: [partner]}
+  - {path: /partner/jobs/new, as: [partner]}
+  - {path: "/partner/jobs/:name/edit", skip: Same form as New Job Posting.}
+  - {path: "/partner/jobs/:name", skip: Needs a posting of the partner's own.}
+  - {path: "/partner/jobs/:name/applications/:appName", skip: Needs an application to the partner's posting.}
+  - {path: /partner/internships, as: [partner]}
+  - {path: /partner/internships/new, as: [partner]}
+  - {path: "/partner/internships/:name/edit", skip: Same form as New Internship Posting.}
+  - {path: "/partner/internships/:name", skip: Needs a posting of the partner's own.}
+  - {path: "/partner/internships/:name/applicants/:appName", skip: Needs an applicant to the partner's posting.}
+  - {path: /partner/interns, as: [partner]}
+  - {path: /grades, as: [student]}
+  - {path: "/development-plans/:student?", as: [student]}
+  - {path: /my-formation, as: [student]}
+  - {path: /cbe-overview, as: [registrar]}
+  - {path: /competency-profile, skip: Redirects to My Formation.}
+  - {path: /courses, as: [student, instructor]}
+  - {path: "/courses/:courseName", as: [student, instructor], params: {courseName: course}}
+  - {path: "/courses/:courseName/status", as: [student], params: {courseName: course}}
+  - {path: "/courses/:courseName/withdraw", as: [student], params: {courseName: course}}
+  - {path: "/courses/:courseName/assessment", as: [student], params: {courseName: course}}
+  - {path: "/courses/:courseName/self-assessment/:competency?", as: [student], params: {courseName: course}}
+  - {path: "/courses/:courseName/development-plan", as: [student], params: {courseName: course}}
+  - {path: "/courses/:courseName/outcome-report", as: [instructor], params: {courseName: course}}
+  - {path: "/courses/:courseName/feedback", as: [student], params: {courseName: course}}
+  - path: "/courses/:courseName/learn/:chapterNumber-:lessonNumber"
+    as: [student, instructor]
+    params: {courseName: course, chapterNumber: one, lessonNumber: one}
+  - {path: "/courses/:courseName/edit", as: [instructor], params: {courseName: course}}
+  - path: "/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit"
+    as: [instructor]
+    params: {courseName: course, chapterNumber: one, lessonNumber: one}
+  - {path: "/instructorprofile/:instructorName", as: [student], params: {instructorName: instructor}}
+  - {path: /quizzes, as: [instructor]}
+  - {path: "/quizzes/:quizID", as: [instructor], params: {quizID: quiz}}
+  - {path: "/quiz/:quizID", as: [student], params: {quizID: quiz}}
+  - {path: "/quiz-submissions/:quizID", as: [instructor], params: {quizID: quiz}}
+  - {path: "/gradebook/:courseName/:quizID", as: [instructor], params: {courseName: course, quizID: quiz}}
+  - {path: "/quiz-submission/:submission", as: [instructor], params: {submission: quiz_submission}}
+  - {path: /assignments, as: [instructor]}
+  - {path: "/assignments/:assignmentID", as: [instructor], params: {assignmentID: assignment}}
+  - path: "/gradebook/:courseName/assignment-submissions/:assignmentID/:submissionName"
+    as: [instructor]
+    params: {courseName: course, assignmentID: assignment_of_submission, submissionName: assignment_submission}
+  - {path: /assignment-submissions, as: [instructor]}
+  - path: "/gradebook/:courseName/assignment-submissions/:assignmentID"
+    as: [instructor]
+    params: {courseName: course, assignmentID: assignment}
+  - {path: /exams, as: [instructor]}
+  - {path: "/exams/:examID", as: [instructor], params: {examID: exam}}
+  - {path: "/exam/:examID", as: [student], params: {examID: exam}}
+  - {path: "/exam-submissions/:examID", as: [instructor], params: {examID: exam}}
+  - path: "/gradebook/:courseName/exam-submissions/:examID/:submission"
+    as: [instructor]
+    params: {courseName: course, examID: exam_of_submission, submission: exam_submission}
+  - {path: "/gradebook/:courseName/exam-submissions/:examID", as: [instructor], params: {courseName: course, examID: exam}}
+  - {path: "/gradebook/:courseName", as: [instructor], params: {courseName: course}}
+  - {path: "/competency-gradebook/:courseName", as: [instructor], params: {courseName: course}}
+  - {path: "/attendance/:courseName", as: [instructor], params: {courseName: course}}
+  - {path: /attendance-checkin, as: [student]}
+  - {path: /discussion-activities, as: [instructor]}
+  - {path: "/discussion-activities/:discussionID", as: [instructor], params: {discussionID: discussion}}
+  - path: "/gradebook/:courseName/discussion-submissions/:discussionID"
+    as: [instructor]
+    params: {courseName: course, discussionID: discussion}
+  - path: "/gradebook/:courseName/discussion-submissions/:discussionID/:submissionName"
+    as: [instructor]
+    params: {courseName: course, discussionID: discussion_of_submission, submissionName: discussion_submission}
+  - {path: /oral-activities, as: [instructor]}
+  - {path: "/oral-activities/:activityID", as: [instructor], params: {activityID: oral}}
+  - path: "/courses/:courseName/oral-meetings/:activityID"
+    as: [instructor]
+    params: {courseName: course, activityID: oral}
+  - path: "/gradebook/:courseName/oral-submissions/:activityID"
+    as: [instructor]
+    params: {courseName: course, activityID: oral}
+  - path: "/gradebook/:courseName/oral-submissions/:activityID/:submissionName"
+    as: [instructor]
+    params: {courseName: course, activityID: oral_of_submission, submissionName: oral_submission}
+  - {path: /discussion-activity-submissions, as: [instructor]}
+  - {path: /mock, skip: A developer page that isn't linked from the portal.}
+  - {path: "/courses/:courseName/student-group", as: [instructor], params: {courseName: course}}
+  - {path: "/courses/:courseName/course-calendar", as: [student], params: {courseName: course}}
+  - {path: /program-audit, as: [student]}
+  - {path: /culminating-project, as: [student]}
+  - {path: /faculty-worklist, as: [instructor]}
+  - {path: /enrollment, as: [student]}
+  - {path: /announcements, skip: Redirects to the inbox.}
+  - {path: /inbox, as: [student, instructor]}
+  - {path: /community, as: [student]}
+  - {path: /reading-plans, as: [student]}
+  - {path: /requirements, as: [student]}
+  - {path: /preferences, as: [student]}
+  - {path: /alumni, as: [student]}
+  - {path: /alumni/directory, as: [student]}
+  - {path: /alumni/organizations, as: [student]}
+  - {path: "/alumni/organizations/:name", as: [student], params: {name: partner_org}}
+  - {path: /alumni/profile, as: [student]}
+  - {path: "/recommender-form/:name", skip: Opens only with a recommender's emailed token.}
+
+# The public pages Seminary renders, visited signed out.
+website:
+  - /home
+  - /programs
+  - /our-team
+  - /what-we-believe
+  - /student-applicant/new

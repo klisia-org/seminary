@@ -35,6 +35,7 @@ declare module 'vue' {
     CompetencyReview: typeof import('./src/components/CompetencyReview.vue')['default']
     CompetencyStudentPane: typeof import('./src/components/CompetencyStudentPane.vue')['default']
     ContactChannelIcons: typeof import('./src/components/ContactChannelIcons.vue')['default']
+    ContentIssues: typeof import('./src/components/ContentIssues.vue')['default']
     CourseAssessmentModal: typeof import('./src/components/Modals/CourseAssessmentModal.vue')['default']
     CourseCardOverlay: typeof import('./src/components/CourseCardOverlay.vue')['default']
     CourseCardToDo: typeof import('./src/components/CourseCardToDo.vue')['default']

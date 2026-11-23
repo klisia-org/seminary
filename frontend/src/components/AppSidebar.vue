@@ -6,7 +6,7 @@
 				<UserDropdown :isCollapsed="isSidebarCollapsed"
 					:seminarySettings="!seminarySettings.loading && seminarySettings.data ? seminarySettings.data : {}" />
 			</div>
-			<nav class="flex flex-col gap-1 overflow-y-auto px-3 pb-6">
+			<nav :aria-label="__('Main')" class="flex flex-col gap-1 overflow-y-auto px-3 pb-6">
 				<SidebarLink v-for="link in links" :key="link.to" :label="link.label" :to="link.to"
 					:isCollapsed="isSidebarCollapsed" :icon="link.icon" :badge="link.badge || 0" />
 				<template

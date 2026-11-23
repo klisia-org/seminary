@@ -27,12 +27,12 @@
 						class="inline-flex items-center gap-1 rounded-full bg-surface-gray-2 px-2.5 py-1 text-sm text-ink-gray-8"
 					>
 						{{ tag }}
-						<button type="button" class="text-ink-gray-5 hover:text-ink-gray-8" @click="removeSkill(tag)">
+						<button :aria-label="__('Remove {0}').format(tag)" type="button" class="text-ink-gray-5 hover:text-ink-gray-8" @click="removeSkill(tag)">
 							<X class="size-3.5" />
 						</button>
 					</span>
 				</div>
-				<select
+				<select :aria-label="__('Add a skill')"
 					class="field-input"
 					:value="''"
 					@change="addSkill($event.target.value); $event.target.value = ''"

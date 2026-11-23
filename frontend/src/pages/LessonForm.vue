@@ -70,15 +70,13 @@
 							:placeholder="__('One or two sentences students see before opening the lesson')" />
 					</div>
 					<div class="mt-5 border-t border-outline-gray-1 pt-4">
-						<div class="flex items-center justify-between gap-4">
-							<div class="cursor-pointer select-none" @click="lesson.allow_discuss = !lesson.allow_discuss">
-								<span class="block text-base font-medium text-ink-gray-9">{{ __('Allow discussion') }}</span>
-								<span class="block text-sm text-ink-gray-5">
-									{{ __('Students can comment below the lesson. Turned off automatically for quizzes.') }}
-								</span>
-							</div>
-							<Switch :aria-label="__('Allow discussion')" v-model="lesson.allow_discuss" size="md" />
-						</div>
+						<!-- Switch's own label and description name the control (102 §9). -->
+						<Switch
+							v-model="lesson.allow_discuss"
+							size="md"
+							:label="__('Allow discussion')"
+							:description="__('Students can comment below the lesson. Turned off automatically for quizzes.')"
+						/>
 					</div>
 				</section>
 
@@ -114,6 +112,7 @@
 							{{ blockCount === 1 ? __('1 block') : __('{0} blocks').format(blockCount) }}
 						</span>
 					</div>
+					<ContentIssues ref="contentChecker" class="mb-3" :issues="contentIssues" />
 					<div v-if="blockCount === 0"
 						class="mb-3 rounded-lg border border-dashed border-outline-gray-3 bg-surface-gray-1 px-4 py-5 text-center">
 						<p class="text-base font-medium text-ink-gray-8">{{ __('Start building your lesson') }}</p>
@@ -132,12 +131,76 @@
 						</div>
 					</div>
 				</section>
+
+				<!-- Captions and transcript (102 §6): saved with the lesson, like its other fields. -->
+				<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
+					<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('Captions and transcript') }}</h2>
+					<p class="mt-0.5 text-sm text-ink-gray-5">
+						{{ __('Caption files for the videos uploaded or recorded in this lesson, one per language, in WebVTT (.vtt) format. YouTube and Vimeo videos keep their own captions.') }}
+					</p>
+					<ul v-if="lesson.captions.length"
+						class="mt-4 divide-y divide-outline-gray-1 rounded-lg border border-outline-gray-2">
+						<li v-for="(row, index) in lesson.captions" :key="row.name || row.caption_file"
+							class="flex items-center gap-3 px-3 py-2 text-sm">
+							<span class="font-medium text-ink-gray-9">{{ row.label || row.language }}</span>
+							<span class="text-xs text-ink-gray-5">{{ row.language }}</span>
+							<a :href="row.caption_file" target="_blank" rel="noopener"
+								class="min-w-0 flex-1 truncate text-ink-gray-6 underline">{{ fileName(row.caption_file) }}</a>
+							<Button variant="ghost" :aria-label="__('Remove captions')" @click="removeCaption(index)">
+								<template #icon>
+									<X class="h-4 w-4" />
+								</template>
+							</Button>
+						</li>
+					</ul>
+					<div class="mt-4 grid items-end gap-3 sm:grid-cols-[12rem,minmax(0,1fr),auto]">
+						<Link doctype="Language" v-model="newCaption.language" :label="__('Language')"
+							:filters="{ enabled: 1 }" :placeholder="__('Choose a language')" />
+						<FormControl v-model="newCaption.label" :label="__('Label (optional)')"
+							:placeholder="__('Shown in the player\'s captions menu')" />
+						<SmartFileUploader :fileTypes="['.vtt', 'text/vtt']" :validateFile="validateVtt"
+							@success="addCaption">
+							<template #default="{ uploading, progress, openFileSelector }">
+								<Button :disabled="!newCaption.language" :loading="uploading" @click="openFileSelector">
+									{{ uploading ? __('Uploading {0}%').format(progress) : __('Upload .vtt file') }}
+								</Button>
+							</template>
+						</SmartFileUploader>
+					</div>
+					<div class="mt-5 border-t border-outline-gray-1 pt-4">
+						<div class="text-base font-medium text-ink-gray-9">{{ __('Transcript') }}</div>
+						<p class="text-sm text-ink-gray-5">
+							{{ __('Optional. A text version of the lesson\'s video or audio, linked below the lesson.') }}
+						</p>
+						<div v-if="lesson.transcript" class="mt-2 flex items-center gap-3 text-sm">
+							<a :href="lesson.transcript" target="_blank" rel="noopener"
+								class="min-w-0 flex-1 truncate text-ink-gray-6 underline">{{ fileName(lesson.transcript) }}</a>
+							<Button variant="ghost" :aria-label="__('Remove transcript')" @click="lesson.transcript = ''">
+								<template #icon>
+									<X class="h-4 w-4" />
+								</template>
+							</Button>
+						</div>
+						<SmartFileUploader v-else class="mt-2"
+							:fileTypes="['.txt', '.pdf', '.doc', '.docx', '.odt', '.html', '.vtt']"
+							@success="(file) => (lesson.transcript = file.file_url)">
+							<template #default="{ uploading, progress, openFileSelector }">
+								<Button :loading="uploading" @click="openFileSelector">
+									{{ uploading ? __('Uploading {0}%').format(progress) : __('Upload transcript') }}
+								</Button>
+							</template>
+						</SmartFileUploader>
+					</div>
+				</section>
 			</div>
 		</div>
 	</div>
 </template>
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
+import ContentIssues from '@/components/ContentIssues.vue'
+import Link from '@/components/Controls/Link.vue'
+import SmartFileUploader from '@/components/SmartFileUploader.vue'
 import {
 	Breadcrumbs,
 	Button,
@@ -175,8 +238,10 @@ import {
 	Type,
 	Upload,
 	Video,
+	X,
 } from 'lucide-vue-next'
 import { updateDocumentTitle, createToast, getEditorTools } from '@/utils'
+import { checkBlocks } from '@/utils/contentCheck'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
 import { examStore } from '@/stores/exam'
@@ -299,6 +364,7 @@ const renderEditor = (holder, course = null, courseName = null, onChange = null)
 	// Clear the holder first
 	const el = document.getElementById(holder)
 	if (el) el.innerHTML = ''
+	if (el) reachablePopovers(el)
 
 	return new EditorJS({
 		holder: holder,
@@ -312,6 +378,16 @@ const renderEditor = (holder, course = null, courseName = null, onChange = null)
 	})
 }
 
+// editorjs's block menus scroll but can't take focus, so a keyboard user can't scroll
+// them (102 §9, WCAG 2.1.1): make each one focusable as it appears.
+const reachablePopovers = (el) => {
+	new MutationObserver(() => {
+		el.querySelectorAll('.ce-popover__items:not([tabindex])').forEach((items) => {
+			items.setAttribute('tabindex', '0')
+		})
+	}).observe(el, { childList: true, subtree: true })
+}
+
 const countBlocks = () => {
 	const api = editor.value
 	if (!api?.blocks) return
@@ -320,6 +396,66 @@ const countBlocks = () => {
 		if (!api.blocks.getBlockByIndex(i)?.isEmpty) filled++
 	}
 	blockCount.value = filled
+}
+
+// The accessibility checker (102 §7): re-read the blocks a moment after the
+// instructor stops typing, and whenever the captions change.
+const contentChecker = ref(null)
+const contentIssues = ref([])
+let checkTimer
+
+const runContentCheck = async () => {
+	clearTimeout(checkTimer)
+	if (!editor.value) return
+	try {
+		const data = await editor.value.save()
+		contentIssues.value = checkBlocks(data.blocks, { captions: lesson.captions })
+	} catch {
+		/* the editor is mid-render; the next change checks again */
+	}
+}
+
+const scheduleContentCheck = () => {
+	clearTimeout(checkTimer)
+	checkTimer = setTimeout(runContentCheck, 800)
+}
+
+const onContentChange = () => {
+	countBlocks()
+	scheduleContentCheck()
+}
+
+watch(() => lesson.captions.length, scheduleContentCheck)
+
+// Captions (102 §6). The rows ride on the lesson and save with it.
+const newCaption = reactive({ language: '', label: '' })
+
+const fileName = (url) => decodeURIComponent(String(url || '').split('?')[0].split('/').pop())
+
+const validateVtt = async (file) => {
+	if (!file.name.toLowerCase().endsWith('.vtt')) {
+		return __('Captions must be a WebVTT (.vtt) file.')
+	}
+	const head = (await file.slice(0, 16).text()).replace(/^\uFEFF/, '')
+	if (!head.startsWith('WEBVTT')) {
+		return __('This file does not start with WEBVTT, so players can\'t read it. Export the captions as WebVTT.')
+	}
+}
+
+const addCaption = (file) => {
+	lesson.captions.push({
+		language: newCaption.language,
+		label: newCaption.label.trim(),
+		caption_file: file.file_url,
+	})
+	newCaption.language = ''
+	newCaption.label = ''
+	if (lessonName.value) persistLesson().catch(() => {})
+}
+
+const removeCaption = (index) => {
+	lesson.captions.splice(index, 1)
+	if (lessonName.value) persistLesson().catch(() => {})
 }
 
 /**
@@ -444,6 +580,9 @@ const lesson = reactive({
 	content: '',
 	discussion_id: null,
 	allow_discuss: false,
+	// Course Lesson Caption rows and the transcript file (102 §6).
+	captions: [],
+	transcript: '',
 })
 
 const lessonDetails = createResource({
@@ -463,7 +602,7 @@ const lessonDetails = createResource({
 		const course = data?.course_title
 		const courseName = props.courseName
 
-		editor.value = renderEditor('content', course, courseName, countBlocks)
+		editor.value = renderEditor('content', course, courseName, onContentChange)
 		instructorEditor.value = renderEditor('instructor-notes', course, courseName)
 
 		if (data.lesson) {
@@ -473,6 +612,8 @@ const lessonDetails = createResource({
 				lesson[key] = data.lesson[key]
 			})
 
+			lesson.captions = Array.isArray(data.lesson.captions) ? data.lesson.captions : []
+			lesson.transcript = data.lesson.transcript || ''
 			lesson.include_in_preview = Boolean(data.lesson.include_in_preview)
 			lesson.allow_discuss = Boolean(data.lesson.allow_discuss)
 
@@ -534,6 +675,7 @@ const initContent = async (data) => {
 
 	focusFreeBlockAtEnd()
 	countBlocks()
+	runContentCheck()
 
 	if (pending?.id) {
 		examStore.clearPendingInsert()
@@ -585,6 +727,7 @@ onBeforeUnmount(() => {
 	localStorage.removeItem('activeCourseName');
 	clearInterval(autoSaveInterval)
 	clearTimeout(titleSaveTimer)
+	clearTimeout(checkTimer)
 	window.removeEventListener('keydown', keyboardShortcut)
 })
 
@@ -907,18 +1050,37 @@ const writeLesson = async () => {
 		: null
 
 	if (lessonName.value) {
-		await editLesson.submit({ lesson: lessonName.value }, { validate: validateLesson })
+		const saved = await editLesson.submit({ lesson: lessonName.value }, { validate: validateLesson })
+		adoptCaptionNames(saved)
 	} else {
 		const data = await newLessonResource.submit({}, { validate: validateLesson })
+		adoptCaptionNames(data)
 		lessonName.value = data.name
 		await lessonReference.submit({ lesson: data.name })
 		capture('lesson_created')
 	}
 }
 
+// Keep the saved rows' names, so the next save updates them rather than
+// replacing every caption row.
+const adoptCaptionNames = (saved) => {
+	const rows = saved?.captions
+	if (!Array.isArray(rows)) return
+	rows.forEach((row, i) => {
+		const local = lesson.captions[i]
+		if (local && !local.name && local.caption_file === row.caption_file) local.name = row.name
+	})
+}
+
 const saveLesson = async (e) => {
 	const wantsMessage = typeof e !== 'undefined' && e.showSuccessMessage
 	const wasNew = !lessonName.value
+	// An explicit save shows what the checker found and lets the instructor go
+	// ahead anyway; the autosave never asks (102 §7).
+	if (wantsMessage && editor.value) {
+		await runContentCheck()
+		if (!(await contentChecker.value?.confirm(contentIssues.value) ?? true)) return
+	}
 	try {
 		await persistLesson()
 		if (wantsMessage) {
@@ -1021,8 +1183,8 @@ updateDocumentTitle(pageMeta)
 
 </script>
 <style>
-.embed-tool__caption,
-.cdx-simple-image__caption {
+/* simple-image's caption stays visible here: it is the image's alt text (102 §7). */
+.embed-tool__caption {
 	display: none;
 }
 

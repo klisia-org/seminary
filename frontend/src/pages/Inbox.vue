@@ -23,14 +23,14 @@
 
 	<div class="mx-auto w-full max-w-3xl px-5 pt-4">
 		<div class="flex flex-wrap items-center gap-2">
-			<select
+			<select :aria-label="__('Channel')"
 				v-model="channelFilter"
 				class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
 			>
 				<option value="">{{ __('All channels') }}</option>
 				<option v-for="c in channels" :key="c" :value="c">{{ __(c) }}</option>
 			</select>
-			<select
+			<select :aria-label="__('Category')"
 				v-model="categoryFilter"
 				class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
 			>
@@ -127,7 +127,7 @@
 			<div class="flex flex-col gap-4">
 				<div v-if="scope.data?.courses?.length">
 					<div class="mb-1.5 text-sm text-ink-gray-5">{{ __('Course (optional filter)') }}</div>
-					<select
+					<select :aria-label="__('Course (optional filter)')"
 						v-model="compose.course"
 						class="w-full rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
 					>

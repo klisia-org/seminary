@@ -485,3 +485,13 @@ a:hover {
 	font-size: 2rem;
 	line-height: 1;
 }
+
+/* Frappe's web form (espresso) colours below 4.5:1 on its own surfaces (decision 102
+   §9, WCAG 1.4.3): the step hint is #999 on white and the amber "Not Saved" badge
+   2.5:1 on its fill. */
+.es-progress__hint {
+	color: #6b6b6b;
+}
+.es-badge[data-theme="amber"] {
+	--c-fg: #7a4200;
+}

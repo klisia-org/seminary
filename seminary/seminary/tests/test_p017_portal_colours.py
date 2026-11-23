@@ -122,6 +122,10 @@ RAW_ALLOWED = {
 
 def _files():
 	for path in sorted(SRC.rglob("*")):
+		# overrides/frappe-ui holds frappe-ui's own components, patched (102 §9): their
+		# classes are frappe-ui's, like the rest of node_modules.
+		if "overrides/frappe-ui" in path.as_posix():
+			continue
 		if path.suffix in {".vue", ".js", ".ts", ".css"} and path.is_file():
 			yield str(path.relative_to(SRC)), path.read_text()
 

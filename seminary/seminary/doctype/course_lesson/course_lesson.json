@@ -22,6 +22,9 @@
   "youtube",
   "instructor_content",
   "instructor_notes",
+  "captions_section",
+  "captions",
+  "transcript",
   "assignments_section",
   "quiz_id",
   "assignment_id",
@@ -213,11 +216,29 @@
    "fieldtype": "Check",
    "label": "Reflection Lesson",
    "read_only": 1
+  },
+  {
+   "description": "Captions for the videos played in this lesson, one file per language. Videos from YouTube or Vimeo keep their own captions.",
+   "fieldname": "captions_section",
+   "fieldtype": "Section Break",
+   "label": "Captions"
+  },
+  {
+   "fieldname": "captions",
+   "fieldtype": "Table",
+   "label": "Captions",
+   "options": "Course Lesson Caption"
+  },
+  {
+   "description": "Optional. A text version of the lesson's video or audio, linked below the lesson.",
+   "fieldname": "transcript",
+   "fieldtype": "Attach",
+   "label": "Transcript"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-24 12:00:00.000000",
+ "modified": "2026-11-22 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

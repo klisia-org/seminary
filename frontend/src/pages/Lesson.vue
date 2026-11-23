@@ -29,7 +29,8 @@
 								</span>
 							</Button>
 						</router-link>
-						<router-link v-if="user?.data?.is_moderator || is_instructor()" :to="{
+						<!-- One control, not a link wrapping a button (102 §9, WCAG 2.5.8). -->
+						<Button v-if="user?.data?.is_moderator || is_instructor()" variant="solid" class="mr-2" :route="{
 							name: 'LessonForm',
 							params: {
 								courseName: courseName,
@@ -37,10 +38,8 @@
 								lessonNumber: props.lessonNumber,
 							},
 						}">
-							<Button variant="solid" class="mr-2">
-								{{ __('Edit') }}
-							</Button>
-						</router-link>
+							{{ __('Edit') }}
+						</Button>
 						<router-link v-if="lesson.data.next" @click="onNextClick" :to="{
 							name: 'Lesson',
 							params: {
@@ -130,10 +129,16 @@
 				</div>
 				<div v-else
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-5">
-					<LessonContent v-if="lesson.data?.body" :content="lesson.data.body" :youtube="lesson.data.youtube"
+					<LessonContent v-if="lesson.data?.body" :content="lesson.data.body" :youtube="lesson.data.youtube" :captions="lesson.data.captions"
 						:quizId="lesson.data.quiz_id" :exam="lesson.data.exam" :assignmentID="lesson.data.assignment_id"
 						:discussionID="lesson.data.discussion_id" :courseName="props.courseName" :socket="socket" />
 				</div>
+				<!-- 102 §6: a text version of the lesson's media, when the instructor gave one. -->
+				<a v-if="lesson.data.transcript" :href="lesson.data.transcript" target="_blank" rel="noopener"
+					class="mt-4 inline-flex items-center gap-1.5 text-sm text-ink-gray-7 underline">
+					<FileText class="h-4 w-4" aria-hidden="true" />
+					{{ __('Transcript') }}
+				</a>
 				<div class="mt-20">
 					<Discussions v-if="allowDiscussions && lesson.data?.name" :title="__('Questions')"
 						:doctype="'Course Lesson'" :docname="lesson.data.name" :key="lesson.data.name" type="multi" />
@@ -164,7 +169,7 @@ import { createResource, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, watch, inject, ref, onMounted, onBeforeUnmount } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ChevronLeft, ChevronRight, GraduationCap } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, FileText, GraduationCap } from 'lucide-vue-next'
 import { getEditorTools, updateDocumentTitle } from '../utils'
 import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
@@ -239,7 +244,9 @@ const lesson = createResource({
 		const courseName = props.courseName 
 
 		if (data.content)
-			editor.value = renderEditor('editor', data.content, course, courseName, data.name)
+			editor.value = renderEditor('editor', data.content, course, courseName, data.name, {
+				captions: data.captions,
+			})
 		if (
 			data.instructor_content &&
 			JSON.parse(data.instructor_content)?.blocks?.length > 1
@@ -256,13 +263,13 @@ const lesson = createResource({
 	},
 })
 
-const renderEditor = (holder, content, course = null,  courseName = null, lessonName = null) => {
+const renderEditor = (holder, content, course = null,  courseName = null, lessonName = null, media = {}) => {
 	// empty the holder
 	if (document.getElementById(holder))
 		document.getElementById(holder).innerHTML = ''
 	return new EditorJS({
 		holder: holder,
-		tools: getEditorTools(course, courseName, lessonName),
+		tools: getEditorTools(course, courseName, lessonName, media),
 		data: JSON.parse(content),
 		readOnly: true,
 		defaultBlock: 'embed', // editor adds an empty block at the top, so to avoid that added default block as embed

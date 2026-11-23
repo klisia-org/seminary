@@ -1,5 +1,8 @@
 <template>
   <button
+    type="button"
+    :aria-current="isActive ? 'page' : undefined"
+    :aria-label="isCollapsed ? label : undefined"
     class="group flex w-full min-h-[44px] cursor-pointer items-center rounded-lg text-ink-gray-8 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
     :class="[
   isCollapsed ? 'justify-center px-0 py-2' : 'justify-start px-3 py-2',

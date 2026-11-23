@@ -1,0 +1,49 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "language",
+  "label",
+  "caption_file"
+ ],
+ "fields": [
+  {
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Language",
+   "options": "Language",
+   "reqd": 1
+  },
+  {
+   "description": "What the player's caption menu shows. Leave blank to use the language's name.",
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Label"
+  },
+  {
+   "description": "A WebVTT file (.vtt).",
+   "fieldname": "caption_file",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Caption File",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-22 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Lesson Caption",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

@@ -11,7 +11,7 @@
 			<FormControl v-model="status" type="select" :options="statusOptions" :placeholder="__('Status')" />
 		</div>
 		<ListView v-if="submissions.loading || submissions.data?.length" :columns="submissionColumns"
-			:rows="submissions.data" rowKey="name">
+			:rows="submissions.data" rowKey="name" :options="{ selectable: false }">
 			<ListHeader class="mb-2 grid items-center space-x-4 rounded bg-surface-gray-2 p-2">
 				<ListHeaderItem :item="item" v-for="item in submissionColumns" />
 			</ListHeader>

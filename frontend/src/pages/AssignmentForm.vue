@@ -47,6 +47,7 @@
 			<TextEditor v-if="model.question !== undefined" :content="model.question || ''"
 				@change="(val) => (model.question = val)" :editable="true" :fixedMenu="true"
 				editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
+			<ContentIssues ref="questionChecker" class="mt-2" :issues="questionIssues" :actionLabel="__('Save anyway')" />
 		</div>
 		<div v-if="defensible" class="mt-8 space-y-4">
 			<div class="font-semibold">{{ __('Oral Defense') }}</div>
@@ -96,6 +97,8 @@
 </template>
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
+import ContentIssues from '@/components/ContentIssues.vue'
+import { useContentCheck } from '@/composables/useContentCheck'
 import {
 	Breadcrumbs,
 	Button,
@@ -236,7 +239,15 @@ const newAssignment = createResource({
 	},
 })
 
-const saveAssignment = () => {
+// The accessibility checker on the question students read (102 §7).
+const {
+	checker: questionChecker,
+	issues: questionIssues,
+	confirmSave: confirmQuestion,
+} = useContentCheck(() => model.question)
+
+const saveAssignment = async () => {
+	if (!(await confirmQuestion())) return
 	if (props.assignmentID == 'new') {
 		newAssignment.submit({
 			...model,

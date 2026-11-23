@@ -49,7 +49,7 @@
 				v-if="partnerOrgs.data?.length"
 				:label="__('Is that one of our partner organizations?')"
 			>
-				<select v-model="form.current_partner_organization" class="field-input">
+				<select :aria-label="__('Is that one of our partner organizations?')" v-model="form.current_partner_organization" class="field-input">
 					<option value="">{{ __('Not listed') }}</option>
 					<option v-for="org in partnerOrgs.data" :key="org.name" :value="org.name">
 						{{ org.organization_name }}

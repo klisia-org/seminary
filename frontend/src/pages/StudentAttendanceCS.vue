@@ -94,7 +94,7 @@
               <div class="flex items-center justify-center space-x-4">
               <Avatar :image="student.stuimage" :label="student.stuname_roster" size="md" class="avatar border border-outline-gray-2 cursor-auto" />
               <Tooltip :text="`Send Email to ${student.stuname_roster}`" placement="bottom" arrow-class="fill-surface-white">
-                <a :href="`mailto:${student.stuemail_rc}`">
+                <a :aria-label="__('Send Email to {0}').format(student.stuname_roster)" :href="`mailto:${student.stuemail_rc}`">
                 <Send class="w-5 h-5 text-ink-blue-2" />
                 </a>
               </Tooltip>

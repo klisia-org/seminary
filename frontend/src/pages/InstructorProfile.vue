@@ -11,7 +11,7 @@
             <div v-if="instructor.data.contact_channels?.length" class="flex items-center gap-3 mt-2">
                 <ContactChannelIcons :channels="instructor.data.contact_channels"
                     :instructor="instructor.data.name"
-                    icon-class="inline-flex items-center justify-center h-5 w-5 text-ink-blue-link hover:text-ink-green-3 transition-colors" />
+                    icon-class="inline-flex items-center justify-center h-6 w-6 p-0.5 text-ink-blue-link hover:text-ink-green-3 transition-colors" />
             </div>
         </div>
         <div v-if="instructor.data.bio" class="m-5">

@@ -1,0 +1,10 @@
+{
+  "name": "seminary-axe",
+  "private": true,
+  "description": "WCAG checks of the portal and public pages with axe-core in Chromium (decision 102 §3). Installed only where the accessibility test runs, never by the app.",
+  "type": "module",
+  "dependencies": {
+    "axe-core": "4.13.0",
+    "puppeteer-core": "24.43.1"
+  }
+}

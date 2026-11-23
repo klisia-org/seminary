@@ -49,7 +49,7 @@
     <!-- Instructor View -->
     <div v-if="course.data?.course && isInstructor && assessmentsToGrade.data?.length" class="text-ink-gray-8">
       <div v-for="assessmentTG in assessmentsToGrade.data" :key="assessmentTG.title" class="text-ink-gray-8 mt-4">
-        <ul>
+        <div>
           <router-link v-if="assessmentTG.Type === 'Exam'"
             :to="{ name: 'ExamSubmissionCS', params: { courseName: props.course, examID: assessmentTG.assessmentID } }"
             class="text-ink-gray-8 mt-4 flex items-center space-x-2">
@@ -63,7 +63,7 @@
             <FileUp class="h-4 w-4 stroke-1.5" />
             <span>{{ assessmentTG.title }} ({{ assessmentTG.ToGrade }} {{ __(" to grade") }})</span>
           </router-link>
-        </ul>
+        </div>
       </div>
     </div>
 

@@ -19,7 +19,7 @@ import InlineCode from '@editorjs/inline-code'
 import { watch } from 'vue'
 import dayjs from '@/utils/dayjs'
 import Embed from '@editorjs/embed'
-import SimpleImage from '@editorjs/simple-image'
+import { AltImage } from '@/utils/altimage'
 import Table from '@editorjs/table'
 import { FolderTool } from '@/utils/foldertool'
 import { IframeEmbed } from '@/utils/iframetool'
@@ -299,7 +299,9 @@ export function htmlToText(html) {
 	return doc.body.textContent || ''
 }
 
-export const getEditorTools = (course = null, courseName = null, lesson = null) => {
+// `media.captions`: the lesson's caption tracks, for the videos its blocks play (102 §6).
+export const getEditorTools = (course = null, courseName = null, lesson = null, media = {}) => {
+	const captions = media?.captions || []
 	return {
 		// Reflection blocks resolve what they cover from their lesson (ADR 079).
 		selfAssessment: { class: SelfAssessment, config: { lesson } },
@@ -316,12 +318,12 @@ export const getEditorTools = (course = null, courseName = null, lesson = null) 
 		discussionActivity: { class: DiscussionActivity, config: { course: course,
                 courseName: courseName} },
 		oralActivity: { class: OralActivity, config: { course: course, courseName: courseName } },
-		upload: Upload, 
+		upload: { class: Upload, config: { captions } },
 		markdown: {
 			class: Markdown,
 			inlineToolbar: true,
 		},
-		image: SimpleImage,
+		image: AltImage,
 		table: {
 			class: Table,
 			inlineToolbar: true,
@@ -465,6 +467,7 @@ export const getEditorTools = (course = null, courseName = null, lesson = null) 
 		},
 		recordVideo: {
 			class: VideoRecord,
+			config: { captions },
 		},
 		folder: {
 			class: FolderTool,

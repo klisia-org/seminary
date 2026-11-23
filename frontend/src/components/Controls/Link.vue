@@ -11,6 +11,7 @@
 			:size="attrs.size || 'sm'"
 			:variant="attrs.variant"
 			:placeholder="attrs.placeholder"
+			:label="attrs.label || attrs['aria-label'] || ''"
 			:filterable="false"
 		>
 			<template #target="{ open, togglePopover }">

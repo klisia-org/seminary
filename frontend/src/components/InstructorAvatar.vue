@@ -1,6 +1,6 @@
 <template>
 	<Tooltip :text="`${instructor_name} - ${__('Profile Page')}`">
-		<router-link :to="{
+		<router-link :aria-label="`${instructor_name} - ${__('Profile Page')}`" :to="{
 			name: 'InstructorProfile',
 			params: { instructorName: instructor_id },
 

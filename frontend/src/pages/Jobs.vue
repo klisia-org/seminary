@@ -16,19 +16,19 @@
 			</div>
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
-			<select v-model="positionType" class="filter-select">
+			<select :aria-label="__('Position')" v-model="positionType" class="filter-select">
 				<option value="">{{ __('All positions') }}</option>
 				<option v-for="p in POSITION_TYPES" :key="p" :value="p">{{ __(p) }}</option>
 			</select>
-			<select v-model="employmentType" class="filter-select">
+			<select :aria-label="__('Employment type')" v-model="employmentType" class="filter-select">
 				<option value="">{{ __('All types') }}</option>
 				<option v-for="t in EMPLOYMENT_TYPES" :key="t" :value="t">{{ __(t) }}</option>
 			</select>
-			<select v-model="ministrySetting" class="filter-select">
+			<select :aria-label="__('Ministry setting')" v-model="ministrySetting" class="filter-select">
 				<option value="">{{ __('All settings') }}</option>
 				<option v-for="s in MINISTRY_SETTINGS" :key="s" :value="s">{{ __(s) }}</option>
 			</select>
-			<select v-model="partnerType" class="filter-select">
+			<select :aria-label="__('Organization type')" v-model="partnerType" class="filter-select">
 				<option value="">{{ __('All organizations') }}</option>
 				<option v-for="pt in partnerTypes.data || []" :key="pt" :value="pt">
 					{{ pt }}
@@ -46,7 +46,7 @@
 	</div>
 
 	<div class="mx-auto flex w-full max-w-6xl flex-col gap-5 p-3 sm:p-5 lg:flex-row lg:items-start">
-		<main class="min-w-0 flex-1">
+		<div class="min-w-0 flex-1">
 			<div v-if="openings.loading" class="text-ink-gray-5">{{ __('Loading jobs...') }}</div>
 
 			<div
@@ -89,7 +89,7 @@
 					</router-link>
 				</li>
 			</ul>
-		</main>
+		</div>
 
 		<aside class="w-full shrink-0 lg:w-80">
 			<div class="rounded-lg border border-outline-gray-2 bg-surface-white p-4">
@@ -99,7 +99,7 @@
 						{{ myApps.data.length }}
 					</span>
 				</div>
-				<select v-model="myStatus" class="filter-select mb-3 w-full">
+				<select :aria-label="__('Application status')" v-model="myStatus" class="filter-select mb-3 w-full">
 					<option value="">{{ __('All statuses') }}</option>
 					<option v-for="s in APPLICATION_FILTERS" :key="s" :value="s">{{ __(s) }}</option>
 				</select>

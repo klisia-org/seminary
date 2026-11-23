@@ -21,7 +21,7 @@
 			</div>
 			<div>
 				<div class="mb-1 text-xs font-medium uppercase tracking-wide text-ink-gray-5">{{ __('Status') }}</div>
-				<select :value="app.data.status" @change="onStatus($event.target.value)"
+				<select :aria-label="__('Status')" :value="app.data.status" @change="onStatus($event.target.value)"
 					class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8 focus:outline-none">
 					<option v-for="s in app.data.statuses" :key="s" :value="s">{{ __(s) }}</option>
 				</select>

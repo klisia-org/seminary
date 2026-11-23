@@ -16,7 +16,7 @@
 			<Input v-model="verseRef" type="text" :placeholder="__('Passage, e.g. Jn 3:16')" class="sm:w-40" />
 			<Input v-model="commentText" type="text" :placeholder="__('Your insight on this passage…')"
 				class="flex-1" @keyup.enter="postVerseComment" />
-			<Button variant="solid" :loading="addComment.loading" @click="postVerseComment">
+			<Button :aria-label="__('Post comment')" variant="solid" :loading="addComment.loading" @click="postVerseComment">
 				<Send class="h-4 w-4" />
 			</Button>
 		</div>

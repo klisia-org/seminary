@@ -2,6 +2,14 @@ import os
 
 import frappe
 
+# The WCAG arithmetic lives in seminary.seminary.contrast (102 §8); these names
+# stay importable from here for the callers that used them first.
+from seminary.seminary.contrast import DARK_INK as _DARK_INK
+from seminary.seminary.contrast import LIGHT_INK as _LIGHT_INK
+from seminary.seminary.contrast import bar_ink
+from seminary.seminary.contrast import luminance as _luminance
+from seminary.seminary.contrast import luminance_ratio as _contrast
+
 _BRAND_CSS_PATH = ("seminary", "public", "css", "website_brand.css")
 _BRAND_CSS_URL = "/assets/seminary/css/website_brand.css"
 
@@ -19,42 +27,6 @@ _BRAND_COLOR_VARS = {
 # The navbar and footer each take their own background, falling back to
 # Primary, and get a derived ink so their text stays readable (061a).
 _BAR_FIELDS = {"navbar": "navbar_background", "footer": "footer_background"}
-_LIGHT_INK = "#ffffff"
-_DARK_INK = "#1a2330"
-
-
-def _luminance(hex_colour):
-	"""WCAG relative luminance of a #rgb/#rrggbb colour, or None."""
-	value = (hex_colour or "").strip().lstrip("#")
-	if len(value) == 3:
-		value = "".join(c * 2 for c in value)
-	if len(value) != 6:
-		return None
-	try:
-		channels = [int(value[i : i + 2], 16) / 255 for i in (0, 2, 4)]
-	except ValueError:
-		return None
-	r, g, b = (c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels)
-	return 0.2126 * r + 0.7152 * g + 0.0722 * b
-
-
-def _contrast(a, b):
-	lighter, darker = max(a, b), min(a, b)
-	return (lighter + 0.05) / (darker + 0.05)
-
-
-def bar_ink(background, text_colour=None):
-	"""The ink with the higher contrast on `background`: white, or the
-	school's Text colour (near-black when that is blank or too light).
-	None when the background can't be read, so the CSS fallback applies."""
-	bg = _luminance(background)
-	if bg is None:
-		return None
-	text = _luminance(text_colour)
-	dark = text_colour.strip() if text is not None and text < 0.2 else _DARK_INK
-	if _contrast(bg, _luminance(dark)) > _contrast(bg, 1.0):
-		return dark
-	return _LIGHT_INK
 
 
 def _website_branding():

@@ -63,7 +63,8 @@ const props = defineProps({
 	iconClass: {
 		type: String,
 		default:
-			'inline-flex items-center justify-center h-4 w-4 text-ink-gray-4 hover:text-ink-blue-link transition-colors',
+			// 24px, the WCAG 2.5.8 minimum, around a 16px icon (102 §9).
+			'inline-flex items-center justify-center h-6 w-6 p-1 text-ink-gray-4 hover:text-ink-blue-link transition-colors',
 	},
 })
 

@@ -176,7 +176,7 @@
 
                 <Tooltip :text="`${__('Send Email to')} ${student.stuname_roster}`" placement="bottom"
                   arrow-class="fill-surface-white">
-                  <a :href="`mailto:${student.stuemail_rc}`"
+                  <a :aria-label="__('Send Email to {0}').format(student.stuname_roster)" :href="`mailto:${student.stuemail_rc}`"
                     class="shrink-0 rounded p-1 text-ink-gray-4 transition-colors hover:bg-surface-blue-1 hover:text-ink-blue-2">
                     <Send class="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </a>
@@ -207,6 +207,7 @@
               </div>
               <div v-else class="flex items-center gap-1">
                 <input type="number"
+                  :aria-label="__('{0}: {1}').format(student.stuname_roster, assessment.title)"
                   :disabled="isFinalized"
                   class="w-full min-w-[50px] text-center text-sm border border-outline-gray-1 bg-surface-white text-ink-gray-9 rounded px-1 py-1 focus:border-outline-blue-1 focus:ring-1 focus:ring-outline-blue-1 outline-none transition-colors disabled:bg-surface-gray-1 disabled:text-ink-gray-6 disabled:cursor-not-allowed"
                   :class="[isCellChanged(student, assessment) ? 'border-outline-blue-1 !bg-surface-blue-1 text-ink-blue-2' : '', weightStatus(student, assessment) ? 'text-ink-gray-5 line-through' : '']"
@@ -214,7 +215,7 @@
                   @input="assessment.extracredit_scac
                     ? markExtraCreditAsChanged(student, assessment, $event.target.value)
                     : markRegularGradeAsChanged(student, assessment, $event.target.value)" />
-                <button v-if="isCellChanged(student, assessment) && !isFinalized"
+                <button :aria-label="__('Save')" v-if="isCellChanged(student, assessment) && !isFinalized"
                   class="shrink-0 rounded p-0.5 text-ink-blue-2 hover:text-ink-blue-3 hover:bg-surface-blue-2 transition-colors"
                   @click="saveCell(student, assessment)">
                   <Save class="h-3.5 w-3.5" />

@@ -49,7 +49,7 @@
 								<td class="p-2" :class="s.time_zone ? '' : 'text-ink-gray-4'">{{ s.time_zone || __('unknown') }}</td>
 								<td class="p-2">{{ s.time_zone ? localNow(s.time_zone) : '' }}</td>
 								<td class="p-2">
-									<select v-model="assign[s.student]"
+									<select :aria-label="__('Group for {0}').format(s.name)" v-model="assign[s.student]"
 										class="rounded-md border-outline-gray-2 bg-surface-white text-sm">
 										<option value="">{{ __('No group') }}</option>
 										<option v-for="g in labels" :key="g" :value="g">{{ g }}</option>

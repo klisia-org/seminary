@@ -257,7 +257,9 @@ const routes = [
 		component: () => import('@/pages/Quizzes.vue'),
 	},
 	{
-		path: '/quizzes/:quizID?',
+		// Required: optional, it also matched /quizzes, so a reload of the list opened
+		// an empty quiz form (102 §9).
+		path: '/quizzes/:quizID',
 		name: 'QuizForm',
 		component: () => import('@/pages/QuizForm.vue'),
 		props: true,
@@ -320,7 +322,8 @@ const routes = [
 		component: () => import('@/pages/Exams.vue'),
 	},
 	{
-  		path: '/exams/:examID?',
+  		// Required, for the same reason as /quizzes/:quizID.
+  		path: '/exams/:examID',
   		name: 'ExamForm',
   		component: () => import('@/pages/ExamForm.vue'),
   		props: true,

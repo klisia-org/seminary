@@ -36,7 +36,7 @@
           {{ title.data?.discussion_name || __('Discussion Activity Submission') }}
         </h1>
         <div class="mt-2 w-64 mx-auto">
-          <select v-model="currentSubmission"
+          <select :aria-label="__('Submission')" v-model="currentSubmission"
             class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 text-sm">
             <option v-for="submission in submissionlist.data" :key="submission.name" :value="submission.name">
               {{ submission.student_name }}

@@ -75,7 +75,7 @@
                             <li v-for="m in course.data.my_oral_meetings" :key="m.name">
                                 {{ m.activity_title }}: {{ new Date(m.start_utc).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) }}
                                 <a v-if="m.link" :href="safeUrl(m.link)" target="_blank" rel="noopener noreferrer"
-                                    class="text-ink-blue-3 hover:underline">· {{ __('Join Online') }}</a>
+                                    class="text-ink-blue-3 underline hover:no-underline">· {{ __('Join Online') }}</a>
                                 <span class="text-ink-amber-3">· {{ __('Recorded for an oral assessment') }}</span>
                             </li>
                         </ul>
@@ -93,7 +93,7 @@
                                 <span v-if="meeting.online" class="text-ink-gray-5">· {{ __('Online') }}</span>
                                 <span v-else-if="meeting.room_label" class="text-ink-gray-5">· {{ meeting.room_label }}</span>
                                 <a v-if="meeting.web_meeting" :href="safeUrl(meeting.web_meeting)" target="_blank"
-                                    rel="noopener noreferrer" class="text-ink-blue-3 hover:underline">
+                                    rel="noopener noreferrer" class="text-ink-blue-3 underline hover:no-underline">
                                     · {{ __('Join Online') }}
                                 </a>
                                 <span v-if="meeting.recorded_for_assessment" class="text-ink-amber-3">

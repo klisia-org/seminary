@@ -14,8 +14,8 @@
 								:image="editImage || studentInfo.image || null" />
 							<FileUploader :fileTypes="['image/*']" :validate-file="validateFileSize" @success="(f) => { editImage = f.file_url }">
 								<template #default="{ uploading, openFileSelector }">
-									<button @click="openFileSelector"
-										class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+									<button :aria-label="__('Change photo')" @click="openFileSelector"
+										class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity">
 										<FeatherIcon v-if="!uploading" name="camera" class="h-4 w-4 text-white" />
 										<FeatherIcon v-else name="loader" class="h-4 w-4 text-white animate-spin" />
 									</button>
@@ -96,7 +96,7 @@
 					<!-- Preferred Bible version -->
 						<div v-if="bibles.length" class="mb-3">
 							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
-							<select v-model="selectedBible"
+							<select :aria-label="__('Preferred Bible')" v-model="selectedBible"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
@@ -105,7 +105,7 @@
 						<!-- Language preference -->
 					<div>
 						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
-						<select v-model="selectedLanguage"
+						<select :aria-label="__('Language')" v-model="selectedLanguage"
 							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 							<option value="">{{ __('Default') }}</option>
 							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
@@ -152,8 +152,8 @@
 								:image="editProfileImage || instructorInfo.profileimage || null" />
 							<FileUploader :fileTypes="['image/*']" :validate-file="validateFileSize" @success="(f) => { editProfileImage = f.file_url }">
 								<template #default="{ uploading, openFileSelector }">
-									<button @click="openFileSelector"
-										class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+									<button :aria-label="__('Change photo')" @click="openFileSelector"
+										class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity">
 										<FeatherIcon v-if="!uploading" name="camera" class="h-4 w-4 text-white" />
 										<FeatherIcon v-else name="loader" class="h-4 w-4 text-white animate-spin" />
 									</button>
@@ -209,7 +209,7 @@
 						<!-- Preferred Bible version -->
 						<div v-if="bibles.length" class="mb-3">
 							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
-							<select v-model="selectedBible"
+							<select :aria-label="__('Preferred Bible')" v-model="selectedBible"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
@@ -218,7 +218,7 @@
 						<!-- Language preference -->
 						<div>
 							<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
-							<select v-model="selectedLanguage"
+							<select :aria-label="__('Language')" v-model="selectedLanguage"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
@@ -293,7 +293,7 @@
 					<!-- Preferred Bible version -->
 						<div v-if="bibles.length" class="mb-3">
 							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
-							<select v-model="selectedBible"
+							<select :aria-label="__('Preferred Bible')" v-model="selectedBible"
 								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
@@ -302,7 +302,7 @@
 						<!-- Language preference -->
 					<div>
 						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
-						<select v-model="selectedLanguage"
+						<select :aria-label="__('Language')" v-model="selectedLanguage"
 							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 							<option value="">{{ __('Default') }}</option>
 							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">

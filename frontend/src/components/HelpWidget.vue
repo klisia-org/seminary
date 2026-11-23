@@ -8,7 +8,7 @@
 			>
 				<div class="flex items-center justify-between border-b border-outline-gray-2 px-4 py-2.5">
 					<span class="text-base font-semibold text-ink-gray-9">{{ __('Help') }}</span>
-					<button class="text-ink-gray-5 hover:text-ink-gray-9" @click="open = false">
+					<button :aria-label="__('Close')" class="text-ink-gray-5 hover:text-ink-gray-9" @click="open = false">
 						<X class="h-4 w-4" />
 					</button>
 				</div>
