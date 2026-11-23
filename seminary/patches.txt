@@ -96,3 +96,4 @@ seminary.seminary.patches.adr100d_meeting_capture_defaults
 seminary.seminary.patches.adr101_community_channels
 seminary.seminary.patches.adr102_report_colour_contrast
 seminary.seminary.patches.adr105_category_actions
+seminary.seminary.patches.adr106_question_rows

@@ -63,37 +63,57 @@
 						:required="true"
 					/>
 					<div v-if="question.type == 'Choices'" class="divide-y border-t">
-						<div v-for="n in 4" class="space-y-4 py-2">
-							<FormControl
-								:label="__('Option') + ' ' + n"
-								v-model="question[`option_${n}`]"
-								:required="n <= 2 ? true : false"
-							/>
+						<div v-for="(choice, n) in question.choices" :key="n" class="space-y-4 py-2">
+							<div class="flex items-end gap-2">
+								<FormControl
+									:label="__('Option') + ' ' + (n + 1)"
+									v-model="choice.option"
+									:required="n < 2"
+									class="flex-1"
+								/>
+								<Button
+									v-if="question.choices.length > 2"
+									variant="ghost"
+									@click="question.choices.splice(n, 1)"
+									:label="__('Remove')"
+									:aria-label="__('Remove option {0}').format(n + 1)"
+								/>
+							</div>
 							<FormControl
 								:label="__('Correct Answer')"
-								v-model="question[`is_correct_${n}`]"
+								v-model="choice.is_correct"
 								type="checkbox"
 							/>
 							<!-- Only correct options' explanations are shown to students,
 							     so the field appears only once an option is marked correct. -->
 							<FormControl
-								v-if="question[`is_correct_${n}`]"
+								v-if="choice.is_correct"
 								:label="__('Explanation')"
-								v-model="question[`explanation_${n}`]"
+								v-model="choice.explanation"
 								:description="__('Shown to students when reviewing this correct answer.')"
 							/>
 						</div>
+						<div class="pt-2">
+							<Button variant="subtle" @click="question.choices.push(newChoice())" :label="__('Add option')" />
+						</div>
 					</div>
-					<div
-						v-else-if="question.type == 'User Input'"
-						v-for="n in 4"
-						class="space-y-2"
-					>
-						<FormControl
-							:label="__('Possibility') + ' ' + n"
-							v-model="question[`possibility_${n}`]"
-							:required="n == 1 ? true : false"
-						/>
+					<div v-else-if="question.type == 'User Input'" class="space-y-2">
+						<div v-for="(row, n) in question.accepted_answers" :key="n" class="flex items-end gap-2">
+							<FormControl
+								:label="__('Possibility') + ' ' + (n + 1)"
+								v-model="row.answer"
+								:required="n == 0"
+								class="flex-1"
+							/>
+							<Button
+								v-if="question.accepted_answers.length > 1"
+								variant="ghost"
+								@click="question.accepted_answers.splice(n, 1)"
+								:label="__('Remove')"
+								:aria-label="__('Remove possibility {0}').format(n + 1)"
+							/>
+						</div>
+						<Button variant="subtle" @click="question.accepted_answers.push({ answer: '' })" :label="__('Add possibility')" />
 					</div>
 					<div
 						v-else-if="question.type == 'Reading Report'"
@@ -186,7 +206,7 @@
 	</Dialog>
 </template>
 <script setup>
-import { Button, Dialog, FormControl, TextEditor, call, createResource, toast } from 'frappe-ui'
+import { Button, Dialog, FormControl, TextEditor, createResource, toast } from 'frappe-ui'
 import { computed, reactive, ref, watch, useId } from 'vue'
 import Link from '@/components/Controls/Link.vue'
 
@@ -199,26 +219,14 @@ const defaultExistingQuestion = () => ({
 	points: 0,
 })
 
+const newChoice = () => ({ option: '', is_correct: false, explanation: '' })
+
 const defaultQuestionState = () => ({
 	question: '',
 	type: 'Choices',
 	points: 0,
-	option_1: '',
-	option_2: '',
-	option_3: '',
-	option_4: '',
-	explanation_1: '',
-	explanation_2: '',
-	explanation_3: '',
-	explanation_4: '',
-	is_correct_1: false,
-	is_correct_2: false,
-	is_correct_3: false,
-	is_correct_4: false,
-	possibility_1: '',
-	possibility_2: '',
-	possibility_3: '',
-	possibility_4: '',
+	choices: [newChoice(), newChoice()],
+	accepted_answers: [{ answer: '' }],
 	pages_total: 0,
 	scripture_bible_id: '',
 	matching_items: [],
@@ -274,8 +282,17 @@ const questionData = createResource({
 		resetQuestionState()
 		Object.keys(question).forEach((key) => {
 			if (Object.hasOwn(data, key)) {
-				if (key.startsWith('is_correct_')) {
-					question[key] = Boolean(data[key])
+				if (key === 'choices' && Array.isArray(data[key])) {
+					const rows = data[key].map((c) => ({
+						option: c.option || '',
+						is_correct: Boolean(c.is_correct),
+						explanation: c.explanation || '',
+					}))
+					while (rows.length < 2) rows.push(newChoice())
+					question.choices = rows
+				} else if (key === 'accepted_answers' && Array.isArray(data[key])) {
+					const rows = data[key].map((a) => ({ answer: a.answer || '' }))
+					question.accepted_answers = rows.length ? rows : [{ answer: '' }]
 				} else if (key === 'matching_items' && Array.isArray(data[key])) {
 					// Strip child-row metadata; the editor only cares about the reference.
 					question.matching_items = data[key].map((it) => ({
@@ -339,7 +356,7 @@ const questionCreation = createResource({
 		return {
 			doc: {
 				doctype: 'Question',
-				...question,
+				...questionValues(),
 			},
 		}
 	},
@@ -401,18 +418,25 @@ const addQuestionRow = (questionValues, close) => {
 	)
 }
 
+// Blank option and possibility rows are left out; the server keeps the order.
+const questionValues = () => {
+	const values = { ...question }
+	delete values.points
+	values.choices = question.choices
+		.filter((c) => (c.option || '').trim())
+		.map((c) => ({ ...c, is_correct: c.is_correct ? 1 : 0 }))
+	values.accepted_answers = question.accepted_answers.filter((a) => (a.answer || '').trim())
+	return values
+}
+
+// One save for the fields and every table: set_value can't update child tables.
 const questionUpdate = createResource({
-	url: 'frappe.client.set_value',
+	url: 'seminary.seminary.doctype.question.question.save_question',
 	auto: false,
 	makeParams() {
-		// set_value can't handle child tables; matching_items is updated
-		// separately via replace_matching_items below.
-		const fields = { ...question }
-		delete fields.matching_items
 		return {
-			doctype: 'Question',
 			name: questionData.data?.name,
-			fieldname: fields,
+			values: JSON.stringify(questionValues()),
 		}
 	},
 })
@@ -453,23 +477,7 @@ const updateQuestion = (close) => {
 		{},
 		{
 			onSuccess() {
-				// Scripture Matching: separately swap the child rows, which
-				// triggers validate() server-side to re-fetch verse texts.
-				if (question.type === 'Scripture Matching') {
-					call(
-						'seminary.seminary.doctype.question.question.replace_matching_items',
-						{
-							question: questionData.data?.name,
-							items: JSON.stringify(question.matching_items),
-						}
-					)
-						.then(finishUpdate)
-						.catch((err) => {
-							toast.error(err.messages?.[0] || err.message || err)
-						})
-				} else {
-					finishUpdate()
-				}
+				finishUpdate()
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)

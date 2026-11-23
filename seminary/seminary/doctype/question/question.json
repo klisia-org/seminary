@@ -16,26 +16,9 @@
   "course",
   "multiple",
   "choices_section",
-  "option_1",
-  "is_correct_1",
-  "explanation_1",
-  "column_break_klxh",
-  "option_2",
-  "is_correct_2",
-  "explanation_2",
-  "column_break_pctk",
-  "option_3",
-  "is_correct_3",
-  "explanation_3",
-  "column_break_rlxe",
-  "option_4",
-  "is_correct_4",
-  "explanation_4",
+  "choices",
   "user_input_section",
-  "possibility_1",
-  "possibility_2",
-  "possibility_3",
-  "possibility_4",
+  "accepted_answers",
   "reading_report_section",
   "pages_total",
   "scripture_section",
@@ -76,80 +59,11 @@
    "label": "Choices"
   },
   {
-   "fieldname": "option_1",
-   "fieldtype": "Small Text",
-   "label": "Option 1"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_correct_1",
-   "fieldtype": "Check",
-   "label": "Option 1 Is Correct"
-  },
-  {
-   "fieldname": "explanation_1",
-   "fieldtype": "Small Text",
-   "label": "Explanation 1"
-  },
-  {
-   "fieldname": "column_break_klxh",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "option_2",
-   "fieldtype": "Small Text",
-   "label": "Option 2"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_correct_2",
-   "fieldtype": "Check",
-   "label": "Option 2 Is Correct"
-  },
-  {
-   "fieldname": "explanation_2",
-   "fieldtype": "Small Text",
-   "label": "Explanation 2"
-  },
-  {
-   "fieldname": "column_break_pctk",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "option_3",
-   "fieldtype": "Small Text",
-   "label": "Option 3"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_correct_3",
-   "fieldtype": "Check",
-   "label": "Option 3 is Correct"
-  },
-  {
-   "fieldname": "explanation_3",
-   "fieldtype": "Small Text",
-   "label": "Explanation 3"
-  },
-  {
-   "fieldname": "column_break_rlxe",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "option_4",
-   "fieldtype": "Small Text",
-   "label": "Option 4"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_correct_4",
-   "fieldtype": "Check",
-   "label": "Option 4 Is Correct"
-  },
-  {
-   "fieldname": "explanation_4",
-   "fieldtype": "Small Text",
-   "label": "Explanation 4"
+   "description": "Add as many options as the question needs. Tick every correct one.",
+   "fieldname": "choices",
+   "fieldtype": "Table",
+   "label": "Options",
+   "options": "Question Option"
   },
   {
    "depends_on": "eval: doc.type == 'User Input';",
@@ -158,25 +72,11 @@
    "label": "User Input"
   },
   {
-   "fieldname": "possibility_1",
-   "fieldtype": "Small Text",
-   "label": "Acceptable Answer 1",
-   "mandatory_depends_on": "type == 'User Input'"
-  },
-  {
-   "fieldname": "possibility_2",
-   "fieldtype": "Small Text",
-   "label": "Acceptable Answer 2"
-  },
-  {
-   "fieldname": "possibility_3",
-   "fieldtype": "Small Text",
-   "label": "Acceptable Answer 3"
-  },
-  {
-   "fieldname": "possibility_4",
-   "fieldtype": "Small Text",
-   "label": "Acceptable Answer 4"
+   "description": "A student's answer counts as correct when it closely matches any of these.",
+   "fieldname": "accepted_answers",
+   "fieldtype": "Table",
+   "label": "Accepted Answers",
+   "options": "Question Accepted Answer"
   },
   {
    "description": "This serves to filter questions specific for a course",
@@ -270,8 +170,8 @@
   }
  ],
  "links": [],
- "modified": "2026-05-21 19:11:17.667246",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-11-23 12:00:00.000000",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Question",
  "naming_rule": "Expression (old style)",

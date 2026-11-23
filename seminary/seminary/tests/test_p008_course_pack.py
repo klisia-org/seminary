@@ -122,7 +122,16 @@ class TestP008CoursePack(IntegrationTestCase):
 						"possibility_1": "x",
 						"owner": "evil@x.y",
 					},
-				}
+					"accepted_answers": [{"answer": "y", "parent": "evil"}],
+				},
+				"q2": {
+					"doctype": "Question",
+					"fields": {
+						"question": f"F9b-{frappe.generate_hash(length=6)}",
+						"type": "User Input",
+						"possibility_1": "x",
+					},
+				},
 			}
 		}
 		frappe.set_user(self.chair)
@@ -131,7 +140,11 @@ class TestP008CoursePack(IntegrationTestCase):
 		frappe.set_user("Administrator")
 		doc = frappe.get_doc("Question", importer.q_map["q1"])
 		self.assertEqual(doc.owner, self.chair)
-		self.assertEqual(doc.possibility_1, "x")
+		# a pack's own table wins over the fields an older site's pack carries
+		self.assertEqual([r.answer for r in doc.accepted_answers], ["y"])
+		self.assertEqual(doc.accepted_answers[0].parent, doc.name)
+		legacy = frappe.get_doc("Question", importer.q_map["q2"])
+		self.assertEqual([r.answer for r in legacy.accepted_answers], ["x"])
 
 	# ------------------------------------------------------ order of operations
 	def test_a_student_is_refused_before_the_archive_is_opened(self):

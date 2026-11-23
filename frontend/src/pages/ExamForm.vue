@@ -105,12 +105,20 @@
 						<div class="font-semibold">
 							{{ __('Questions') }}
 						</div>
-						<Button @click="openOpenQuestionModal()">
-							<template #prefix>
-								<Plus class="w-4 h-4" />
-							</template>
-							{{ __('New Question') }}
-						</Button>
+						<div class="flex items-center gap-2">
+							<ImportQuestions
+								v-if="examDetails.data?.name"
+								doctype="Exam Activity"
+								:name="examDetails.data.name"
+								@imported="examDetails.reload()"
+							/>
+							<Button @click="openOpenQuestionModal()">
+								<template #prefix>
+									<Plus class="w-4 h-4" />
+								</template>
+								{{ __('New Question') }}
+							</Button>
+						</div>
 					</div>
 					<ListView :columns="questionColumns" :rows="exam.questions" row-key="name" :options="{
 						showTooltip: false,
@@ -176,6 +184,7 @@ import {
 } from 'vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import OpenQuestion from '@/components/Modals/OpenQuestion.vue'
+import ImportQuestions from '@/components/ImportQuestions.vue'
 import { updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'

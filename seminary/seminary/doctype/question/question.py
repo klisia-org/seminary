@@ -37,13 +37,17 @@ def validate_correct_answers(question):
 		validate_scripture_memorization(question)
 
 
+def _filled(rows, field):
+	"""Child rows whose text field holds more than whitespace."""
+	kept = [r for r in rows or [] if (r.get(field) or "").strip()]
+	for i, r in enumerate(kept, start=1):
+		r.idx = i
+	return kept
+
+
 def validate_duplicate_options(question):
-	options = []
-
-	for num in range(1, 5):
-		if question.get(f"option_{num}"):
-			options.append(question.get(f"option_{num}"))
-
+	question.choices = _filled(question.choices, "option")
+	options = [r.option.strip() for r in question.choices]
 	if len(set(options)) != len(options):
 		frappe.throw(_("Duplicate options found for this question."))
 
@@ -59,24 +63,13 @@ def validate_correct_options(question):
 
 
 def validate_minimum_options(question):
-	if question.type == "Choices" and (not question.option_1 or not question.option_2):
+	if question.type == "Choices" and len(_filled(question.choices, "option")) < 2:
 		frappe.throw(_("Minimum two options are required for multiple choice questions."))
 
 
 def validate_possible_answer(question):
-	possible_answers = []
-	possible_answers_fields = [
-		"possibility_1",
-		"possibility_2",
-		"possibility_3",
-		"possibility_4",
-	]
-
-	for field in possible_answers_fields:
-		if question.get(field):
-			possible_answers.append(field)
-
-	if not len(possible_answers):
+	question.accepted_answers = _filled(question.accepted_answers, "answer")
+	if not question.accepted_answers:
 		frappe.throw(
 			_("Add at least one possible answer for this question: {0}").format(
 				frappe.bold(question.question)
@@ -186,18 +179,77 @@ def update_question_title(question):
 
 
 def get_correct_options(question):
-	correct_options = []
-	correct_option_fields = [
-		"is_correct_1",
-		"is_correct_2",
-		"is_correct_3",
-		"is_correct_4",
-	]
-	for field in correct_option_fields:
-		if question.get(field) == 1:
-			correct_options.append(field)
+	return [r for r in question.get("choices") or [] if r.is_correct]
 
-	return correct_options
+
+def question_rows(questions):
+	"""{question: {"choices": [...], "accepted_answers": [...]}} in row order, one query each."""
+	questions = list({q for q in questions or [] if q})
+	out = {q: {"choices": [], "accepted_answers": []} for q in questions}
+	if not questions:
+		return out
+	for r in frappe.get_all(
+		"Question Option",
+		filters={"parenttype": "Question", "parent": ["in", questions]},
+		fields=["parent", "option", "is_correct", "explanation"],
+		order_by="parent, idx",
+	):
+		out[r.parent]["choices"].append(
+			frappe._dict(option=r.option, is_correct=cint(r.is_correct), explanation=r.explanation)
+		)
+	for r in frappe.get_all(
+		"Question Accepted Answer",
+		filters={"parenttype": "Question", "parent": ["in", questions]},
+		fields=["parent", "answer"],
+		order_by="parent, idx",
+	):
+		out[r.parent]["accepted_answers"].append(r.answer)
+	return out
+
+
+@frappe.whitelist()
+def save_question(name: str, values: str | dict) -> dict:
+	"""Update a question's fields and replace its Options, Accepted Answers and
+	matching pairs in one save. The frontend uses this because
+	frappe.client.set_value can't update child tables."""
+	import json as _json
+
+	data = values if isinstance(values, dict) else _json.loads(values or "{}")
+	doc = frappe.get_doc("Question", name)
+	scalar = {
+		"question",
+		"type",
+		"multiple",
+		"pages_total",
+		"scripture_bible_id",
+		"memorization_ref",
+		"hide_word_count",
+		"min_word_length",
+	}
+	doc.update({k: v for k, v in data.items() if k in scalar})
+	if "choices" in data:
+		doc.choices = []
+		for row in data.get("choices") or []:
+			doc.append(
+				"choices",
+				{
+					"option": (row or {}).get("option"),
+					"is_correct": cint((row or {}).get("is_correct")),
+					"explanation": (row or {}).get("explanation") or None,
+				},
+			)
+	if "accepted_answers" in data:
+		doc.accepted_answers = []
+		for row in data.get("accepted_answers") or []:
+			doc.append("accepted_answers", {"answer": (row or {}).get("answer")})
+	if "matching_items" in data:
+		doc.matching_items = []
+		for row in data.get("matching_items") or []:
+			ref = ((row or {}).get("reference") or "").strip()
+			if ref:
+				doc.append("matching_items", {"reference": ref})
+	doc.save()
+	return {"name": doc.name}
 
 
 @frappe.whitelist()
@@ -242,11 +294,7 @@ def get_question_details(question):
 	if not has_course_instructor_role() or not has_course_moderator_role():
 		return
 
-	fields = ["question", "type", "name"]
-	for i in range(1, 5):
-		fields.append(f"option_{i}")
-		fields.append(f"is_correct_{i}")
-		fields.append(f"explanation_{i}")
-		fields.append(f"possibility_{i}")
-
-	return frappe.db.get_value("Question", question, fields, as_dict=1)
+	details = frappe.db.get_value("Question", question, ["question", "type", "name"], as_dict=1)
+	if details:
+		details.update(question_rows([question])[question])
+	return details

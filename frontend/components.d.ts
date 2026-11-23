@@ -64,6 +64,7 @@ declare module 'vue' {
     GuestLayout: typeof import('./src/components/GuestLayout.vue')['default']
     HelpWidget: typeof import('./src/components/HelpWidget.vue')['default']
     ImageViewer: typeof import('./src/components/AssignmentViewers/ImageViewer.vue')['default']
+    ImportQuestions: typeof import('./src/components/ImportQuestions.vue')['default']
     ImprovementActionsPanel: typeof import('./src/components/ImprovementActionsPanel.vue')['default']
     InstructorAvatar: typeof import('./src/components/InstructorAvatar.vue')['default']
     LessonContent: typeof import('./src/components/LessonContent.vue')['default']

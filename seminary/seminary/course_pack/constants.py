@@ -70,28 +70,17 @@ QUESTION_FIELDS = (
 	"question",
 	"type",
 	"multiple",
-	"option_1",
-	"is_correct_1",
-	"explanation_1",
-	"option_2",
-	"is_correct_2",
-	"explanation_2",
-	"option_3",
-	"is_correct_3",
-	"explanation_3",
-	"option_4",
-	"is_correct_4",
-	"explanation_4",
-	"possibility_1",
-	"possibility_2",
-	"possibility_3",
-	"possibility_4",
 	"pages_total",
 	"scripture_bible_id",
 	"memorization_ref",
 	"hide_word_count",
 	"min_word_length",
 )  # course set on import; memorization_resolved_ref/text recomputed
+
+QUESTION_OPTION_FIELDS = ("option", "is_correct", "explanation")
+QUESTION_ANSWER_FIELDS = ("answer",)
+# Packs from sites before decisions/106 carry the options as fields on the question.
+LEGACY_OPTION_SLOTS = 4
 
 SCRIPTURE_MATCHING_ITEM_FIELDS = ("reference",)  # resolved_ref/fetched_text recomputed
 

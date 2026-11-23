@@ -69,9 +69,7 @@ class TestCoursePackRoundTrip(FrappeTestCase):
 					"question": "What is 2+2?",
 					"type": "Choices",
 					"course": cls.course,
-					"option_1": "4",
-					"is_correct_1": 1,
-					"option_2": "5",
+					"choices": [{"option": "4", "is_correct": 1}, {"option": "5"}],
 				}
 			)
 			.insert(ignore_permissions=True, ignore_mandatory=True)

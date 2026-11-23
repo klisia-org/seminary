@@ -18,7 +18,7 @@ def _make_input_question(possibility):
 	doc = frappe.new_doc("Question")
 	doc.question = f"QI-{frappe.generate_hash(length=8)}"
 	doc.type = "User Input"
-	doc.possibility_1 = possibility
+	doc.append("accepted_answers", {"answer": possibility})
 	doc.insert(ignore_permissions=True)
 	return doc.name
 

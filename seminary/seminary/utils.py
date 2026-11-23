@@ -1662,7 +1662,7 @@ def get_lesson_creation_details(course: str, chapter: str | int, lesson: str | i
 # --- who may see a quiz question, and when its explanations may travel ---------
 #
 # p005a A01-15 / p008a G8. These endpoints had no gate, and returned
-# explanation_1..4 BEFORE the student answered. Only correct options carry an
+# option explanations BEFORE the student answered. Only correct options carry an
 # explanation (see the note in frontend Modals/Question.vue), so the presence of
 # one marks the right answer: the key was in the pre-answer payload, readable in
 # devtools by anyone taking the quiz and -- ungated -- by any session at all.
@@ -1715,13 +1715,28 @@ def quiz_question_access(question, quiz=None):
 
 
 def _strip_explanations(row):
-	for i in range(1, 5):
-		row.pop(f"explanation_{i}", None)
+	for c in row.get("options") or []:
+		c.pop("explanation", None)
 	return row
 
 
+def _attach_options(rows, key="question"):
+	"""Give each Choices row its options in order, as {option, explanation}.
+	Which option is correct never travels; accepted answers never travel."""
+	from seminary.seminary.doctype.question.question import question_rows
+
+	by_q = question_rows([r.get(key) for r in rows if r.get("type") == "Choices"])
+	for r in rows:
+		if r.get("type") == "Choices":
+			r["options"] = [
+				{"option": c.option, "explanation": c.explanation if c.is_correct else None}
+				for c in by_q.get(r.get(key), {}).get("choices", [])
+			]
+	return rows
+
+
 @frappe.whitelist()
-def get_question_details(question, quiz=None):
+def get_question_details(question: str, quiz: str | None = None):
 	with_explanations = quiz_question_access(question, quiz)
 	fields = [
 		"question",
@@ -1735,11 +1750,11 @@ def get_question_details(question, quiz=None):
 		"hide_word_count",
 		"min_word_length",
 	]
-	for i in range(1, 5):
-		fields.append(f"option_{i}")
-		fields.append(f"explanation_{i}")
-
 	question_details = frappe.db.get_value("Question", question, fields, as_dict=1) or {}
+	if question_details:
+		question_details["name"] = question
+		_attach_options([question_details], key="name")
+		question_details.pop("name")
 	if question_details.get("type") == "Scripture Matching":
 		question_details["matching_items"] = frappe.get_all(
 			"Scripture Matching Item",
@@ -1753,7 +1768,7 @@ def get_question_details(question, quiz=None):
 
 
 @frappe.whitelist()
-def get_all_questions_details(questions):
+def get_all_questions_details(questions: str | list):
 	"""``questions`` are Quiz Question row names, so the quiz is derived from the
 	rows themselves (``qq.parent``) and the caller cannot name a friendlier one."""
 	if isinstance(questions, str):
@@ -1783,11 +1798,9 @@ def get_all_questions_details(questions):
 		return []
 
 	placeholders = ", ".join(["%s"] * len(questions))
-	all_question_details = frappe.db.sql(
+	all_question_details = frappe.db.sql(  # nosemgrep -- values are bound or escaped, see the nosec note
 		f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.type,
-q.pages_total, q.option_1, q.option_2, q.option_3, q.option_4,
-q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4,
-q.scripture_bible_id, q.memorization_ref, q.memorization_resolved_ref,
+q.pages_total, q.multiple, q.scripture_bible_id, q.memorization_ref, q.memorization_resolved_ref,
 q.memorization_text, q.hide_word_count, q.min_word_length
 from `tabQuestion` q, `tabQuiz Question` qq
 where q.name = qq.question and qq.name in ({placeholders})""",  # nosec B608 -- interpolates %s placeholders; the values are bound
@@ -1819,6 +1832,7 @@ where q.name = qq.question and qq.name in ({placeholders})""",  # nosec B608 -- 
 			if row.get("type") == "Scripture Matching":
 				row["matching_items"] = items_by_parent.get(row["question"], [])
 
+	_attach_options(all_question_details)
 	for row in all_question_details:
 		if not reveal.get(row["name"]):
 			_strip_explanations(row)
@@ -1838,7 +1852,7 @@ def get_all_open_questions_details(questions):
 		# Ensure questions is a list
 	if isinstance(questions, str):
 		questions = frappe.parse_json(questions)
-	all_question_details = frappe.db.sql(
+	all_question_details = frappe.db.sql(  # nosemgrep -- values are bound or escaped, see the nosec note
 		f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question_name, q.explanation
 from `tabOpen Question` q, `tabExam Question` qq
 where q.name = qq.question and qq.name in ({", ".join(frappe.db.escape(q) for q in questions)})""",  # nosec B608 -- the value is escaped before it reaches the string

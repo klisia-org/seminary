@@ -34,6 +34,7 @@ from .constants import (
 	GRADING_SCALE_INTERVAL_FIELDS,
 	IMPORT_ROLES,
 	IMPORTABLE_DOCTYPES,
+	LEGACY_OPTION_SLOTS,
 	LESSON_FIELDS,
 	LESSON_SCAC_LINK_FIELDS,
 	MAX_PACK_BYTES,
@@ -44,6 +45,8 @@ from .constants import (
 	MAX_PACK_UNCOMPRESSED_BYTES,
 	PACK_FORMAT_VERSION,
 	PACK_RATIO_FLOOR_BYTES,
+	QUESTION_ANSWER_FIELDS,
+	QUESTION_OPTION_FIELDS,
 	QUIZ_QUESTION_FIELDS,
 	SCAC_FIELDS,
 	SCRIPTURE_MATCHING_ITEM_FIELDS,
@@ -57,6 +60,34 @@ def _only(fields, allowed):
 	if not isinstance(fields, dict):
 		return {}
 	return {k: v for k, v in fields.items() if k in allowed}
+
+
+def _question_choices(rec):
+	"""A question's options from the pack: the Choices list, or the four
+	option fields a pack from an older site carries."""
+	if rec.get("choices"):
+		return [_only(r, QUESTION_OPTION_FIELDS) for r in rec["choices"] if isinstance(r, dict)]
+	f = rec.get("fields") if isinstance(rec.get("fields"), dict) else {}
+	return [
+		{
+			"option": f.get(f"option_{n}"),
+			"is_correct": 1 if f.get(f"is_correct_{n}") else 0,
+			"explanation": f.get(f"explanation_{n}"),
+		}
+		for n in range(1, LEGACY_OPTION_SLOTS + 1)
+		if isinstance(f.get(f"option_{n}"), str) and f.get(f"option_{n}").strip()
+	]
+
+
+def _question_answers(rec):
+	if rec.get("accepted_answers"):
+		return [_only(r, QUESTION_ANSWER_FIELDS) for r in rec["accepted_answers"] if isinstance(r, dict)]
+	f = rec.get("fields") if isinstance(rec.get("fields"), dict) else {}
+	return [
+		{"answer": f.get(f"possibility_{n}")}
+		for n in range(1, LEGACY_OPTION_SLOTS + 1)
+		if isinstance(f.get(f"possibility_{n}"), str) and f.get(f"possibility_{n}").strip()
+	]
 
 
 def _importable(section, doctype):
@@ -416,6 +447,10 @@ class _Importer:
 				d.course = self.course
 				for it in rec.get("matching_items") or []:
 					d.append("matching_items", _only(it, SCRIPTURE_MATCHING_ITEM_FIELDS))
+				for row in _question_choices(rec):
+					d.append("choices", self._rw(row))
+				for row in _question_answers(rec):
+					d.append("accepted_answers", self._rw(row))
 			d.flags.ignore_permissions = True
 			d.insert(ignore_mandatory=True)
 			self.q_map[src] = d.name
