@@ -218,6 +218,9 @@ def set_criteria(lesson: str, criteria: str | None = None) -> dict:
 	same way every other course write is.
 	"""
 	row = _lesson_context(lesson)
+	from seminary.seminary.guards import CONTENT, require_section_capability
+
+	require_section_capability(row.course, CONTENT, include_registrar=True)
 
 	criteria = (criteria or "").strip() or None
 	if criteria:

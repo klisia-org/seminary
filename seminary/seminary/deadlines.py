@@ -20,6 +20,8 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt, format_datetime, get_datetime, now_datetime
 
+from seminary.seminary.guards import CONTENT, GRADE
+
 # A timed attempt the client closes at the cut-off still has to reach the
 # server; this much lateness on the wire is not a refusal.
 CUTOFF_SLACK_SECONDS = 120
@@ -481,10 +483,14 @@ def extra_attempts(course_schedule, quiz, student):
 # the student endpoint answers only for the session user.
 
 
-def _require_staff(course_schedule):
-	from seminary.seminary.guards import require_course_staff
+def _require_staff(course_schedule, action=None):
+	"""Reads need course staff; a write names its action (decisions/105)."""
+	from seminary.seminary.guards import require_course_staff, require_section_capability
 
-	require_course_staff(course_schedule, include_registrar=True)
+	if action:
+		require_section_capability(course_schedule, action, include_registrar=True)
+	else:
+		require_course_staff(course_schedule, include_registrar=True)
 
 
 def _parse(value):
@@ -552,13 +558,13 @@ def _discussion_requires_replies(discussion):
 
 
 @frappe.whitelist()
-def save_late_policy(course, policy):
+def save_late_policy(course: str, policy: str | list | dict):
 	"""Write the section's late policy. The Course Schedule controller refuses
 	it on a scale it cannot apply to, and its on_update re-prices the cards."""
 	from seminary.seminary.guards import require_outline_editor
 
 	require_outline_editor()
-	_require_staff(course)
+	_require_staff(course, CONTENT)
 	policy = _parse(policy)
 	doc = frappe.get_doc("Course Schedule", course)
 	for field in POLICY_FIELDS:
@@ -569,7 +575,7 @@ def save_late_policy(course, policy):
 
 
 @frappe.whitelist()
-def save_override(data):
+def save_override(data: str | list | dict):
 	"""Create or edit one student's override. The doctype's validate checks
 	the section, the roster, the dates and the caller."""
 	data = _parse(data)
@@ -584,7 +590,7 @@ def save_override(data):
 	)
 	course_assess = data.get("course_assess")
 	course = frappe.db.get_value("Scheduled Course Assess Criteria", course_assess, "parent")
-	_require_staff(course)
+	_require_staff(course, GRADE)
 	if data.get("name"):
 		doc = frappe.get_doc("Student Due Date Override", data["name"])
 		if doc.course_assess != course_assess:
@@ -623,7 +629,7 @@ def delete_override(name):
 
 
 @frappe.whitelist()
-def set_late_adjustment(card, deduction=None, reason=None):
+def set_late_adjustment(card: str, deduction: float | int | str | None = None, reason: str | None = None):
 	"""Waive (0) or change the late deduction on one student's grade, or pass
 	no deduction to go back to the policy. A reason is required to change it."""
 	row = frappe.db.get_value(
@@ -637,7 +643,7 @@ def set_late_adjustment(card, deduction=None, reason=None):
 		if row
 		else None
 	)
-	_require_staff(roster.course_sc if roster else None)
+	_require_staff(roster.course_sc if roster else None, GRADE)
 	if not roster:
 		frappe.throw(_("That grade no longer exists."))
 	if not roster.active:

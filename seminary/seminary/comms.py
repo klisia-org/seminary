@@ -649,7 +649,7 @@ def _insert_log(values, dedupe_key=None):
 	log = frappe.get_doc(values)
 	try:
 		log.insert(ignore_permissions=True)
-	except (frappe.UniqueValidationError, frappe.DuplicateEntryError):
+	except frappe.UniqueValidationError, frappe.DuplicateEntryError:
 		return None  # raced on the idempotency key — already queued elsewhere
 	if log.status == "Cancelled":
 		_reflect_announcement(log)
@@ -1784,13 +1784,13 @@ def _staff_recipients(course):
 
 @frappe.whitelist()
 def send_portal_message(
-	recipients=None,
-	message=None,
-	subject=None,
-	course=None,
-	all_students=0,
-	recipient=None,
-	attachments=None,
+	recipients: str | list | dict | None = None,
+	message: str | None = None,
+	subject: str | None = None,
+	course: str | None = None,
+	all_students: int | bool | str = 0,
+	recipient: str | None = None,
+	attachments: str | list | dict | None = None,
 ):
 	"""Portal compose: person-to-person In-App messages, instant delivery.
 	Accepts a list of recipients; all_students expands to every student in the
@@ -1819,6 +1819,12 @@ def send_portal_message(
 		scope = get_my_messaging_scope(course=course)
 		if not scope["staff"]:
 			frappe.throw(_("Only staff can message all students."), frappe.PermissionError)
+		if course:
+			# A whole class is the section's to post to (decisions/105).
+			from seminary.seminary.guards import POST, is_course_staff, may_act, require_section_capability
+
+			if is_course_staff(course) and not may_act(course, POST):
+				require_section_capability(course, POST)
 		targets += [r["person"] for r in scope["recipients"] if r["kind"] == "Student"]
 
 	targets = [t for t in dict.fromkeys(targets) if t]

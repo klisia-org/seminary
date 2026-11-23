@@ -119,7 +119,7 @@
 					<div class="mt-5">
 						<Announcements :cs="props.courseName" />
 					</div>
-					<div v-if="isTeachingStaff" class="mt-5 flex justify-center">
+					<div v-if="isTeachingStaff && mayDo('post')" class="mt-5 flex justify-center">
 						<Button @click="openAnnouncementModal()">
 							<span>
 								{{ __('Make an Announcement') }}
@@ -187,8 +187,12 @@ const route = useRoute()
 
 // What this viewer is on this section, from the server (privatedocs p012):
 // "instructor" teaches or administers it, "mentor" follows some of its
-// students, "student", "reader" (an instructor of record looking in).
+// students, "student", "reader" (an instructor of record looking in),
+// "observer" (reads the course, sees no students; decisions/105).
 const access = computed(() => course.data?.access || null)
+// What an instructor's role on this section allows: content, grade,
+// attendance, post. The server refuses the rest either way.
+const mayDo = (action) => (course.data?.actions || []).includes(action)
 const roleIsStaff = computed(() => !!(user.data?.is_moderator || user.data?.is_instructor))
 // Outcome reporting and announcements are teaching-staff work on *this*
 // section: a mentor holds the Instructor role but does not teach the class.
@@ -283,6 +287,7 @@ const canEditOutline = computed(() => {
 	const roles = user?.data || {}
 	return Boolean(
 		access.value === 'instructor' &&
+		mayDo('content') &&
 		(roles.is_moderator || roles.is_instructor || roles.is_evaluator)
 	)
 })

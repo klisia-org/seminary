@@ -29,6 +29,7 @@ from frappe import _
 from frappe.utils import add_to_date, cint, get_datetime, now_datetime, strip_html
 
 from seminary.seminary import oral
+from seminary.seminary.guards import GRADE
 
 QUESTION = "Oral Defense Question"
 SUBMISSION = "Assignment Submission"
@@ -595,14 +596,18 @@ def answer_in_writing(submission, question, answer):
 # ------------------------------------------------------------------- the staff
 
 
-def _staff(submission):
-	from seminary.seminary.guards import require_course_staff, require_grader
+def _staff(submission, action=None):
+	"""Reads need course staff; a write names its action (decisions/105)."""
+	from seminary.seminary.guards import require_course_staff, require_grader, require_section_capability
 
 	require_grader()
 	sub = _sub(submission)
 	if not sub:
 		frappe.throw(_("Submission not found."), frappe.DoesNotExistError)
-	require_course_staff(sub.course)
+	if action:
+		require_section_capability(sub.course, action)
+	else:
+		require_course_staff(sub.course)
 	return sub
 
 
@@ -624,9 +629,15 @@ def get_defense(submission):
 
 
 @frappe.whitelist(methods=["POST"])
-def save_question(submission, question, passage=None, good_answer=None, name=None):
+def save_question(
+	submission: str,
+	question: str,
+	passage: str | None = None,
+	good_answer: str | None = None,
+	name: str | None = None,
+):
 	"""The instructor writes or edits a question before the student starts (§2)."""
-	sub = _staff(submission)
+	sub = _staff(submission, GRADE)
 	if sub.defense_status not in (
 		"Waiting for Questions",
 		"Waiting for Release",
@@ -665,8 +676,8 @@ def save_question(submission, question, passage=None, good_answer=None, name=Non
 
 
 @frappe.whitelist(methods=["POST"])
-def delete_question(submission, name):
-	sub = _staff(submission)
+def delete_question(submission: str, name: str):
+	sub = _staff(submission, GRADE)
 	if sub.defense_status not in (
 		"Waiting for Questions",
 		"Waiting for Release",
@@ -680,9 +691,9 @@ def delete_question(submission, name):
 
 
 @frappe.whitelist(methods=["POST"])
-def release(submission):
+def release(submission: str):
 	"""Open a defense the activity holds for review (§4)."""
-	sub = _staff(submission)
+	sub = _staff(submission, GRADE)
 	if sub.defense_status != "Waiting for Release":
 		frappe.throw(_("This defense is not waiting for you."))
 	return open_if_ready(submission, released=True)
