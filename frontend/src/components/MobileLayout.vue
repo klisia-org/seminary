@@ -3,17 +3,21 @@
 		<!-- `isolate`: the page's own stacking (sticky PageHeader z-10, sidebar z-20,
 		     help widget) stays below dialogs frappe-ui teleports to <body>. Toasts live
 		     outside this wrapper, so they still show over an open dialog. -->
-		<div class="h-full pb-16 overflow-y-auto" id="scrollContainer">
+		<!-- The page content is the main landmark and the skip link's target (102 §9). -->
+		<main id="scrollContainer" tabindex="-1" class="h-full pb-16 overflow-y-auto focus:outline-none">
 			<slot />
-		</div>
+		</main>
 
 		<!-- Fixed bottom navigation -->
-		<div
+		<nav
+			:aria-label="__('Main')"
 			class="fixed bottom-0 left-0 w-full flex items-center justify-around border-t border-outline-gray-1 bg-surface-menu-bar standalone:pb-4 z-20"
 		>
 			<button
 				v-for="link in visibleLinks"
 				:key="link.to"
+				type="button"
+				:aria-current="isActive(link) ? 'page' : undefined"
 				class="flex flex-col items-center justify-center py-2 px-1 min-w-0 flex-1 transition active:scale-95"
 				@click="handleClick(link)"
 			>
@@ -29,7 +33,7 @@
 					{{ link.label }}
 				</span>
 			</button>
-		</div>
+		</nav>
 
 		<HelpWidget mobile />
 

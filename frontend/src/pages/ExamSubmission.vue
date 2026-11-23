@@ -118,10 +118,10 @@
           <div class="flex items-center justify-end space-x-5">
             <!-- Buttons for Auto-Grading -->
             <div v-if="gradeMode !== 'competency'" class="flex items-center space-x-2">
-              <Button variant="solid" theme="green" size="sm" @click="setPoints(row, row.points_out_of)">
+              <Button variant="solid" theme="green" size="sm" :aria-label="__('Full points')" @click="setPoints(row, row.points_out_of)">
                 <Check class="w-4 h-4" />
               </Button>
-              <Button variant="solid" theme="red" size="sm" @click="setPoints(row, 0)">
+              <Button variant="solid" theme="red" size="sm" :aria-label="__('No points')" @click="setPoints(row, 0)">
                 <X class="w-4 h-4" />
               </Button>
             </div>
@@ -131,7 +131,7 @@
                  for editing (ADR 065 section 11c). -->
             <div v-if="gradeMode !== 'competency'" class="flex flex-col items-end space-y-1">
               <div class="flex items-center space-x-2">
-                <FormControl v-model="row.points" type="number" class="w-20 text-right"
+                <FormControl v-model="row.points" type="number" class="w-20 text-right" :aria-label="__('Points')"
                   @change="(val) => onPointsChange(row, val)" />
                 <span class="text-sm text-ink-gray-7">
                   / {{ parseInt(row.points_out_of, 10) }} {{ __('Points') }}

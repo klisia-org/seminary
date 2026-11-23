@@ -12,6 +12,9 @@
 		<div v-else-if="block.includes('{{ Video')">
 			<video controls width="100%" controlsList="nodownload" oncontextmenu="return false;">
 				<source :src="getId(block)" type="video/mp4" />
+				<!-- The lesson's caption files (102 §6); native controls offer them. -->
+				<track v-for="track in captions || []" :key="track.file" kind="captions"
+					:srclang="track.language" :label="track.label" :src="track.file" />
 			</video>
 		</div>
 		<div v-else-if="block.includes('{{ PDF')">
@@ -86,6 +89,11 @@ const props = defineProps({
 	},
 	folder: {
 		type: String,
+		required: false,
+	},
+	// [{ language, label, file }] for the lesson's videos (102 §6).
+	captions: {
+		type: Array,
 		required: false,
 	},
 

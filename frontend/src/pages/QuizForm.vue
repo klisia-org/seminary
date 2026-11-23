@@ -176,7 +176,7 @@
 						<ListSelectBanner>
 							<template #actions="{ unselectAll, selections }">
 								<div class="flex gap-2">
-									<Button
+									<Button :aria-label="__('Delete selected questions')"
 										variant="ghost"
 										@click="deleteQuestions(selections, unselectAll)"
 									>

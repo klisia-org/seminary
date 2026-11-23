@@ -10,10 +10,10 @@
 			</span>
 			<Input v-model="commentText" type="text" :placeholder="__('Add a note at this moment…')"
 				class="flex-1" @keyup.enter="postComment" />
-			<Button variant="solid" :loading="addComment.loading" @click="postComment">
+			<Button :aria-label="__('Post comment')" variant="solid" :loading="addComment.loading" @click="postComment">
 				<Send class="h-4 w-4" />
 			</Button>
-			<button class="text-ink-gray-5" @click="composing = false"><X class="h-4 w-4" /></button>
+			<button :aria-label="__('Cancel')" class="text-ink-gray-5" @click="composing = false"><X class="h-4 w-4" /></button>
 		</div>
 
 		<!-- timestamped comments -->

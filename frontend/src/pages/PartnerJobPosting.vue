@@ -20,11 +20,11 @@
 				<input v-model="query" type="search" :placeholder="__('Search applicant')"
 					class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none" />
 			</div>
-			<select v-model="status" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8 focus:outline-none">
+			<select :aria-label="__('Status')" v-model="status" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8 focus:outline-none">
 				<option value="">{{ __('All statuses') }}</option>
 				<option v-for="s in STATUSES" :key="s" :value="s">{{ __(s) }}</option>
 			</select>
-			<select v-model="evaluated" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8 focus:outline-none">
+			<select :aria-label="__('Evaluated')" v-model="evaluated" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8 focus:outline-none">
 				<option value="">{{ __('All evaluations') }}</option>
 				<option value="no">{{ __('Needs my evaluation') }}</option>
 				<option value="yes">{{ __('Evaluated by me') }}</option>

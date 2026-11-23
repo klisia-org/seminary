@@ -119,7 +119,7 @@
       <template v-for="{ criteria, index } in group.rows" :key="index">
       <tr>
         <td class="p-2 border">
-          <FormControl v-model="criteria.title" class="mb-4 overflow-visible" :required="false" />
+          <FormControl v-model="criteria.title" :aria-label="__('Title')" class="mb-4 overflow-visible" :required="false" />
         </td>
         <td class="p-2 border">
           <Link v-model="criteria.assesscriteria_scac" class="mb-4" doctype="Assessment Criteria" :required="true"
@@ -154,14 +154,14 @@
           </template>
         </td>
         <td v-if="isCbe" class="p-2 border" style="width: 16%;">
-          <FormControl type="select" v-model="criteria.course_competency"
+          <FormControl type="select" v-model="criteria.course_competency" :aria-label="__('Competency')"
             :options="competencyOptions" :disabled="!!chapterCompetency(criteria)" />
           <p v-if="chapterCompetency(criteria)" class="mt-1 text-xs text-ink-gray-5">
             {{ __('Set by its chapter.') }}
           </p>
         </td>
         <td v-if="weightsApply" class="p-2 border text-center">
-          <FormControl v-model="criteria.extracredit_scac" type="checkbox" :required="false" class="mb-4 inline-block"
+          <FormControl v-model="criteria.extracredit_scac" type="checkbox" :aria-label="__('Extra credit')" :required="false" class="mb-4 inline-block"
             :default="false" />
         </td>
         <td v-if="weightsApply" class="p-2 border" style="width: 10%;">
@@ -177,7 +177,7 @@
               <p class="mt-1 text-xs text-ink-gray-5">
                 {{ __('{0}% of the grade').format(shareOf(criteria, index)) }}
               </p>
-              <FormControl type="select" class="mt-2" v-model="criteria.category_code"
+              <FormControl type="select" class="mt-2" v-model="criteria.category_code" :aria-label="__('Category')"
                 :options="categoryOptions" />
               <FormControl type="checkbox" class="mt-2" v-model="criteria.never_drop"
                 :label="__('Never drop')" />
@@ -190,7 +190,7 @@
         </td>
         <td class="p-2 border text-center align-middle">
           <Tooltip :text="criteria.name ? __('Cut-off, late deduction and student exceptions') : __('Save first')">
-            <Button variant="ghost" size="sm" :disabled="!criteria.name" @click="toggleDates(criteria)">
+            <Button :aria-label="criteria.name ? __('Cut-off, late deduction and student exceptions') : __('Save first')" variant="ghost" size="sm" :disabled="!criteria.name" @click="toggleDates(criteria)">
               <Clock class="h-4 w-4 stroke-1.5"
                 :class="criteria.cutoff_date || overridesFor(criteria).length ? 'text-ink-blue-3' : ''" />
             </Button>
@@ -212,12 +212,12 @@
         </td>
         <td v-if="hasAretenic" class="p-2 border text-center align-middle">
           <Tooltip v-if="!criteria.name" :text="__('Save the assessment before mapping outcomes')">
-            <Button variant="ghost" size="sm" :disabled="true">
+            <Button :aria-label="__('Save the assessment before mapping outcomes')" variant="ghost" size="sm" :disabled="true">
               <Target class="h-4 w-4 stroke-1.5" />
             </Button>
           </Tooltip>
           <Tooltip v-else :text="__('Map to Course Learning Outcomes')">
-            <Button variant="ghost" size="sm" @click="openCloMapper(criteria)">
+            <Button :aria-label="__('Map to Course Learning Outcomes')" variant="ghost" size="sm" @click="openCloMapper(criteria)">
               <Target class="h-4 w-4 stroke-1.5" />
             </Button>
           </Tooltip>
@@ -226,12 +226,13 @@
           <Button variant="ghost" size="sm"
             :disabled="!criteria.name"
             :title="criteria.name ? __('Dimensions and evaluators') : __('Save first')"
+            :aria-label="criteria.name ? __('Dimensions and evaluators') : __('Save first')"
             @click="toggleDetail(criteria)">
             <SlidersHorizontal class="h-4 w-4 stroke-1.5" />
           </Button>
         </td>
         <td class="p-2 border text-center align-middle">
-          <Button variant="ghost" size="sm" theme="red" @click="removeCriteria(index)">
+          <Button variant="ghost" size="sm" theme="red" :aria-label="__('Remove')" @click="removeCriteria(index)">
             <Trash2 class="h-4 w-4 stroke-1.5" />
           </Button>
         </td>
@@ -294,7 +295,7 @@
                 <td class="p-1">{{ ov.reason }}</td>
                 <td class="p-1 whitespace-nowrap">
                   <Button variant="ghost" size="sm" @click="editOverride(ov)">{{ __('Edit') }}</Button>
-                  <Button variant="ghost" size="sm" theme="red" @click="removeOverride(ov)">
+                  <Button variant="ghost" size="sm" theme="red" :aria-label="__('Remove')" @click="removeOverride(ov)">
                     <Trash2 class="h-4 w-4 stroke-1.5" />
                   </Button>
                 </td>

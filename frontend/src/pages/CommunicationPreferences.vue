@@ -17,7 +17,7 @@
 			<p class="mb-3 text-sm text-ink-gray-5">
 				{{ __('Messages from the seminary are sent in this language when a translation exists.') }}
 			</p>
-			<select
+			<select :aria-label="__('Language')"
 				v-model="language"
 				class="w-full max-w-xs rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
 			>
@@ -36,7 +36,7 @@
 				{{ __('Meetings set for you are shown and sent in this time zone, and instructors see it when they schedule group meetings.') }}
 			</p>
 			<div class="flex flex-wrap items-center gap-2">
-				<select v-model="timeZone"
+				<select :aria-label="__('Time zone')" v-model="timeZone"
 					class="w-full max-w-xs rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0">
 					<option v-for="z in zoneOptions" :key="z" :value="z">{{ z }}</option>
 				</select>
@@ -113,7 +113,7 @@
 					:placeholder="__('Postal code')"
 					class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
 				/>
-				<select
+				<select :aria-label="__('Country')"
 					v-model="mailing.country"
 					class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
 				>

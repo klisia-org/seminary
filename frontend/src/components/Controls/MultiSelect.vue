@@ -27,6 +27,7 @@
 								ref="search"
 								class="search-input form-input w-full focus-visible:!ring-0"
 								type="text"
+								:aria-label="label ? __('Search {0}').format(label) : __('Search')"
 								:value="query"
 								@change="
 									(e) => {

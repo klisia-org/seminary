@@ -142,8 +142,9 @@ def _self_host(doc):
 #: should borrow their read permission from.
 EMBEDDED_FILE_FIELDS = {
 	"Course Lesson": {
-		"fields": ("content", "body", "instructor_content", "instructor_notes"),
-		"children": (),
+		# Captions and the transcript are read by whoever reads the lesson (102 §6).
+		"fields": ("content", "body", "instructor_content", "instructor_notes", "transcript"),
+		"children": (("captions", "caption_file"),),
 		"host": lambda doc: ("Course Schedule", doc.get("course_sc")),
 	},
 	# A graded discussion is read by the whole section, attachments included,

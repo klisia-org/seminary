@@ -4,9 +4,14 @@
 			<template #target="{ open: openPopover, togglePopover }">
 				<slot name="target" v-bind="{ open: openPopover, togglePopover }">
 					<div class="w-full">
+						<!-- Named by `label`, or else the placeholder, so the trigger is never
+						     a nameless button (102 §9). -->
 						<button
+							type="button"
 							class="flex w-full items-center justify-between focus:outline-none"
 							:class="inputClasses"
+							:aria-label="triggerLabel"
+							aria-haspopup="listbox"
 							@click="() => togglePopover()"
 						>
 							<div class="flex items-center">
@@ -43,9 +48,10 @@
 								"
 								:value="query"
 								autocomplete="off"
-								placeholder="Search"
+								:placeholder="__('Search')"
+								:aria-label="label ? __('Search {0}').format(label) : __('Search')"
 							/>
-							<button
+							<button :aria-label="__('Clear')"
 								class="absolute right-1.5 inline-flex h-7 w-7 items-center justify-center"
 								@click="selectedValue = null"
 							>
@@ -163,6 +169,11 @@ const props = defineProps({
 		type: Boolean,
 		default: true,
 	},
+	// The field's name for assistive technology; Link passes its own label.
+	label: {
+		type: String,
+		default: '',
+	},
 })
 const emit = defineEmits(['update:modelValue', 'update:query', 'change'])
 
@@ -171,6 +182,13 @@ const showOptions = ref(false)
 const search = ref(null)
 
 const attrs = useAttrs()
+
+const triggerLabel = computed(() => {
+	const name = props.label || props.placeholder
+	if (!name) return undefined
+	const chosen = selectedValue.value ? displayValue(selectedValue.value) : ''
+	return chosen ? `${name}: ${chosen}` : name
+})
 const slots = useSlots()
 
 const valuePropPassed = computed(() => 'value' in attrs)

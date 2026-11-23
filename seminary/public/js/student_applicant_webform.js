@@ -240,3 +240,30 @@ frappe.ready(function () {
     }
     setRows(wf.doc && wf.doc.program);
 });
+
+// Every field named for assistive technology (decision 102 §9, WCAG 1.3.1/4.1.2):
+// Frappe's web form draws a field's label beside its control without tying the two
+// together for some field types (Select among them). Name any control left without
+// a label from the field's own label.
+frappe.ready(function () {
+    if (!window.frappe || !frappe.web_form) return;
+    function nameControls() {
+        var fields = frappe.web_form.fields_dict || {};
+        Object.keys(fields).forEach(function (key) {
+            var field = fields[key];
+            var label = field && field.df && field.df.label;
+            if (!label || !field.$wrapper) return;
+            field.$wrapper.find("input, select, textarea").each(function () {
+                var has = (this.labels && this.labels.length) || this.getAttribute("aria-label") || this.getAttribute("aria-labelledby");
+                if (!has) this.setAttribute("aria-label", __(label));
+            });
+        });
+    }
+    nameControls();
+    // Fields drawn later (a section shown, a page turned) are named on the next change.
+    var timer = null;
+    new MutationObserver(function () {
+        clearTimeout(timer);
+        timer = setTimeout(nameControls, 200);
+    }).observe(document.body, { childList: true, subtree: true });
+});

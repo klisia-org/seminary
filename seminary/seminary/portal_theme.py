@@ -172,3 +172,84 @@ def _fonts_version():
 		return str(int(os.path.getmtime(frappe.get_app_path(*_FONTS_CSS))))
 	except OSError:
 		return "0"
+
+
+# --------------------------------------------------------------------- contrast (102 §8)
+
+#: Text on background pairs a theme must keep at 4.5:1, in each mode. The portal draws
+#: `--portal-brand` as text (the header, the active sidebar link, the user menu), never as
+#: a fill, so it is checked on the page; `--ink-white` is the text on solid buttons
+#: (`--surface-gray-7`).
+CONTRAST_PAIRS = (
+	("--ink-gray-9", "--surface-white"),
+	("--ink-gray-8", "--surface-cards"),
+	("--ink-gray-7", "--surface-white"),
+	("--ink-blue-link", "--surface-white"),
+	("--portal-brand", "--surface-white"),
+	("--ink-white", "--surface-gray-7"),
+)
+
+#: frappe-ui 0.1.261's own values (tailwind/colors.json; the same in the built CSS), used
+#: for the side of a pair a theme leaves unset. `--ink-blue-link` is left out on purpose:
+#: frappe-ui's light value is itself below 4.5:1 on white, so filling it in would refuse
+#: a theme for a colour the school never chose. `--portal-brand` has no default.
+FRAPPE_UI_DEFAULTS = {
+	"light": {
+		"--ink-gray-9": "#171717",
+		"--ink-gray-8": "#383838",
+		"--ink-gray-7": "#525252",
+		"--ink-white": "#ffffff",
+		"--surface-white": "#ffffff",
+		"--surface-cards": "#ffffff",
+		"--surface-gray-7": "#171717",
+	},
+	"dark": {
+		"--ink-gray-9": "#f8f8f8",
+		"--ink-gray-8": "#d4d4d4",
+		"--ink-gray-7": "#afafaf",
+		"--ink-white": "#0f0f0f",
+		"--surface-white": "#0f0f0f",
+		"--surface-cards": "#1c1c1c",
+		"--surface-gray-7": "#f8f8f8",
+	},
+}
+
+
+def failing_pairs(theme, minimum=None):
+	"""The text/background pairs of `theme` below the contrast minimum, per mode.
+
+	`theme` has the shape a `portal_theme` hook returns (only "light" and "dark" are
+	read). A pair is checked when the theme sets at least one side of it; the other
+	side falls back to frappe-ui's default where there is a reliable one. A pair whose
+	colours can't be read (unset with no default, or translucent) is skipped.
+
+	Returns a list of dicts: mode, text, background (variable names), text_value,
+	background_value, ratio and ratio_text ("3.21:1"). Pure: the app that stores the
+	theme calls it on save; the portal never refuses a theme while rendering."""
+	from seminary.seminary import contrast
+
+	minimum = contrast.MIN_RATIO if minimum is None else minimum
+	out = []
+	for mode in ("light", "dark"):
+		values = {name: str(value).strip() for name, value in ((theme or {}).get(mode) or {}).items()}
+		defaults = FRAPPE_UI_DEFAULTS[mode]
+		for text, background in CONTRAST_PAIRS:
+			if text not in values and background not in values:
+				continue
+			fg = values.get(text) or defaults.get(text)
+			bg = values.get(background) or defaults.get(background)
+			ratio = contrast.contrast_ratio(fg, bg) if fg and bg else None
+			if ratio is None or ratio >= minimum:
+				continue
+			out.append(
+				{
+					"mode": mode,
+					"text": text,
+					"background": background,
+					"text_value": fg,
+					"background_value": bg,
+					"ratio": ratio,
+					"ratio_text": contrast.format_ratio(ratio),
+				}
+			)
+	return out

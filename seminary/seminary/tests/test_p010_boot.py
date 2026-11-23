@@ -56,7 +56,9 @@ class TestP010Boot(IntegrationTestCase):
 		self.assertEqual(
 			set(get_boot_data()),
 			# lang: the portal follows the user's language (aretenic 071).
-			{"user", "csrf_token", "sitename", "session", "lang"},
+			# site_time_zone: server datetimes are naive in the site's zone, and
+			# utils/index.js converts them to the viewer's.
+			{"user", "csrf_token", "sitename", "session", "lang", "site_time_zone"},
 		)
 
 	def test_session_carries_only_the_user(self):

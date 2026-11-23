@@ -65,6 +65,7 @@
 		<RichTextEditor :teleport="false" id="oral-prompt" :content="activity.prompt || ''"
 			@change="(val) => (activity.prompt = val)"
 			:placeholder="__('What should the students talk about?')" />
+		<ContentIssues ref="promptChecker" class="mt-2" :issues="promptIssues" :actionLabel="__('Save anyway')" />
 		<RubricEditor v-if="activityDetails.data?.name" class="mt-8" activity-doctype="Oral Activity"
 			:activity="activityDetails.data.name" />
 	</div>
@@ -72,6 +73,8 @@
 <script setup>
 // Create and edit an oral activity (decisions/100b).
 import PageHeader from '@/components/PageHeader.vue'
+import ContentIssues from '@/components/ContentIssues.vue'
+import { useContentCheck } from '@/composables/useContentCheck'
 import { Breadcrumbs, createResource, FormControl, Button, toast } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, onBeforeUnmount, watch } from 'vue'
 import { updateDocumentTitle } from '@/utils'
@@ -166,7 +169,15 @@ const activityUpdate = createResource({
 	makeParams: (values) => ({ doctype: 'Oral Activity', name: values.activityID, fieldname: { ...activity } }),
 })
 
-const submitActivity = () => {
+// The accessibility checker on the prompt students read (102 §7).
+const {
+	checker: promptChecker,
+	issues: promptIssues,
+	confirmSave: confirmPrompt,
+} = useContentCheck(() => activity.prompt)
+
+const submitActivity = async () => {
+	if (!(await confirmPrompt())) return
 	if (activityDetails.data?.name) {
 		activityUpdate.submit(
 			{ activityID: activityDetails.data.name },

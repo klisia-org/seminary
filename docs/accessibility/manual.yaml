@@ -1,0 +1,440 @@
+# Criteria axe-core can't decide, checked by a person (decision 102 §4).
+#
+# For each row, check the portal and public pages the way `how` says, then fill in:
+#   result:      Supports | Partially Supports | Does Not Support | Not Applicable
+#   remarks:     what fails and where, when it isn't Supports (shown in the report)
+#   checked_by:  who checked
+#   checked_on:  YYYY-MM-DD; a row older than 12 months counts as not checked
+# A row left blank makes its criterion Partially Supports in conformance.json.
+
+- id: "1.1.1"
+  name: Non-text Content
+  how: "Icons that carry meaning have a text name; decorative images are hidden; the alt text instructors give images is kept in the lesson."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.2.1"
+  name: Audio-only and Video-only (Prerecorded)
+  how: "Audio-only and video-only content Seminary itself plays (recordings, oral activities) offers a transcript or text alternative."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.2.2"
+  name: Captions (Prerecorded)
+  how: "A lesson video with captions shows them in the player and they can be switched; videos without captions are flagged to the instructor."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.2.3"
+  name: Audio Description or Media Alternative (Prerecorded)
+  how: "Recorded video Seminary plays offers a transcript or audio description."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.2.4"
+  name: Captions (Live)
+  how: "Seminary streams no live audio; live classes run on meeting providers (out of scope)."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.2.5"
+  name: Audio Description (Prerecorded)
+  how: "Recorded video Seminary plays: audio description, or the transcript covers the visual content."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.3.1"
+  name: Info and Relationships
+  how: "Headings, lists, tables and form groups are marked up as such on each portal page."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.3.2"
+  name: Meaningful Sequence
+  how: "Reading order with styles off matches the visual order (sidebar, then page content)."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.3.3"
+  name: Sensory Characteristics
+  how: 'No instruction relies only on shape, position or sound ("click the green button").'
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.3.4"
+  name: Orientation
+  how: "The portal works in portrait and landscape on a phone."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.3.5"
+  name: Identify Input Purpose
+  how: "Personal fields (name, email, phone, address) carry autocomplete attributes."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.1"
+  name: Use of Color
+  how: "Status (grades, attendance, due dates) is never shown by colour alone."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.2"
+  name: Audio Control
+  how: "No audio plays on its own for more than 3 seconds."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.3"
+  name: Contrast (Minimum)
+  how: "Spot-check text over images and in states axe can't reach (hover, disabled, dark mode)."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.4"
+  name: Resize Text
+  how: "Text zoomed to 200% loses no content or function."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.5"
+  name: Images of Text
+  how: "No images of text other than logos."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.10"
+  name: Reflow
+  how: "At 320 CSS px wide (400% zoom), pages need no horizontal scrolling except data tables."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.11"
+  name: Non-text Contrast
+  how: "Control borders, focus outlines and icons reach 3:1 against their background."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.12"
+  name: Text Spacing
+  how: "Increased line, letter and word spacing (WCAG bookmarklet) clips no text."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "1.4.13"
+  name: Content on Hover or Focus
+  how: "Tooltips and popovers can be dismissed with Escape, hovered and stay until dismissed."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.1.1"
+  name: Keyboard
+  how: "Every action on the main student and instructor pages can be done with the keyboard alone."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.1.2"
+  name: No Keyboard Trap
+  how: "Focus never gets stuck: dialogs, editors and menus can be left with the keyboard."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.1.4"
+  name: Character Key Shortcuts
+  how: "Single-key shortcuts can be turned off or only work with focus on the control."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.2.1"
+  name: Timing Adjustable
+  how: "Timed quizzes and exams warn before time runs out and let the student ask for more time; sessions warn before expiry."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.2.2"
+  name: Pause, Stop, Hide
+  how: "Moving or auto-updating content (carousels, live feeds) can be paused."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.3.1"
+  name: Three Flashes or Below Threshold
+  how: "Nothing flashes more than three times a second."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.4.1"
+  name: Bypass Blocks
+  how: "The skip link reaches the content on every portal page; landmarks are present."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.4.2"
+  name: Page Titled
+  how: "Each page's title names the page and course."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.4.3"
+  name: Focus Order
+  how: "Tab order follows the visual order; focus moves into dialogs and back when they close."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.4.4"
+  name: Link Purpose (In Context)
+  how: "Each link's purpose is clear from its text or its context."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.4.5"
+  name: Multiple Ways
+  how: "Pages can be reached through the sidebar and through links from the course."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.4.6"
+  name: Headings and Labels
+  how: "Headings and labels describe their topic or purpose."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.4.7"
+  name: Focus Visible
+  how: "Every control shows a visible focus outline."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.4.11"
+  name: Focus Not Obscured (Minimum)
+  how: "A focused control is never hidden behind the sticky header, the bottom bar or the help widget."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.5.1"
+  name: Pointer Gestures
+  how: "No action needs a multi-point or path gesture."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.5.2"
+  name: Pointer Cancellation
+  how: "Actions fire on release, not on press."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.5.3"
+  name: Label in Name
+  how: "A control's visible text is part of its accessible name."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.5.4"
+  name: Motion Actuation
+  how: "No action is triggered by shaking or tilting the device."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.5.7"
+  name: Dragging Movements
+  how: "Anything that can be dragged (reordering lessons, blocks) can also be done without dragging."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "2.5.8"
+  name: Target Size (Minimum)
+  how: "Spot-check targets axe can't measure (inside editors, on small screens)."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.1.2"
+  name: Language of Parts
+  how: "Passages in another language (Greek, Hebrew, Scripture quotations) are marked with lang where Seminary renders them."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.2.1"
+  name: On Focus
+  how: "Focusing a control never opens a new page or dialog by itself."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.2.2"
+  name: On Input
+  how: "Changing a select or checkbox never navigates or submits without warning."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.2.3"
+  name: Consistent Navigation
+  how: "The sidebar and bottom bar stay in the same order on every page."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.2.4"
+  name: Consistent Identification
+  how: "The same function is labelled the same way across pages."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.2.6"
+  name: Consistent Help
+  how: "The help widget is in the same place on every page."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.3.1"
+  name: Error Identification
+  how: "Form errors are identified in text next to the field."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.3.2"
+  name: Labels or Instructions
+  how: "Every form field has a visible label or instruction."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.3.3"
+  name: Error Suggestion
+  how: "Errors suggest a correction where one is known."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.3.4"
+  name: Error Prevention (Legal, Financial, Data)
+  how: "Submitting an exam, payment or enrollment can be reviewed, corrected or confirmed first."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.3.7"
+  name: Redundant Entry
+  how: "Information already entered in a process (applicant form, enrollment) isn't asked for again."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "3.3.8"
+  name: Accessible Authentication (Minimum)
+  how: "Sign-in needs no cognitive test; password managers and paste work."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "4.1.2"
+  name: Name, Role, Value
+  how: "Custom controls (switches, tabs, menus, editors) expose name, role and state to a screen reader."
+  result:
+  remarks:
+  checked_by:
+  checked_on:
+
+- id: "4.1.3"
+  name: Status Messages
+  how: "Saves, errors and page changes are announced without moving focus."
+  result:
+  remarks:
+  checked_by:
+  checked_on:

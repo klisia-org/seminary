@@ -15,7 +15,7 @@
 		</div>
 	</div>
 	<div class="flex flex-wrap items-center gap-2">
-		<select v-model="partnerType" class="filter-select">
+		<select :aria-label="__('Organization type')" v-model="partnerType" class="filter-select">
 			<option value="">{{ __('All types') }}</option>
 			<option v-for="pt in partnerTypes.data || []" :key="pt" :value="pt">{{ pt }}</option>
 		</select>
@@ -24,7 +24,7 @@
 
 
 	<div class="mx-auto flex w-full max-w-6xl flex-col gap-5 p-3 sm:p-5 lg:flex-row lg:items-start">
-		<main class="min-w-0 flex-1">
+		<div class="min-w-0 flex-1">
 			<div v-if="directory.loading" class="text-ink-gray-5">{{ __('Loading organizations...') }}</div>
 
 			<div
@@ -58,7 +58,7 @@
 					</router-link>
 				</li>
 			</ul>
-		</main>
+		</div>
 
 		<aside class="w-full shrink-0 lg:w-80">
 			<MyOrganizationsPanel @created="directory.reload()" />

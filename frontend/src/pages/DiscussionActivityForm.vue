@@ -70,6 +70,7 @@
 				@change="(val) => (discussion.prompt = val)"
 				:placeholder="__('Enter a prompt for the discussion...')"
 			/>
+			<ContentIssues ref="promptChecker" class="mt-2" :issues="promptIssues" :actionLabel="__('Save anyway')" />
 			<RubricEditor v-if="discussionDetails.data?.name" class="mt-8" activity-doctype="Discussion Activity"
 				:activity="discussionDetails.data.name" @saved="outcomesPanel?.reload()" />
 			<ActivityOutcomesPanel v-if="discussionDetails.data?.name && user?.data?.has_aretenic" ref="outcomesPanel"
@@ -80,6 +81,8 @@
 </template>
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
+import ContentIssues from '@/components/ContentIssues.vue'
+import { useContentCheck } from '@/composables/useContentCheck'
 import {
 	Breadcrumbs,
 	createResource,
@@ -226,7 +229,15 @@ const discussionUpdate = createResource({
 	},
 })
 
-const submitDiscussion = () => {
+// The accessibility checker on the prompt students read (102 §7).
+const {
+	checker: promptChecker,
+	issues: promptIssues,
+	confirmSave: confirmPrompt,
+} = useContentCheck(() => discussion.prompt)
+
+const submitDiscussion = async () => {
+	if (!(await confirmPrompt())) return
 	if (discussionDetails.data?.name) updateDiscussion()
 	else createDiscussion()
 }

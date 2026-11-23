@@ -8,9 +8,11 @@ import { FrappeUI } from 'frappe-ui'
 import { Button } from 'frappe-ui'
 
 export class Upload {
-	constructor({ data, api, readOnly }) {
+	constructor({ data, api, readOnly, config }) {
 		this.data = data
 		this.readOnly = readOnly
+		// The lesson's caption tracks, handed to every video it plays (102 §6).
+		this.captions = config?.captions || []
 	}
 
 	static get toolbox() {
@@ -48,7 +50,9 @@ export class Upload {
 		if (this.isVideo(file.file_type)) {
 			const app = createApp(VideoBlock, {
 				file: file.file_url,
+				captions: this.captions,
 			})
+			app.use(translationPlugin)
 			app.mount(this.wrapper)
 			return
 		} else if (this.isAudio(file.file_type)) {
@@ -89,7 +93,30 @@ export class Upload {
 			image.className = 'mb-4'
 			image.setAttribute('src', file.file_url)
 			image.setAttribute('width', '100%')
-			this.wrapper.replaceChildren(image)
+			// Alt text the instructor gives below the image while editing (102 §7).
+			image.setAttribute('alt', this.data.alt || '')
+			if (this.readOnly) {
+				this.wrapper.replaceChildren(image)
+				return
+			}
+			const alt = document.createElement('input')
+			alt.type = 'text'
+			alt.className = 'form-input mb-4 w-full text-sm'
+			alt.value = this.data.alt || ''
+			alt.placeholder = __('Describe the image for students who can\'t see it')
+			alt.setAttribute('aria-label', __('Image description (alt text)'))
+			// Keys typed here are the field's: editorjs would read Enter as "new
+			// block" and Backspace in an empty field as "delete this one".
+			alt.addEventListener('keydown', (event) => {
+				event.stopPropagation()
+				if (event.key === 'Enter') event.preventDefault()
+			})
+			alt.addEventListener('input', () => {
+				this.data.alt = alt.value
+				image.setAttribute('alt', alt.value)
+			})
+			image.className = 'mb-1'
+			this.wrapper.replaceChildren(image, alt)
 			return
 		}
 	}
@@ -116,10 +143,12 @@ export class Upload {
 	}
 
 	save(blockContent) {
-		return {
+		const saved = {
 			file_url: this.data.file_url,
 			file_type: this.data.file_type,
 		}
+		if (this.data.alt) saved.alt = this.data.alt
+		return saved
 	}
 
 	isVideo(type) {

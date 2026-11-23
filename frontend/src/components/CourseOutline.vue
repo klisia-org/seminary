@@ -130,8 +130,8 @@
 								</div>
 								<div v-else-if="props.allowEdit">
 									<Tooltip :text="__('Delete Lesson')" placement="bottom">
-										<button type="button"
-											class="rounded-md p-1 text-ink-red-3 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-red-1"
+										<button :aria-label="__('Delete Lesson')" type="button"
+											class="rounded-md p-1 text-ink-red-3 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 hover:bg-surface-red-1"
 											@click.prevent="trashLesson(lesson.name, chapter.name)">
 											<Trash2 class="h-4 w-4" />
 										</button>

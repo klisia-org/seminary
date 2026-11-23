@@ -13,9 +13,11 @@ import translationPlugin from '../translation'
  * while editing and in the read-only lesson view.
  */
 export class VideoRecord {
-	constructor({ data, readOnly }) {
+	constructor({ data, readOnly, config }) {
 		this.data = data && typeof data === 'object' ? data : {}
 		this.readOnly = readOnly
+		// The lesson's caption tracks (102 §6).
+		this.captions = config?.captions || []
 		this.wrapper = undefined
 		this.app = null
 	}
@@ -54,6 +56,7 @@ export class VideoRecord {
 		this.app = createApp(VideoBlock, {
 			file: file.file_url,
 			type: file.file_type === 'mp4' ? 'video/mp4' : 'video/webm',
+			captions: this.captions,
 		})
 		this.app.use(translationPlugin)
 		this.app.use(FrappeUI)

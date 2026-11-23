@@ -17,7 +17,7 @@
 							</div>
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
-			<select v-model="ministrySetting" class="filter-select">
+			<select :aria-label="__('Ministry setting')" v-model="ministrySetting" class="filter-select">
 				<option value="">{{ __('All settings') }}</option>
 				<option v-for="s in MINISTRY_SETTINGS" :key="s" :value="s">{{ __(s) }}</option>
 			</select>

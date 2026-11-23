@@ -9,21 +9,32 @@
 			ref="videoRef"
 		>
 			<source :src="fileURL" :type="type" />
+			<!-- The lesson's caption files (102 §6). Only videos Seminary plays itself
+			     get these; YouTube and Vimeo embeds keep their own captions. -->
+			<track
+				v-for="(track, index) in captions"
+				:key="track.file"
+				kind="captions"
+				:srclang="track.language"
+				:label="track.label"
+				:src="track.file"
+				:default="index === defaultTrack"
+			/>
 		</video>
 		<div
-			class="flex items-center space-x-2 bg-surface-gray-3 rounded-md p-0.5 absolute bottom-3 w-[98%] left-0 right-0 mx-auto invisible group-hover:visible"
+			class="flex items-center space-x-2 bg-surface-gray-3 rounded-md p-0.5 absolute bottom-3 w-[98%] left-0 right-0 mx-auto invisible group-hover:visible group-focus-within:visible"
 		>
-			<Button variant="ghost">
+			<!-- The click is on the button, not its icon, so Enter and Space work (102 §9). -->
+			<Button :aria-label="playing ? __('Pause') : __('Play')" variant="ghost" @click="playing ? pauseVideo() : playVideo()">
 				<template #icon>
 					<Play
 						v-if="!playing"
-						@click="playVideo"
 						class="w-4 h-4 text-ink-gray-9"
 					/>
-					<Pause v-else @click="pauseVideo" class="w-4 h-4 text-ink-gray-9" />
+					<Pause v-else class="w-4 h-4 text-ink-gray-9" />
 				</template>
 			</Button>
-			<Button variant="ghost" @click="toggleMute">
+			<Button :aria-label="muted ? __('Unmute') : __('Mute')" variant="ghost" @click="toggleMute">
 				<template #icon>
 					<Volume2 v-if="!muted" class="w-4 h-4 text-ink-gray-9" />
 					<VolumeX v-else class="w-4 h-4 text-ink-gray-9" />
@@ -31,6 +42,7 @@
 			</Button>
 			<input
 				type="range"
+				:aria-label="__('Position')"
 				min="0"
 				:max="duration"
 				step="0.1"
@@ -41,7 +53,19 @@
 			<span class="text-xs font-medium">
 				{{ formatTime(currentTime) }} / {{ formatTime(duration) }}
 			</span>
-			<Button variant="ghost" @click="toggleFullscreen">
+			<select
+				v-if="captions.length"
+				v-model="activeTrack"
+				:aria-label="__('Captions')"
+				class="h-7 rounded border-none bg-transparent py-0 pl-1 pr-6 text-xs text-ink-gray-9 focus:ring-1 focus:ring-outline-gray-3"
+				@change="showTrack"
+			>
+				<option :value="-1">{{ __('Captions off') }}</option>
+				<option v-for="(track, index) in captions" :key="track.file" :value="index">
+					{{ track.label }}
+				</option>
+			</select>
+			<Button :aria-label="__('Full screen')" variant="ghost" @click="toggleFullscreen">
 				<template #icon>
 					<Maximize class="w-4 h-4 text-ink-gray-9" />
 				</template>
@@ -53,6 +77,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { Play, Pause, Maximize, Volume2, VolumeX } from 'lucide-vue-next'
 import { Button } from 'frappe-ui'
+import { userLocale } from '@seminary/portal-shell'
 
 const videoRef = ref(null)
 const videoContainer = ref(null)
@@ -70,7 +95,30 @@ const props = defineProps({
 		type: String,
 		default: 'video/mp4',
 	},
+	// [{ language, label, file }] from the lesson (102 §6).
+	captions: {
+		type: Array,
+		default: () => [],
+	},
 })
+
+// The track in the viewer's language: the exact tag first, then the same base
+// language ("pt" for "pt-BR"). None matching leaves captions off.
+const defaultTrack = computed(() => {
+	const locale = userLocale().toLowerCase()
+	const base = locale.split('-')[0]
+	const tags = props.captions.map((t) => String(t.language || '').toLowerCase().replace('_', '-'))
+	const exact = tags.indexOf(locale)
+	return exact !== -1 ? exact : tags.findIndex((tag) => tag.split('-')[0] === base)
+})
+const activeTrack = ref(defaultTrack.value)
+
+const showTrack = () => {
+	const tracks = videoRef.value?.textTracks || []
+	for (let i = 0; i < tracks.length; i++) {
+		tracks[i].mode = i === Number(activeTrack.value) ? 'showing' : 'disabled'
+	}
+}
 
 onMounted(() => {
 	setTimeout(() => {

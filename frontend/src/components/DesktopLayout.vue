@@ -8,10 +8,11 @@
 				<div class="relative h-full">
 					<AppSidebar />
 				</div>
-				<div class="relative flex-1 overflow-auto" id="scrollContainer">
+				<!-- The page content is the main landmark and the skip link's target (102 §9). -->
+				<main id="scrollContainer" tabindex="-1" class="relative flex-1 overflow-auto focus:outline-none">
 					<slot />
 					<HelpWidget />
-				</div>
+				</main>
 			</div>
 		</div>
 	</div>

@@ -7,7 +7,7 @@
 			<source :src="encodeURI(file)" type="audio/mp3" />
 		</audio>
 		<div class="flex items-center space-x-2 shadow rounded-lg p-1 w-1/2">
-			<Button variant="ghost" @click="togglePlay">
+			<Button :aria-label="isPlaying ? __('Pause') : __('Play')" variant="ghost" @click="togglePlay">
 				<template #icon>
 					<Play v-if="!isPlaying" class="w-4 h-4 text-ink-gray-9" />
 					<Pause v-else class="w-4 h-4 text-ink-gray-9" />
@@ -15,6 +15,7 @@
 			</Button>
 			<input
 				type="range"
+				:aria-label="__('Position')"
 				min="0"
 				:max="duration"
 				step="0.1"
@@ -25,7 +26,7 @@
 			<span class="text-xs text-ink-gray-9 font-medium">
 				{{ formatTime(currentTime) }} / {{ formatTime(duration) }}
 			</span>
-			<Button variant="ghost" @click="toggleMute">
+			<Button :aria-label="isMuted ? __('Unmute') : __('Mute')" variant="ghost" @click="toggleMute">
 				<template #icon>
 					<Volume2 v-if="!isMuted" class="w-4 h-4 text-ink-gray-9" />
 					<VolumeX v-else class="w-4 h-4 text-ink-gray-9" />

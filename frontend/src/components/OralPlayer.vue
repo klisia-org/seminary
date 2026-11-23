@@ -23,7 +23,7 @@
         <span class="w-20">{{ s.label }}</span>
         <Button size="sm" variant="ghost" :disabled="firstStart(s.label) === undefined"
           @click="seek(firstStart(s.label))">{{ __('Listen') }}</Button>
-        <select class="form-select text-xs rounded border-outline-gray-2" :value="s.student || ''"
+        <select :aria-label="__('Student speaking as {0}').format(s.label)" class="form-select text-xs rounded border-outline-gray-2" :value="s.student || ''"
           @change="link(s.label, $event.target.value)">
           <option value="">{{ __('Not a student on the recording') }}</option>
           <option v-for="p in rec.data.people" :key="p.student" :value="p.student">{{ p.name }}</option>

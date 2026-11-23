@@ -83,7 +83,7 @@
 		<div class="flex min-w-0 flex-1 flex-col">
 			<!-- Phones: the rail folds into selectors above the feed (section 5.5). -->
 			<div v-if="cohorts.length" class="mb-3 flex flex-wrap gap-2 md:hidden">
-				<select v-model="selectedCohort"
+				<select :aria-label="__('Cohort')" v-model="selectedCohort"
 					class="min-w-0 flex-1 rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
 					<option value="">{{ __('All my cohorts') }}</option>
 					<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
@@ -121,10 +121,10 @@
 						<Search class="h-4 w-4 text-ink-gray-4" />
 						<input v-model="searchQuery" type="text" :placeholder="__('Search posts or people')"
 							class="w-full border-0 bg-transparent px-0 py-1.5 text-sm text-ink-gray-8 shadow-none focus:outline-none focus:ring-0" />
-						<button v-if="searchQuery" @click="searchQuery = ''"><X class="h-4 w-4 text-ink-gray-4" /></button>
+						<button :aria-label="__('Clear search')" v-if="searchQuery" @click="searchQuery = ''"><X class="h-4 w-4 text-ink-gray-4" /></button>
 					</div>
 					<CommunityPassagePicker v-model="passageFilter" :cohort="selectedCohort" />
-					<select v-model="channelFilter"
+					<select :aria-label="__('Channel')" v-model="channelFilter"
 						class="rounded-md border px-2 py-1.5 text-sm"
 						:class="channelFilter ? 'border-outline-gray-4 bg-surface-gray-3 text-ink-gray-9' : 'border-outline-gray-2 bg-surface-white text-ink-gray-7'">
 						<option value="">{{ __('Channel: all') }}</option>
@@ -310,12 +310,12 @@
 							<div class="mt-2">
 								<div v-if="replyTo" class="mb-1 flex items-center gap-2 text-xs text-ink-gray-5">
 									{{ __('Replying to') }} {{ replyTo.author_name || replyTo.author }}
-									<button @click="replyTo = null"><X class="h-3 w-3" /></button>
+									<button :aria-label="__('Cancel reply')" @click="replyTo = null"><X class="h-3 w-3" /></button>
 								</div>
 								<div class="flex gap-2">
 									<Input v-model="replyText" type="text" :placeholder="__('Write a reply…')" class="flex-1"
 										@keyup.enter="submitReply(post)" />
-									<Button variant="solid" :loading="addComment.loading" @click="submitReply(post)">
+									<Button :aria-label="__('Send reply')" variant="solid" :loading="addComment.loading" @click="submitReply(post)">
 										<Send class="h-4 w-4" />
 									</Button>
 								</div>
@@ -526,7 +526,7 @@
 					</div>
 					<div class="flex items-center gap-2">
 						<label class="text-sm text-ink-gray-6">{{ __('Visibility') }}</label>
-						<select v-model="editDraft.visibility"
+						<select :aria-label="__('Visibility')" v-model="editDraft.visibility"
 							class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
 							<option value="cohort_only">{{ __('Cohort only') }}</option>
 							<option value="portal_users">{{ __('Whole community') }}</option>
@@ -739,7 +739,7 @@
 		<Dialog v-model="showReport" :options="{ title: __('Report content') }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
-					<select v-model="reportReason"
+					<select :aria-label="__('Reason')" v-model="reportReason"
 						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
 						<option value="Inappropriate">{{ __('Inappropriate') }}</option>
 						<option value="Off-topic">{{ __('Off-topic') }}</option>

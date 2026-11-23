@@ -29,7 +29,8 @@ def get_context(context):
 	context.portal_theme_head = portal_theme.render_head(theme)
 	if logo := portal_theme.boot_logo(theme):
 		context.boot.portal_logo = logo
-	context.title = "Seminary ERP"
+	# The school's name ends every page title the portal sets (102 §9).
+	context.title = frappe.db.get_single_value("Website Settings", "app_name") or "Seminary ERP"
 	context.history_base = "/seminary/"
 
 	if _is_dev_request():

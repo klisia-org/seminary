@@ -1,7 +1,7 @@
 <template>
 	<div class="mt-6">
 		<div v-if="!singleThread" class="flex items-center mb-5">
-			<Button variant="outline" @click="showTopics = true">
+			<Button :aria-label="__('Back to topics')" variant="outline" @click="showTopics = true">
 				<template #icon>
 					<ChevronLeft class="w-5 h-5 stroke-1.5 text-ink-gray-7" />
 				</template>

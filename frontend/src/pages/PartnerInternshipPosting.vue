@@ -15,7 +15,7 @@
 		{{ apps.data.total === 1 ? __('1 application received') : __('{0} applications received').format(apps.data.total) }}
 		</p>
 		<div>
-			<select v-model="status" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8 focus:outline-none">
+			<select :aria-label="__('Status')" v-model="status" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8 focus:outline-none">
 				<option value="">{{ __('All statuses') }}</option>
 				<option v-for="s in STATUSES" :key="s" :value="s">{{ __(s) }}</option>
 			</select>

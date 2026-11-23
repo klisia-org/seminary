@@ -21,7 +21,7 @@
           <template v-else>
             <div v-if="studentProjects.length > 1" class="mb-4">
               <label class="text-sm font-medium text-ink-gray-6 mb-1 block">{{ __('Project') }}</label>
-              <select v-model="selectedStudent"
+              <select :aria-label="__('Project')" v-model="selectedStudent"
                 class="border border-outline-gray-2 bg-surface-white text-ink-gray-9 rounded-md px-3 py-2 text-sm w-full max-w-md">
                 <option v-for="p in studentProjects" :key="p.name" :value="p.name">{{ p.project_title }}</option>
               </select>
@@ -45,7 +45,7 @@
             <template v-else>
               <!-- Filters -->
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <select v-for="f in filterDefs" :key="f.key" v-model="filters[f.key]"
+                <select :aria-label="f.label" v-for="f in filterDefs" :key="f.key" v-model="filters[f.key]"
                   class="border border-outline-gray-2 bg-surface-white text-ink-gray-9 rounded-md px-2 py-1.5 text-sm">
                   <option value="">{{ f.label }}</option>
                   <option v-for="opt in f.options.value" :key="opt" :value="opt">{{ opt }}</option>

@@ -43,6 +43,8 @@
 								@change="(val) => (course.course_description_for_lms = val)" :editable="true"
 								:fixedMenu="true"
 								editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
+							<ContentIssues ref="descriptionChecker" class="mt-2" :issues="descriptionIssues"
+								:actionLabel="__('Save anyway')" />
 						</div>
 						<div class="mb-4">
 							<div class="text-xs text-ink-gray-5 mb-2">
@@ -165,7 +167,7 @@
 										<span v-if="m.attendance" class="text-xs text-ink-gray-4">
 											{{ __('Attendance recorded') }}
 										</span>
-										<Button v-else size="sm" variant="ghost" theme="red"
+										<Button v-else size="sm" variant="ghost" theme="red" :aria-label="__('Remove meeting')"
 											@click="removeVirtualMeeting(m.name)">
 											<template #icon><Trash2 class="h-4 w-4" /></template>
 										</Button>
@@ -288,6 +290,8 @@
 </template>
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
+import ContentIssues from '@/components/ContentIssues.vue'
+import { useContentCheck } from '@/composables/useContentCheck'
 import {
 	Breadcrumbs,
 	TextEditor,
@@ -566,8 +570,16 @@ const imageResource = createResource({
 
 
 
+// The accessibility checker on the description students read (102 §7).
+const {
+	checker: descriptionChecker,
+	issues: descriptionIssues,
+	confirmSave: confirmDescription,
+} = useContentCheck(() => course.course_description_for_lms)
+
 const submitCourse = async () => {
 	if (!courseResource.data) return;
+	if (!(await confirmDescription())) return;
 	// Sent only when this form is the one that owns the setting; otherwise the
 	// key is absent and the server leaves any existing override alone.
 	const course_data = { ...course }

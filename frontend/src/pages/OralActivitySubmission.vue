@@ -41,8 +41,8 @@
 					<FormControl v-model="grade" type="number" min="0" :label="__('Grade (percentage)')" />
 				</template>
 				<div>
-					<label class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Comments') }}</label>
-					<textarea v-model="comments" rows="5"
+					<label for="oral-submission-comments" class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Comments') }}</label>
+					<textarea id="oral-submission-comments" v-model="comments" rows="5"
 						class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-sm" />
 				</div>
 				<Button variant="solid" class="w-full" :loading="saving" @click="save">{{ __('Save') }}</Button>

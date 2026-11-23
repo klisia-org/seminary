@@ -43,9 +43,36 @@ class CourseLesson(Document):
 		cbe_reflection.assert_not_unflagged(self)
 		cbe_reflection.assert_block_kept(self)
 		self.sanitize_editor_content()
+		self.validate_captions()
 		# self.check_and_create_folder()
 		self.validate_quiz_id()
 		self.updates_lessons()
+
+	def validate_captions(self):
+		"""Each caption row is a WebVTT file (102 §6): the player hands it to a
+		<track>, which reads nothing else. A file changed in this save is opened
+		and must start with the WEBVTT signature."""
+		before = self.get_doc_before_save()
+		saved = {row.name: row.caption_file for row in (before.get("captions") if before else [])}
+		for row in self.get("captions") or []:
+			url = (row.caption_file or "").strip()
+			if not url:
+				continue
+			if not is_vtt_name(caption_file_name(url)):
+				frappe.throw(
+					_("Captions row {0}: {1} is not a WebVTT file. Upload a .vtt file.").format(
+						row.idx, caption_file_name(url) or url
+					),
+					title=_("Captions"),
+				)
+			if saved.get(row.name) != url and not has_vtt_signature(url):
+				frappe.throw(
+					_(
+						"Captions row {0}: {1} does not start with WEBVTT, so players can't read it. "
+						"Export the captions as WebVTT and upload them again."
+					).format(row.idx, caption_file_name(url)),
+					title=_("Captions"),
+				)
 
 	def validate_quiz_id(self):
 		if self.quiz_id and not frappe.db.exists("Quiz", self.quiz_id):
@@ -169,6 +196,60 @@ class CourseLesson(Document):
 	# 	macros = find_macros(self.body)
 	# 	exercises = [value for name, value in macros if name == "Exercise"]
 	# 	return [frappe.get_doc("LMS Exercise", name) for name in exercises]
+
+
+def caption_file_name(url):
+	"""The file name behind an Attach value: the File row's, else the URL's last part."""
+	from seminary.storage.backend import normalize_file_url
+
+	name = frappe.db.get_value("File", {"file_url": normalize_file_url(url)}, "file_name")
+	return name or url.split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1]
+
+
+def is_vtt_name(name):
+	return (name or "").lower().endswith(".vtt")
+
+
+def has_vtt_signature(url):
+	"""True when the file starts with WEBVTT (after an optional byte-order mark).
+	A URL with no File row on this site can't be opened here and isn't judged."""
+	from seminary.storage.backend import normalize_file_url
+
+	file_name = frappe.db.get_value("File", {"file_url": normalize_file_url(url)}, "name")
+	if not file_name:
+		return True
+	try:
+		content = frappe.get_doc("File", file_name).get_content()
+	except Exception:
+		frappe.clear_last_message()
+		return True
+	if isinstance(content, bytes):
+		content = content.decode("utf-8", errors="replace")
+	return content.lstrip("\ufeff").startswith("WEBVTT")
+
+
+def lesson_captions(lesson):
+	"""The caption tracks and transcript the player needs for a lesson (102 §6)."""
+	rows = frappe.get_all(
+		"Course Lesson Caption",
+		filters={"parent": lesson, "parenttype": "Course Lesson", "parentfield": "captions"},
+		fields=["language", "label", "caption_file"],
+		order_by="idx asc",
+	)
+	if not rows:
+		return []
+	from seminary.language import native_choices
+
+	names = dict(native_choices([r.language for r in rows]))
+	return [
+		{
+			"language": r.language,
+			"label": r.label or names.get(r.language) or r.language,
+			"file": r.caption_file,
+		}
+		for r in rows
+		if r.caption_file
+	]
 
 
 @frappe.whitelist()

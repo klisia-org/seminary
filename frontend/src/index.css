@@ -6,6 +6,33 @@
 	--app-topbar-height: 4rem;
 }
 
+/* Text colours that reach 4.5:1 on the portal's surfaces (102 §9, WCAG 1.4.3).
+   frappe-ui's light palette puts secondary text, links, badges and status text below
+   it (#999 on white is 2.8:1). Same specificity as frappe-ui's own definitions and
+   later in the cascade, so these win over frappe-ui but lose to a portal theme, whose
+   selectors are stronger; the dark block restates frappe-ui's dark values for the
+   colours that already pass there. */
+:root {
+	--ink-gray-4: #6b6b6b;
+	--ink-gray-5: #5e5e5e;
+	--ink-blue-2: #0066b8;
+	--ink-blue-3: #0062b3;
+	--ink-blue-link: #0066b8;
+	--ink-amber-3: #a04b06;
+	--ink-green-3: #137949;
+	--ink-red-3: #c62828;
+}
+[data-theme='dark'] {
+	--ink-gray-4: #9c9c9c;
+	--ink-gray-5: #adadad;
+	--ink-blue-2: #3294e3;
+	--ink-blue-3: #5aaef2;
+	--ink-blue-link: #1580d8;
+	--ink-amber-3: #e79913;
+	--ink-green-3: #58c08e;
+	--ink-red-3: #f06a6a;
+}
+
 html,
 body {
 	height: 100%;
@@ -56,4 +83,23 @@ h2 {
   margin-bottom: 1rem;
   font-size: large;
   font-weight: 700;
+}
+/* Visible focus on every control a keyboard user can reach (102 §9, WCAG 2.4.7).
+   Many components remove the browser outline with `focus:outline-none` and show only a
+   pale ring, or nothing; this outline follows the text colour, so it shows in light and
+   dark modes and with a portal theme. Text fields keep their own focus border. */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible,
+select:focus-visible,
+[role='button']:focus-visible,
+[role='tab']:focus-visible,
+[role='switch']:focus-visible,
+[role='menuitem']:focus-visible,
+[role='option']:focus-visible,
+[tabindex]:not([tabindex='-1']):focus-visible {
+	outline: 2px solid var(--ink-gray-8, #383838) !important;
+	outline-offset: 2px !important;
 }

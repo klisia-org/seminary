@@ -149,7 +149,7 @@
 					</div>
 					<div class="flex flex-wrap items-center gap-2 text-sm">
 						<span class="text-ink-gray-6">{{ __('Repeat') }}</span>
-						<select v-model="form.repeat" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm">
+						<select :aria-label="__('Repeat')" v-model="form.repeat" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm">
 							<option value="">{{ __('Does not repeat') }}</option>
 							<option value="weekly">{{ __('Every week') }}</option>
 							<option value="fortnightly">{{ __('Every two weeks') }}</option>

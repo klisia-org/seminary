@@ -27,7 +27,7 @@
 				v-model="titleFilter"
 				:placeholder="__('Search by title')"
 			/>
-			<select
+			<select :aria-label="__('Course')"
 				v-model="courseFilter"
 				class="form-select border border-outline-gray-2 bg-surface-white rounded-md text-sm text-ink-gray-9 placeholder-ink-gray-5 focus:border-outline-gray-3 focus:ring-0"
 			>
