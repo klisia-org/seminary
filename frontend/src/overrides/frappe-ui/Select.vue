@@ -111,6 +111,7 @@ const selectOptions = computed(() => {
       class="inline-flex items-center gap-2 outline-none text-base text-ink-gray-7 data-[placeholder]:text-ink-gray-4 data-[disabled]:text-ink-gray-4"
       :id="id"
       :aria-label="$attrs['aria-label'] || (id ? undefined : placeholder)"
+      :aria-required="$attrs['aria-required']"
       :class="[selectClasses, $attrs.class]"
       :disabled="disabled"
     >

@@ -30,26 +30,6 @@ async function runSteps(page, steps) {
   }
 }
 
-// NVDA reads the window that has the system focus. Another window (NVDA's own Speech Viewer,
-// say) can take it between journeys, so Chrome's window is minimised and restored, which
-// brings it to the front, before each one.
-async function focusChrome(page) {
-  const cdp = await page.createCDPSession();
-  const { windowId } = await cdp.send("Browser.getWindowForTarget");
-  await cdp.send("Browser.setWindowBounds", {
-    windowId,
-    bounds: { windowState: "minimized" },
-  });
-  await pause(300);
-  await cdp.send("Browser.setWindowBounds", {
-    windowId,
-    bounds: { windowState: "maximized" },
-  });
-  await page.bringToFront();
-  await pause(700);
-  await cdp.detach();
-}
-
 // What NVDA says inside its own windows, not the page.
 const OUTSIDE_CHROME = [/speech viewer/i, /read only, multi line/i];
 
@@ -62,19 +42,46 @@ async function journey(page, row) {
   };
   await page.goto(row.url, { waitUntil: "networkidle2", timeout: 60000 });
   await pause(1500);
-  await focusChrome(page);
+  // A session that has ended (they last an hour) lands on the login page, where NVDA's
+  // moves would type into the form instead of reading the page.
+  if (row.cookies?.length && new URL(page.url()).pathname.startsWith("/login"))
+    throw new Error(
+      "The site asked to sign in: the exported sessions have ended. Export the journeys again."
+    );
+  // The page must have the keyboard focus: in a window that isn't in front NVDA ignores focus
+  // changes, and in the address bar (where Chrome may leave it after loading a page) NVDA's
+  // keys would type the address. F6 moves Chrome's focus from the address bar to the page.
+  const inPage = () => page.evaluate(() => document.hasFocus());
+  let focused = await inPage();
+  for (let i = 0; i < 3 && !focused; i++) {
+    await nvda.press("F6");
+    await pause(500);
+    focused = await inPage();
+  }
   await runSteps(page, row.steps);
+  // Which window NVDA is reading: its title, said by NVDA, should name the page.
+  await nvda.clearSpokenPhraseLog();
+  await nvda.perform(nvda.keyboardCommands.reportTitle);
+  await pause(800);
+  const window = (await nvda.spokenPhraseLog()).join(" ");
   // Browse mode starts where NVDA last was: begin every journey at the top of the page.
+  // Control+Home reads the first item, which the virtual reader reaches with its first
+  // "next", so that move presses once less.
+  await nvda.clearSpokenPhraseLog();
   await nvda.press("Control+Home");
   await pause(800);
-  await nvda.clearSpokenPhraseLog();
+  let atTop = true;
   for (const move of row.moves) {
-    if (move.next) for (let i = 0; i < move.next; i++) await nvda.next();
+    const fromTop = atTop;
+    atTop = false;
+    if (move.next)
+      for (let i = fromTop ? 1 : 0; i < move.next; i++) await nvda.next();
     else if (move.landmark)
       for (let i = 0; i < move.landmark; i++)
         await nvda.perform(nvda.keyboardCommands.moveToNextLandmark);
     else if (move.focus) await page.focus(move.focus);
-    else if (move.press) await page.keyboard.press(move.press);
+    // A real key press, as a person would make, so that NVDA sees it.
+    else if (move.press) await nvda.press(move.press);
     else if (move.click) await page.click(move.click);
     else if (move.clear) {
       await listen();
@@ -82,6 +89,13 @@ async function journey(page, row) {
     }
     // NVDA speaks after the browser has moved: give it a moment.
     await pause(move.wait || 800);
+    // NVDA may not announce a focus change the page made itself (the virtual reader does), so
+    // it is asked what has the focus. If that names something outside the page, NVDA wasn't
+    // following Chrome.
+    if (move.focus || move.press || move.click) {
+      await nvda.perform(nvda.keyboardCommands.reportCurrentFocus);
+      await pause(800);
+    }
     if (move.hear || move.not_hear) {
       await listen();
       checks.push({
@@ -92,7 +106,7 @@ async function journey(page, row) {
     }
   }
   await listen();
-  return { checks, said };
+  return { checks, said, focused, window };
 }
 
 const lines = [
@@ -105,13 +119,23 @@ const lines = [
   "gave the same information.",
   "",
 ];
+// Chrome first: started from the terminal you are using, Windows puts it in front, and nothing
+// the script does afterwards asks for the front again (Windows would refuse and only flash
+// Chrome's taskbar button). NVDA reads the window in front, so its own Speech Viewer must stay
+// off (see README.md).
 const browser = await puppeteer.launch({
   executablePath: chrome,
   headless: false,
   defaultViewport: null,
-  args: ["--start-maximized", "--force-renderer-accessibility"],
+  // On the main monitor (it starts at 0,0), maximised.
+  args: [
+    "--window-position=0,0",
+    "--start-maximized",
+    "--force-renderer-accessibility",
+  ],
 });
 await nvda.start();
+await pause(3000);
 try {
   // One tab for every journey: each new tab is a chance for the focus to go elsewhere.
   const page = (await browser.pages())[0] || (await browser.newPage());
@@ -119,7 +143,15 @@ try {
     if (row.cookies?.length) await browser.setCookie(...row.cookies);
     lines.push(`## ${row.key}`, "", row.url, "");
     try {
-      const { checks, said } = await journey(page, row);
+      const { checks, said, focused, window } = await journey(page, row);
+      lines.push(`NVDA was reading: ${window || "(it didn't say)"}`, "");
+      if (!focused)
+        lines.push(
+          "**The page didn't have the keyboard focus during this journey** (Chrome's window wasn't in front, or the focus stayed in the address bar), so NVDA may have read something else. Close other windows, start the run, and don't touch the keyboard or mouse until Chrome closes.",
+          ""
+        );
+      else if (!said.length && checks.every((c) => !c.said.length))
+        lines.push("**NVDA said nothing during this journey.**", "");
       if (
         said.some((p) => OUTSIDE_CHROME.some((re) => re.test(p))) ||
         checks.some((c) =>

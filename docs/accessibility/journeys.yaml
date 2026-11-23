@@ -14,9 +14,13 @@
     - hear: ["link, Skip to content"]
     - landmark: 4
     - hear: ["main", "navigation, Main"]
-    - clear: true
+
+# Icons inside a named control are decoration: a reader must not announce them. From the top,
+# so the sidebar is read whichever landmark a reader ended on.
+- key: portal shell icons
+  visit: student /courses
+  moves:
     - next: 30
-    # Icons inside a named control are decoration: a reader must not announce them.
     - not_hear: ["graphics-document", "graphics-symbol"]
 
 - key: course outline move menu
@@ -29,6 +33,13 @@
     - hear: ["menuitem, Move"]
     - press: Escape
     - hear: ["button, Move"]
+    # Opened by a click too (as NVDA's Enter in browse mode opens it), the first move has the
+    # focus, not the menu.
+    - clear: true
+    - click: '[data-move^="lesson:"]'
+    - wait: 300
+    - hear: ["menuitem, Move"]
+    - press: Escape
 
 - key: withdrawal form labels
   visit: student /courses/:courseName/withdraw
