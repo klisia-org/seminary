@@ -23,14 +23,13 @@ IGNORE_TEST_RECORD_DEPENDENCIES = [
 
 
 def _make_choice_question(options, correct_idx):
-	"""Create a Choices Question. `options` is a list of option texts (2-4);
+	"""Create a Choices Question. `options` is a list of option texts (2 or more);
 	`correct_idx` is a set of 1-based indices that are correct."""
 	doc = frappe.new_doc("Question")
 	doc.question = f"Q-{frappe.generate_hash(length=8)}"
 	doc.type = "Choices"
 	for i, text in enumerate(options, start=1):
-		doc.set(f"option_{i}", text)
-		doc.set(f"is_correct_{i}", 1 if i in correct_idx else 0)
+		doc.append("choices", {"option": text, "is_correct": 1 if i in correct_idx else 0})
 	doc.insert(ignore_permissions=True)
 	return doc.name
 
@@ -86,13 +85,13 @@ class TestQuiz(IntegrationTestCase):
 		self.assertEqual(choice_is_correct(q, ["A", "B", "C"]), 0)  # extra wrong
 		self.assertEqual(choice_is_correct(q, []), 0)
 
-	# --- check_choice_answers: per-option list shape must remain for the review UI ---
+	# --- check_choice_answers: one verdict per option, in order, for the review UI ---
 
-	def test_check_choice_answers_returns_four_element_list(self):
+	def test_check_choice_answers_returns_one_verdict_per_option(self):
 		q = _make_choice_question(["A", "B"], {1})
 		out = check_choice_answers(q, ["A"])
 		self.assertIsInstance(out, list)
-		self.assertEqual(len(out), 4)
+		self.assertEqual(out, [1, 0])
 
 	# --- quiz_summary: end-to-end scoring + pass threshold (#181, #182) ---
 

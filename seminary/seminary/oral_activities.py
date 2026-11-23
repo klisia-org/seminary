@@ -492,14 +492,14 @@ def get_submission(submission):
 
 
 @frappe.whitelist(methods=["POST"])
-def save_grade(submission, grade, comments=None):
+def save_grade(submission: str, grade: float | int | str, comments: str | None = None):
 	"""Grade one student's submission. Talk time is never a grade (100b §7):
 	nothing here reads it."""
-	from seminary.seminary.guards import require_course_staff, require_grader
+	from seminary.seminary.guards import GRADE, require_grader, require_section_capability
 
 	require_grader()
 	doc = frappe.get_doc(SUBMISSION, submission)
-	require_course_staff(doc.course)
+	require_section_capability(doc.course, GRADE)
 	doc.grade = float(grade)
 	doc.status = "Graded"
 	if comments is not None:

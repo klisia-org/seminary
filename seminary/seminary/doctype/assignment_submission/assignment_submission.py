@@ -9,7 +9,7 @@ from frappe.model.document import Document
 from frappe.utils import sanitize_html, validate_email_address
 
 from seminary.seminary import rubrics
-from seminary.seminary.guards import is_grader, require_course_staff, require_grader
+from seminary.seminary.guards import GRADE, is_grader, require_grader, require_section_capability
 from seminary.seminary.url_policy import WEB_SCHEMES, is_safe_url
 
 
@@ -230,7 +230,7 @@ def get_assignment(lesson):
 
 
 @frappe.whitelist()
-def grade_assignment(name, result, comments):
+def grade_assignment(name: str, result: str, comments: str | None):
 	"""Save a grade on an Assignment Submission.
 
 	Section-scoped as well as role-gated: ``require_grader()`` alone would let a
@@ -239,7 +239,7 @@ def grade_assignment(name, result, comments):
 	"""
 	require_grader()
 	doc = frappe.get_doc("Assignment Submission", name)
-	require_course_staff(doc.course)
+	require_section_capability(doc.course, GRADE)
 	doc.status = result
 	doc.comments = sanitize_html(comments, always_sanitize=True) if comments else comments
 	doc.save(ignore_permissions=True)

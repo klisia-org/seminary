@@ -13,6 +13,7 @@ from frappe.utils import cint, comma_and, cstr, sanitize_html
 from frappe.utils.file_manager import safe_b64decode
 from fuzzywuzzy import fuzz
 
+from seminary.seminary.doctype.question.question import question_rows
 from seminary.seminary.utils import generate_slug
 
 
@@ -247,28 +248,17 @@ _JSON_ANSWER_TYPES = ("Scripture Matching", "Scripture Memorization")
 def _question_answer_key(question_name):
 	"""Returns (type, correct_answer, explanation) for a Question, used to show
 	the expected answer in a result summary. Reading Report has no fixed answer."""
-	fields = ["type"]
-	for n in range(1, 5):
-		fields += [
-			f"option_{n}",
-			f"is_correct_{n}",
-			f"explanation_{n}",
-			f"possibility_{n}",
-		]
-	q = frappe.db.get_value("Question", question_name, fields, as_dict=1) or frappe._dict()
+	q = frappe.db.get_value("Question", question_name, ["type"], as_dict=1) or frappe._dict()
+	rows = question_rows([question_name])[question_name]
 
 	if q.type == "Choices":
-		correct = [q.get(f"option_{n}") for n in range(1, 5) if q.get(f"is_correct_{n}")]
-		explanation = " ".join(
-			q.get(f"explanation_{n}")
-			for n in range(1, 5)
-			if q.get(f"is_correct_{n}") and q.get(f"explanation_{n}")
-		)
+		right = [r for r in rows["choices"] if r.is_correct]
+		correct = [r.option for r in right]
+		explanation = " ".join(r.explanation for r in right if r.explanation)
 		return q.type, ", ".join(filter(None, correct)), explanation or None
 
 	if q.type == "User Input":
-		accepted = [q.get(f"possibility_{n}") for n in range(1, 5) if q.get(f"possibility_{n}")]
-		return q.type, ", ".join(accepted), None
+		return q.type, ", ".join(rows["accepted_answers"]), None
 
 	if q.type == "Scripture Matching":
 		rows = frappe.get_all(
@@ -476,55 +466,35 @@ def check_reading_report(question, answer):
 
 def choice_is_correct(question, selected):
 	"""Authoritative scalar verdict for a Choices question: correct iff the set of selected
-	option texts exactly equals the set of correct option texts. Ignores empty option slots,
-	so questions with fewer than four filled options grade correctly (issue #182), and a missed
-	correct option fails the question (set inequality). Returns 1 or 0.
+	option texts exactly equals the set of correct option texts, so a missed correct option fails
+	the question (set inequality). Returns 1 or 0.
 
 	Use this for scoring. `check_choice_answers` returns the per-option list for result display.
 	"""
-	fields = []
-	for num in range(1, 5):
-		fields += [f"option_{num}", f"is_correct_{num}"]
-	q = frappe.db.get_value("Question", question, fields, as_dict=1) or frappe._dict()
-
-	correct = {
-		q.get(f"option_{num}") for num in range(1, 5) if q.get(f"option_{num}") and q.get(f"is_correct_{num}")
-	}
+	choices = question_rows([question])[question]["choices"]
+	correct = {r.option for r in choices if r.option and r.is_correct}
 	chosen = {s for s in (selected or []) if s}
 	return 1 if correct and chosen == correct else 0
 
 
 def check_choice_answers(question, answers):
-	fields = ["multiple"]
+	"""Per-option verdicts in option order: 1 chosen and correct, 0 chosen and
+	wrong or left out and wrong, 2 a correct option the student missed."""
 	is_correct = []
-	for num in range(1, 5):
-		fields.append(f"option_{cstr(num)}")
-		fields.append(f"is_correct_{cstr(num)}")
-
-	question_details = frappe.db.get_value("Question", question, fields, as_dict=1)
-
-	for num in range(1, 5):
-		if question_details[f"option_{num}"] in answers:
-			is_correct.append(question_details[f"is_correct_{num}"])
-		elif question_details[f"is_correct_{num}"]:
+	for r in question_rows([question])[question]["choices"]:
+		if r.option in answers:
+			is_correct.append(r.is_correct)
+		elif r.is_correct:
 			is_correct.append(2)
 		else:
 			is_correct.append(0)
-
 	return is_correct
 
 
 def check_input_answers(question, answer):
-	fields = []
-	for num in range(1, 5):
-		fields.append(f"possibility_{cstr(num)}")
-
-	question_details = frappe.db.get_value("Question", question, fields, as_dict=1)
-	for num in range(1, 5):
-		current_possibility = question_details[f"possibility_{num}"]
-		if current_possibility and fuzz.token_sort_ratio(current_possibility, answer) > 85:
+	for accepted in question_rows([question])[question]["accepted_answers"]:
+		if accepted and fuzz.token_sort_ratio(accepted, answer) > 85:
 			return 1
-
 	return 0
 
 

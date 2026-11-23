@@ -22,7 +22,11 @@ doctype is unaffected by anything here.
 import frappe
 
 from seminary.seminary.guards import (
+	ATTENDANCE,
+	CONTENT,
 	COURSE_FIELD,
+	GRADE,
+	POST,
 	_memo,
 	_roles,
 	course_of,
@@ -31,6 +35,7 @@ from seminary.seminary.guards import (
 	is_course_staff,
 	is_read_ptype,
 	is_school_role,
+	may_act,
 	mentored_sections,
 	own_course_schedules,
 	readable_course_schedules,
@@ -78,6 +83,23 @@ CONFIG = {
 # Mentor tier (privatedocs p012 decisions 1-2): read-only, and for rows that
 # belong to a student only that student's mentors. Section *content* rows are
 # readable on any section the user mentors in.
+# decisions/105: what a write on each doctype asks of an instructor's role on
+# the section. A doctype left out needs only to be on the section's staff.
+WRITE_ACTIONS = {
+	"Course Schedule": CONTENT,
+	"Course Schedule Chapter": CONTENT,
+	"Course Lesson": CONTENT,
+	"Student Attendance": ATTENDANCE,
+	"Exam Submission": GRADE,
+	"Assignment Submission": GRADE,
+	"Discussion Submission": GRADE,
+	"Oral Activity Submission": GRADE,
+	"Quiz Submission": GRADE,
+	"Student Due Date Override": GRADE,
+	"Oral Moment": GRADE,
+	"Oral Step Result": GRADE,
+}
+
 MENTOR_CONTENT = {"Course Schedule", "Course Schedule Chapter", "Course Lesson"}
 # doctype -> (field naming the student, "student" docname | "user" email)
 MENTOR_STUDENT_FIELD = {
@@ -233,6 +255,10 @@ def _instructor_allows(doctype, doc, ptype, user, rule):
 			)
 		)
 	cs = course_of(doc)
+	if ptype == "email" and doctype == "Course Schedule" and cs:
+		# An announcement to the class (Frappe's Communication asks for
+		# "email" on the section): posting, not reading (decisions/105).
+		return may_act(cs, POST, user=user)
 	if is_read_ptype(ptype):
 		if cs is None:
 			return tier == "record"
@@ -242,6 +268,9 @@ def _instructor_allows(doctype, doc, ptype, user, rule):
 		# A new section, or a row that has not been tied to one yet: only an
 		# instructor of record may create it.
 		return tier == "record"
+	action = WRITE_ACTIONS.get(doctype)
+	if action:
+		return may_act(cs, action, user=user)
 	return is_course_staff(cs, user=user)
 
 

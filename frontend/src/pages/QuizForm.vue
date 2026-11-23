@@ -133,12 +133,20 @@
 						<div class="font-semibold">
 							{{ __('Questions') }}
 						</div>
-						<Button @click="openQuestionModal()">
-							<template #prefix>
-								<Plus class="w-4 h-4" />
-							</template>
-							{{ __('New Question') }}
-						</Button>
+						<div class="flex items-center gap-2">
+							<ImportQuestions
+								v-if="quizDetails.data?.name"
+								doctype="Quiz"
+								:name="quizDetails.data.name"
+								@imported="quizDetails.reload()"
+							/>
+							<Button @click="openQuestionModal()">
+								<template #prefix>
+									<Plus class="w-4 h-4" />
+								</template>
+								{{ __('New Question') }}
+							</Button>
+						</div>
 					</div>
 					<ListView
 						:columns="questionColumns"
@@ -228,6 +236,7 @@ import {
 } from 'vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import Question from '@/components/Modals/Question.vue'
+import ImportQuestions from '@/components/ImportQuestions.vue'
 import { updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'

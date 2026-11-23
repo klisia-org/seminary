@@ -8,7 +8,7 @@ answer, and not at all where the instructor did not ask for feedback.
   Question's ``explanation`` and so rides inside the exam a student must read)
   are permlevel 1; ``Open Question`` has no Student row at all;
 * the quiz detail endpoints are membership-gated on the QUIZ's course and send
-  ``explanation_*`` before the answer only to graders, or with a quiz context
+  option explanations before the answer only to graders, or with a quiz context
   whose ``show_answers`` is on;
 * ``check_answer`` is not an oracle: no verdict without that same context;
 * the three caller-less ``get_question_details`` endpoints are gone.
@@ -31,8 +31,8 @@ def _choice_question():
 	q = frappe.new_doc("Question")
 	q.question = f"QC-{frappe.generate_hash(length=8)}"
 	q.type = "Choices"
-	q.option_1, q.is_correct_1, q.explanation_1 = "right", 1, "because it is right"
-	q.option_2, q.is_correct_2 = "wrong", 0
+	q.append("choices", {"option": "right", "is_correct": 1, "explanation": "because it is right"})
+	q.append("choices", {"option": "wrong", "is_correct": 0})
 	q.insert(ignore_permissions=True)
 	return q.name
 
@@ -41,7 +41,7 @@ def _input_question(possibility="Jerusalem"):
 	q = frappe.new_doc("Question")
 	q.question = f"QI-{frappe.generate_hash(length=8)}"
 	q.type = "User Input"
-	q.possibility_1 = possibility
+	q.append("accepted_answers", {"answer": possibility})
 	q.insert(ignore_permissions=True)
 	return q.name
 
@@ -62,7 +62,7 @@ def _quiz(question, qtype, show_answers, course=None):
 
 
 def _expl(d):
-	return [k for k in (d or {}) if k.startswith("explanation_")]
+	return [c["explanation"] for c in (d or {}).get("options") or [] if c.get("explanation")]
 
 
 class TestP008aAnswerKeys(IntegrationTestCase):

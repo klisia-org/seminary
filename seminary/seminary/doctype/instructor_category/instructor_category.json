@@ -15,6 +15,12 @@
   "is_competency_evaluator",
   "mentor_scope",
   "description",
+  "actions_section",
+  "may_edit_content",
+  "may_grade",
+  "column_break_actions",
+  "may_record_attendance",
+  "may_post_to_class",
   "rates_section",
   "rates"
  ],
@@ -69,10 +75,47 @@
    "fieldtype": "Select",
    "label": "Mentor Scope",
    "options": "Course\nProgram"
+  },
+  {
+   "fieldname": "actions_section",
+   "fieldtype": "Section Break",
+   "label": "On Their Sections",
+   "description": "What instructors in this category may do on the sections they are listed on. Program Chairs, Seminary Managers and the Registrar are not limited by these."
+  },
+  {
+   "default": "1",
+   "fieldname": "may_edit_content",
+   "fieldtype": "Check",
+   "label": "Edits course content",
+   "description": "Course outline, lessons, assessments, late policy and student groups."
+  },
+  {
+   "default": "1",
+   "fieldname": "may_grade",
+   "fieldtype": "Check",
+   "label": "Grades",
+   "description": "Grades and comments on submissions, due-date exceptions and sending final grades."
+  },
+  {
+   "fieldname": "column_break_actions",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "may_record_attendance",
+   "fieldtype": "Check",
+   "label": "Records attendance"
+  },
+  {
+   "default": "1",
+   "fieldname": "may_post_to_class",
+   "fieldtype": "Check",
+   "label": "Posts to the class",
+   "description": "Messages to all of the section's students, replies in discussions, and removing replies."
   }
  ],
  "links": [],
- "modified": "2026-08-28 21:00:00.000000",
+ "modified": "2026-11-23 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor Category",

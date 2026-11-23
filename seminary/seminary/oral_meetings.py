@@ -40,6 +40,8 @@ from frappe.utils import (
 	today,
 )
 
+from seminary.seminary.guards import GRADE
+
 OAM = "Oral Activity Meeting"
 ROW = "Course Schedule Meeting Dates"
 SCAC = "Scheduled Course Assess Criteria"
@@ -77,21 +79,25 @@ def method(name):
 # ------------------------------------------------------------------ helpers
 
 
-def _staff(course):
-	from seminary.seminary.guards import require_course_staff, require_grader
+def _staff(course, action=None):
+	"""Reads need course staff; a write names its action (decisions/105)."""
+	from seminary.seminary.guards import require_course_staff, require_grader, require_section_capability
 
 	require_grader()
-	require_course_staff(course)
+	if action:
+		require_section_capability(course, action)
+	else:
+		require_course_staff(course)
 
 
-def _staff_capture(name):
+def _staff_capture(name, action=None):
 	"""One capture for its section's staff. A student is refused before the
 	name is even looked up."""
 	from seminary.seminary.guards import require_grader
 
 	require_grader()
 	doc = frappe.get_doc(OAM, name)
-	_staff(doc.course_schedule)
+	_staff(doc.course_schedule, action)
 	return doc
 
 
@@ -250,9 +256,9 @@ def capture_options(course, activity):
 
 
 @frappe.whitelist(methods=["POST"])
-def schedule_capture(course, activity, meeting, capture_method):
+def schedule_capture(course: str, activity: str, meeting: str, capture_method: str):
 	"""Capture one class meeting for an activity on the section."""
-	_staff(course)
+	_staff(course, GRADE)
 	scac = _scac(course, activity)
 	act = _activity(activity)
 	if act.capture != "Virtual meeting":
@@ -311,8 +317,8 @@ def list_captures(course, activity):
 
 
 @frappe.whitelist(methods=["POST"])
-def cancel_capture(name):
-	doc = _staff_capture(name)
+def cancel_capture(name: str):
+	doc = _staff_capture(name, GRADE)
 	if doc.status not in (*ACTIVE, "Failed"):
 		frappe.throw(_("This meeting has already been captured."))
 	_cancel(doc)
@@ -640,13 +646,13 @@ def get_capture(name):
 
 
 @frappe.whitelist(methods=["POST"])
-def confirm_capture(name, links):
+def confirm_capture(name: str, links: str | list | dict):
 	"""The instructor's list: ``{participant row: student or ""}``. Creates a
 	submission for each student, on the recording they spoke in."""
 	from seminary.seminary import deadlines
 	from seminary.seminary.oral_activities import _roster, _submitted
 
-	doc = _staff_capture(name)
+	doc = _staff_capture(name, GRADE)
 	if doc.status != "Captured":
 		frappe.throw(_("Only a captured meeting waiting for its list can be confirmed."))
 	if isinstance(links, str):

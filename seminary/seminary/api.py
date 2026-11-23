@@ -291,7 +291,9 @@ def get_discussion_submissions(
 
 
 @frappe.whitelist()
-def reply_to_discussion_submission(submission, reply, reply_attach=None, in_reply_to=None):
+def reply_to_discussion_submission(
+	submission: str, reply: str | None, reply_attach: str | None = None, in_reply_to: str | None = None
+):
 	"""Reply to a classmate's post in a graded Discussion Activity.
 
 	The portal used to insert the child row with `frappe.client.insert`, which
@@ -311,6 +313,10 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None, in_repl
 	if not row:
 		frappe.throw(_("Not permitted."), frappe.PermissionError)
 	require_enrolled(row.coursesc)
+	# Staff answer as staff, which their role on the section may leave out
+	# (decisions/105).
+	if is_course_staff(row.coursesc) and not guards.may_act(row.coursesc, guards.POST):
+		guards.require_section_capability(row.coursesc, guards.POST)
 	# A post the student may not read is one they may not answer either.
 	if row.member != frappe.session.user:
 		visible = _visible_classmates(row.coursesc, row.disc_activity)
@@ -548,7 +554,7 @@ def save_discussion_submission_grade(submission_name: str, grade: float):
 		raise frappe.ValidationError(_("Submission name is required."))
 
 	submission = frappe.get_doc("Discussion Submission", submission_name)
-	require_course_staff(submission.coursesc)
+	guards.require_section_capability(submission.coursesc, guards.GRADE)
 	submission.grade = float(grade)
 	submission.status = "Graded"
 
@@ -845,8 +851,8 @@ def get_file_info(file_url):
 
 
 @frappe.whitelist()
-def save_course(course, course_data):
-	require_course_staff(course)
+def save_course(course: str, course_data: str | list | dict):
+	guards.require_section_capability(course, guards.CONTENT)
 
 	try:
 		if isinstance(course_data, str):
@@ -2841,13 +2847,13 @@ def check_attendance_records_exist(course_schedule=None, date=None):
 
 @frappe.whitelist()
 def mark_attendance(
-	students_present,
-	students_absent,
-	students_tardy=None,
-	course_schedule=None,
-	date=None,
-	meeting=None,
-	students_excused=None,
+	students_present: str | list | dict,
+	students_absent: str | list | dict,
+	students_tardy: str | list | dict | None = None,
+	course_schedule: str | None = None,
+	date: str | None = None,
+	meeting: str | None = None,
+	students_excused: str | list | dict | None = None,
 ):
 	"""Creates Multiple Attendance Records.
 
@@ -2865,7 +2871,7 @@ def mark_attendance(
 	require_grader(include_registrar=True)
 	if not course_schedule:
 		return {"success": False}
-	require_course_staff(course_schedule, include_registrar=True)
+	guards.require_section_capability(course_schedule, guards.ATTENDANCE, include_registrar=True)
 
 	def _as_list(value):
 		if value is None:
@@ -3174,7 +3180,9 @@ def quizresult_to_card(doc, method):
 
 
 @frappe.whitelist()
-def save_course_assessment(course, assessment_data, categories=None):
+def save_course_assessment(
+	course: str, assessment_data: str | list | dict, categories: str | list | dict | None = None
+):
 	"""Save Course Assessment Criteria.
 
 	:param course: Course.
@@ -3183,7 +3191,7 @@ def save_course_assessment(course, assessment_data, categories=None):
 	    None to leave them as they are (decisions/096).
 	"""
 	require_outline_editor()
-	require_course_staff(course)
+	guards.require_section_capability(course, guards.CONTENT)
 	import json
 
 	# If assessment_data is a string, convert it to a dictionary/list
@@ -3563,13 +3571,13 @@ def _update_cards(doc, existings):
 
 
 @frappe.whitelist()
-def insert_cs_assessment(criteria):
+def insert_cs_assessment(criteria: str | list | dict):
 	require_outline_editor()
 	# If criteria is already a dict, use it directly.
 	# If it's a string, then parse it.
 	if isinstance(criteria, str):
 		criteria = json.loads(criteria)
-	require_course_staff(criteria.get("parent"))
+	guards.require_section_capability(criteria.get("parent"), guards.CONTENT)
 
 	# The section and the title, not the caller's whole payload (p010 H4):
 	# this wrote an arbitrary caller-supplied dict into the shared worker log
@@ -3662,11 +3670,11 @@ def get_course_rosters(name):
 
 
 @frappe.whitelist()
-def grade_thisstudent(name):
+def grade_thisstudent(name: str):
 	"""Desk entry point (scheduled_course_roster.js); server callers use
 	``_grade_thisstudent`` directly (p006 §2.7)."""
 	require_grader(include_registrar=True)
-	require_course_staff(_roster_section(name), include_registrar=True)
+	guards.require_section_capability(_roster_section(name), guards.GRADE, include_registrar=True)
 	return _grade_thisstudent(name)
 
 
@@ -3776,11 +3784,11 @@ def get_gradepass(grading_scale, percentage):
 
 
 @frappe.whitelist()
-def fgrade_this_std(name):
+def fgrade_this_std(name: str):
 	"""Desk entry point (scheduled_course_roster.js); server callers use
 	``_fgrade_this_std`` directly (p006 §2.7)."""
 	require_grader(include_registrar=True)
-	require_course_staff(_roster_section(name), include_registrar=True)
+	guards.require_section_capability(_roster_section(name), guards.GRADE, include_registrar=True)
 	return _fgrade_this_std(name)
 
 
@@ -3793,7 +3801,7 @@ def _require_send_scope(course_schedule):
 	for a section they are listed on (p007 §2.4)."""
 	if set(frappe.get_roles()) & SCHOOL_ROLES:
 		return
-	require_course_staff(course_schedule)
+	guards.require_section_capability(course_schedule, guards.GRADE)
 
 
 def _fgrade_this_std(name):
@@ -4828,14 +4836,14 @@ OUTLINE_EDIT_ROLES = {
 
 @frappe.whitelist()
 def upsert_chapter(
-	chapter_title,
-	course,
-	is_scorm_package,
-	scorm_package,
-	name=None,
-	course_competency=None,
+	chapter_title: str,
+	course: str,
+	is_scorm_package: int | bool | str | None,
+	scorm_package: str | None,
+	name: str | None = None,
+	course_competency: str | None = None,
 ):
-	require_course_staff(course)
+	guards.require_section_capability(course, guards.CONTENT)
 	course_title = frappe.get_value("Course Schedule", course, "course")
 	values = frappe._dict(
 		{
@@ -5032,7 +5040,7 @@ def queue_scorm_unpack(chapter_name, file_name):
 
 
 @frappe.whitelist()
-def delete_chapter(chapter):
+def delete_chapter(chapter: str):
 	require_outline_editor()
 	chapterInfo = frappe.db.get_value(
 		"Course Schedule Chapter",
@@ -5042,7 +5050,7 @@ def delete_chapter(chapter):
 	)
 	if not chapterInfo:
 		frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
-	require_course_staff(chapterInfo.coursesc)
+	guards.require_section_capability(chapterInfo.coursesc, guards.CONTENT)
 
 	from seminary.seminary import cbe_reflection
 
@@ -5204,11 +5212,11 @@ def get_fields(doctype, fields=None):
 
 
 @frappe.whitelist()
-def delete_lesson(lesson, chapter):
+def delete_lesson(lesson: str, chapter: str):
 	require_outline_editor()
 	# Delete Reference
 	chapter = frappe.get_doc("Course Schedule Chapter", chapter)
-	require_course_staff(chapter.coursesc)
+	guards.require_section_capability(chapter.coursesc, guards.CONTENT)
 	from seminary.seminary import cbe_reflection
 
 	cbe_reflection.assert_lesson_deletable(lesson)
@@ -5259,7 +5267,7 @@ def get_announcements(cs):
 
 
 @frappe.whitelist()
-def update_lesson_index(lesson, source_chapter, target_chapter, idx):
+def update_lesson_index(lesson: str, source_chapter: str, target_chapter: str, idx: int | str):
 	"""Update the order of a lesson inside or across chapters."""
 	require_outline_editor()
 	idx = cint(idx) or 1
@@ -5272,8 +5280,8 @@ def update_lesson_index(lesson, source_chapter, target_chapter, idx):
 		if source_chapter == target_chapter
 		else frappe.get_doc("Course Schedule Chapter", target_chapter)
 	)
-	require_course_staff(source_doc.coursesc)
-	require_course_staff(target_doc.coursesc)
+	guards.require_section_capability(source_doc.coursesc, guards.CONTENT)
+	guards.require_section_capability(target_doc.coursesc, guards.CONTENT)
 	from seminary.seminary import cbe_reflection
 
 	cbe_reflection.assert_lesson_movable(lesson_doc.name)
@@ -5347,13 +5355,13 @@ def _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx):
 
 
 @frappe.whitelist()
-def update_chapter_index(course, chapter, idx):
+def update_chapter_index(course: str, chapter: str, idx: int | str):
 	"""Move a chapter to position `idx` in its course's outline.
 
 	Chapter order is the order of the Course Schedule's `chapters` child rows,
 	so reordering rewrites that table — the same shape as reordering lessons
 	inside a chapter."""
-	require_course_staff(course)
+	guards.require_section_capability(course, guards.CONTENT)
 	idx = max(cint(idx) or 1, 1)
 
 	course_doc = frappe.get_doc("Course Schedule", course)
@@ -5455,7 +5463,7 @@ def _can_grade_submission(submission):
 		return False
 	course = submission.get("course") if submission is not None else None
 	if course:
-		return is_course_staff(course)
+		return guards.may_act(course, guards.GRADE)
 	return True
 
 
@@ -6064,7 +6072,7 @@ def _require_submission_staff(submission_name):
 	"""The submission's section must be one the caller teaches (p007 §2.4)."""
 	course = frappe.db.get_value("Assignment Submission", submission_name, "course")
 	if course:
-		require_course_staff(course)
+		guards.require_section_capability(course, guards.GRADE)
 
 
 def _latest_plagiarism_result(submission_name):

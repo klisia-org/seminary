@@ -138,31 +138,32 @@
 						</div>
 					</div>
 					<SafeHtml class="text-ink-gray-9 font-semibold mt-2 leading-5" :html="questionDetails.data.question" />
-					<div v-if="questionDetails.data.type == 'Choices'" v-for="index in 4">
-						<label v-if="questionDetails.data[`option_${index}`]"
+					<div v-if="questionDetails.data.type == 'Choices'"
+						v-for="(choice, ci) in questionDetails.data.options || []" :key="ci">
+						<label
 							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-outline-blue-1">
 							<input v-if="!showAnswers.length && !questionDetails.data.multiple" type="radio"
 								:name="encodeURIComponent(questionDetails.data.question)"
 								class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
-								@change="markAnswer(index)" />
+								@change="markAnswer(ci)" />
 
 							<input v-else-if="!showAnswers.length && questionDetails.data.multiple" type="checkbox"
 								:name="encodeURIComponent(questionDetails.data.question)"
 								class="w-3.5 h-3.5 text-ink-gray-9 rounded-sm focus:ring-outline-gray-modals"
-								@change="markAnswer(index)" />
+								@change="markAnswer(ci)" />
 							<div v-else-if="quiz.data.show_answers" v-for="(answer, idx) in showAnswers">
-								<div v-if="index - 1 == idx">
+								<div v-if="ci == idx">
 									<CheckCircle v-if="answer == 1" class="w-4 h-4 text-ink-green-3" />
 									<MinusCircle v-else-if="answer == 2" class="w-4 h-4 text-ink-green-2" />
 									<XCircle v-else-if="answer == 0" class="w-4 h-4 text-ink-red-3" />
 									<MinusCircle v-else class="w-4 h-4" />
 								</div>
 							</div>
-							<SafeHtml class="ml-2" :html="questionDetails.data[`option_${index}`]" as="span" />
+							<SafeHtml class="ml-2" :html="choice.option" as="span" />
 						</label>
-						<div v-if="questionDetails.data[`explanation_${index}`]" class="mt-2 text-xs"
+						<div v-if="choice.explanation" class="mt-2 text-xs"
 							v-show="showAnswers.length">
-							{{ questionDetails.data[`explanation_${index}`] }}
+							{{ choice.explanation }}
 						</div>
 					</div>
 					<div v-else-if="questionDetails.data.type == 'User Input'">
@@ -271,16 +272,16 @@
 				</div>
 				<SafeHtml class="text-ink-gray-9 font-semibold mt-2 leading-5" :html="question.question_detail" />
 				<!-- Answer Options -->
-				<div v-if="question.type == 'Choices'" v-for="index in 4">
-					<label v-if="question[`option_${index}`]"
+				<div v-if="question.type == 'Choices'" v-for="(choice, ci) in question.options || []" :key="ci">
+					<label
 						class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-outline-blue-1">
 						<input v-if="!question.multiple" type="radio" :name="`question_${qtidx}`"
 							class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
-							@change="recordAnswer(qtidx, question[`option_${index}`])" />
+							@change="recordAnswer(qtidx, choice.option)" />
 						<input v-else-if="question.multiple" type="checkbox" :name="`question_${qtidx}`"
 							class="w-3.5 h-3.5 text-ink-gray-9 rounded-sm focus:ring-outline-gray-modals"
-							@change="toggleAnswer(qtidx, question[`option_${index}`])" />
-						<SafeHtml class="ml-2" :html="question[`option_${index}`]" as="span" />
+							@change="toggleAnswer(qtidx, choice.option)" />
+						<SafeHtml class="ml-2" :html="choice.option" as="span" />
 					</label>
 				</div>
 				<!-- User Input Option -->
@@ -425,7 +426,7 @@ const user = inject('$user')
 const fullQuizMode = ref(false);
 const activeQuestion = ref(0)
 const currentQuestion = ref('')
-const selectedOptions = reactive([0, 0, 0, 0])
+const selectedOptions = reactive([])
 const showAnswers = reactive([])
 let questions = reactive([])
 const possibleAnswer = ref(null)
@@ -745,9 +746,12 @@ const startQuiz2 = () => {
 
 
 const markAnswer = (index) => {
-	if (!questionDetails.data.multiple)
-		selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	selectedOptions[index - 1] = selectedOptions[index - 1] ? 0 : 1
+	if (!questionDetails.data.multiple) {
+		selectedOptions.splice(0, selectedOptions.length)
+		selectedOptions[index] = 1
+	} else {
+		selectedOptions[index] = selectedOptions[index] ? 0 : 1
+	}
 }
 
 const getAnswers = () => {
@@ -755,9 +759,8 @@ const getAnswers = () => {
 	const type = questionDetails.data.type
 
 	if (type == 'Choices') {
-		selectedOptions.forEach((value, index) => {
-			if (selectedOptions[index])
-				answers.push(questionDetails.data[`option_${index + 1}`])
+		;(questionDetails.data.options || []).forEach((choice, index) => {
+			if (selectedOptions[index]) answers.push(choice.option)
 		})
 	} else {
 		answers.push(possibleAnswer.value)
@@ -794,7 +797,8 @@ const checkAnswer = () => {
 			if (data === null || data === undefined) {
 				// nothing to display
 			} else if (type === 'Choices') {
-				selectedOptions.forEach((option, index) => {
+				;(questionDetails.data.options || []).forEach((_, index) => {
+					const option = selectedOptions[index]
 					if (option) {
 						showAnswers[index] = option && data[index];
 					} else if (data[index] === 2) {
@@ -858,7 +862,7 @@ const nextQuestion = () => {
 const resetQuestion = () => {
 	if (activeQuestion.value == quiz.data.questions.length) return
 	activeQuestion.value = activeQuestion.value + 1
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+	selectedOptions.splice(0, selectedOptions.length)
 	showAnswers.length = 0
 	possibleAnswer.value = null
 }
@@ -1018,7 +1022,7 @@ const createSubmission = () => {
 
 const resetQuiz = () => {
 	activeQuestion.value = 0
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+	selectedOptions.splice(0, selectedOptions.length)
 	showAnswers.length = 0
 	isReviewingSubmission.value = false
 	quizSubmission.reset()

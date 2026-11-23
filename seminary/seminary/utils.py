@@ -53,11 +53,13 @@ from frappe.utils import (
 from frappe.utils.dateutils import get_period
 
 from seminary.seminary.guards import (
+	POST,
 	SCHOOL_ROLES,
 	current_student,
 	is_course_staff,
 	is_enrolled,
 	is_grader,
+	may_act,
 	may_read_course_schedule,
 	may_view_content,
 	own_or_staff,
@@ -65,6 +67,7 @@ from seminary.seminary.guards import (
 	require_course_staff,
 	require_enrolled,
 	require_grader,
+	require_section_capability,
 	section_access,
 	section_mentees,
 )
@@ -533,7 +536,12 @@ def get_own_course_schedules(user):
 
 
 @frappe.whitelist()
-def get_courses(filters=None, start=0, page_length=20, scope="mine"):
+def get_courses(
+	filters: str | list | dict | None = None,
+	start: int | str = 0,
+	page_length: int | str = 20,
+	scope: str = "mine",
+):
 	"""Returns the list of courses.
 
 	Program Chairs (treated as academic deans), Seminary Managers and System
@@ -568,12 +576,13 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
 			# A grader who is also a student: the sections they work on,
 			# published or not, plus the published ones they take. A mentor
 			# also lists the sections their mentees are in (p012 decision 1).
-			from seminary.seminary.guards import mentored_sections, student_sections
+			from seminary.seminary.guards import mentored_sections, observed_sections, student_sections
 
 			own = sorted(
 				set(get_own_course_schedules(frappe.session.user))
 				| set(student_sections())
 				| set(mentored_sections())
+				| set(observed_sections())
 			)
 			if not own:
 				return []
@@ -583,9 +592,10 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
 		# school's whole published offering (p007 §8.1). Only staff see
 		# unpublished sections: that is where an instructor builds the course
 		# (p006 §2.11).
-		from seminary.seminary.guards import student_sections
+		from seminary.seminary.guards import observed_sections, student_sections
 
-		mine = student_sections()
+		# Plus the sections they observe (decisions/105), published too.
+		mine = sorted(set(student_sections()) | set(observed_sections()))
 		if not mine:
 			return []
 		filters["name"] = ["in", mine]
@@ -883,7 +893,7 @@ def get_course_fields():
 
 
 @frappe.whitelist()
-def get_course_details(course):
+def get_course_details(course: str):
 	course_details = frappe.db.get_value(
 		"Course Schedule",
 		course,
@@ -922,6 +932,14 @@ def get_course_details(course):
 	# What the portal offers this viewer here (p012 decision 1); the outline
 	# editor and the staff tabs key off it rather than off roles alone.
 	course_details.access = section_access(course_details.name)
+	# What they may do here, so the page offers only that (decisions/105).
+	from seminary.seminary.guards import ACTION_FIELDS
+
+	course_details.actions = (
+		[a for a in ACTION_FIELDS if may_act(course_details.name, a, include_registrar=True)]
+		if course_details.access == "instructor"
+		else []
+	)
 	course_details.location = get_course_location(course_details.room)
 	course_details.days_of_week = [
 		day.capitalize()
@@ -1040,7 +1058,7 @@ def get_course_location(room):
 
 
 @frappe.whitelist()
-def get_roster(course):
+def get_roster(course: str):
 	"""Returns the course roster, each row enriched with the student's gender
 	(used to split community cohorts by gender). A student on the section
 	gets classmates' names and pictures only (p007 §2.5, decision 6). A
@@ -1048,6 +1066,11 @@ def get_roster(course):
 	if not is_enrolled(course):
 		mentees = section_mentees(course)
 		if not mentees:
+			from seminary.seminary.guards import is_section_observer
+
+			if is_section_observer(course):
+				# An observer reads the course, never its students (decisions/105 §5).
+				return []
 			require_enrolled(course)
 		return [r for r in _roster(course) if r.student in mentees]
 	staff = is_course_staff(course, include_registrar=True) or has_super_access()
@@ -1420,7 +1443,7 @@ def get_lesson_due_date(lesson):
 
 	try:
 		content = json.loads(lesson_doc.content)
-	except (ValueError, TypeError):
+	except ValueError, TypeError:
 		return None
 
 	activities_by_type = {}
@@ -1529,7 +1552,7 @@ def get_current_student():
 	try:
 		student_id = frappe.get_all("Student", {"student_email_id": email}, ["name"])[0].name
 		return frappe.get_doc("Student", student_id)
-	except (IndexError, frappe.DoesNotExistError):
+	except IndexError, frappe.DoesNotExistError:
 		return None
 
 
@@ -1639,7 +1662,7 @@ def get_lesson_creation_details(course: str, chapter: str | int, lesson: str | i
 # --- who may see a quiz question, and when its explanations may travel ---------
 #
 # p005a A01-15 / p008a G8. These endpoints had no gate, and returned
-# explanation_1..4 BEFORE the student answered. Only correct options carry an
+# option explanations BEFORE the student answered. Only correct options carry an
 # explanation (see the note in frontend Modals/Question.vue), so the presence of
 # one marks the right answer: the key was in the pre-answer payload, readable in
 # devtools by anyone taking the quiz and -- ungated -- by any session at all.
@@ -1692,13 +1715,28 @@ def quiz_question_access(question, quiz=None):
 
 
 def _strip_explanations(row):
-	for i in range(1, 5):
-		row.pop(f"explanation_{i}", None)
+	for c in row.get("options") or []:
+		c.pop("explanation", None)
 	return row
 
 
+def _attach_options(rows, key="question"):
+	"""Give each Choices row its options in order, as {option, explanation}.
+	Which option is correct never travels; accepted answers never travel."""
+	from seminary.seminary.doctype.question.question import question_rows
+
+	by_q = question_rows([r.get(key) for r in rows if r.get("type") == "Choices"])
+	for r in rows:
+		if r.get("type") == "Choices":
+			r["options"] = [
+				{"option": c.option, "explanation": c.explanation if c.is_correct else None}
+				for c in by_q.get(r.get(key), {}).get("choices", [])
+			]
+	return rows
+
+
 @frappe.whitelist()
-def get_question_details(question, quiz=None):
+def get_question_details(question: str, quiz: str | None = None):
 	with_explanations = quiz_question_access(question, quiz)
 	fields = [
 		"question",
@@ -1712,11 +1750,11 @@ def get_question_details(question, quiz=None):
 		"hide_word_count",
 		"min_word_length",
 	]
-	for i in range(1, 5):
-		fields.append(f"option_{i}")
-		fields.append(f"explanation_{i}")
-
 	question_details = frappe.db.get_value("Question", question, fields, as_dict=1) or {}
+	if question_details:
+		question_details["name"] = question
+		_attach_options([question_details], key="name")
+		question_details.pop("name")
 	if question_details.get("type") == "Scripture Matching":
 		question_details["matching_items"] = frappe.get_all(
 			"Scripture Matching Item",
@@ -1730,7 +1768,7 @@ def get_question_details(question, quiz=None):
 
 
 @frappe.whitelist()
-def get_all_questions_details(questions):
+def get_all_questions_details(questions: str | list):
 	"""``questions`` are Quiz Question row names, so the quiz is derived from the
 	rows themselves (``qq.parent``) and the caller cannot name a friendlier one."""
 	if isinstance(questions, str):
@@ -1760,11 +1798,9 @@ def get_all_questions_details(questions):
 		return []
 
 	placeholders = ", ".join(["%s"] * len(questions))
-	all_question_details = frappe.db.sql(
+	all_question_details = frappe.db.sql(  # nosemgrep -- values are bound or escaped, see the nosec note
 		f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.type,
-q.pages_total, q.option_1, q.option_2, q.option_3, q.option_4,
-q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4,
-q.scripture_bible_id, q.memorization_ref, q.memorization_resolved_ref,
+q.pages_total, q.multiple, q.scripture_bible_id, q.memorization_ref, q.memorization_resolved_ref,
 q.memorization_text, q.hide_word_count, q.min_word_length
 from `tabQuestion` q, `tabQuiz Question` qq
 where q.name = qq.question and qq.name in ({placeholders})""",  # nosec B608 -- interpolates %s placeholders; the values are bound
@@ -1796,6 +1832,7 @@ where q.name = qq.question and qq.name in ({placeholders})""",  # nosec B608 -- 
 			if row.get("type") == "Scripture Matching":
 				row["matching_items"] = items_by_parent.get(row["question"], [])
 
+	_attach_options(all_question_details)
 	for row in all_question_details:
 		if not reveal.get(row["name"]):
 			_strip_explanations(row)
@@ -1815,7 +1852,7 @@ def get_all_open_questions_details(questions):
 		# Ensure questions is a list
 	if isinstance(questions, str):
 		questions = frappe.parse_json(questions)
-	all_question_details = frappe.db.sql(
+	all_question_details = frappe.db.sql(  # nosemgrep -- values are bound or escaped, see the nosec note
 		f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question_name, q.explanation
 from `tabOpen Question` q, `tabExam Question` qq
 where q.name = qq.question and qq.name in ({", ".join(frappe.db.escape(q) for q in questions)})""",  # nosec B608 -- the value is escaped before it reaches the string
@@ -2078,7 +2115,7 @@ def _lesson_activities_by_type(content_json):
 		return activities
 	try:
 		content = json.loads(content_json)
-	except (ValueError, TypeError):
+	except ValueError, TypeError:
 		return activities
 	for block in content.get("blocks", []) or []:
 		block_type = block.get("type")
@@ -2190,7 +2227,7 @@ def _build_lesson_index_for_course(course_sc):
 			continue
 		try:
 			content = json.loads(lesson.content)
-		except (ValueError, TypeError):
+		except ValueError, TypeError:
 			continue
 		for block in content.get("blocks", []) or []:
 			block_type = block.get("type")
@@ -2691,8 +2728,9 @@ def create_discussion_topic(doctype, docname, title, reply=None):
 
 
 @frappe.whitelist()
-def add_discussion_reply(topic, reply):
+def add_discussion_reply(topic: str, reply: str):
 	_require_reference_read(*_topic_reference(topic))
+	_require_staff_may_post(_topic_course(topic))
 	doc = frappe.get_doc({"doctype": "Discussion Reply", "topic": topic, "reply": _clean_reply(reply)})
 	doc.insert(ignore_permissions=True)
 	from seminary.seminary import discussion_threads
@@ -2714,13 +2752,20 @@ def edit_discussion_reply(name, reply):
 
 
 @frappe.whitelist()
-def delete_discussion_reply(name):
+def delete_discussion_reply(name: str):
 	row = frappe.db.get_value("Discussion Reply", name, ["owner", "topic"], as_dict=True)
 	if not row:
 		frappe.throw(_("Not permitted."), frappe.PermissionError)
-	if row.owner != frappe.session.user and not is_course_staff(_topic_course(row.topic)):
+	if row.owner != frappe.session.user and not may_act(_topic_course(row.topic), POST):
 		frappe.throw(_("You can only delete your own reply."), frappe.PermissionError)
 	frappe.delete_doc("Discussion Reply", name, ignore_permissions=True)
+
+
+def _require_staff_may_post(course_schedule):
+	"""A student answers in their own course; staff answer as staff, which
+	their role on the section may leave out (decisions/105)."""
+	if course_schedule and is_course_staff(course_schedule) and not may_act(course_schedule, POST):
+		require_section_capability(course_schedule, POST)
 
 
 def _require_reference_read(doctype, docname):
@@ -2955,8 +3000,12 @@ sg.name = sgm.parent and cs.name = %s""",
 
 
 @frappe.whitelist()
-def create_student_group(course, group_name, group_instructor, members):
-	require_course_staff(course)
+def create_student_group(
+	course: str, group_name: str, group_instructor: str | None, members: str | list | dict
+):
+	from seminary.seminary.guards import CONTENT
+
+	require_section_capability(course, CONTENT)
 	course_doc = frappe.get_doc("Course Schedule", course)
 	student_group = frappe.new_doc("Student Group")
 	student_group.group_name = group_name

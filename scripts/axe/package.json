@@ -6,6 +6,6 @@
   "dependencies": {
     "@guidepup/virtual-screen-reader": "0.33.0",
     "axe-core": "4.13.0",
-    "puppeteer-core": "24.43.1"
+    "puppeteer-core": "25.16.0"
   }
 }

@@ -23,6 +23,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt
 
+from seminary.seminary.guards import GRADE
 from seminary.seminary.rubrics import shares, slug
 
 DROPPED = "Dropped"
@@ -371,10 +372,14 @@ def on_section_update(doc):
 # --- endpoints ----------------------------------------------------------------
 
 
-def _require_staff(course_schedule):
-	from seminary.seminary.guards import require_course_staff
+def _require_staff(course_schedule, action=None):
+	"""Reads need course staff; a write names its action (decisions/105)."""
+	from seminary.seminary.guards import require_course_staff, require_section_capability
 
-	require_course_staff(course_schedule, include_registrar=True)
+	if action:
+		require_section_capability(course_schedule, action, include_registrar=True)
+	else:
+		require_course_staff(course_schedule, include_registrar=True)
 
 
 @frappe.whitelist()
@@ -391,7 +396,13 @@ def get_categories(course):
 
 
 @frappe.whitelist()
-def set_excused(card=None, excused=1, reason=None, course_assess=None, student=None):
+def set_excused(
+	card: str | None = None,
+	excused: int | bool | str = 1,
+	reason: str | None = None,
+	course_assess: str | None = None,
+	student: str | None = None,
+):
 	"""Excuse one student from one assessment, or take the excuse back. Course
 	staff and the registrar; never once grades are sent. The card is named,
 	or found from the assessment and the student (the attendance page)."""
@@ -416,7 +427,7 @@ def set_excused(card=None, excused=1, reason=None, course_assess=None, student=N
 		if row
 		else None
 	)
-	_require_staff(roster.course_sc if roster else None)
+	_require_staff(roster.course_sc if roster else None, GRADE)
 	if not roster:
 		frappe.throw(_("That grade no longer exists."))
 	if not roster.active:

@@ -73,6 +73,98 @@ def require_outline_editor():
 		)
 
 
+# decisions/105: what an instructor may do on a section they are listed on,
+# from the category on their row there.
+CONTENT = "content"
+GRADE = "grade"
+ATTENDANCE = "attendance"
+POST = "post"
+ACTION_FIELDS = {
+	CONTENT: "may_edit_content",
+	GRADE: "may_grade",
+	ATTENDANCE: "may_record_attendance",
+	POST: "may_post_to_class",
+}
+
+
+def _action_denial(action):
+	return {
+		CONTENT: _("Your role on this section does not include editing the course."),
+		GRADE: _("Your role on this section does not include grading."),
+		ATTENDANCE: _("Your role on this section does not include recording attendance."),
+		POST: _("Your role on this section does not include posting to the class."),
+	}[action]
+
+
+def _category_actions(category) -> set:
+	def _lookup():
+		row = frappe.db.get_value("Instructor Category", category, list(ACTION_FIELDS.values()), as_dict=True)
+		if not row:
+			return set()
+		return {action for action, field in ACTION_FIELDS.items() if row.get(field)}
+
+	return _memo(("category_actions", category), _lookup)
+
+
+def section_actions(course_schedule, user=None) -> set:
+	"""What the user's rows on this section allow (decisions/105 §3): the
+	union over their rows, each read from the row's category, else their
+	default category. No category anywhere means no restriction recorded, so
+	all four. Empty for someone not listed on the section."""
+	u = _user(user)
+
+	def _lookup():
+		inst = current_instructor(u)
+		if not inst or not course_schedule:
+			return set()
+		categories = frappe.get_all(
+			"Course Schedule Instructors",
+			filters={
+				"parent": course_schedule,
+				"parenttype": "Course Schedule",
+				"instructor": inst,
+			},
+			pluck="instructor_category",
+		)
+		out = set()
+		for category in categories:
+			category = category or frappe.db.get_value("Instructor", inst, "default_inst_category")
+			if not category:
+				return set(ACTION_FIELDS)
+			out |= _category_actions(category)
+		return out
+
+	return _memo(("section_actions", u, course_schedule), _lookup)
+
+
+def may_act(course_schedule, action, include_registrar=False, user=None) -> bool:
+	"""``is_course_staff`` narrowed by the category's actions. School roles,
+	and the Registrar where the caller admits them, are not narrowed."""
+	u = _user(user)
+	if not is_course_staff(course_schedule, include_registrar=include_registrar, user=u):
+		return False
+	if u == "Administrator":
+		return True
+	roles = _roles(u)
+	if roles & {"Program Chair", "Seminary Manager", "System Manager"}:
+		return True
+	if include_registrar and "Registrar" in roles and registrar_has_academic_records():
+		return True
+	return action in section_actions(course_schedule, u)
+
+
+def require_section_capability(course_schedule, action, include_registrar=False):
+	"""``require_course_staff`` plus the action (decisions/105)."""
+	require_course_staff(course_schedule, include_registrar=include_registrar)
+	if not may_act(course_schedule, action, include_registrar=include_registrar):
+		_deny(
+			_action_denial(action),
+			"require_section_capability",
+			course_schedule=course_schedule,
+			action=action,
+		)
+
+
 def require_registrar():
 	if not _roles() & REGISTRAR_ROLES:
 		_deny(
@@ -563,8 +655,9 @@ def is_section_mentor(course_schedule, user=None) -> bool:
 
 def section_access(course_schedule, user=None):
 	"""What the portal offers this user on a section: ``"instructor"`` (course
-	staff, who also edit the outline), ``"mentor"`` (reads content, sees and
-	grades only their mentees), ``"student"``, or ``None``."""
+	staff; what they may do there is ``section_actions``), ``"mentor"`` (reads
+	content, sees and grades only their mentees), ``"student"``, ``"reader"``,
+	``"observer"`` (decisions/105), or ``None``."""
 	u = _user(user)
 	if is_course_staff(course_schedule, include_registrar=True, user=u):
 		return "instructor"
@@ -573,14 +666,61 @@ def section_access(course_schedule, user=None):
 	if is_enrolled(course_schedule, u):
 		# Record-tier readers land here too; they read, they do not edit.
 		return "student" if current_student(u) else "reader"
+	if is_section_observer(course_schedule, u):
+		# Reads the course, sees no students (decisions/105 §5).
+		return "observer"
 	return None
+
+
+def observed_sections(user=None) -> list:
+	"""Published, uncancelled sections where the user's Person is a current
+	observer: no *Until*, or *Until* not yet past (decisions/105 §4, §6)."""
+	u = _user(user)
+	if not u or u in ("Guest", "Administrator"):
+		return []
+
+	def _lookup():
+		person = frappe.db.get_value("Person", {"user": u}, "name")
+		if not person:
+			return []
+		today = frappe.utils.getdate(frappe.utils.today())
+		rows = frappe.get_all(
+			"Course Schedule Observers",
+			filters={"person": person, "parenttype": "Course Schedule"},
+			fields=["parent", "until"],
+		)
+		current = {r.parent for r in rows if not r.until or frappe.utils.getdate(r.until) >= today}
+		if not current:
+			return []
+		return sorted(
+			frappe.get_all(
+				"Course Schedule",
+				filters={
+					"name": ["in", sorted(current)],
+					"published": 1,
+					"workflow_state": ["!=", "Cancelled"],
+				},
+				pluck="name",
+			)
+		)
+
+	return _memo(("observed", u), _lookup)
+
+
+def is_section_observer(course_schedule, user=None) -> bool:
+	return bool(course_schedule) and course_schedule in observed_sections(user)
 
 
 def may_view_content(course_schedule, user=None) -> bool:
 	"""Section *content* reads -- outline, lessons, assessments, announcements:
-	everyone `is_enrolled` admits, plus the section's mentors. Never use this
-	for anything that lists students: a mentor sees only their own."""
-	return is_enrolled(course_schedule, user) or is_section_mentor(course_schedule, user)
+	everyone `is_enrolled` admits, plus the section's mentors and observers.
+	Never use this for anything that lists students: a mentor sees only their
+	own, an observer none (decisions/105 §5)."""
+	return (
+		is_enrolled(course_schedule, user)
+		or is_section_mentor(course_schedule, user)
+		or is_section_observer(course_schedule, user)
+	)
 
 
 def require_content_reader(course_schedule):

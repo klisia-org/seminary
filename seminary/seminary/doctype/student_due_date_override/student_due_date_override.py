@@ -30,9 +30,9 @@ class StudentDueDateOverride(Document):
 		self.course_schedule = row.parent
 		self.assessment_title = row.title
 
-		from seminary.seminary.guards import require_course_staff
+		from seminary.seminary.guards import GRADE, require_section_capability
 
-		require_course_staff(self.course_schedule, include_registrar=True)
+		require_section_capability(self.course_schedule, GRADE, include_registrar=True)
 
 		if not frappe.db.exists(
 			"Scheduled Course Roster",
@@ -84,9 +84,9 @@ class StudentDueDateOverride(Document):
 		self._reprice()
 
 	def on_trash(self):
-		from seminary.seminary.guards import require_course_staff
+		from seminary.seminary.guards import GRADE, require_section_capability
 
-		require_course_staff(self.course_schedule, include_registrar=True)
+		require_section_capability(self.course_schedule, GRADE, include_registrar=True)
 
 	def after_delete(self):
 		self._reprice()

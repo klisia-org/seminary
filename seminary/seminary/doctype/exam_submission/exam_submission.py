@@ -9,7 +9,7 @@ from frappe.model.document import Document
 from frappe.utils import sanitize_html as _frappe_sanitize_html
 
 from seminary.seminary.api import sanitize_html
-from seminary.seminary.guards import is_grader, require_course_staff, require_grader
+from seminary.seminary.guards import GRADE, is_grader, require_grader, require_section_capability
 
 
 class ExamSubmission(Document):
@@ -85,7 +85,7 @@ def _assert_owns_submission(doc):
 
 
 @frappe.whitelist()
-def save_exam_comment(submission_name, row_name, comments):
+def save_exam_comment(submission_name: str | None, row_name: str, comments: str | None):
 	"""Save a single question comment on an Exam Submission.
 
 	``row_name`` used to be trusted outright: the write was a bare
@@ -108,12 +108,19 @@ def save_exam_comment(submission_name, row_name, comments):
 			_("That question does not belong to this exam submission."),
 			frappe.PermissionError,
 		)
-	require_course_staff(frappe.db.get_value("Exam Submission", parent.parent, "course"))
+	require_section_capability(frappe.db.get_value("Exam Submission", parent.parent, "course"), GRADE)
 	frappe.db.set_value("Exam Question Result", row_name, "comments", _clean_rich_text(comments))
 
 
 @frappe.whitelist()
-def save_exam_grade(submission_name, status, score, percentage, fudge_points, result):
+def save_exam_grade(
+	submission_name: str,
+	status: str | None,
+	score: float | int | str | None,
+	percentage: float | int | str | None,
+	fudge_points: float | int | str | None,
+	result: str | list | dict,
+):
 	"""Save instructor grading for an Exam Submission.
 
 	``require_grader()`` is a role check, and under p007 §2.8 the Instructor role
@@ -126,7 +133,7 @@ def save_exam_grade(submission_name, status, score, percentage, fudge_points, re
 	require_grader()
 	result = frappe.parse_json(result)
 	doc = frappe.get_doc("Exam Submission", submission_name)
-	require_course_staff(doc.course)
+	require_section_capability(doc.course, GRADE)
 
 	doc.status = status
 	doc.score = score
@@ -289,20 +296,21 @@ def get_exam_grading_comments(submission_name):
 
 
 @frappe.whitelist()
-def add_exam_grading_comment(submission_name, comment):
+def add_exam_grading_comment(submission_name: str, comment: str):
 	"""Add a grading comment to an Exam Submission."""
 	if not submission_name or not comment:
 		frappe.throw(_("Submission name and comment are required."))
 
 	doc = frappe.get_doc("Exam Submission", submission_name)
 
-	from seminary.seminary.guards import is_course_staff
+	from seminary.seminary.guards import may_act
 
 	user = frappe.session.user
 	is_owner = doc.member == user
-	# The student and the section's staff converse here; another section's
-	# instructor does not (p007 §2.4).
-	is_staff = is_course_staff(doc.course)
+	# The student and the section's graders converse here; another section's
+	# instructor does not (p007 §2.4), nor one whose role leaves out grading
+	# (decisions/105).
+	is_staff = may_act(doc.course, GRADE)
 	if not is_owner and not is_staff:
 		frappe.throw(
 			_("You do not have permission to comment on this submission."),

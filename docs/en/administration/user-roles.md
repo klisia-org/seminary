@@ -17,6 +17,50 @@ See [ERPNext Module Access documentation.](https://docs.frappe.io/erpnext/adding
 - **Instructor** — teaches and grades their own courses, and may report
   disciplinary incidents.
 
+## What an instructor may do on a section
+
+The Instructor role opens the door; the **Category** on each section's
+instructor row decides what they may do there. Every Instructor Category has
+four checkboxes:
+
+| Checkbox | Covers |
+|---|---|
+| **Edits course content** | Course outline, lessons, assessments, late policy, student groups |
+| **Grades** | Grades and comments on submissions, due-date exceptions, sending final grades |
+| **Records attendance** | Taking attendance for the section's meetings |
+| **Posts to the class** | Announcements, messages to all of the section's students, instructor replies in discussions |
+
+The starter categories come set like this:
+
+| Category | Content | Grades | Attendance | Posts |
+|---|---|---|---|---|
+| Instructor of Record | ✓ | ✓ | ✓ | ✓ |
+| Co-Instructor | ✓ | ✓ | ✓ | ✓ |
+| Graduate Teaching Assistant | | ✓ | ✓ | ✓ |
+| Grader | | ✓ | | |
+
+A category you add starts with all four. Change them at **Desk → Instructor
+Category**. If a section row has no category, the instructor's default category
+applies; if that is empty too, they may do all four. Everyone on a section
+still sees its students and gradebook, whatever their category. Program
+Chairs and Seminary Managers are not limited by categories, and neither is the
+Registrar where the Registrar may keep academic records.
+
+## Observers
+
+To let someone read a course without teaching it (a colleague reviewing the
+teaching, an advisor, an accreditation visitor, a ministry supervisor), add
+their Person to the **Observers** table on the Course Schedule, with an
+optional **Until** date and a reason. They need a user account but no role.
+
+Once the section is published, an observer finds it under their courses and
+can read the outline, lessons, assessments and announcements. They do not see
+the roster, grades, submissions or discussions. Access stops after the
+**Until** date or when the section is cancelled.
+
+If someone should also see students' work, add them as an instructor in a
+category with no checkboxes ticked instead.
+
 ## Portal roles (frontend)
 
 - **Student** — enrols in courses, submits work, and views their own records and

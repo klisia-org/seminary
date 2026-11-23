@@ -1,1 +1,0 @@
-import{mn as e,tn as t}from"./frappe-ui-BKaGiRME.js";import{z as n}from"./index-DC_Yfyr4.js";function r(r){let i=t(),a=e(()=>n.returnContext),o=e(()=>!!a.value);function s(){let e=a.value;if(!e)return;let t=r==null?void 0:r();t&&n.setPendingInsert({type:e.insertType,id:t}),n.clearReturnContext(),i.push(e.route)}return{showBackToLesson:o,backToLesson:s}}export{r as t};

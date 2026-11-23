@@ -41,7 +41,9 @@ from .constants import (
 	OPEN_QUESTION_FIELDS,
 	ORAL_FIELDS,
 	PACK_FORMAT_VERSION,
+	QUESTION_ANSWER_FIELDS,
 	QUESTION_FIELDS,
+	QUESTION_OPTION_FIELDS,
 	QUIZ_FIELDS,
 	QUIZ_QUESTION_FIELDS,
 	SCAC_FIELDS,
@@ -145,6 +147,10 @@ class _Exporter:
 				"matching_items": [
 					self._pick(r, SCRIPTURE_MATCHING_ITEM_FIELDS) for r in q.get("matching_items") or []
 				],
+				"choices": [self._pick(r, QUESTION_OPTION_FIELDS) for r in q.get("choices") or []],
+				"accepted_answers": [
+					self._pick(r, QUESTION_ANSWER_FIELDS) for r in q.get("accepted_answers") or []
+				],
 			}
 		else:  # Open Question
 			rec = {
@@ -152,6 +158,8 @@ class _Exporter:
 				"fields": self._pick(q, OPEN_QUESTION_FIELDS),
 			}
 		self._scan_media(rec["fields"])
+		for row in rec.get("choices") or []:
+			self._scan_media(row)
 		self.questions[name] = rec
 
 	def _ensure_activity(self, doctype, name):

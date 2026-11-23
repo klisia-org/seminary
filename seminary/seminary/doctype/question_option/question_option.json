@@ -1,0 +1,48 @@
+{
+ "actions": [],
+ "creation": "2026-11-23 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "option",
+  "is_correct",
+  "explanation"
+ ],
+ "fields": [
+  {
+   "fieldname": "option",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Option",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Correct"
+  },
+  {
+   "depends_on": "eval: doc.is_correct",
+   "description": "Shown to students when they review this correct answer.",
+   "fieldname": "explanation",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Explanation"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-23 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Question Option",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

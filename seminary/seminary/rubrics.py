@@ -25,9 +25,11 @@ from frappe import _
 from frappe.utils import cint, flt, now_datetime
 
 from seminary.seminary.guards import (
+	GRADE,
 	is_course_staff,
 	require_course_staff,
 	require_grader,
+	require_section_capability,
 )
 
 ACTIVITIES = {
@@ -385,12 +387,12 @@ def get_grading(submission_doctype, submission):
 
 
 @frappe.whitelist()
-def save_scores(submission_doctype, submission, scores):
+def save_scores(submission_doctype: str, submission: str, scores: str | list | dict):
 	"""Upsert the grader's levels and comments, then re-save the submission so
 	its grade (and from there the gradebook) follows."""
 	require_grader()
 	doc, (_activity_doctype, _activity, section, _r) = _grading_doc(submission_doctype, submission)
-	require_course_staff(section)
+	require_section_capability(section, GRADE)
 	rubric = scored_rubric(doc)
 	if not rubric:
 		frappe.throw(_("This activity has no rubric."))

@@ -71,6 +71,22 @@ def after_install():
 # ERPNext setup. Seminary installs on Frappe alone.
 
 
+# decisions/105 §2: what each starter category may do on its sections. Any
+# other category, and a new one, gets all four (the field defaults).
+CATEGORY_ACTIONS = {
+	"Instructor of Record": ("may_edit_content", "may_grade", "may_record_attendance", "may_post_to_class"),
+	"Co-Instructor": ("may_edit_content", "may_grade", "may_record_attendance", "may_post_to_class"),
+	"Graduate Teaching Assistant": ("may_grade", "may_record_attendance", "may_post_to_class"),
+	"Grader": ("may_grade",),
+}
+ACTION_FIELDS = ("may_edit_content", "may_grade", "may_record_attendance", "may_post_to_class")
+
+
+def category_action_defaults(english_name):
+	allowed = CATEGORY_ACTIONS.get(english_name, ACTION_FIELDS)
+	return {field: int(field in allowed) for field in ACTION_FIELDS}
+
+
 def setup_fixtures():
 	# Academic setup only. The ERPNext groups (Item Group, Customer Groups,
 	# Supplier Group, billing UOMs) are created by the oikonomos bridge.
@@ -81,11 +97,13 @@ def setup_fixtures():
 			"category_name": _("Instructor of Record"),
 			"is_instructor_of_record": 1,
 			"description": _("Primary instructor responsible for the course for accreditation purposes."),
+			**category_action_defaults("Instructor of Record"),
 		},
 		{
 			"doctype": "Instructor Category",
 			"category_name": _("Co-Instructor"),
 			"description": _("Shares teaching duties with the Instructor of Record."),
+			**category_action_defaults("Co-Instructor"),
 		},
 		{
 			"doctype": "Instructor Category",
@@ -93,11 +111,13 @@ def setup_fixtures():
 			"description": _(
 				"Graduate student assisting with teaching and grading under faculty supervision."
 			),
+			**category_action_defaults("Graduate Teaching Assistant"),
 		},
 		{
 			"doctype": "Instructor Category",
 			"category_name": _("Grader"),
 			"description": _("Grades assignments and assessments only."),
+			**category_action_defaults("Grader"),
 		},
 	]
 	make_records(records)
