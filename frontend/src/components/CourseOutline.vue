@@ -286,6 +286,11 @@
 								{{ __('Add Lesson') }}
 							</Button>
 						</router-link>
+						<!-- decisions/110 §5: choose content inside a tool; each pick becomes a lesson. -->
+						<Dropdown v-if="!chapter.is_scorm_package && deepLinkTools.length" class="ml-2"
+							:options="deepLinkTools.map((t) => ({ label: t.tool_name, onClick: () => addFromTool(chapter, t) }))">
+							<Button>{{ __('Add from tool') }}</Button>
+						</Dropdown>
 					</div>
 				</DisclosurePanel>
 			</Disclosure>
@@ -304,7 +309,7 @@
 </template>
 <script setup>
 import { Button, createResource, Dropdown, Tooltip, toast } from 'frappe-ui'
-import { inject, nextTick, ref } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, ref } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
 	Check,
@@ -408,6 +413,49 @@ const outline = createResource({
 	},
 	auto: true,
 })
+
+// decisions/110 §5. Only editors are offered tools, and only tools that offer
+// content selection. The tool's window is opened from the click (an await first
+// would make it a blocked popup) and cut off from this page; when the editor
+// comes back to this tab, the outline reloads to show what was added.
+const ltiTools = createResource({
+	url: 'seminary.lti.launch.tools_for_lessons',
+	params: { course: props.courseName },
+	auto: Boolean(props.allowEdit),
+})
+const deepLinkTools = computed(() =>
+	(ltiTools.data || []).filter((t) => t.allow_deep_linking && t.deep_linking_url)
+)
+const startDeepLink = createResource({ url: 'seminary.lti.launch.start_deep_link' })
+let reloadOnReturn = false
+const onReturn = () => {
+	if (reloadOnReturn && document.visibilityState === 'visible') {
+		reloadOnReturn = false
+		outline.reload()
+	}
+}
+document.addEventListener('visibilitychange', onReturn)
+window.addEventListener('focus', onReturn)
+onBeforeUnmount(() => {
+	document.removeEventListener('visibilitychange', onReturn)
+	window.removeEventListener('focus', onReturn)
+})
+async function addFromTool(chapter, tool) {
+	const win = window.open('', '_blank')
+	try {
+		const data = await startDeepLink.submit({ chapter: chapter.name, tool: tool.name })
+		reloadOnReturn = true
+		if (win) {
+			win.opener = null
+			win.location = data.url
+		} else {
+			window.location.assign(data.url)
+		}
+	} catch (e) {
+		win?.close()
+		toast.error(e?.messages?.[0] || __('The tool could not be opened.'))
+	}
+}
 
 const course_title = createResource({
 	url: 'seminary.seminary.utils.get_course_title',

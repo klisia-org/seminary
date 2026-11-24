@@ -39,9 +39,9 @@ def convert_to_ics_datetime(dt):
 # A calendar client polls; it does not poll 120 times an hour. Keyed on the
 # section as well as the IP so a token guess cannot be spread across addresses
 # -- this endpoint builds a whole schedule per hit (p010 H6, p005a A09-4).
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep -- the section token is checked first; rate-limited
 @rate_limit(key="course_schedule", limit=120, seconds=3600, ip_based=True)
-def course_ics(course_schedule=None, token=None):
+def course_ics(course_schedule: str | None = None, token: str | None = None):
 	"""Generate ICS calendar data for a given course schedule."""
 	if not course_schedule or not token:
 		raise frappe.ValidationError(_("Course Schedule and token are required."))
@@ -75,6 +75,9 @@ def course_ics(course_schedule=None, token=None):
 	from seminary.seminary.oral_meetings import captured_rows
 
 	recorded = captured_rows(course_schedule)
+	from seminary.seminary.school_meetings import recorded_rows
+
+	class_recorded = recorded_rows(course_schedule)
 
 	for meeting in meeting_dates:
 		event = Event()
@@ -90,6 +93,8 @@ def course_ics(course_schedule=None, token=None):
 			event.description += f"\nJoin online: {meeting.web_meeting}"
 		if meeting.name in recorded:
 			event.description += "\n" + _("This meeting is recorded for an oral assessment.")
+		elif meeting.name in class_recorded:
+			event.description += "\n" + _("This class is recorded.")
 		# Online meetings have no physical room; show the room otherwise.
 		if meeting.cs_online:
 			event.location = meeting.web_meeting or _("Online")

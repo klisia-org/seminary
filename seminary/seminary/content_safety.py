@@ -107,7 +107,18 @@ def clean_rich(value):
 		strip_comments=True,
 		filter_style_properties=SAFE_STYLES,
 		url_schemes=_URL_SCHEMES,
+		attribute_filter=_check_embed,
 	)
+
+
+def _check_embed(tag, attribute, value):
+	"""A rich-text embed is saved as `<figure data-embed="URL">` (decision 109 §1); the
+	page builds its frame from that URL. Keep only a URL an iframe may load."""
+	if attribute == "data-embed":
+		from seminary.seminary.url_policy import safe_embed_url
+
+		return safe_embed_url(value) or None
+	return value
 
 
 def clean_code(value):

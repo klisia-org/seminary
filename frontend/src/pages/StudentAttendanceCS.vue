@@ -104,9 +104,10 @@
               <div>
                 {{ student.stuname_roster }}
                 <span v-if="suggestions.data?.[student.student]"
-                  class="ml-2 rounded bg-surface-blue-1 px-1.5 py-0.5 text-xs text-ink-blue-3"
-                  :title="__('Seen in the captured meeting (oral activity), confirmed by an instructor.')">
-                  {{ __('In the meeting {0}–{1}').format(hm(suggestions.data[student.student].joined_at), hm(suggestions.data[student.student].left_at)) }}
+                  class="ml-2 rounded px-1.5 py-0.5 text-xs"
+                  :class="suggestions.data[student.student].enough ? 'bg-surface-blue-1 text-ink-blue-3' : 'bg-surface-amber-1 text-ink-amber-3'"
+                  :title="__('Reported by the online meeting. Nothing is recorded until you mark attendance.')">
+                  {{ __('In the meeting {0}–{1} ({2}%)').format(hm(suggestions.data[student.student].joined_at), hm(suggestions.data[student.student].left_at), suggestions.data[student.student].share) }}
                 </span>
                 <span v-if="onLeave(student.student)"
                   class="ml-2 rounded bg-surface-gray-3 px-1.5 py-0.5 text-xs text-ink-gray-7"
@@ -183,10 +184,10 @@
         </p>
       </div>
 
-      <!-- Suggested from a captured meeting (decisions/100d §7) -->
+      <!-- Suggested from the online meeting (decisions/100d §7) -->
       <div v-if="selectedDate && !isFuture && (!attendanceTaken || editing) && suggestedCount" class="mt-2">
         <button class="text-sm text-ink-blue-3 hover:underline" @click="markSuggestedPresent">
-          {{ __('Mark the {0} students seen in the captured meeting present').format(suggestedCount) }}
+          {{ __('Mark the {0} students seen in the online meeting present').format(suggestedCount) }}
         </button>
       </div>
 
@@ -511,7 +512,7 @@ watch(
   }
 );
 
-// Who a confirmed meeting capture saw, with join and leave times (100d §7).
+// Who the online meeting saw, with join and leave times and their share of it (100d §7).
 const suggestions = createResource({
   url: 'seminary.seminary.oral_meetings.attendance_suggestions',
   makeParams: () => ({ course_schedule: props.courseName, meeting: selectedDate.value?.name }),
@@ -519,9 +520,13 @@ const suggestions = createResource({
   onError: () => {},
 });
 const hm = (v) => (v ? dayjs(v).format('HH:mm') : '');
-const suggestedCount = computed(() => Object.keys(suggestions.data || {}).length);
+// Only students in the meeting for the school's least share are marked; the others show their times.
+const enoughStudents = computed(() =>
+  Object.entries(suggestions.data || {}).filter(([, s]) => s.enough).map(([student]) => student)
+);
+const suggestedCount = computed(() => enoughStudents.value.length);
 const markSuggestedPresent = () => {
-  Object.keys(suggestions.data || {}).forEach((student) => {
+  enoughStudents.value.forEach((student) => {
     if (student in attendance.value) attendance.value[student] = 'Present';
   });
 };

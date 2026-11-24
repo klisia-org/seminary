@@ -1,0 +1,10 @@
+[project]
+name = "seminary"
+requires-python = ">=3.14"
+# setup.py still supplies these: the version from seminary/__init__.py and the
+# dependencies from requirements.txt, which CI's pip-audit reads.
+dynamic = ["version", "description", "authors", "dependencies"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

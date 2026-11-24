@@ -33,6 +33,7 @@
   "title",
   "web_meeting",
   "school_meeting",
+  "record_meetings",
   "section_break_7",
   "monday_column",
   "monday",
@@ -677,6 +678,15 @@
    "depends_on": "eval:doc.modality!='Presential'",
    "description": "Create each online meeting on one of the school's meeting accounts. The join links are then filled in for you.",
    "permlevel": 1
+  },
+  {
+   "fieldname": "record_meetings",
+   "fieldtype": "Select",
+   "label": "Record School Meetings",
+   "options": "\nRecord\nDo not record",
+   "depends_on": "school_meeting",
+   "permlevel": 1,
+   "description": "Blank follows the school's default. A recorded class is kept by the meeting provider; students on this section see its link and passcode on the course calendar, and anyone they share them with can watch it."
   },
   {
    "default": "0",

@@ -12,6 +12,7 @@
  */
 import DOMPurify from 'dompurify'
 import { RENDER_FORBIDDEN_TAGS, FORBIDDEN_ATTR, filterStyle } from './htmlPolicy.js'
+import { buildRichMedia } from './embed.js'
 
 // Tighter than DOMPurify's default, which also admits cid:, xmpp:, sms: etc.
 // Relative URLs, fragments and queries still pass. Note DOMPurify admits data:
@@ -73,5 +74,12 @@ export function sanitize(html, profile = 'rich') {
 		installHooks(DOMPurify)
 		hooked = true
 	}
-	return DOMPurify.sanitize(String(html), PROFILES[profile] || PROFILES.rich)
+	const config = PROFILES[profile] || PROFILES.rich
+	if (config !== RICH) return DOMPurify.sanitize(String(html), config)
+	// Rich text: after cleaning, the page builds embeds' frames and videos' caption
+	// tracks itself, from checked values (decision 109; see embed.js).
+	const fragment = DOMPurify.sanitize(String(html), { ...config, RETURN_DOM_FRAGMENT: true })
+	const out = document.createElement('div')
+	out.appendChild(buildRichMedia(fragment))
+	return out.innerHTML
 }

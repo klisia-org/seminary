@@ -1,7 +1,7 @@
 # 100d — Capture from virtual meetings
 
 **Date:** 2026-11-20
-**Status:** Accepted
+**Status:** Accepted 2026-11-20; implemented 2026-11-21 (caa99b44)
 **Parent:** [100](100-oral-assessment.md)
 **Amended:** 2026-11-21 (§1, §4, §7, §8: Oral Activity Meeting, confirmed matches)
 **Amended by:** [100d-a](100d-a-online-meeting-groups.md) (group meetings)

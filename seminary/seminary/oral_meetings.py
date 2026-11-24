@@ -125,6 +125,7 @@ def _row(name):
 			"cs_web_meeting",
 			"cs_meeting_account",
 			"cs_meeting_id",
+			"school_meeting",
 		],
 		as_dict=True,
 	)
@@ -177,7 +178,18 @@ def _capture(doc):
 		"start": _utc(row.cs_meetdate, row.cs_fromtime),
 		"end": _utc(row.cs_meetdate, row.cs_totime),
 		"bot_name": _("Seminary recorder (for assessment)"),
+		# The class records anyway: standing down must not turn its recording off.
+		"keep_recording": _class_records(doc.course_schedule, row),
 	}
+
+
+def _class_records(course_schedule, row):
+	from seminary.seminary.school_meetings import row_recorded
+
+	try:
+		return row_recorded(frappe.get_doc("Course Schedule", course_schedule), row)
+	except frappe.DoesNotExistError:
+		return False
 
 
 def _normal(name):
@@ -720,12 +732,31 @@ def confirm_capture(name: str, links: str | list | dict):
 
 
 @frappe.whitelist()
-def attendance_suggestions(course_schedule, meeting):
-	"""{student: {joined_at, left_at}} from confirmed captures of one meeting."""
+def attendance_suggestions(course_schedule: str, meeting: str):
+	"""{student: {joined_at, left_at, share, enough}} for one meeting: who the meeting
+	provider reported (privatedocs p027 §5) and who confirmed captures saw (100d §7).
+	*enough*: in the meeting for at least the school's least share, so Mark Present
+	marks them; the others only show their times."""
 	from seminary.seminary.guards import require_course_staff
 
 	require_course_staff(course_schedule, include_registrar=True)
 	out = {}
+	report = frappe.db.get_value(
+		"Class Meeting Report", {"course_schedule": course_schedule, "meeting": meeting}, "name"
+	)
+	if report:
+		for p in frappe.get_doc("Class Meeting Report", report).participants:
+			if not p.student:
+				continue
+			seen = out.setdefault(
+				p.student, {"joined_at": p.joined_at, "left_at": p.left_at, "attended_s": 0}
+			)
+			# One person can show twice (a phone and a laptop): add the time up.
+			seen["attended_s"] += cint(p.attended_s) or _span(p.joined_at, p.left_at)
+			if p.joined_at and (not seen["joined_at"] or p.joined_at < seen["joined_at"]):
+				seen["joined_at"] = p.joined_at
+			if p.left_at and (not seen["left_at"] or p.left_at > seen["left_at"]):
+				seen["left_at"] = p.left_at
 	for name in frappe.get_all(
 		OAM,
 		filters={
@@ -737,8 +768,29 @@ def attendance_suggestions(course_schedule, meeting):
 	):
 		for p in frappe.get_doc(OAM, name).participants:
 			if p.student and p.student not in out:
-				out[p.student] = {"joined_at": p.joined_at, "left_at": p.left_at}
+				out[p.student] = {
+					"joined_at": p.joined_at,
+					"left_at": p.left_at,
+					"attended_s": _span(p.joined_at, p.left_at),
+				}
+	row = frappe.db.get_value(ROW, meeting, ["cs_fromtime", "cs_totime"], as_dict=True)
+	length = _span(row.cs_fromtime, row.cs_totime) if row else 0
+	least = frappe.db.get_single_value("Seminary Settings", "meeting_attendance_min_share")
+	least = 50 if least is None else float(least)
+	for seen in out.values():
+		share = min(100, round(100 * seen["attended_s"] / length)) if length else 100
+		seen["share"] = share
+		seen["enough"] = share >= least
 	return out
+
+
+def _span(start, end) -> int:
+	"""Seconds from start to end: datetimes, or times as Frappe returns them (timedelta)."""
+	if not (start and end):
+		return 0
+	if hasattr(start, "total_seconds"):
+		return max(0, int((end - start).total_seconds()))
+	return max(0, int((get_datetime(end) - get_datetime(start)).total_seconds()))
 
 
 def captured_rows(course_schedule) -> set:

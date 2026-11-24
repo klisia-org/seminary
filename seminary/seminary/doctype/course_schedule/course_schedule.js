@@ -301,6 +301,11 @@ frappe.ui.form.on("Course Schedule", {
 				},
 				__("Actions")
 			);
+			frm.add_custom_button(
+				__("Import Course from Another LMS"),
+				() => import_course_from_lms(frm),
+				__("Actions")
+			);
 		}
 
 		// Export this schedule's full authored content as a portable Course Pack.
@@ -314,6 +319,18 @@ frappe.ui.form.on("Course Schedule", {
 						"?course_schedule=" +
 						encodeURIComponent(frm.doc.name);
 					window.open(url, "_blank");
+				},
+				__("Actions")
+			);
+			frm.add_custom_button(
+				__("Export Common Cartridge"),
+				function () {
+					window.open(
+						"/api/method/seminary.seminary.lms_migration.export_cc.export_common_cartridge" +
+							"?course_schedule=" +
+							encodeURIComponent(frm.doc.name),
+						"_blank"
+					);
 				},
 				__("Actions")
 			);
@@ -555,3 +572,64 @@ frappe.ui.form.on("Course Schedule", {
 		}
 	},
 });
+
+// Course migration from another LMS (decisions/108): upload a Common Cartridge
+// or a Moodle 5.0–5.3 backup, import it into this section, and show what was left out.
+function import_course_from_lms(frm) {
+	new frappe.ui.FileUploader({
+		allow_multiple: false,
+		allow_toggle_private: false,
+		make_attachments_public: false,
+		restrictions: { allowed_file_types: [".imscc", ".mbz", ".zip"] },
+		on_success(file) {
+			frappe.dom.freeze(__("Importing course…"));
+			frappe
+				.call({
+					method: "seminary.seminary.lms_migration.importer.import_course",
+					args: { course_schedule: frm.doc.name, file_url: file.file_url },
+				})
+				.then((r) => {
+					frappe.dom.unfreeze();
+					show_migration_report(r && r.message);
+					frm.reload_doc();
+				})
+				.catch(() => frappe.dom.unfreeze());
+		},
+	});
+}
+
+function show_migration_report(m) {
+	if (!m) return;
+	const esc = frappe.utils.escape_html;
+	const list = (rows, key) =>
+		"<ul>" +
+		rows
+			.map((row) => `<li>${row.title ? esc(row.title) + ": " : ""}${esc(row[key])}</li>`)
+			.join("") +
+		"</ul>";
+	let html = `<p>${esc(
+		__(
+			"From {0}: {1} chapters, {2} lessons, {3} activities, {4} questions, {5} rubrics and {6} files.",
+			[m.source, m.chapters, m.lessons, m.activities, m.questions, m.rubrics, m.files]
+		)
+	)}</p>`;
+	html += `<p>${esc(
+		__(
+			"Assessments were added with no weight. Set the weights, due dates and release dates before the term starts."
+		)
+	)}</p>`;
+	if (m.skipped && m.skipped.length) {
+		html +=
+			`<h5>${esc(__("Not imported; rebuild these by hand"))}</h5>` +
+			list(m.skipped, "reason");
+	}
+	if (m.notes && m.notes.length) {
+		html += `<h5>${esc(__("Check these"))}</h5>` + list(m.notes, "note");
+	}
+	frappe.msgprint({
+		title: __("Course imported"),
+		indicator: "green",
+		message: html,
+		wide: true,
+	});
+}

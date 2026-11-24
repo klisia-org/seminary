@@ -46,7 +46,33 @@ class CourseLesson(Document):
 		self.validate_captions()
 		# self.check_and_create_folder()
 		self.validate_quiz_id()
+		self.validate_lti()
 		self.updates_lessons()
+
+	def validate_lti(self):
+		"""An LTI lesson (decisions/110 §3): a resource link id of our own, a
+		launch URL that is https, and a grade mapping inside its own section."""
+		if not self.lti_tool:
+			self.lti_assessment_criteria = None
+			return
+		if not self.lti_resource_link_id:
+			self.lti_resource_link_id = frappe.generate_hash(length=20)
+		from seminary.lti.keys import require_https
+		from seminary.seminary.doctype.lti_tool.lti_tool import parse_custom
+
+		if self.lti_url:
+			self.lti_url = self.lti_url.strip()
+			require_https(self.lti_url, _("Launch URL"))
+		parse_custom(self.lti_custom)
+		if self.lti_score_maximum is not None and self.lti_score_maximum <= 0:
+			self.lti_score_maximum = 100
+		if self.lti_assessment_criteria:
+			course = frappe.db.get_value("Course Schedule Chapter", self.chapter, "coursesc")
+			parent = frappe.db.get_value(
+				"Scheduled Course Assess Criteria", self.lti_assessment_criteria, "parent"
+			)
+			if not course or parent != course:
+				frappe.throw(_("That criterion belongs to a different section."), frappe.PermissionError)
 
 	def validate_captions(self):
 		"""Each caption row is a WebVTT file (102 §6): the player hands it to a

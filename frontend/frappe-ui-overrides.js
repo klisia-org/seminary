@@ -28,13 +28,31 @@ const OVERRIDES = {
   'components/Combobox/Combobox.vue': 'Combobox.vue',
   'components/Autocomplete/Autocomplete.vue': 'Autocomplete.vue',
   'components/FormControl/FormControl.vue': 'FormControl.vue',
+  // Asks for the embed's title, and checks its address (decision 109 §1).
+  'components/TextEditor/extensions/iframe/InsertIframe.vue': 'InsertIframe.vue',
+}
+
+// The text editor's iframe and video nodes, replaced with ones that save what the
+// sanitisers keep (decision 109 §1, §5), with text direction (§4) riding on the embed.
+// Opt-in, `frappeUiOverrides({ richMedia: true })`: the replacements use this portal's
+// own components and the page that shows the HTML must build the frames (SafeHtml).
+// Modules every portal gets: plain fixes.
+const MODULE_OVERRIDES = {
+  // The / menu, mentions and emoji inside a dialog: placed in it, so they can be clicked.
+  'components/TextEditor/extensions/suggestion/createSuggestionExtension.ts': 'createSuggestionExtension.js',
+}
+
+const RICH_MEDIA_OVERRIDES = {
+  'components/TextEditor/video-extension.ts': 'video-extension.js',
+  'components/TextEditor/extensions/iframe/index.ts': 'iframe-extension.js',
 }
 const FRAPPE_UI_SRC = '/frappe-ui/src/'
 
 const isBare = (source) => !/^[./\0]/.test(source) && !source.startsWith('virtual:') && !path.isAbsolute(source)
 
-export function frappeUiOverrides() {
+export function frappeUiOverrides({ richMedia = false } = {}) {
   let root = process.cwd()
+  const modules = richMedia ? { ...MODULE_OVERRIDES, ...RICH_MEDIA_OVERRIDES } : MODULE_OVERRIDES
   return {
     name: 'seminary-frappe-ui-overrides',
     enforce: 'pre',
@@ -48,13 +66,16 @@ export function frappeUiOverrides() {
       if (from.startsWith(OVERRIDES_DIR + path.sep) && isBare(source)) {
         return this.resolve(source, path.join(root, 'index.html'), { ...options, skipSelf: true })
       }
-      if (!source.includes('.vue') || !from.includes(FRAPPE_UI_SRC)) return null
+      if (!from.includes(FRAPPE_UI_SRC)) return null
+      const isModule = /^\.\.?\//.test(source) && !source.includes('.vue')
+      if (!source.includes('.vue') && !(isModule && Object.keys(modules).length)) return null
       const resolved = await this.resolve(source, importer, { ...options, skipSelf: true })
       const id = resolved?.id?.split('?')[0]
       if (!id) return null
       const at = id.lastIndexOf(FRAPPE_UI_SRC)
       if (at < 0) return null
-      const copy = OVERRIDES[id.slice(at + FRAPPE_UI_SRC.length)]
+      const key = id.slice(at + FRAPPE_UI_SRC.length)
+      const copy = OVERRIDES[key] || modules[key]
       return copy ? path.join(OVERRIDES_DIR, copy) : null
     },
   }

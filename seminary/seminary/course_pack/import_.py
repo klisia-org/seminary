@@ -595,6 +595,7 @@ class _Importer:
 				les = frappe.new_doc("Course Lesson")
 				les.chapter = ch.name
 				les.update(self._rewrite_lesson_fields(_only(lrec.get("fields"), LESSON_FIELDS)))
+				self._resolve_lti(les)
 				les.flags.ignore_permissions = True
 				les.insert(ignore_mandatory=True)
 				self.l_map[lsrc] = les.name
@@ -628,6 +629,26 @@ class _Importer:
 				)
 			)
 		return n_chapters, n_lessons
+
+	def _resolve_lti(self, les):
+		"""This site's tool for an LTI lesson: the same name, else the tool whose
+		launch URL is on the same host (decisions/110). None means a plain lesson."""
+		if not (les.get("lti_tool") or les.get("lti_url")):
+			return
+		from seminary.seminary.doctype.lti_tool.lti_tool import tool_for_url
+
+		tool = les.get("lti_tool")
+		if not (tool and frappe.db.exists("LTI Tool", tool)):
+			tool = tool_for_url(les.get("lti_url"))
+		if tool:
+			les.lti_tool = tool
+			return
+		self.warnings.append(
+			_(
+				"Lesson '{0}' opened an external tool this site has not registered; it was imported without it."
+			).format(les.lesson_title)
+		)
+		les.lti_tool = les.lti_url = les.lti_custom = None
 
 	def _rewrite_lesson_fields(self, fields):
 		out = self._rw(fields)
@@ -694,26 +715,13 @@ class _Importer:
 		self.import_scac(cs)
 		n_ch, n_les = self.import_chapters_and_lessons(cs)
 		self.remap_lesson_scac_links()
+		self.after_content(cs)
 		from seminary.seminary import cbe_reflection
 
 		cbe_reflection.scaffold(cs.name)
 		frappe.get_doc("Course Schedule", cs.name).refile_assessment_competencies()
 
-		cs.add_comment(
-			"Info",
-			_(
-				"Imported Course Pack '{0}' on {1} by {2}: {3} chapters, {4} lessons, "
-				"{5} activities, {6} questions."
-			).format(
-				self.m["source"].get("title") or self.m["source"].get("course"),
-				formatdate(now()),
-				frappe.session.user,
-				n_ch,
-				n_les,
-				len(self.a_map),
-				len(self.q_map),
-			),
-		)
+		cs.add_comment("Info", self.summary_comment(n_ch, n_les))
 		return {
 			"course": self.course,
 			"course_schedule": cs.name,
@@ -725,6 +733,24 @@ class _Importer:
 			"media": len(self.url_map),
 			"warnings": self.warnings,
 		}
+
+	def after_content(self, cs):
+		"""Runs once chapters, lessons and assessments exist. Course migration
+		(decisions/108) adds rubrics here."""
+
+	def summary_comment(self, n_ch, n_les):
+		return _(
+			"Imported Course Pack '{0}' on {1} by {2}: {3} chapters, {4} lessons, "
+			"{5} activities, {6} questions."
+		).format(
+			self.m["source"].get("title") or self.m["source"].get("course"),
+			formatdate(now()),
+			frappe.session.user,
+			n_ch,
+			n_les,
+			len(self.a_map),
+			len(self.q_map),
+		)
 
 	def _warn_same_site(self):
 		"""Same-site reuse through export → import duplicates storage and

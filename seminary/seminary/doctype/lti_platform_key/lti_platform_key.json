@@ -1,0 +1,74 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-11-24 10:00:00.000000",
+ "description": "A key this site signs LTI messages with. Created on first use and published at /lti/jwks; a rotated key stays published for a day so launches already in flight still verify.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "kid",
+  "active",
+  "retired_on",
+  "public_jwk",
+  "private_key"
+ ],
+ "fields": [
+  {
+   "fieldname": "kid",
+   "fieldtype": "Data",
+   "label": "Key ID",
+   "read_only": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "retired_on",
+   "fieldtype": "Datetime",
+   "label": "Retired on",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "public_jwk",
+   "fieldtype": "Code",
+   "label": "Public key",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "private_key",
+   "fieldtype": "Long Text",
+   "label": "Private key",
+   "read_only": 1,
+   "hidden": 1,
+   "description": "Encrypted with the site's encryption key."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-24 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "LTI Platform Key",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "delete": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

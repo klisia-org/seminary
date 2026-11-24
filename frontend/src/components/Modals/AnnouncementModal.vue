@@ -16,15 +16,16 @@
 					<Input type="text" v-model="announcement.replyTo" :aria-label="__('Reply To')" />
 				</div>
 				<div class="mb-4">
-					<div class="mb-1.5 text-sm text-ink-gray-5">
+					<div :id="labelId" class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Announcement') }}
 					</div>
-					<div v-if="editorReady && editor" class="border rounded-md">
+					<div v-if="editorReady && editor"
+						class="border rounded-md focus-within:ring-2 focus-within:ring-outline-gray-3">
 						<TextEditorFixedMenu
 							class="w-full overflow-x-auto rounded-t-md border-b border-outline-gray-modals"
 							:buttons="true"
 						/>
-						<EditorContent :editor="editor" class="prose-sm py-2 px-2 min-h-[200px]" />
+						<EditorContent :editor="editor" class="py-2 px-2" />
 					</div>
 					<div v-else class="border rounded-md py-2 px-2 min-h-[200px] bg-surface-gray-3 text-ink-gray-4 text-sm">
 						{{ __('Loading editor...') }}
@@ -38,8 +39,8 @@
 <script setup>
 import { Dialog, Input, TextEditorFixedMenu, createResource, toast } from 'frappe-ui'
 import { Editor, EditorContent } from '@tiptap/vue-3'
-import { getTextEditorExtensions } from '@/utils/textEditorFull'
-import { computed, provide, reactive, ref, watch, onBeforeUnmount } from 'vue'
+import { editorClass, getTextEditorExtensions } from '@/utils/textEditorFull'
+import { computed, provide, reactive, ref, watch, onBeforeUnmount, useId } from 'vue'
 
 const show = defineModel()
 
@@ -58,6 +59,7 @@ const editorReady = ref(false)
 const editor = ref(null)
 
 provide('editor', editor)
+const labelId = useId()
 
 const announcement = reactive({
 	subject: '',
@@ -75,6 +77,14 @@ const initEditor = () => {
 	destroyEditor()
 	editor.value = new Editor({
 		content: announcement.announcement || '',
+		editorProps: {
+			attributes: {
+				class: editorClass('min-h-[184px]'),
+				role: 'textbox',
+				'aria-multiline': 'true',
+				'aria-labelledby': labelId,
+			},
+		},
 		extensions: getTextEditorExtensions({
 			placeholder: __('Write your announcement...'),
 		}),

@@ -1,7 +1,7 @@
 /**
  * The accessibility checker for content instructors write (102 §7).
  *
- * One pure function per input shape, no imports: `checkHtml` for the rich-text
+ * One pure function per input shape, importing only the media type list: `checkHtml` for the rich-text
  * editors, `checkBlocks` for the lesson's editorjs blocks, and `checkContent`
  * for either. Each returns a list of issues
  *
@@ -18,13 +18,16 @@
  *   table-header    a table with no header row
  *   video-captions  a video Seminary plays with no captions: in a lesson, an
  *                   uploaded or recorded video while the lesson has no caption
- *                   files; in HTML, a <video> with no captions <track>. YouTube and
+ *                   files; in HTML, a <video> that lists no captions (decision
+ *                   109 §5) and has no captions <track>. YouTube and
  *                   Vimeo embeds carry their own captions and aren't counted.
  *
  * HTML is read with the browser's DOMParser, which builds an inert document:
  * nothing in it loads or runs. `__` is the portal's global translator, looked up
  * when a message is built.
  */
+
+import { isImage, isVideo } from './mediaTypes.js'
 
 // Link text that names no destination, in the portal's languages. Compared after
 // lower-casing and dropping punctuation and surrounding space.
@@ -60,8 +63,6 @@ export const VAGUE_LINK_TEXT = new Set([
 	'enlace',
 ])
 
-const VIDEO_TYPES = ['mov', 'mp4', 'avi', 'mkv', 'webm']
-const NOT_IMAGE_TYPES = [...VIDEO_TYPES, 'mp3', 'wav', 'ogg', 'pdf']
 
 const MESSAGES = {
 	'image-alt': (n) =>
@@ -157,8 +158,19 @@ function tallyFragment(doc, t) {
 		if (!hasHeader) t.add('table-header')
 	})
 	doc.querySelectorAll('video').forEach((video) => {
-		if (!video.querySelector('track[kind="captions"], track[kind="subtitles"]')) t.add('video-captions')
+		if (!listsCaptions(video) && !video.querySelector('track[kind="captions"], track[kind="subtitles"]'))
+			t.add('video-captions')
 	})
+}
+
+// A rich-text video keeps its caption files in `data-captions` (decision 109 §5).
+function listsCaptions(video) {
+	try {
+		const list = JSON.parse(video.getAttribute('data-captions') || '[]')
+		return Array.isArray(list) && list.some((c) => c && c.src)
+	} catch {
+		return false
+	}
 }
 
 /** Issues in an HTML fragment (the rich-text editors). */
@@ -208,10 +220,9 @@ export function checkBlocks(blocks, options = {}) {
 				if (!String(data.caption || '').replace(/<[^>]*>/g, '').trim()) t.add('image-alt')
 				break
 			case 'upload': {
-				const type = String(data.file_type || '').toLowerCase()
-				if (VIDEO_TYPES.includes(type)) {
+				if (isVideo(data.file_type)) {
 					if (!hasCaptions) t.add('video-captions')
-				} else if (data.file_url && !NOT_IMAGE_TYPES.includes(type) && !String(data.alt || '').trim()) {
+				} else if (data.file_url && isImage(data.file_type) && !String(data.alt || '').trim()) {
 					t.add('image-alt')
 				}
 				break
