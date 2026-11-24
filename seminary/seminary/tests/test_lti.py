@@ -637,6 +637,23 @@ class TestLTIPlumbing(_LTICase):
 		self.assertIsNone(frappe.local.lti_bearer)
 		self.assertIn("Authorization", frappe.local.request.headers)
 
+	def test_lti_responses_leave_the_browser_session_alone(self):
+		# A tool's cross-site POST arrives without the Lax session cookie; a
+		# Guest Set-Cookie on the answer would log the user out of Desk.
+		from frappe.auth import CookieManager
+
+		from seminary.lti.renderer import _keep_browser_session
+
+		saved = getattr(frappe.local, "cookie_manager", None)
+		self.addCleanup(lambda: setattr(frappe.local, "cookie_manager", saved))
+		frappe.local.cookie_manager = cm = CookieManager()
+		cm.set_cookie("sid", "Guest")
+		cm.set_cookie("user_id", "Guest")
+		cm.delete_cookie(["full_name"])
+		_keep_browser_session()
+		self.assertEqual(cm.cookies, {})
+		self.assertEqual(cm.to_delete, [])
+
 	def test_the_key_set_route(self):
 		from werkzeug.test import EnvironBuilder
 		from werkzeug.wrappers import Request

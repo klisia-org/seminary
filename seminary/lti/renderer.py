@@ -37,6 +37,7 @@ class LTIRoutes:
 	def render(self) -> Response:
 		from seminary.lti import services
 
+		_keep_browser_session()
 		try:
 			return self._dispatch()
 		except services.Refused as e:
@@ -81,3 +82,20 @@ class LTIRoutes:
 			case ["nrps", course, "memberships"] if method == "GET":
 				return services.memberships(course, args)
 		return services.oauth_error("not_found", status=404)
+
+
+def _keep_browser_session() -> None:
+	"""No /lti/ response sets or deletes a cookie (decisions/110 §3).
+
+	A tool returns the browser here with a cross-site form POST (the Deep Linking
+	return, or an OIDC request sent as POST), and the SameSite=Lax session cookie
+	is not sent with it. Frappe then treats the request as Guest and answers with
+	`sid=Guest`/`user_id=Guest`, overwriting the session the same browser still
+	has open in Desk or the portal: the "session has expired" dialog. Nothing
+	under /lti/ reads the session cookie for identity (the user comes from a
+	signed hint), so none of these responses has a reason to touch cookies.
+	"""
+	cm = getattr(frappe.local, "cookie_manager", None)
+	if cm is not None:
+		cm.cookies.clear()
+		cm.to_delete.clear()

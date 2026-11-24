@@ -71,6 +71,8 @@ first (108 §4).
   user, five minutes, used once, answered only to a registered redirect URL. If a session is
   present, it must be the same user. The auth and deep-link pages carry their own CSP, because
   the site's policy has `form-action 'self'`.
+- §3: that same cookieless request made Frappe answer with `sid=Guest`, which logged the user
+  out of Desk in the same browser. No `/lti/` response sets or deletes a cookie.
 - §8: Frappe treats any `Authorization: Bearer` header it doesn't know as a failed login, before
   routing. A `before_request` hook moves the header aside for `/lti/` paths only.
 - §2: the first key is often created on a GET, so that request is flagged to commit.
