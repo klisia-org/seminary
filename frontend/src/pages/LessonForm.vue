@@ -138,6 +138,22 @@
 					</div>
 				</section>
 
+				<!-- An external tool (decisions/110 §3): saved with the lesson, like its other fields. -->
+				<section v-if="ltiTools.data?.length || lesson.lti_tool"
+					class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
+					<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('External tool') }}</h2>
+					<p class="mt-0.5 text-sm text-ink-gray-5">
+						{{ __('Students open the tool from this lesson, signed in as themselves. Anything else in the lesson is shown above the button.') }}
+					</p>
+					<div class="mt-4 grid gap-4 md:grid-cols-2">
+						<FormControl type="select" :label="__('Tool')" v-model="lesson.lti_tool" :options="ltiToolOptions" />
+						<FormControl v-if="lesson.lti_tool" type="url" :label="__('Launch URL')" v-model="lesson.lti_url"
+							:placeholder="__('The tool\'s own launch URL')" />
+					</div>
+					<FormControl v-if="lesson.lti_tool" class="mt-4" type="textarea" :label="__('Custom parameters')"
+						v-model="lesson.lti_custom" :placeholder="__('One key=value per line, if the tool asks for any')" />
+				</section>
+
 				<!-- Captions and transcript (102 §6): saved with the lesson, like its other fields. -->
 				<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
 					<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('Captions and transcript') }}</h2>
@@ -580,7 +596,26 @@ const lesson = reactive({
 	// Course Lesson Caption rows and the transcript file (102 §6).
 	captions: [],
 	transcript: '',
+	// decisions/110
+	lti_tool: '',
+	lti_url: '',
+	lti_custom: '',
 })
+
+const ltiTools = createResource({
+	url: 'seminary.lti.launch.tools_for_lessons',
+	params: { course: props.courseName },
+	auto: true,
+})
+
+const ltiToolOptions = computed(() => [
+	{ label: __('None'), value: '' },
+	...(ltiTools.data || []).map((t) => ({ label: t.tool_name, value: t.name })),
+	// A tool since disabled stays selectable on the lesson that already names it.
+	...(lesson.lti_tool && !(ltiTools.data || []).some((t) => t.name === lesson.lti_tool)
+		? [{ label: lesson.lti_tool, value: lesson.lti_tool }]
+		: []),
+])
 
 const lessonDetails = createResource({
 	url: 'seminary.seminary.utils.get_lesson_creation_details',

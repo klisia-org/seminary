@@ -20,7 +20,7 @@ from urllib.parse import unquote
 
 import frappe
 from frappe import _
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, strip_html
 
 from seminary.seminary import qti
 
@@ -55,7 +55,6 @@ _UNSUPPORTED_MODULES = {
 	"scorm": "SCORM package",
 	"h5pactivity": "H5P",
 	"hvp": "H5P",
-	"lti": "external tool (LTI)",
 	"workshop": "workshop",
 	"lesson": "Moodle lesson",
 	"glossary": "glossary",
@@ -272,6 +271,18 @@ class Reader:
 			return
 		blocks = [*self.intro_blocks(el, ctx, "mod_url"), html_blocks.link_paragraph(url, name)]
 		self.b.lesson(chapter, name, blocks)
+
+	def mod_lti(self, chapter, title, el, ctx):
+		"""An external tool. A site-level tool type keeps its URL in `ltitype`."""
+		name = _v(el, "name") or title
+		launch = _v(el, "securetoolurl") or _v(el, "toolurl") or text(first(el, "baseurl"))
+		custom = {}
+		for line in (_v(el, "instructorcustomparameters") or "").splitlines():
+			if "=" in line:
+				key, value = line.split("=", 1)
+				custom[key.strip()] = value.strip()
+		description = " ".join(strip_html(_v(el, "intro") or "").split())[:2000]
+		self.b.lti_lesson(chapter, name, launch, custom, description)
 
 	def mod_resource(self, chapter, title, el, ctx):
 		name = _v(el, "name") or title

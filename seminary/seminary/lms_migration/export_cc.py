@@ -32,6 +32,11 @@ NS = "http://www.imsglobal.org/xsd/imsccv1p3/imscp_v1p1"
 LOM = "http://ltsc.ieee.org/xsd/imsccv1p3/LOM/manifest"
 QTI_TYPE = "imsqti_xmlv1p2/imscc_xmlv1p3/assessment"
 FILEBASE = "$IMS-CC-FILEBASE$"
+LTI_NS = (
+	'xmlns="http://www.imsglobal.org/xsd/imslticc_v1p0" '
+	'xmlns:blti="http://www.imsglobal.org/xsd/imsbasiclti_v1p0" '
+	'xmlns:lticm="http://www.imsglobal.org/xsd/imslticm_v1p0"'
+)
 
 
 def _x(value):
@@ -318,6 +323,40 @@ class CartridgeWriter:
 			return rid, activities
 		return None, activities
 
+	def _lti_link(self, lesson_src):
+		"""An LTI lesson as a Common Cartridge LTI link (decisions/108 §4, by 110).
+		The receiving LMS needs its own registration of the tool."""
+		f = ((self.m.get("lessons") or {}).get(lesson_src) or {}).get("fields") or {}
+		if not f.get("lti_tool"):
+			return None
+		launch = f.get("lti_url") or frappe.db.get_value("LTI Tool", f["lti_tool"], "target_link_url")
+		if not launch:
+			return None
+		props = ""
+		for line in (f.get("lti_custom") or "").splitlines():
+			if "=" in line:
+				key, value = line.split("=", 1)
+				props += f"<lticm:property name={_a(key.strip())}>{_x(value.strip())}</lticm:property>"
+		secure = (
+			f"<blti:secure_launch_url>{_x(launch)}</blti:secure_launch_url>"
+			if launch.startswith("https:")
+			else ""
+		)
+		path = f"lti/{self.uid('LTI')}.xml"
+		self.files[path] = (
+			'<?xml version="1.0" encoding="UTF-8"?>\n'
+			f"<cartridge_basiclti_link {LTI_NS}>"
+			f"<blti:title>{_x(f.get('lesson_title') or '')}</blti:title>"
+			f"<blti:custom>{props}</blti:custom>"
+			f"<blti:launch_url>{_x(launch)}</blti:launch_url>{secure}"
+			"</cartridge_basiclti_link>"
+		).encode()
+		rid = self.uid("LTIRES")
+		self.resources.append(
+			f'<resource identifier="{rid}" type="imsbasiclti_xmlv1p0"><file href={_a(path)}/></resource>'
+		)
+		return rid
+
 	def build(self):
 		self._written = {}
 		self._media()
@@ -329,6 +368,9 @@ class CartridgeWriter:
 			items = []
 			for lsrc in ch.get("lessons") or []:
 				title = ((self.m["lessons"].get(lsrc) or {}).get("fields") or {}).get("lesson_title") or ""
+				lti = self._lti_link(lsrc)
+				if lti:
+					items.append((title, lti))
 				page, activities = self._lesson(lsrc)
 				if page:
 					items.append((title, page))

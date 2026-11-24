@@ -24,6 +24,7 @@
   "column_break_fsas",
   "actualextrapt_card",
   "scorm_reported_card",
+  "lti_reported_card",
   "late_base_card",
   "late_deduction_card",
   "late_adjusted_card",
@@ -152,6 +153,14 @@
    "read_only": 1
   },
   {
+   "default": "0",
+   "fieldname": "lti_reported_card",
+   "fieldtype": "Check",
+   "label": "Reported by external tool",
+   "read_only": 1,
+   "description": "This cell's raw score was posted by an LTI tool rather than entered or auto-graded. Once a grader changes the number, later scores from the tool stand down."
+  },
+  {
    "fieldname": "late_base_card",
    "fieldtype": "Float",
    "label": "Score Before Late Deduction",
@@ -216,7 +225,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-10-31 12:00:00.000000",
+ "modified": "2026-11-24 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Assess Results Detail",

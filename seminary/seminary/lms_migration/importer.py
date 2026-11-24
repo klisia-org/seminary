@@ -97,14 +97,18 @@ class MigrationImporter(_Importer):
 		)
 
 
-def _check_target(cs):
-	from seminary.seminary import cbe_reflection
-
+def _require_role():
 	if not set(frappe.get_roles()).intersection(IMPORT_ROLES):
 		frappe.throw(
 			_("Only Program Chair, Seminary Manager, or Registrar can import a course."),
 			frappe.PermissionError,
 		)
+
+
+def _check_target(cs):
+	from seminary.seminary import cbe_reflection
+
+	_require_role()
 	cs.check_permission("write")
 	if cs.workflow_state not in IMPORT_STATES:
 		frappe.throw(_("A course can only be imported while the section is in Draft or Open for Enrollment."))
@@ -162,6 +166,7 @@ def import_into(cs_name, content):
 def import_course(course_schedule: str, file_url: str) -> dict:
 	"""Import an uploaded .imscc or .mbz into this section. The upload is the
 	caller's own private File and is deleted afterwards."""
+	_require_role()  # before the lookup says whether the section exists
 	cs = frappe.get_doc("Course Schedule", course_schedule)
 	_check_target(cs)  # before the upload is read
 	name = frappe.db.get_value("File", {"file_url": file_url}, "name")

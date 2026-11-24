@@ -1340,6 +1340,8 @@ def get_lesson(course: str, chapter: str | int, lesson: str | int):
 			"scorm_sco_identifier",
 			"scorm_orphaned",
 			"transcript",
+			# decisions/110: an LTI lesson shows a launch for its tool.
+			"lti_tool",
 		],
 		as_dict=True,
 	)
@@ -1739,6 +1741,10 @@ def get_lesson_creation_details(course: str, chapter: str | int, lesson: str | i
 				"exam",
 				"allow_discuss",
 				"transcript",
+				# decisions/110
+				"lti_tool",
+				"lti_url",
+				"lti_custom",
 			],
 			as_dict=1,
 		)

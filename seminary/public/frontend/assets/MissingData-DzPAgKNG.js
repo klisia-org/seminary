@@ -1,1 +1,0 @@
-import{Ar as e,Nr as t,fi as n,qr as r}from"./frappe-ui-C-9kjAUG.js";var i={class:`flex items-center justify-center h-[250px]`},a={class:`text-ink-gray-5`},o={__name:`MissingData`,props:{message:{type:String,default:__(`No data found`)}},setup(o){return(s,c)=>(r(),t(`div`,i,[e(`p`,a,n(o.message),1)]))}};export{o as t};

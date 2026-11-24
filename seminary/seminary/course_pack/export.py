@@ -533,6 +533,10 @@ class _Exporter:
 					continue
 				lesson = frappe.get_doc("Course Lesson", lref.lesson)
 				fields = self._pick(lesson, LESSON_FIELDS)
+				if lesson.lti_tool and not lesson.lti_url:
+					# The receiving site matches the tool by host when the name
+					# means nothing there (decisions/110), so carry the URL used.
+					fields["lti_url"] = frappe.db.get_value("LTI Tool", lesson.lti_tool, "target_link_url")
 				for content in (lesson.content, lesson.instructor_content):
 					for fref in editorjs.scan_folder_refs(content):
 						self._ensure_folder(fref["folder_ref"], fref["folder"])
@@ -566,14 +570,16 @@ def _site_language():
 
 
 def _validate_export(cs_name):
-	if not frappe.db.exists("Course Schedule", cs_name):
-		frappe.throw(_("Course Schedule {0} does not exist.").format(cs_name))
+	# The role first, so a caller without it is refused before the answer says
+	# whether the section exists.
 	roles = set(frappe.get_roles(frappe.session.user))
 	if not roles.intersection(EXPORT_ROLES):
 		frappe.throw(
 			_("Only Program Chair, Seminary Manager, or Registrar can export course packs."),
 			frappe.PermissionError,
 		)
+	if not frappe.db.exists("Course Schedule", cs_name):
+		frappe.throw(_("Course Schedule {0} does not exist.").format(cs_name))
 	if not frappe.has_permission("Course Schedule", "read", doc=cs_name):
 		frappe.throw(
 			_("You do not have read access to this Course Schedule."),

@@ -27,6 +27,7 @@ PNG = (
 	b"\xaeB`\x82"
 )
 CANVAS = "http://canvas.instructure.com/xsd/cccv1p0"
+PUBLISHER = "https://publisher.lti-test.example"
 
 
 class TestHtmlBlocks(FrappeTestCase):
@@ -236,6 +237,13 @@ def canvas_cartridge():
 		'<item identifier="i6" identifierref="lti1"><title>Publisher tool</title></item>'
 		"</item>"
 	)
+	f["lti1.xml"] = (
+		'<cartridge_basiclti_link xmlns="http://www.imsglobal.org/xsd/imslticc_v1p0" '
+		'xmlns:blti="http://www.imsglobal.org/xsd/imsbasiclti_v1p0" xmlns:lticm="http://www.imsglobal.org/xsd/imslticm_v1p0">'
+		"<blti:title>Publisher tool</blti:title><blti:description>Chapter readings</blti:description>"
+		'<blti:custom><lticm:property name="isbn">978-0</lticm:property></blti:custom>'
+		f"<blti:launch_url>{PUBLISHER}/launch</blti:launch_url></cartridge_basiclti_link>"
+	)
 	f["imsmanifest.xml"] = (
 		'<?xml version="1.0"?><manifest identifier="cc" xmlns="http://www.imsglobal.org/xsd/imsccv1p1/imscp_v1p1">'
 		"<metadata><schema>IMS Common Cartridge</schema><schemaversion>1.1.0</schemaversion></metadata>"
@@ -299,8 +307,12 @@ class TestCommonCartridgeImport(MigrationCase):
 		self.assertEqual(round(rdoc.criteria[0].weight), 67)
 		self.assertEqual(frappe.db.get_value("Assignment Activity", assignment, "type"), "Document")
 
-		# graded discussion; the announcement and the LTI tool are reported, not imported
-		self.assertEqual(skipped.get("Publisher tool"), "external tool (LTI)")
+		# graded discussion; the announcement is reported, not imported, and so is
+		# the LTI link while no tool on its host is registered (108 §4, by 110)
+		self.assertEqual(
+			skipped.get("Publisher tool"),
+			"external tool (LTI): register a tool for publisher.lti-test.example, then import again",
+		)
 		self.assertTrue(any("announcement" in r for r in skipped.values()))
 
 		# every graded activity has an assessment row with no weight
@@ -350,7 +362,7 @@ class TestCommonCartridgeImport(MigrationCase):
 # --- a Moodle backup -----------------------------------------------------------------------
 
 
-def moodle_backup(release="5.3.1+ (Build: 20261124)"):
+def moodle_backup(release="5.3.1+ (Build: 20261124)", lti=False):
 	f = {}
 	activities = [
 		("12", "34", "page", "Course outline"),
@@ -364,6 +376,8 @@ def moodle_backup(release="5.3.1+ (Build: 20261124)"):
 		("20", "35", "subsection", "Extra"),
 		("21", "36", "label", "Optional reading"),
 	]
+	if lti:
+		activities.append(("22", "36", "lti", "Publisher tool"))
 	acts = "".join(
 		f"<activity><moduleid>{m}</moduleid><sectionid>{s}</sectionid><modulename>{n}</modulename>"
 		f"<title>{t}</title><directory>activities/{n}_{m}</directory></activity>"
@@ -388,7 +402,7 @@ def moodle_backup(release="5.3.1+ (Build: 20261124)"):
 		"<sequence>14,15,16,17,18,19,20</sequence><visible>1</visible><component/><itemid/></section>"
 	)
 	f["sections/section_36/section.xml"] = (
-		'<section id="36"><number>2</number><name/><summary></summary><sequence>21</sequence>'
+		f'<section id="36"><number>2</number><name/><summary></summary><sequence>{"21,22" if lti else "21"}</sequence>'
 		"<visible>1</visible><component>mod_subsection</component><itemid>7</itemid></section>"
 	)
 
@@ -470,6 +484,16 @@ def moodle_backup(release="5.3.1+ (Build: 20261124)"):
 		"109",
 		'<label id="1"><name>Optional reading</name><intro>&lt;p&gt;Read more.&lt;/p&gt;</intro></label>',
 	)
+
+	if lti:
+		act(
+			"22",
+			"lti",
+			"110",
+			'<lti id="1"><name>Publisher tool</name><intro>&lt;p&gt;Read chapter 2.&lt;/p&gt;</intro>'
+			f"<typeid>0</typeid><toolurl>{PUBLISHER}/launch/moodle</toolurl>"
+			"<instructorcustomparameters>isbn=978-0\nunit=2</instructorcustomparameters></lti>",
+		)
 
 	def question(qid, qtype, text, answers="", extra=""):
 		return (
@@ -631,3 +655,71 @@ class TestCommonCartridgeExport(MigrationCase):
 		self.assertEqual(before, after)
 		self.assertEqual(report["questions"], 2)
 		self.assertEqual(report["skipped"], [])
+
+
+# --- LTI links (decisions/108 §4, amended by 110) -------------------------------------------
+
+
+class TestLtiLinks(MigrationCase):
+	def setUp(self):
+		from cryptography.hazmat.primitives import serialization
+		from cryptography.hazmat.primitives.asymmetric import rsa
+
+		pem = (
+			rsa.generate_private_key(public_exponent=65537, key_size=2048)
+			.public_key()
+			.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+			.decode()
+		)
+		self.tool = frappe.get_doc(
+			{
+				"doctype": "LTI Tool",
+				"tool_name": f"MIG publisher {frappe.generate_hash(length=6)}",
+				"oidc_login_url": f"{PUBLISHER}/login",
+				"target_link_url": f"{PUBLISHER}/launch",
+				"public_key": pem,
+			}
+		).insert(ignore_permissions=True)
+		self.addCleanup(
+			lambda: frappe.delete_doc("LTI Tool", self.tool.name, force=True, ignore_permissions=True)
+		)
+
+	def _lti_lessons(self, cs):
+		return [lesson for _c, lesson in self.lessons(cs) if lesson.lti_tool]
+
+	def test_a_cartridge_link_becomes_an_lti_lesson(self):
+		cs = self.new_cs()
+		report = import_into(cs, canvas_cartridge())
+		self.assertNotIn("Publisher tool", {s["title"] for s in report["skipped"]})
+		(lesson,) = self._lti_lessons(cs)
+		self.assertEqual(lesson.lesson_title, "Publisher tool")
+		self.assertEqual(lesson.lti_tool, self.tool.name)
+		self.assertEqual(lesson.lti_url, f"{PUBLISHER}/launch")
+		self.assertEqual(lesson.lti_custom, "isbn=978-0")
+		self.assertTrue(lesson.lti_resource_link_id)
+		self.assertFalse(lesson.lti_assessment_criteria)
+		self.assertIn("Chapter readings", lesson.content)
+
+	def test_a_moodle_external_tool_becomes_an_lti_lesson(self):
+		cs = self.new_cs()
+		import_into(cs, moodle_backup(lti=True))
+		(lesson,) = self._lti_lessons(cs)
+		self.assertEqual(lesson.lti_url, f"{PUBLISHER}/launch/moodle")
+		self.assertEqual(lesson.lti_custom, "isbn=978-0\nunit=2")
+
+	def test_export_writes_lti_links_and_they_come_back(self):
+		source = self.new_cs()
+		import_into(source, canvas_cartridge())
+		_name, content, _left_out = build_cartridge_bytes(source)
+		with zipfile.ZipFile(io.BytesIO(content)) as zf:
+			manifest = zf.read("imsmanifest.xml").decode()
+			links = [zf.read(n).decode() for n in zf.namelist() if n.startswith("lti/")]
+		self.assertIn("imsbasiclti_xmlv1p0", manifest)
+		self.assertEqual(len(links), 1)
+		self.assertIn(f"{PUBLISHER}/launch", links[0])
+		self.assertIn('name="isbn"', links[0])
+
+		target = self.new_cs()
+		import_into(target, content)
+		(lesson,) = self._lti_lessons(target)
+		self.assertEqual((lesson.lti_tool, lesson.lti_custom), (self.tool.name, "isbn=978-0"))

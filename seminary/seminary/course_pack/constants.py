@@ -40,6 +40,12 @@ LESSON_FIELDS = (
 	"instructor_notes",
 	"instructor_content",
 	"allow_discuss",
+	# An LTI lesson (decisions/110). The tool is matched on the receiving site
+	# by name, else by the launch URL's host; one it cannot match is dropped.
+	"lti_tool",
+	"lti_url",
+	"lti_custom",
+	"lti_score_maximum",
 )
 
 # Lesson Link fields pointing at SCAC rows — remapped after SCAC insert, exactly
@@ -49,6 +55,7 @@ LESSON_SCAC_LINK_FIELDS = (
 	"assessment_criteria_assignment",
 	"assessment_criteria_exam",
 	"assessment_criteria_discussion",
+	"lti_assessment_criteria",
 )
 
 QUIZ_FIELDS = (

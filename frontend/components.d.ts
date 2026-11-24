@@ -72,6 +72,7 @@ declare module 'vue' {
     LessonHistory: typeof import('./src/components/LessonHistory.vue')['default']
     LightEditor: typeof import('./src/components/LightEditor.vue')['default']
     Link: typeof import('./src/components/Controls/Link.vue')['default']
+    LtiLaunch: typeof import('./src/components/LtiLaunch.vue')['default']
     MissingData: typeof import('./src/components/MissingData.vue')['default']
     MobileLayout: typeof import('./src/components/MobileLayout.vue')['default']
     MultiSelect: typeof import('./src/components/Controls/MultiSelect.vue')['default']

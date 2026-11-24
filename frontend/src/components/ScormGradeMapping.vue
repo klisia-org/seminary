@@ -11,6 +11,9 @@
   nothing else. The server gates on the lesson's own section and refuses a
   criterion from any other -- this picker only ever offers what that gate will
   accept.
+
+  `source="lti"` is the same mapping for an LTI lesson (decisions/110 §7): a
+  tool's final score is written where staff point it, and nowhere by default.
 -->
 <template>
 	<div v-if="mapping.data" class="scorm-mapping">
@@ -22,29 +25,25 @@
 				{{ __('Reporting') }}
 			</Badge>
 			<Badge v-else theme="gray" variant="subtle">
-				{{ __('Completion only') }}
+				{{ isLti ? __('Not reported') : __('Completion only') }}
 			</Badge>
 		</div>
 
 		<p v-if="mapping.data.competency_section" class="mt-2 text-sm text-ink-gray-6">
 			{{
-				__(
-					'This is a competency-based section: the gradebook cell holds a level, not a percentage, so a SCORM score is never written to it. The package still records completion.'
-				)
+				isLti
+					? __(
+							"This section's gradebook holds a level, not a percentage, so the tool's scores are never written to it. They stay on the lesson."
+					  )
+					: __(
+							'This is a competency-based section: the gradebook cell holds a level, not a percentage, so a SCORM score is never written to it. The package still records completion.'
+					  )
 			}}
 		</p>
 
 		<template v-else>
 			<p class="mt-2 text-sm text-ink-gray-6">
-				{{
-					mapping.data.current
-						? __(
-								'A passing score from this SCO is written to the criterion below. A grade you enter by hand replaces it and is never overwritten.'
-						  )
-						: __(
-								'This SCO records completion only. Choose a criterion to have a passing score written to the gradebook.'
-						  )
-				}}
+				{{ explanation }}
 			</p>
 
 			<div class="mt-3 flex items-center gap-2">
@@ -72,13 +71,28 @@ import { Badge, FormControl, LoadingIndicator, createResource, toast } from 'fra
 
 const props = defineProps({
 	lesson: { type: String, required: true },
+	source: { type: String, default: 'scorm' },
+})
+
+const isLti = computed(() => props.source === 'lti')
+const api = computed(() => (isLti.value ? 'seminary.lti.grades' : 'seminary.scorm.grades'))
+
+const explanation = computed(() => {
+	const current = mapping.data?.current
+	if (isLti.value)
+		return current
+			? __('A final score from the tool is written to the criterion below. A grade you enter by hand replaces it and is never overwritten.')
+			: __('Scores from this tool stay on the lesson. Choose a criterion to have final scores written to the gradebook.')
+	return current
+		? __('A passing score from this SCO is written to the criterion below. A grade you enter by hand replaces it and is never overwritten.')
+		: __('This SCO records completion only. Choose a criterion to have a passing score written to the gradebook.')
 })
 
 const saving = ref(false)
 const selected = ref('')
 
 const mapping = createResource({
-	url: 'seminary.scorm.grades.criteria_for_lesson',
+	url: `${api.value}.criteria_for_lesson`,
 	makeParams() {
 		return { lesson: props.lesson }
 	},
@@ -91,7 +105,10 @@ const mapping = createResource({
 const options = computed(() => {
 	const rows = mapping.data?.criteria || []
 	return [
-		{ label: __('Completion only — no grade reported'), value: '' },
+		{
+			label: isLti.value ? __('Not reported: scores stay on the lesson') : __('Completion only — no grade reported'),
+			value: '',
+		},
 		...rows.map((row) => ({
 			// The stored title where there is one, the criterion it came from
 			// otherwise: a row with no title is common and its docname is a
@@ -103,7 +120,7 @@ const options = computed(() => {
 })
 
 const save = createResource({
-	url: 'seminary.scorm.grades.set_criteria',
+	url: `${api.value}.set_criteria`,
 })
 
 async function onChange(value) {

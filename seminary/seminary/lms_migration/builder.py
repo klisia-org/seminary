@@ -169,6 +169,33 @@ class PackBuilder:
 		chapter["lessons"].append(src)
 		return src
 
+	def lti_lesson(self, chapter, title, launch_url, custom=None, description=""):
+		"""An LTI link, as an LTI lesson when this site has registered a tool on
+		the link's host (decisions/108 §4, amended by 110). Its grade mapping
+		does not come across: a weighted row is the instructor's to set."""
+		from urllib.parse import urlparse
+
+		from seminary.seminary.doctype.lti_tool.lti_tool import tool_for_url
+
+		launch_url = (launch_url or "").strip()
+		if not launch_url:
+			self.skip(title, _("external tool (LTI) with no launch URL"))
+			return None
+		tool = tool_for_url(launch_url)
+		if not tool:
+			host = urlparse(launch_url).hostname or launch_url
+			self.skip(
+				title, _("external tool (LTI): register a tool for {0}, then import again").format(host)
+			)
+			return None
+		blocks = [{"type": "paragraph", "data": {"text": htmllib.escape(description)}}] if description else []
+		src = self.lesson(chapter, title, blocks)
+		lines = [f"{k}={v}" for k, v in (custom or {}).items() if k and "\n" not in f"{k}{v}"]
+		self.lessons[src]["fields"].update(
+			{"lti_tool": tool, "lti_url": launch_url, "lti_custom": "\n".join(lines)}
+		)
+		return src
+
 	def html_lesson(self, chapter, title, html, resolve):
 		blocks, missing = html_blocks.to_blocks(html, resolve)
 		for src in missing:

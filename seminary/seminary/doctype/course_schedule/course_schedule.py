@@ -1528,6 +1528,11 @@ _LESSON_COPYABLE_FIELDS = (
 	"instructor_notes",
 	"instructor_content",
 	"allow_discuss",
+	# An LTI lesson keeps its tool; a new resource link id is issued (decisions/110).
+	"lti_tool",
+	"lti_url",
+	"lti_custom",
+	"lti_score_maximum",
 )
 
 
@@ -1872,6 +1877,7 @@ _LESSON_SCAC_LINK_FIELDS = (
 	"assessment_criteria_assignment",
 	"assessment_criteria_exam",
 	"assessment_criteria_discussion",
+	"lti_assessment_criteria",
 )
 
 

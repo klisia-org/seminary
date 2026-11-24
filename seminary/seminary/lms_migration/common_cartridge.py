@@ -162,7 +162,7 @@ class Reader:
 		if t.startswith("imsqti_item"):
 			return  # a question bank's items, not an assessment of the course
 		if "imsbasiclti" in t or "lti" in t.split("/")[0]:
-			self.b.skip(title or r.id, _("external tool (LTI)"))
+			self.lti_link(chapter, r, title)
 		elif "imswl" in t:
 			self.weblink(chapter, r, title)
 		elif "imsdt" in t:
@@ -209,6 +209,16 @@ class Reader:
 			self.b.skip(title, _("web link with no address"))
 			return
 		self.b.lesson(chapter, title, [html_blocks.link_paragraph(href, title)])
+
+	def lti_link(self, chapter, r, title):
+		root = self.a.xml(r.main()) if r.main() else None
+		if root is None:
+			self.b.skip(title or r.id, _("external tool (LTI) could not be read"))
+			return
+		title = title or kid_text(root, "title") or r.id
+		launch = kid_text(root, "secure_launch_url") or kid_text(root, "launch_url")
+		custom = {p.get("name"): text(p) for p in kids(kid(root, "custom"), "property") if p.get("name")}
+		self.b.lti_lesson(chapter, title, launch, custom, kid_text(root, "description"))
 
 	def topic(self, chapter, r, title):
 		root = self.a.xml(r.main())

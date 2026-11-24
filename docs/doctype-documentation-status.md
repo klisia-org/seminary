@@ -111,6 +111,9 @@ Documentation ✓ links to the live page.
 | Instructor | ✓ | [✓](https://docs.seminaryerp.org/getting-started/initial-setup.html#_16-add-instructors) |  |
 | Instructor Category | ✓ | [✓](https://docs.seminaryerp.org/modules/instructor-payment.html#instructor-categories) |  |
 | Instructor Log Payment | ✓ | [✓](https://docs.seminaryerp.org/modules/instructor-payment.html#running-payroll) |  |
+| LTI Platform Key | ✓ | [✓](https://docs.seminaryerp.org/administration/lti-tools.html#signing-keys) |  |
+| LTI Score | ✓ | [✓](https://docs.seminaryerp.org/administration/lti-tools.html#grades) |  |
+| LTI Tool | ✓ | [✓](https://docs.seminaryerp.org/administration/lti-tools.html) |  |
 | Mailing Label Format | ✓ | ✗ | Doc to write: short subsection under Announcements (Print channel / mailing labels) -- presets and measuring custom stock. |
 | Open Question | ✓ | [✓](https://docs.seminaryerp.org/modules/grading.html#quiz) |  |
 | Partner Seminary | ✓ | [✓](https://docs.seminaryerp.org/getting-started/legacy-grade-import.html#_2-one-time-setup-external-partner) |  |

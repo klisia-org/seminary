@@ -1,7 +1,8 @@
 # 108 — Course migration from another LMS
 
 **Date:** 2026-11-23
-**Status:** Accepted 2026-11-23; amended 2026-11-23 (§1: Moodle 5.0–5.3)
+**Status:** Accepted 2026-11-23; amended 2026-11-23 (§1: Moodle 5.0–5.3); amended 2026-11-24
+(§4: LTI links, by 110)
 **Delivers:** LMS-IMP-01 (Yes)
 **Related:** 014 (course template import), 041 (course packs), 094 (history import),
 095 (rubrics), 097 (course discussions), 106 (QTI import), 107 (chapter release), p009 (SCORM)
@@ -36,10 +37,14 @@ they will have to rebuild by hand.
    2.1 quiz bank.
 4. **Rebuild by hand** is stated in two places. The import report lists every skipped item and
    why. A user-guide page lists what never comes across: student work and grades (094's job),
-   gradebook weights and categories, release dates and prerequisites (107), groups, LTI tools,
+   gradebook weights and categories, release dates and prerequisites (107), groups,
    SCORM settings, H5P, Moodle workshops/lessons/glossaries, and the question types 106 skips.
 5. **Populi** needs no reader. Programs and courses come through Frappe's Data Import with a
    CSV template for each, as 094 does for history.
+   *Amended 2026-11-24 (110):* an LTI link becomes an LTI lesson when an enabled LTI Tool on
+   this site has a launch URL on the same host. Its URL and custom parameters come across, and
+   its grade mapping does not. A link with no matching tool is listed in the report, naming the
+   host to register. Export writes LTI lessons as Common Cartridge LTI links.
 6. Packages are read with `defusedxml` under 041's size and entry limits.
 
 Rejected: importing through SCORM, which keeps nothing editable. Reading only Common Cartridge,

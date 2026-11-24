@@ -784,12 +784,22 @@ plagiarism_providers = {
 # renderer rather than a whitelisted method because a package's relative
 # references resolve against the DOCUMENT URL, so the URL has to be a real path.
 # It renders only on `scorm_delivery_host`, and only for `/scorm/...`.
-page_renderer = ["seminary.scorm.delivery.SCORMDelivery"]
+page_renderer = [
+	"seminary.scorm.delivery.SCORMDelivery",
+	# LTI 1.3 (decisions/110): the protocol fixes these URLs and their media
+	# types, so they are routes, not `/api/method/...`.
+	"seminary.lti.renderer.LTIRoutes",
+]
 
 # The other half of that split, and the half that makes it real: frappe routes
 # on path and ignores `Host`, so without this the whole app would answer on the
 # delivery domain. There, only `/scorm/...` exists.
-before_request = ["seminary.scorm.delivery.guard_delivery_host"]
+before_request = [
+	"seminary.scorm.delivery.guard_delivery_host",
+	# Frappe reads every Bearer header as its own OAuth token and refuses one it
+	# does not know before routing; an LTI tool's token is ours (decisions/110 §8).
+	"seminary.lti.services.take_bearer",
+]
 
 after_request = [
 	"seminary.seminary.http_headers.apply_security_headers",
@@ -834,6 +844,8 @@ scheduler_events = {
 		# cannot do this one: the prefix is live for packages that ARE claimed,
 		# and age alone does not tell them apart (privatedocs/p009 §2.13).
 		"seminary.scorm.lifecycle.sweep_orphaned_packages",
+		# LTI signing keys retired more than a day ago (decisions/110 §2).
+		"seminary.lti.keys.purge_retired",
 		# Course folder download archives are reproducible artifacts keyed by a
 		# hash of the folder's contents; superseded ones are retired at build
 		# time, and this expires the rest (p008 F17a).

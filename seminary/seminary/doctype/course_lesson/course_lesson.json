@@ -37,7 +37,15 @@
   "assessment_criteria_discussion",
   "scorm_sco_identifier",
   "scorm_orphaned",
-  "scorm_assessment_criteria"
+  "scorm_assessment_criteria",
+  "lti_section",
+  "lti_tool",
+  "lti_url",
+  "lti_custom",
+  "column_break_lti",
+  "lti_resource_link_id",
+  "lti_assessment_criteria",
+  "lti_score_maximum"
  ],
  "fields": [
   {
@@ -234,11 +242,67 @@
    "fieldname": "transcript",
    "fieldtype": "Attach",
    "label": "Transcript"
+  },
+  {
+   "fieldname": "lti_section",
+   "fieldtype": "Section Break",
+   "label": "External tool",
+   "collapsible": 1,
+   "collapsible_depends_on": "lti_tool"
+  },
+  {
+   "fieldname": "lti_tool",
+   "fieldtype": "Link",
+   "label": "LTI tool",
+   "options": "LTI Tool",
+   "description": "Opening this lesson launches the tool."
+  },
+  {
+   "fieldname": "lti_url",
+   "fieldtype": "Data",
+   "label": "Launch URL",
+   "options": "URL",
+   "depends_on": "lti_tool",
+   "description": "Empty means the tool's own launch URL."
+  },
+  {
+   "fieldname": "lti_custom",
+   "fieldtype": "Small Text",
+   "label": "Custom parameters",
+   "depends_on": "lti_tool",
+   "description": "One key=value per line, added to the tool's."
+  },
+  {
+   "fieldname": "column_break_lti",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lti_resource_link_id",
+   "fieldtype": "Data",
+   "label": "Resource link ID",
+   "read_only": 1,
+   "depends_on": "lti_tool",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "lti_assessment_criteria",
+   "fieldtype": "Link",
+   "label": "Reports grades to",
+   "options": "Scheduled Course Assess Criteria",
+   "depends_on": "lti_tool",
+   "description": "Scores the tool posts are written to this gradebook criterion. Empty keeps them on the lesson only."
+  },
+  {
+   "fieldname": "lti_score_maximum",
+   "fieldtype": "Float",
+   "label": "Points possible",
+   "default": "100",
+   "depends_on": "lti_tool"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-22 12:00:00.000000",
+ "modified": "2026-11-24 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

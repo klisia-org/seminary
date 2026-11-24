@@ -101,6 +101,7 @@ export default withMermaid(defineConfig({
               { text: 'User Roles', link: '/administration/user-roles' },
               { text: 'Customization', link: '/administration/customization' },
               { text: 'Bible Lookup', link: '/administration/bible-api' },
+              { text: 'External Tools (LTI)', link: '/administration/lti-tools' },
             ],
           },
         ],

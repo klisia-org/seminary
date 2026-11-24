@@ -205,6 +205,12 @@ STUDENT_ALLOWED = {
 	"seminary.scorm.launch.end",
 	"seminary.scorm.runtime.commit",
 	"seminary.scorm.runtime.state",
+	# LTI (decisions/110). Both run `require_content_reader` on the lesson's
+	# section; `start` then needs a launch role there (a student on the active
+	# roster, or the section's staff) and an open chapter, and mints a hint for
+	# the session user only. Covered by test_lti.
+	"seminary.lti.launch.start",
+	"seminary.lti.launch.lesson_launch_info",
 	# lesson discussions: whoever reads the lesson posts; own-reply rules inside
 	"seminary.seminary.api.reply_to_discussion_submission",
 	# decisions/097: the caller's own read state, after require_enrolled
@@ -347,6 +353,25 @@ STAFF_ONLY = {
 	"seminary.scorm.grades.criteria_for_lesson",
 	"seminary.scorm.grades.set_criteria",
 	"seminary.scorm.selftest.run",
+	# --- LTI (decisions/110). The grade mapping is the SCORM one's twin; the
+	# tool list and content selection need *Edits course content* on the
+	# section; rotating keys and starting a registration are site settings.
+	"seminary.lti.grades.criteria_for_lesson",
+	"seminary.lti.grades.set_criteria",
+	"seminary.lti.launch.tools_for_lessons",
+	"seminary.lti.launch.start_deep_link",
+	"seminary.lti.keys.rotate",
+	"seminary.lti.registration.start_registration",
+	# --- Course migration (decisions/108) and lesson history (109). Each checks
+	# the caller's role before it looks the record up, so a student is refused
+	# before the answer says whether it exists. import_course and
+	# export_common_cartridge: Program Chair, Seminary Manager or Registrar,
+	# then write (import) or read (export) on the section; the lesson history:
+	# write on Course Lesson, then on the lesson itself.
+	"seminary.seminary.lms_migration.importer.import_course",
+	"seminary.seminary.lms_migration.export_cc.export_common_cartridge",
+	"seminary.seminary.lesson_history.get_lesson_history",
+	"seminary.seminary.lesson_history.get_lesson_version",
 	# --- Billing actions routed to the active billing app (aretenic decision
 	# 051 §3). `frappe.only_for` Registrar / Seminary Manager before anything.
 	"seminary.seminary.financial.actions.regenerate_current_term_charges",
@@ -648,6 +673,20 @@ NOT_EXECUTED = {
 	# all: a criterion belonging to a *different* section is refused.
 	"seminary.scorm.grades.criteria_for_lesson",
 	"seminary.scorm.grades.set_criteria",
+	# (3) seminary.lti.grades -- the same gate as (2), through `_staff_lesson`;
+	# exercised in `test_lti`. seminary.lti.launch.start_deep_link --
+	# `require_section_capability(CONTENT)` on the chapter's section, and an
+	# unresolvable chapter is refused with PermissionError for everybody (reason
+	# 2); exercised in `test_lti`. seminary.lti.keys.rotate --
+	# `frappe.only_for("System Manager")`, and calling it rotates the site's
+	# signing key (reason 1). seminary.lti.registration.start_registration --
+	# `frappe.only_for(System Manager, Seminary Manager)`, so a Program Chair is
+	# refused by design; exercised in `test_lti`.
+	"seminary.lti.grades.criteria_for_lesson",
+	"seminary.lti.grades.set_criteria",
+	"seminary.lti.launch.start_deep_link",
+	"seminary.lti.keys.rotate",
+	"seminary.lti.registration.start_registration",
 	# seminary.demo
 	"seminary.demo.install_demo",
 	"seminary.demo.remove_demo",

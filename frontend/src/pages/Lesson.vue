@@ -113,6 +113,16 @@
 						Date(lesson.data.due_date)) }}
 
 				</div>
+				<!-- decisions/110: an LTI lesson opens its tool; whatever the lesson
+				     also says is shown below as usual. Before the SCORM player, so
+				     the player's v-if/v-else chain stays intact. -->
+				<LtiLaunch v-if="lesson.data.lti_tool" class="mt-5" :lesson="lesson.data.name" />
+				<ScormGradeMapping
+					v-if="lesson.data.lti_tool && (user?.data?.is_moderator || is_instructor())"
+					class="mt-4"
+					source="lti"
+					:lesson="lesson.data.name"
+				/>
 				<!-- p009 §2.10: a SCO *is* a lesson, so everything around it --
 				     title, outline, notes, discussions -- is unchanged. Only the
 				     body is replaced. -->
@@ -192,6 +202,7 @@ import Discussions from '@/components/Discussions.vue'
 import Notes from '@/components/Notes.vue'
 import ScormPlayer from '@/components/ScormPlayer.vue'
 import ScormGradeMapping from '@/components/ScormGradeMapping.vue'
+import LtiLaunch from '@/components/LtiLaunch.vue'
 
 
 const user = inject('$user')

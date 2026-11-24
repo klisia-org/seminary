@@ -31,6 +31,10 @@ MAX_ROWS = 2000
 
 
 def _require_edit(lesson):
+	# Who may edit lessons at all comes first, so a caller who can't is refused
+	# before the answer says whether the lesson exists.
+	if not frappe.has_permission("Course Lesson", "write"):
+		frappe.throw(_("Only someone who can edit this lesson can see its history."), frappe.PermissionError)
 	if not frappe.db.exists("Course Lesson", lesson):
 		frappe.throw(_("Lesson not found."), frappe.DoesNotExistError)
 	if not frappe.has_permission("Course Lesson", "write", doc=lesson):

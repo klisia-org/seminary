@@ -595,6 +595,7 @@ class _Importer:
 				les = frappe.new_doc("Course Lesson")
 				les.chapter = ch.name
 				les.update(self._rewrite_lesson_fields(_only(lrec.get("fields"), LESSON_FIELDS)))
+				self._resolve_lti(les)
 				les.flags.ignore_permissions = True
 				les.insert(ignore_mandatory=True)
 				self.l_map[lsrc] = les.name
@@ -628,6 +629,26 @@ class _Importer:
 				)
 			)
 		return n_chapters, n_lessons
+
+	def _resolve_lti(self, les):
+		"""This site's tool for an LTI lesson: the same name, else the tool whose
+		launch URL is on the same host (decisions/110). None means a plain lesson."""
+		if not (les.get("lti_tool") or les.get("lti_url")):
+			return
+		from seminary.seminary.doctype.lti_tool.lti_tool import tool_for_url
+
+		tool = les.get("lti_tool")
+		if not (tool and frappe.db.exists("LTI Tool", tool)):
+			tool = tool_for_url(les.get("lti_url"))
+		if tool:
+			les.lti_tool = tool
+			return
+		self.warnings.append(
+			_(
+				"Lesson '{0}' opened an external tool this site has not registered; it was imported without it."
+			).format(les.lesson_title)
+		)
+		les.lti_tool = les.lti_url = les.lti_custom = None
 
 	def _rewrite_lesson_fields(self, fields):
 		out = self._rw(fields)

@@ -40,7 +40,7 @@ These things never come across. Plan time for them before the term starts.
 * **Weights and categories.** Set each assessment's weight. Until the weights add up to 100%, the section cannot be saved.
 * **Due dates, release dates and prerequisites.**
 * **Groups.**
-* **External tools (LTI)**, such as publisher content or video platforms.
+* **External tools (LTI) with no matching tool on this site.** A link becomes an LTI lesson only if a tool on the same host is already registered here, so register your tools before you import. See [External Tools (LTI)](../administration/lti-tools). A tool's grade link is not carried either. Set it on the lesson again.
 * **SCORM packages.** Add them as SCORM chapters again.
 * **H5P content**, and Moodle workshops, lessons, glossaries, choices and wikis.
 * **Question types seminary does not have:** matching, numeric, several drop-downs or blanks, ordering, hot spot, file upload, and Moodle random questions.
