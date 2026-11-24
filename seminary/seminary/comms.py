@@ -649,7 +649,7 @@ def _insert_log(values, dedupe_key=None):
 	log = frappe.get_doc(values)
 	try:
 		log.insert(ignore_permissions=True)
-	except frappe.UniqueValidationError, frappe.DuplicateEntryError:
+	except (frappe.UniqueValidationError, frappe.DuplicateEntryError):
 		return None  # raced on the idempotency key — already queued elsewhere
 	if log.status == "Cancelled":
 		_reflect_announcement(log)

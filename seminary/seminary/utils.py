@@ -1534,7 +1534,7 @@ def get_lesson_due_date(lesson):
 
 	try:
 		content = json.loads(lesson_doc.content)
-	except ValueError, TypeError:
+	except (ValueError, TypeError):
 		return None
 
 	activities_by_type = {}
@@ -1643,7 +1643,7 @@ def get_current_student():
 	try:
 		student_id = frappe.get_all("Student", {"student_email_id": email}, ["name"])[0].name
 		return frappe.get_doc("Student", student_id)
-	except IndexError, frappe.DoesNotExistError:
+	except (IndexError, frappe.DoesNotExistError):
 		return None
 
 
@@ -2206,7 +2206,7 @@ def _lesson_activities_by_type(content_json):
 		return activities
 	try:
 		content = json.loads(content_json)
-	except ValueError, TypeError:
+	except (ValueError, TypeError):
 		return activities
 	for block in content.get("blocks", []) or []:
 		block_type = block.get("type")
@@ -2318,7 +2318,7 @@ def _build_lesson_index_for_course(course_sc):
 			continue
 		try:
 			content = json.loads(lesson.content)
-		except ValueError, TypeError:
+		except (ValueError, TypeError):
 			continue
 		for block in content.get("blocks", []) or []:
 			block_type = block.get("type")
