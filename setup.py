@@ -1,10 +1,23 @@
+import re
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
-with open("requirements.txt") as f:
-	install_requires = f.read().strip().split("\n")
+here = Path(__file__).parent
 
-# get version from __version__ variable in seminary/__init__.py
-from seminary import __version__ as version
+# Read, not import: an isolated build (uv, pip >= 23) does not have the package
+# on sys.path, so `from seminary import __version__` fails there.
+version = re.search(
+	r'^__version__\s*=\s*["\']([^"\']+)["\']',
+	(here / "seminary" / "__init__.py").read_text(),
+	re.M,
+).group(1)
+
+install_requires = [
+	line.split("#", 1)[0].strip()
+	for line in (here / "requirements.txt").read_text().splitlines()
+	if line.split("#", 1)[0].strip()
+]
 
 setup(
 	name="seminary",
