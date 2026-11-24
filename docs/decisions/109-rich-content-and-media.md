@@ -1,7 +1,7 @@
 # 109 — Rich content and media
 
 **Date:** 2026-11-23
-**Status:** Proposed 2026-11-23
+**Status:** Accepted 2026-11-23; implemented 2026-11-23
 **Delivers:** LMS-CRS-04 (Yes)
 **Related:** 040 (upload limits), 102 (accessibility: captions, content check), p008 (HTML policy)
 
@@ -12,8 +12,8 @@ fall short:
 
 - The rich-text editor's "/Embed" makes an `<iframe>`, and both the save sanitiser and the display
   sanitiser remove it. The embed is lost without a warning.
-- The upload picker accepts any audio or video file, but the block plays only some types. An m4a
-  recording shows as a broken image.
+- The upload picker offers any audio or video file, then refuses all but mp4, mov, mp3 and three
+  image types, saying only images and video are allowed. An m4a recording can't be added.
 - Lessons keep a change history, but only Desk shows it, as raw block data.
 - No text is marked right to left, so a Hebrew passage in an English lesson is laid out wrongly.
 
@@ -66,3 +66,30 @@ list, mkv and avi included, must be converted before it is uploaded. A video in 
 pass the caption check. A restore adds a version and never deletes one.
 Content that mixes directions can still need a manual fix when a line starts in the other
 script.
+
+## As built
+
+- `content_safety.clean_rich` checks `data-embed` with `safe_embed_url`. `utils/embed.js` builds
+  the frames and caption tracks after `sanitize()` has cleaned rich text, and adds `dir="auto"` to
+  text saved before the editor did.
+- frappe-ui's TextEditor has its iframe and video nodes replaced by `utils/richEditorNodes.js`. Its
+  embed dialog is patched in `overrides/frappe-ui/InsertIframe.vue`. The node replacement is
+  opt-in in `frappe-ui-overrides.js` (`richMedia: true`), because another portal using the overrides
+  shows HTML its own way. Text direction comes with the embed node, the one node every editor has.
+- `utils/mediaTypes.js` holds the list. The upload block, its picker, the content check and the
+  lesson icon use it.
+- `CaptionsEditor.vue` is shared by the lesson's Captions section and the rich-text video.
+- `lesson_history.py` lists editing sessions, not single saves, because the editor autosaves.
+  Saves by one person less than 15 minutes apart are one session, up to 30 minutes long.
+- The editor autosaved a version every 10 seconds, even with no edit: EditorJS stamps a new
+  `time` on each save, and the caret's empty last line was saved too. One demo lesson had 1,096
+  versions from one day. The editor now saves neither, so an unchanged lesson writes no version.
+- First browser pass, in the Announcement dialog:
+  - The / menu showed but couldn't be clicked. frappe-ui attaches it to `<body>`, where a modal
+    dialog turns clicks off. `overrides/frappe-ui/createSuggestionExtension.js` attaches it inside
+    the open dialog, for mentions and emoji too, in every portal.
+  - The editable area was one line tall inside its frame. The editors now give it
+    `editorClass()`, and the frame shows the focus.
+  - A video upload showed nothing until it finished. A video is now a placeholder with its
+    progress until it is in. Editor uploads go through `utils/editorUpload.js` (object storage
+    where the site has it), which checks the size first.

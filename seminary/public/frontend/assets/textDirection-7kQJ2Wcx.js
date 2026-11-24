@@ -1,0 +1,1 @@
+var e=new WeakSet;function t(t){if(!t||e.has(t))return;e.add(t);let n=()=>{t.querySelectorAll(`.ce-paragraph, .ce-header, .cdx-nested-list__item-content, .tc-cell, blockquote`).forEach(e=>{e.hasAttribute(`dir`)||e.setAttribute(`dir`,`auto`)})};n(),new MutationObserver(n).observe(t,{childList:!0,subtree:!0})}export{t};

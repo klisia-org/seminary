@@ -10,7 +10,7 @@ import { frappeUiOverrides } from './frappe-ui-overrides.js'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-		frappeUiOverrides(),
+		frappeUiOverrides({ richMedia: true }),
   		frappeui({
 			frappeProxy: true,
 			lucideIcons: true,

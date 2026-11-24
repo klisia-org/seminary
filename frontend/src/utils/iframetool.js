@@ -1,6 +1,7 @@
 import { h, createApp } from 'vue'
 import { Code2 } from 'lucide-vue-next'
 import { safeEmbedUrl } from './urlPolicy.js'
+import { buildEmbed } from './embed.js'
 
 /**
  * EditorJS block for embedding arbitrary iframe/HTML content (e.g. Genially,
@@ -82,36 +83,11 @@ export class IframeEmbed {
 		return safeEmbedUrl(src)
 	}
 
-	/** The responsive 16:9 shell, built node by node. */
-	static buildEmbed(url) {
-		const outer = document.createElement('div')
-		outer.style.width = '100%'
-		const ratio = document.createElement('div')
-		ratio.style.position = 'relative'
-		ratio.style.paddingBottom = '56.25%'
-		ratio.style.height = '0'
-		const frame = document.createElement('iframe')
-		frame.setAttribute('src', url)
-		frame.setAttribute('frameborder', '0')
-		frame.setAttribute('scrolling', 'yes')
-		frame.setAttribute('allowfullscreen', 'true')
-		frame.setAttribute('loading', 'lazy')
-		frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin')
-		frame.style.position = 'absolute'
-		frame.style.top = '0'
-		frame.style.left = '0'
-		frame.style.width = '100%'
-		frame.style.height = '100%'
-		ratio.appendChild(frame)
-		outer.appendChild(ratio)
-		return outer
-	}
-
 	fillPreview(container, value) {
 		container.replaceChildren()
 		const url = IframeEmbed.embedUrl(value)
 		if (url) {
-			container.appendChild(IframeEmbed.buildEmbed(url))
+			container.appendChild(buildEmbed(url))
 		} else if ((value || '').trim() && !this.readOnly) {
 			const note = document.createElement('p')
 			note.style.fontSize = '13px'

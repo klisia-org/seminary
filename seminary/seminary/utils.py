@@ -1486,11 +1486,13 @@ def get_lesson_icon(body, content):
 			return "icon-list"
 
 		for block in content.get("blocks"):
+			# The video types a lesson plays (decision 109 §2; frontend mediaTypes.js).
 			if block.get("type") == "upload" and block.get("data").get("file_type").lower() in [
 				"mp4",
+				"m4v",
 				"webm",
-				"ogg",
 				"mov",
+				"ogv",
 			]:
 				return "icon-youtube"
 

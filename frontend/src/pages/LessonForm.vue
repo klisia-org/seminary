@@ -10,6 +10,9 @@
 						<span class="h-1.5 w-1.5 rounded-full" :class="saveStatus.dot"></span>
 						{{ saveStatus.label }}
 					</span>
+					<Button v-if="lessonName" @click="historyOpen = true">
+						{{ __('History') }}
+					</Button>
 					<Button v-if="lessonName" :route="lessonRoute">
 						{{ __('Preview') }}
 					</Button>
@@ -19,6 +22,8 @@
 				</div>
 			</template>
 		</PageHeader>
+		<LessonHistory v-model="historyOpen" :lesson="lessonName"
+			:course="lessonDetails.data?.course_title || ''" @restore="restoreVersion" />
 
 		<div class="mx-auto max-w-6xl px-4 py-6 grid gap-5 lg:grid-cols-[15rem,minmax(0,1fr)] items-start">
 			<!-- Block palette: drag a tile into the lesson, or click it to add at the end. -->
@@ -139,35 +144,8 @@
 					<p class="mt-0.5 text-sm text-ink-gray-5">
 						{{ __('Caption files for the videos uploaded or recorded in this lesson, one per language, in WebVTT (.vtt) format. YouTube and Vimeo videos keep their own captions.') }}
 					</p>
-					<ul v-if="lesson.captions.length"
-						class="mt-4 divide-y divide-outline-gray-1 rounded-lg border border-outline-gray-2">
-						<li v-for="(row, index) in lesson.captions" :key="row.name || row.caption_file"
-							class="flex items-center gap-3 px-3 py-2 text-sm">
-							<span class="font-medium text-ink-gray-9">{{ row.label || row.language }}</span>
-							<span class="text-xs text-ink-gray-5">{{ row.language }}</span>
-							<a :href="row.caption_file" target="_blank" rel="noopener"
-								class="min-w-0 flex-1 truncate text-ink-gray-6 underline">{{ fileName(row.caption_file) }}</a>
-							<Button variant="ghost" :aria-label="__('Remove captions')" @click="removeCaption(index)">
-								<template #icon>
-									<X class="h-4 w-4" />
-								</template>
-							</Button>
-						</li>
-					</ul>
-					<div class="mt-4 grid items-end gap-3 sm:grid-cols-[12rem,minmax(0,1fr),auto]">
-						<Link doctype="Language" v-model="newCaption.language" :label="__('Language')"
-							:filters="{ enabled: 1 }" :placeholder="__('Choose a language')" />
-						<FormControl v-model="newCaption.label" :label="__('Label (optional)')"
-							:placeholder="__('Shown in the player\'s captions menu')" />
-						<SmartFileUploader :fileTypes="['.vtt', 'text/vtt']" :validateFile="validateVtt"
-							@success="addCaption">
-							<template #default="{ uploading, progress, openFileSelector }">
-								<Button :disabled="!newCaption.language" :loading="uploading" @click="openFileSelector">
-									{{ uploading ? __('Uploading {0}%').format(progress) : __('Upload .vtt file') }}
-								</Button>
-							</template>
-						</SmartFileUploader>
-					</div>
+					<CaptionsEditor class="mt-4" :captions="lesson.captions"
+						@add="addCaption" @remove="removeCaption" />
 					<div class="mt-5 border-t border-outline-gray-1 pt-4">
 						<div class="text-base font-medium text-ink-gray-9">{{ __('Transcript') }}</div>
 						<p class="text-sm text-ink-gray-5">
@@ -200,8 +178,10 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
 import ContentIssues from '@/components/ContentIssues.vue'
-import Link from '@/components/Controls/Link.vue'
 import SmartFileUploader from '@/components/SmartFileUploader.vue'
+import CaptionsEditor from '@/components/CaptionsEditor.vue'
+import LessonHistory from '@/components/LessonHistory.vue'
+import { autoDirection } from '@/utils/textDirection'
 import {
 	Breadcrumbs,
 	Button,
@@ -222,6 +202,7 @@ import {
 } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import EditorJS from '@editorjs/editorjs'
+import dayjs from '@/utils/dayjs'
 import {
 	BookOpenCheck,
 	ChevronDown,
@@ -366,6 +347,7 @@ const renderEditor = (holder, course = null, courseName = null, onChange = null)
 	const el = document.getElementById(holder)
 	if (el) el.innerHTML = ''
 	if (el) reachablePopovers(el)
+	if (el) autoDirection(el)
 
 	return new EditorJS({
 		holder: holder,
@@ -429,29 +411,43 @@ const onContentChange = () => {
 watch(() => lesson.captions.length, scheduleContentCheck)
 
 // Captions (102 §6). The rows ride on the lesson and save with it.
-const newCaption = reactive({ language: '', label: '' })
-
 const fileName = (url) => decodeURIComponent(String(url || '').split('?')[0].split('/').pop())
 
-const validateVtt = async (file) => {
-	if (!file.name.toLowerCase().endsWith('.vtt')) {
-		return __('Captions must be a WebVTT (.vtt) file.')
-	}
-	const head = (await file.slice(0, 16).text()).replace(/^\uFEFF/, '')
-	if (!head.startsWith('WEBVTT')) {
-		return __('This file does not start with WEBVTT, so players can\'t read it. Export the captions as WebVTT.')
-	}
+const addCaption = (row) => {
+	lesson.captions.push(row)
+	if (lessonName.value) persistLesson().catch(() => {})
 }
 
-const addCaption = (file) => {
-	lesson.captions.push({
-		language: newCaption.language,
-		label: newCaption.label.trim(),
-		caption_file: file.file_url,
-	})
-	newCaption.language = ''
-	newCaption.label = ''
-	if (lessonName.value) persistLesson().catch(() => {})
+// Lesson history (decision 109 §3): a restored version goes into the editors and is
+// saved, which makes it the newest version.
+const historyOpen = ref(false)
+
+const restoreVersion = async ({ content, instructor_content, saved_at }) => {
+	const parse = (json) => {
+		try {
+			const data = JSON.parse(json || '{}')
+			return Array.isArray(data.blocks) ? data : { blocks: [] }
+		} catch {
+			return { blocks: [] }
+		}
+	}
+	try {
+		await editor.value.isReady
+		await editor.value.render(parse(content))
+		if (instructorEditor.value) {
+			await instructorEditor.value.isReady
+			const notes = parse(instructor_content)
+			if (notes.blocks.length) await instructorEditor.value.render(notes)
+			else instructorEditor.value.clear()
+			hasInstructorNotes.value = hasInstructorNotes.value || notes.blocks.length > 0
+		}
+		countBlocks()
+		runContentCheck()
+		await persistLesson()
+		toast.success(__('Restored the version saved {0}.').format(dayjs(saved_at).format('D MMM YYYY, HH:mm')))
+	} catch (err) {
+		toast.error(err.messages?.[0] || err.message || __('Could not restore that version'))
+	}
 }
 
 const removeCaption = (index) => {
@@ -1030,11 +1026,22 @@ const persistLessonInner = async () => {
 }
 
 const writeLesson = async () => {
-	const contentData = await editor.value.save()
+	// Without editorjs's save `time`, which changes on every save, and without the empty
+	// line focusFreeBlockAtEnd() leaves for the caret: an autosave with no edit then
+	// changes nothing, and the lesson's history (decision 109 §3) gets a version only
+	// when the lesson did change.
+	const untimed = ({ time, ...data }) => {
+		const blocks = [...(data.blocks || [])]
+		const blank = (b) =>
+			['markdown', 'paragraph'].includes(b?.type) && !String(b.data?.text || '').replace(/<br\s*\/?>|&nbsp;|\s/g, '')
+		while (blocks.length && blank(blocks[blocks.length - 1])) blocks.pop()
+		return { ...data, blocks }
+	}
+	const contentData = untimed(await editor.value.save())
 	lesson.content = JSON.stringify(contentData)
 
 	if (instructorEditor.value) {
-		const instructorData = await instructorEditor.value.save()
+		const instructorData = untimed(await instructorEditor.value.save())
 		lesson.instructor_content = JSON.stringify(instructorData)
 	}
 

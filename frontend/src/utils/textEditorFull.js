@@ -24,8 +24,7 @@ import TaskList from '@tiptap/extension-task-list'
 import { ImageExtension } from '../../node_modules/frappe-ui/src/components/TextEditor/extensions/image'
 import ImageViewerExtension from '../../node_modules/frappe-ui/src/components/TextEditor/image-viewer-extension'
 import { ImageGroup } from '../../node_modules/frappe-ui/src/components/TextEditor/extensions/image-group/image-group-extension'
-import VideoExtension from '../../node_modules/frappe-ui/src/components/TextEditor/video-extension'
-import { IframeExtension } from '../../node_modules/frappe-ui/src/components/TextEditor/extensions/iframe'
+import { RichEmbed, RichVideo } from './richEditorNodes.js'
 import LinkExtension from '../../node_modules/frappe-ui/src/components/TextEditor/link-extension'
 import { Heading } from '../../node_modules/frappe-ui/src/components/TextEditor/extensions/heading/heading'
 import { ExtendedCode, ExtendedCodeBlock } from '../../node_modules/frappe-ui/src/components/TextEditor/extensions/code-block'
@@ -34,11 +33,26 @@ import NamedHighlightExtension from '../../node_modules/frappe-ui/src/components
 import EmojiExtension from '../../node_modules/frappe-ui/src/components/TextEditor/extensions/emoji/emoji-extension'
 import SlashCommands from '../../node_modules/frappe-ui/src/components/TextEditor/extensions/slash-commands/slash-commands-extension'
 import { ContentPasteExtension } from '../../node_modules/frappe-ui/src/components/TextEditor/extensions/content-paste-extension'
-import { useFileUpload } from '../../node_modules/frappe-ui/src/utils/useFileUpload'
+import { uploadForEditor } from './editorUpload.js'
 
-function defaultUploadFunction(file) {
-	let fileUpload = useFileUpload()
-	return fileUpload.upload(file, {})
+// Through object storage where the site has it, with progress (editorUpload.js).
+function defaultUploadFunction(file, options) {
+	return uploadForEditor(file, options)
+}
+
+/**
+ * The editable area's classes, as frappe-ui's TextEditor gives them. Without them the
+ * editable area is as tall as its text, and the browser outlines just that: a one-line
+ * box inside the larger frame. `minHeight` makes it fill the frame; the frame shows the
+ * focus instead (`focus-within:` on the wrapper).
+ */
+export function editorClass(minHeight = 'min-h-[7rem]') {
+	return [
+		'prose prose-sm max-w-none focus:outline-none',
+		'prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border',
+		'prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-th:bg-surface-gray-2',
+		minHeight,
+	].join(' ')
 }
 
 export function getTextEditorExtensions({ placeholder = '', uploadFunction } = {}) {
@@ -66,8 +80,9 @@ export function getTextEditorExtensions({ placeholder = '', uploadFunction } = {
 		ImageExtension.configure({ uploadFunction: upload }),
 		ImageGroup.configure({ uploadFunction: upload }),
 		ImageViewerExtension,
-		VideoExtension.configure({ uploadFunction: upload }),
-		IframeExtension,
+		// Saved as markup the sanitisers keep (decision 109 §1, §5).
+		RichVideo.configure({ uploadFunction: upload }),
+		RichEmbed,
 		LinkExtension.configure({ openOnClick: false }),
 		Placeholder.configure({ placeholder: () => placeholder }),
 		EmojiExtension,

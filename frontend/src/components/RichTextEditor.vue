@@ -18,14 +18,14 @@
         </div>
 
         <!-- Inline mode (inside Dialogs — already teleported to body by Dialog) -->
-        <div v-else-if="!useTeleport" class="border rounded-md">
+        <div v-else-if="!useTeleport" class="border rounded-md focus-within:ring-2 focus-within:ring-outline-gray-3">
             <component v-if="menuComponent && editor" :is="menuComponent"
                 class="w-full overflow-x-auto rounded-t-md border-b border-outline-gray-modals"
                 :buttons="true"
            />
             <component v-if="editorContentComponent && editor" :is="editorContentComponent"
                 :editor="editor"
-                class="prose-sm py-2 px-2 min-h-[7rem]"
+                class="py-2 px-2"
            />
         </div>
 
@@ -34,7 +34,7 @@
             <div ref="anchorEl" :style="{ minHeight: editorHeight + 'px' }" class="min-h-[7rem]"></div>
             <Teleport to="body">
                 <div ref="editorWrapperEl"
-                    class="border rounded-md bg-surface-white shadow-lg"
+                    class="border rounded-md bg-surface-white shadow-lg focus-within:ring-2 focus-within:ring-outline-gray-3"
                     :style="editorStyle">
                     <component v-if="menuComponent && editor" :is="menuComponent"
                         class="w-full overflow-x-auto rounded-t-md border-b border-outline-gray-modals"
@@ -42,7 +42,7 @@
                    />
                     <component v-if="editorContentComponent && editor" :is="editorContentComponent"
                         :editor="editor"
-                        class="prose-sm py-2 px-2 min-h-[7rem]"
+                        class="py-2 px-2"
                    />
                 </div>
             </Teleport>
@@ -109,7 +109,7 @@ async function activate() {
     await nextTick()
     if (useTeleport.value) updatePosition()
 
-    const [{ Editor, EditorContent }, { TextEditorFixedMenu }, { getTextEditorExtensions }] = await Promise.all([
+    const [{ Editor, EditorContent }, { TextEditorFixedMenu }, { getTextEditorExtensions, editorClass }] = await Promise.all([
         import('@tiptap/vue-3'),
         import('frappe-ui'),
         import('@/utils/textEditorFull'),
@@ -122,9 +122,12 @@ async function activate() {
         content: props.content || '',
         editable: props.editable,
         editorProps: {
-            attributes: props.labelledby
-                ? { role: 'textbox', 'aria-multiline': 'true', 'aria-labelledby': props.labelledby }
-                : {},
+            attributes: {
+                class: editorClass(),
+                ...(props.labelledby
+                    ? { role: 'textbox', 'aria-multiline': 'true', 'aria-labelledby': props.labelledby }
+                    : {}),
+            },
         },
         extensions: getTextEditorExtensions({
             placeholder: props.placeholder,

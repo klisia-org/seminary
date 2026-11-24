@@ -177,6 +177,7 @@
 </template>
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
+import { autoDirection } from '@/utils/textDirection'
 import { createResource, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, watch, inject, ref, onMounted, onBeforeUnmount } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
@@ -279,6 +280,7 @@ const renderEditor = (holder, content, course = null,  courseName = null, lesson
 	// empty the holder
 	if (document.getElementById(holder))
 		document.getElementById(holder).innerHTML = ''
+	autoDirection(document.getElementById(holder))
 	return new EditorJS({
 		holder: holder,
 		tools: getEditorTools(course, courseName, lessonName, media),

@@ -6,6 +6,7 @@ import { Upload as UploadIcon } from 'lucide-vue-next'
 import translationPlugin from '../translation'
 import { FrappeUI } from 'frappe-ui'
 import { Button } from 'frappe-ui'
+import { isAudio, isImage, isPdf, isVideo } from './mediaTypes.js'
 
 export class Upload {
 	constructor({ data, api, readOnly, config }) {
@@ -47,7 +48,7 @@ export class Upload {
 	}
 
 	renderFile(file) {
-		if (this.isVideo(file.file_type)) {
+		if (isVideo(file.file_type)) {
 			const app = createApp(VideoBlock, {
 				file: file.file_url,
 				captions: this.captions,
@@ -55,13 +56,13 @@ export class Upload {
 			app.use(translationPlugin)
 			app.mount(this.wrapper)
 			return
-		} else if (this.isAudio(file.file_type)) {
+		} else if (isAudio(file.file_type)) {
 			const app = createApp(AudioBlock, {
 				file: file.file_url,
 			})
 			app.mount(this.wrapper)
 			return
-		} else if (file.file_type == 'PDF') {
+		} else if (isPdf(file.file_type)) {
 			// Rendered by the browser on our own origin. This used to go through Google
 			// Docs Viewer, which fetches the URL from Google's servers without the
 			// user's session: private files came back 403 (a blank viewer), and public
@@ -82,6 +83,18 @@ export class Upload {
 			link.className = 'mb-4 inline-block text-sm text-ink-gray-7 underline'
 			link.textContent = __('Open PDF')
 			this.wrapper.replaceChildren(frame, link)
+			return
+		} else if (!isImage(file.file_type)) {
+			// A type the page can't play or show (an mkv or avi from before decision
+			// 109 §2): a download link with the file's name, never a broken image.
+			const link = document.createElement('a')
+			link.href = encodeURI(file.file_url)
+			link.setAttribute('download', '')
+			link.className = 'mb-4 inline-block text-sm text-ink-gray-7 underline'
+			link.textContent = __('Download {0}').format(
+				decodeURIComponent(file.file_url.split('?')[0].split('/').pop())
+			)
+			this.wrapper.replaceChildren(link)
 			return
 		} else {
 			// Built node by node, like the PDF branch above (p008 F3). This was an
@@ -149,13 +162,5 @@ export class Upload {
 		}
 		if (this.data.alt) saved.alt = this.data.alt
 		return saved
-	}
-
-	isVideo(type) {
-		return ['mov', 'mp4', 'avi', 'mkv', 'webm'].includes(type.toLowerCase())
-	}
-
-	isAudio(type) {
-		return ['mp3', 'wav', 'ogg'].includes(type.toLowerCase())
 	}
 }
