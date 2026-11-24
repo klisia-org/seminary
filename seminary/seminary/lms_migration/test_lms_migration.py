@@ -60,7 +60,7 @@ class MigrationCase(FrappeTestCase):
 		cls.scale = _ensure(
 			"Grading Scale",
 			{"grading_scale_name": "MIG Test Scale", "grscale_type": "Points", "maxnumgrade": 100},
-			child={"intervals": [{"grade_code": "A", "threshold": 0, "grade_pass": "Pass"}]},
+			child={"intervals": [{"grade_code": "A", "threshold": 0, "grade_pass": "Pass"}]},  # nosec B105 - a grade label
 		)
 		cls.course = _ensure(
 			"Course",

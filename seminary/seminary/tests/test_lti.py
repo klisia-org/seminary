@@ -667,7 +667,7 @@ class TestLTIPlumbing(_LTICase):
 			"initiate_login_uri": f"{TOOL_HOST}/login",
 			"redirect_uris": [f"{TOOL_HOST}/launch"],
 			"jwks_uri": f"{TOOL_HOST}/jwks",
-			"token_endpoint_auth_method": "private_key_jwt",
+			"token_endpoint_auth_method": "private_key_jwt",  # nosec B105 - an OAuth method name
 			"scope": f"{SCOPE_SCORE} {SCOPE_NRPS}",
 			registration.TOOL_CONFIG: {
 				"domain": "tool.lti-test.example",
