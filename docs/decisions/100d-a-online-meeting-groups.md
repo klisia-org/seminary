@@ -1,7 +1,7 @@
 # 100d-a — Online meeting groups
 
 **Date:** 2026-11-21
-**Status:** Accepted
+**Status:** Accepted 2026-11-21; implemented 2026-11-21 (420f0983)
 **Amends:** [100d](100d-capture-from-virtual-meetings.md) §1, §5, §7
 **Related:** 051a (school meeting accounts), 097 (student groups), 038 (overlap)
 

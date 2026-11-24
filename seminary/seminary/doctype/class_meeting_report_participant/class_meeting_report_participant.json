@@ -1,0 +1,88 @@
+{
+ "actions": [],
+ "creation": "2026-11-23 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "istable": 1,
+ "description": "One person the meeting provider saw in a school meeting, and the student they were matched to.",
+ "fields": [
+  {
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "label": "Display Name",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "joined_at",
+   "fieldtype": "Datetime",
+   "label": "Joined At",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "left_at",
+   "fieldtype": "Datetime",
+   "label": "Left At",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "attended_s",
+   "fieldtype": "Int",
+   "label": "Seconds in the Meeting",
+   "description": "Every time in the meeting added up, for someone who left and came back.",
+   "read_only": 1
+  },
+  {
+   "fieldname": "match",
+   "fieldtype": "Select",
+   "label": "Match",
+   "options": "\nEmail\nName",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "fetch_from": "student.student_name",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-23 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Class Meeting Report Participant",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "field_order": [
+  "display_name",
+  "email",
+  "joined_at",
+  "left_at",
+  "attended_s",
+  "match",
+  "student",
+  "student_name"
+ ]
+}

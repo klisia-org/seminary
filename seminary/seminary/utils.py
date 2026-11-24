@@ -1038,11 +1038,19 @@ def get_course_details(course: str):
 	# per-meeting detail (ADR 051).
 	_room_labels = {}
 	from seminary.seminary.oral_meetings import captured_rows
+	from seminary.seminary.school_meetings import recorded_rows, reports_for
 
 	_recorded = captured_rows(course_details.name)
+	# Recorded classes say so, and show the provider's recording (privatedocs p027 §4).
+	_class_recorded = recorded_rows(course_details.name)
+	_reports = reports_for(course_details.name)
 	for m in course_details.meeting_dates:
 		# Recorded for an oral activity: everyone on the calendar is told (100d §5).
 		m["recorded_for_assessment"] = m.name in _recorded
+		m["recorded"] = m.name in _class_recorded or bool(_reports.get(m.name, {}).get("recorded"))
+		report = _reports.get(m.name)
+		m["recording_url"] = report.recording_url if report else None
+		m["recording_passcode"] = report.recording_passcode if report else None
 		eff_room = None if m.cs_online else (m.cs_room or course_details.room)
 		if eff_room and eff_room not in _room_labels:
 			_room_labels[eff_room] = frappe.db.get_value("Room", eff_room, "room_name") or eff_room
@@ -1067,6 +1075,8 @@ def get_course_details(course: str):
 		for m in course_details.meeting_dates:
 			m["cs_web_meeting"] = None
 			m["web_meeting"] = None
+			m["recording_url"] = None
+			m["recording_passcode"] = None
 
 	# A student's own oral activity group meetings, never another group's (100d-a §6).
 	course_details.my_oral_meetings = []

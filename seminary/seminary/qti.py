@@ -360,14 +360,21 @@ def _v2_item(root, source):
 	return item
 
 
+def parse_document(name, root):
+	"""The items of one parsed QTI document: a 1.2 questestinterop or a 2.1 item.
+	Course migration (decisions/108) reads one quiz's file out of a cartridge."""
+	tag = _ln(root.tag)
+	if tag == "questestinterop":
+		return _v1_items(root, name)
+	if tag == "assessmentItem":
+		return [_v2_item(root, name)]
+	return []
+
+
 def parse(package):
 	items = []
 	for name, root in package.xml_documents():
-		tag = _ln(root.tag)
-		if tag == "questestinterop":
-			items += _v1_items(root, name)
-		elif tag == "assessmentItem":
-			items.append(_v2_item(root, name))
+		items += parse_document(name, root)
 		if len(items) > _limit("qti_max_items", MAX_QTI_ITEMS):
 			frappe.throw(_("The package has too many questions to import."))
 	return items
@@ -425,7 +432,7 @@ def _question(item, course):
 	return doc.name
 
 
-def _check_choice(item):
+def check_choice(item):
 	options = [t for t, _c in item.options]
 	if len([t for t in options if t]) < 2:
 		return _("fewer than two options")
@@ -450,7 +457,7 @@ def import_into(target, package):
 		if not reason and not is_quiz and item.kind != ESSAY:
 			reason = _("not an essay; import it into a quiz")
 		if not reason and item.kind == CHOICE:
-			reason = _check_choice(item)
+			reason = check_choice(item)
 		if not reason and not strip_html(item.html).strip() and "<img" not in item.html.lower():
 			reason = _("no question text")
 		if reason:

@@ -806,6 +806,8 @@ scheduler_events = {
 	"cron": {
 		# Communication Log drainer (ADR 043): rate-limited per provider account.
 		"*/5 * * * *": ["seminary.seminary.comms.dispatch"],
+		# What the meeting provider reports after a school meeting (privatedocs p027 §3).
+		"*/10 * * * *": ["seminary.seminary.school_meetings.sweep"],
 	},
 	"daily": [
 		"seminary.tasks.daily",

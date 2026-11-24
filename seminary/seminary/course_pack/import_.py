@@ -694,26 +694,13 @@ class _Importer:
 		self.import_scac(cs)
 		n_ch, n_les = self.import_chapters_and_lessons(cs)
 		self.remap_lesson_scac_links()
+		self.after_content(cs)
 		from seminary.seminary import cbe_reflection
 
 		cbe_reflection.scaffold(cs.name)
 		frappe.get_doc("Course Schedule", cs.name).refile_assessment_competencies()
 
-		cs.add_comment(
-			"Info",
-			_(
-				"Imported Course Pack '{0}' on {1} by {2}: {3} chapters, {4} lessons, "
-				"{5} activities, {6} questions."
-			).format(
-				self.m["source"].get("title") or self.m["source"].get("course"),
-				formatdate(now()),
-				frappe.session.user,
-				n_ch,
-				n_les,
-				len(self.a_map),
-				len(self.q_map),
-			),
-		)
+		cs.add_comment("Info", self.summary_comment(n_ch, n_les))
 		return {
 			"course": self.course,
 			"course_schedule": cs.name,
@@ -725,6 +712,24 @@ class _Importer:
 			"media": len(self.url_map),
 			"warnings": self.warnings,
 		}
+
+	def after_content(self, cs):
+		"""Runs once chapters, lessons and assessments exist. Course migration
+		(decisions/108) adds rubrics here."""
+
+	def summary_comment(self, n_ch, n_les):
+		return _(
+			"Imported Course Pack '{0}' on {1} by {2}: {3} chapters, {4} lessons, "
+			"{5} activities, {6} questions."
+		).format(
+			self.m["source"].get("title") or self.m["source"].get("course"),
+			formatdate(now()),
+			frappe.session.user,
+			n_ch,
+			n_les,
+			len(self.a_map),
+			len(self.q_map),
+		)
 
 	def _warn_same_site(self):
 		"""Same-site reuse through export → import duplicates storage and

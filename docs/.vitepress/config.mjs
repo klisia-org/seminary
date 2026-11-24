@@ -64,6 +64,7 @@ export default withMermaid(defineConfig({
               { text: 'Initial Setup', link: '/getting-started/initial-setup' },
               { text: 'Pricing Strategy', link: '/getting-started/pricing-strategy' },
               { text: 'Legacy Grade Import', link: '/getting-started/legacy-grade-import' },
+              { text: 'Moving Courses from Another LMS', link: '/getting-started/course-migration' },
               { text: 'Your First Term', link: '/getting-started/first-term' },
               { text: 'Translations', link: '/getting-started/translations' },
             ],

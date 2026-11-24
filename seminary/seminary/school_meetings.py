@@ -13,21 +13,39 @@ provides each provider through the ``meeting_providers`` hook,
 - ``update(account, meeting_id, meeting) -> dict | None`` (same keys, all optional)
 - ``delete(account, meeting_id)``
 
+and may have
+
+- ``records_by_default() -> bool``: the school's default when a section leaves
+  Record School Meetings blank;
+- ``after_meeting(account, meeting_id, {"record", "start", "end"})``: ``None``
+  while the meeting has not ended, else ``{"participants": [{"name", "email",
+  "joined_at", "left_at", "attended_s"}], "recording": {"url", "passcode"} |
+  None, "pending": bool}``. *pending* means the recording is not ready yet.
+
 ``account`` is ``{"name", "provider", "host_id"}``; ``meeting`` is ``{"topic",
 "date", "from_time", "to_time", "start", "duration", "timezone",
-"alternative_hosts"}``. A provider raises on failure; the row then shows the
-error and keeps its previous link (051a §5).
+"alternative_hosts", "record"}``. A provider raises on failure; the row then
+shows the error and keeps its previous link (051a §5).
+
+After a meeting, a ten-minute sweep asks ``after_meeting`` and keeps the answer
+as a Class Meeting Report (privatedocs p027): the recording link the section's
+students see, and who joined, which the attendance sheet suggests.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import frappe
 from frappe import _
-from frappe.utils import cint, get_system_timezone, get_time, getdate
+from frappe.utils import cint, get_datetime, get_system_timezone, get_time, getdate, now_datetime
 
 ROW = "Course Schedule Meeting Dates"
 HOOK = "meeting_providers"
 ACCOUNT = "Web Meeting Account"
+REPORT = "Class Meeting Report"
+# A meeting is asked about from 5 minutes after its end until 48 hours after (p027 §3).
+REPORT_AFTER = timedelta(minutes=5)
+REPORT_UNTIL = timedelta(hours=48)
 _CLEAR = {
 	"cs_meeting_account": None,
 	"cs_meeting_id": None,
@@ -69,6 +87,59 @@ def is_managed(cs, row) -> bool:
 	if not cint(cs.get("school_meeting")):
 		return False
 	return bool(cint(row.get("cs_online")) or cs.get("modality") == "Virtual")
+
+
+# --- Recording (p027 §1) ------------------------------------------------------
+
+
+def _default_records(provider) -> bool:
+	try:
+		obj = connector(provider)
+	except Exception:
+		return False
+	fn = getattr(obj, "records_by_default", None)
+	return bool(fn and fn())
+
+
+def row_recorded(cs, row, _defaults=None) -> bool:
+	"""A school meeting the class records: the section's choice, else the provider's default."""
+	if not (row.get("cs_meeting_account") and is_managed(cs, row)):
+		return False
+	choice = cs.get("record_meetings")
+	if choice == "Record":
+		return True
+	if choice == "Do not record":
+		return False
+	provider = frappe.db.get_value(ACCOUNT, row.cs_meeting_account, "provider")
+	if not provider:
+		return False
+	if _defaults is None:
+		return _default_records(provider)
+	if provider not in _defaults:
+		_defaults[provider] = _default_records(provider)
+	return _defaults[provider]
+
+
+def recorded_rows(cs) -> set:
+	"""The meeting rows of a section that the class records, for the notice."""
+	if isinstance(cs, str):
+		cs = frappe.get_doc("Course Schedule", cs)
+	if not cint(cs.get("school_meeting")) and not any(
+		cint(r.get("school_meeting")) for r in cs.cs_meetinfo or []
+	):
+		return set()
+	defaults = {}
+	return {r.name for r in cs.cs_meetinfo or [] if row_recorded(cs, r, defaults)}
+
+
+def _captured_by_account(row_name) -> bool:
+	"""An oral activity captures this meeting from the school's account (100d)."""
+	return bool(
+		frappe.db.exists(
+			"Oral Activity Meeting",
+			{"meeting": row_name, "method": "account", "status": ["in", ["Scheduled", "Armed"]]},
+		)
+	)
 
 
 # --- On save: pick accounts ----------------------------------------------------
@@ -227,6 +298,7 @@ def on_update(cs):
 		for r in old.values()
 		if (r.cs_meeting_account, r.cs_meeting_id) not in now_ids
 	]
+	_drop_reports(cs.name, keep={r.name for r in cs.cs_meetinfo or []})
 	sync = []
 	for row in cs.cs_meetinfo or []:
 		if not row.cs_meeting_account:
@@ -238,6 +310,7 @@ def on_update(cs):
 			or not prev
 			or _changed(prev, row)
 			or (before and before.title != cs.title)
+			or (before and (before.get("record_meetings") or "") != (cs.get("record_meetings") or ""))
 		):
 			sync.append(row.name)
 	if not (deletes or sync):
@@ -269,7 +342,17 @@ def on_section_gone(cs):
 	deletes = [(r.cs_meeting_account, r.cs_meeting_id) for r in rows]
 	for r in rows:
 		frappe.db.set_value(ROW, r.name, _CLEAR, update_modified=False)
+	_drop_reports(cs.name, keep=set())
 	_enqueue(cs.name, deletes, [])
+
+
+def _drop_reports(cs_name, keep):
+	"""A report goes with its meeting row: it holds names and emails (p027)."""
+	for name, meeting in frappe.get_all(
+		REPORT, filters={"course_schedule": cs_name}, fields=["name", "meeting"], as_list=True
+	):
+		if meeting not in keep:
+			frappe.delete_doc(REPORT, name, ignore_permissions=True, force=True)
 
 
 def _enqueue(cs_name, deletes, sync):
@@ -371,6 +454,8 @@ def _meeting(cs, row, hosts):
 		"duration": max(1, int((end - start).total_seconds() // 60)),
 		"timezone": get_system_timezone(),
 		"alternative_hosts": hosts,
+		# The class records, or an oral activity captures it by account (p027 §1).
+		"record": row_recorded(cs, row) or _captured_by_account(row.name),
 	}
 
 
@@ -413,3 +498,196 @@ def retry(course_schedule):
 	if rows:
 		_enqueue(course_schedule, [], rows)
 	return len(rows)
+
+
+def resync_upcoming():
+	"""The provider's default changed: update every school meeting still to come."""
+	rows = frappe.get_all(
+		ROW,
+		filters={
+			"parenttype": "Course Schedule",
+			"cs_meeting_account": ["is", "set"],
+			"cs_meeting_id": ["is", "set"],
+			"cs_meetdate": [">=", getdate()],
+		},
+		fields=["name", "parent"],
+	)
+	by_section = {}
+	for r in rows:
+		by_section.setdefault(r.parent, []).append(r.name)
+	for cs_name, names in by_section.items():
+		_enqueue(cs_name, [], names)
+	return len(rows)
+
+
+# --- After the meeting: Class Meeting Reports (p027 §2-3) ----------------------
+
+
+def _window_utc(row):
+	"""The meeting's start and end, naive in the site's zone and as UTC ISO strings."""
+	zone = ZoneInfo(get_system_timezone())
+	start = datetime.combine(getdate(row.cs_meetdate), get_time(row.cs_fromtime))
+	end = datetime.combine(getdate(row.cs_meetdate), get_time(row.cs_totime))
+
+	def iso(value):
+		return value.replace(tzinfo=zone).astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+	return start, end, iso(start), iso(end)
+
+
+def sweep(now=None):
+	"""Every ten minutes: ask about school meetings that ended in the last 48 hours."""
+	now = get_datetime(now) if now else now_datetime()
+	rows = frappe.get_all(
+		ROW,
+		filters={
+			"parenttype": "Course Schedule",
+			"cs_meeting_account": ["is", "set"],
+			"cs_meeting_id": ["is", "set"],
+			"cs_meetdate": ["between", [getdate(now - REPORT_UNTIL - timedelta(days=1)), getdate(now)]],
+		},
+		fields=["name", "cs_meetdate", "cs_fromtime", "cs_totime"],
+	)
+	final = set(
+		frappe.get_all(
+			REPORT,
+			filters={"meeting": ["in", [r.name for r in rows] or [""]], "status": ["!=", "Waiting"]},
+			pluck="meeting",
+		)
+	)
+	done = 0
+	for r in rows:
+		if r.name in final or not (r.cs_fromtime and r.cs_totime):
+			continue
+		_start, end, _s, _e = _window_utc(r)
+		if not (end + REPORT_AFTER <= now <= end + REPORT_UNTIL):
+			continue
+		try:
+			collect_row(r.name, now=now)
+			done += 1
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"Class meeting report failed: {r.name}")
+	return done
+
+
+def collect_now(meeting_id):
+	"""A provider's webhook says one meeting has news: ask about it now."""
+	row = frappe.db.get_value(ROW, {"cs_meeting_id": str(meeting_id)}, "name")
+	if row:
+		frappe.enqueue(
+			"seminary.seminary.school_meetings.collect_row",
+			queue="short",
+			enqueue_after_commit=True,
+			row_name=row,
+		)
+	return bool(row)
+
+
+def collect_row(row_name, now=None):
+	"""Ask the provider about one meeting and keep its answer as the report."""
+	now = get_datetime(now) if now else now_datetime()
+	row = frappe.get_doc(ROW, row_name)
+	if not (row.cs_meeting_account and row.cs_meeting_id):
+		return None
+	cs = frappe.get_doc("Course Schedule", row.parent)
+	acc = _account(row.cs_meeting_account)
+	if not acc:
+		return None
+	provider = connector(acc["provider"])
+	after = getattr(provider, "after_meeting", None)
+	if not after:
+		return None
+	_start, end, start_iso, end_iso = _window_utc(row)
+	recorded = row_recorded(cs, row)
+	name = frappe.db.get_value(REPORT, {"meeting": row.name}, "name")
+	doc = (
+		frappe.get_doc(REPORT, name)
+		if name
+		else frappe.get_doc({"doctype": REPORT, "course_schedule": cs.name, "meeting": row.name})
+	)
+	doc.update(
+		{
+			"meeting_date": row.cs_meetdate,
+			"from_time": row.cs_fromtime,
+			"to_time": row.cs_totime,
+			"recorded": 1 if recorded else 0,
+			"checked_on": now,
+		}
+	)
+	late = now >= end + REPORT_UNTIL
+	try:
+		out = after(acc, row.cs_meeting_id, {"record": recorded, "start": start_iso, "end": end_iso})
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), f"Class meeting report failed: {row.name}")
+		doc.status, doc.error = "Failed", _message(e)
+		doc.save(ignore_permissions=True)
+		return doc
+	if out is None:
+		if not late:
+			return None
+		doc.status, doc.error = "Failed", _("The provider never reported the meeting as ended.")
+		doc.save(ignore_permissions=True)
+		return doc
+	if out.get("participants") is not None:
+		_set_participants(doc, cs.name, out.get("participants") or [])
+	recording = out.get("recording") or {}
+	if recording.get("url"):
+		doc.recording_url = recording["url"]
+		doc.recording_passcode = recording.get("passcode") or None
+	pending = bool(out.get("pending")) and not doc.recording_url
+	doc.error = None
+	if pending and late:
+		doc.status, doc.error = "Done", _("The recording never became available.")
+	else:
+		doc.status = "Waiting" if pending else "Done"
+	doc.save(ignore_permissions=True)
+	return doc
+
+
+def _set_participants(doc, cs_name, participants):
+	"""Match each participant to a student on the section: by email, else a unique name."""
+	from seminary.seminary.oral_activities import _roster
+	from seminary.seminary.oral_meetings import _normal
+
+	roster = _roster(cs_name)
+	by_email, by_name = {}, {}
+	for user, student, name in roster:
+		by_email[user.lower()] = student
+		email = frappe.db.get_value("User", user, "email")
+		if email:
+			by_email[email.lower()] = student
+		by_name.setdefault(_normal(name), []).append(student)
+	doc.set("participants", [])
+	for p in participants:
+		email = (p.get("email") or "").strip().lower()
+		student, match = None, None
+		if email and email in by_email:
+			student, match = by_email[email], "Email"
+		else:
+			found = by_name.get(_normal(p.get("name")))
+			if found and len(found) == 1:
+				student, match = found[0], "Name"
+		doc.append(
+			"participants",
+			{
+				"display_name": (p.get("name") or "")[:140],
+				"email": email or None,
+				"joined_at": get_datetime(p["joined_at"]) if p.get("joined_at") else None,
+				"left_at": get_datetime(p["left_at"]) if p.get("left_at") else None,
+				"attended_s": cint(p.get("attended_s")) or None,
+				"match": match,
+				"student": student,
+			},
+		)
+
+
+def reports_for(cs_name) -> dict:
+	"""{meeting row: report} for the calendar: the recording link of each meeting."""
+	return {
+		r.meeting: r
+		for r in frappe.get_all(
+			REPORT,
+			filters={"course_schedule": cs_name},
+			fields=["meeting", "recorded", "recording_url", "recording_passcode"],
+		)
+	}

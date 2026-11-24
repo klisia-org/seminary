@@ -99,6 +99,18 @@
                                 <span v-if="meeting.recorded_for_assessment" class="text-ink-amber-3">
                                     · {{ __('Recorded for an oral assessment') }}
                                 </span>
+                                <span v-else-if="meeting.recorded" class="text-ink-amber-3">
+                                    · {{ __('This class is recorded') }}
+                                </span>
+                                <template v-if="meeting.recording_url">
+                                    <a :href="safeUrl(meeting.recording_url)" target="_blank"
+                                        rel="noopener noreferrer" class="text-ink-blue-3 underline hover:no-underline">
+                                        · {{ __('Watch the recording') }}
+                                    </a>
+                                    <span v-if="meeting.recording_passcode" class="text-ink-gray-5">
+                                        ({{ __('passcode {0}').format(meeting.recording_passcode) }})
+                                    </span>
+                                </template>
                             </li>
                         </ul>
                     </dd>

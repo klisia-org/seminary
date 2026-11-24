@@ -70,11 +70,23 @@ def load_blocks(content):
 		return None
 	try:
 		data = json.loads(content)
-	except (ValueError, TypeError):
+	except ValueError, TypeError:
 		return None
 	if not isinstance(data, dict) or not isinstance(data.get("blocks"), list):
 		return None
 	return data
+
+
+# The discussion block saves its reference as `discussion`; `discussionID` is
+# the key the constants always named. Both are read so neither shape is missed.
+_ALT_REF_KEYS = {"discussionID": "discussion"}
+
+
+def _ref_key(data, field):
+	"""The key that holds the block's reference: ``field``, or its alternative."""
+	if isinstance(data, dict) and not data.get(field) and data.get(_ALT_REF_KEYS.get(field, "")):
+		return _ALT_REF_KEYS[field]
+	return field
 
 
 def scan_content_refs(content):
@@ -90,7 +102,7 @@ def scan_content_refs(content):
 		if not spec:
 			continue
 		field, doctype = spec
-		value = (block.get("data") or {}).get(field)
+		value = (block.get("data") or {}).get(_ref_key(block.get("data"), field))
 		if value:
 			refs.append((doctype, value))
 	return refs
@@ -109,8 +121,9 @@ def rewrite_content_refs(content, ref_map):
 			continue
 		field, _doctype = spec
 		bdata = block.get("data")
-		if isinstance(bdata, dict) and bdata.get(field) in ref_map:
-			bdata[field] = ref_map[bdata[field]]
+		key = _ref_key(bdata, field)
+		if isinstance(bdata, dict) and bdata.get(key) in ref_map:
+			bdata[key] = ref_map[bdata[key]]
 	return json.dumps(data)
 
 

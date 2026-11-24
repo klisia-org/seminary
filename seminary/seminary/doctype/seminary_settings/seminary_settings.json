@@ -137,7 +137,8 @@
   "oral_step_consistency",
   "meeting_capture_html",
   "meeting_capture_account",
-  "meeting_capture_bot"
+  "meeting_capture_bot",
+  "meeting_attendance_min_share"
  ],
  "fields": [
   {
@@ -979,11 +980,18 @@
    "fieldname": "meeting_capture_bot",
    "fieldtype": "Check",
    "label": "Capture by a recorder that joins the meeting"
+  },
+  {
+   "default": "50",
+   "fieldname": "meeting_attendance_min_share",
+   "fieldtype": "Percent",
+   "label": "Suggested attendance: least share of the meeting",
+   "description": "When the meeting provider reports who joined a school meeting, Mark Present on the attendance sheet marks only students who were in it for at least this share of its time. The others show their times."
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-21 12:00:00.000000",
+ "modified": "2026-11-23 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
