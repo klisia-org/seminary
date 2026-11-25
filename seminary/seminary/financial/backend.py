@@ -150,6 +150,23 @@ class FinancialBackend(ABC):
 		`application_payment_url` it creates nothing (decisions/112 §2)."""
 		return False
 
+	# -- Application fee discounts and waivers (decisions/113) ---------------
+	# The backend reads `application_fee.discount(applicant)` when it raises the
+	# fee, and raises nothing at 100 percent.
+
+	def application_fee_configured(self, program: str) -> bool:
+		"""Whether the program charges an application fee."""
+		return False
+
+	def application_fee_paid(self, applicant_name: str) -> float:
+		"""What has been paid towards the applicant's fee (credits excluded)."""
+		return 0.0
+
+	def waive_application_fee(self, applicant_name: str, percent: float, reason: str) -> list:
+		"""Reduce the open fee to `percent` off the full price, by credit; the
+		names of what it created."""
+		return []
+
 	@abstractmethod
 	def invoice_payment_url(self, invoice_name: str) -> dict | None:
 		"""Gateway payment URL for one of the student's invoices."""

@@ -4726,9 +4726,9 @@ def course_event(name):
 # missing applicant and a wrong key, so there is no oracle. What it never had
 # is an attempt *counter*: keyed on the applicant and not the IP, so guesses
 # cannot be spread across addresses (p010 H6, p005a A09-4).
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep.rules.security.guest-whitelisted-method
 @rate_limit(key="applicant_name", limit=20, seconds=3600, ip_based=False)
-def get_application_payment_url(applicant_name, key=None):
+def get_application_payment_url(applicant_name: str, key: str | None = None):
 	"""Payment URL + instructions for an applicant's Application invoice (public
 	web form). Delegates to the financial backend; None on a Frappe-only seminary.
 
@@ -4751,6 +4751,9 @@ def get_application_payment_url(applicant_name, key=None):
 				frappe.PermissionError,
 			)
 
+	if frappe.db.get_value("Student Applicant", applicant_name, "fee_waiver_status") == "Requested":
+		# Nothing to pay while a fee waiver is being decided (decisions/113 §5).
+		return None
 	return get_financial_backend().application_payment_url(applicant_name)
 
 

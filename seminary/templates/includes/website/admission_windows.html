@@ -50,6 +50,7 @@
                             {{ _("Apply to be our student") }}
                         </a>
                     </div>
+                    {% if fee_window_note %}<div class="term-meta fee-window-note">{{ fee_window_note | e }}</div>{% endif %}
                     {% endif %}
                 </div>
                 <div class="window-right">

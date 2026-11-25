@@ -156,6 +156,9 @@ GUEST_ALLOWED = {
 	# text of the agreements its form asks to sign -- configuration (decisions/111)
 	"seminary.seminary.application_form.application_questions",
 	"seminary.seminary.requirements.application_agreements",
+	# @rate_limit 300/3600s ip_based; whether a program charges an application fee,
+	# takes waiver requests, and its open discount window -- configuration (decisions/113)
+	"seminary.seminary.application_fee.form_options",
 	# resolves through a readable File row; content-hash keys are not enumerable (p004)
 	"seminary.storage.api.download_file",
 }
@@ -498,6 +501,9 @@ OWN_RULE = (
 		"seminary.seminary.admissions.review_panel",
 		"seminary.seminary.admissions.save_review_scores",
 		"seminary.seminary.admissions.submit_review",
+		# decisions/113 §5: the admissions chair or staff (may_decide_waiver);
+		# covered by test_decisions113_fee_waivers.
+		"seminary.seminary.application_fee.decide_waiver",
 		"seminary.seminary.admissions.withdraw",
 		# disciplinary: these two carry their own rule rather than a throw -- an
 		# unauthorized caller gets [] (fail-closed, no leak), so they are not

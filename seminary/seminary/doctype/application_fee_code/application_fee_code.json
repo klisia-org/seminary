@@ -1,0 +1,144 @@
+{
+ "actions": [],
+ "creation": "2026-11-25 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "code",
+  "discount_percent",
+  "active",
+  "column_break_dates",
+  "valid_from",
+  "valid_to",
+  "max_uses",
+  "uses",
+  "programs_section",
+  "programs",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "code",
+   "fieldtype": "Data",
+   "label": "Code",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1,
+   "description": "What applicants type on the application form. Upper and lower case are the same.",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "discount_percent",
+   "fieldtype": "Percent",
+   "label": "Discount",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "100 means no application fee."
+  },
+  {
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "label": "Valid From"
+  },
+  {
+   "fieldname": "valid_to",
+   "fieldtype": "Date",
+   "label": "Valid To"
+  },
+  {
+   "fieldname": "max_uses",
+   "fieldtype": "Int",
+   "label": "Maximum Uses",
+   "description": "Leave at 0 for no limit."
+  },
+  {
+   "fieldname": "uses",
+   "fieldtype": "Int",
+   "label": "Uses",
+   "read_only": 1,
+   "is_virtual": 1,
+   "description": "Applications that carry this code."
+  },
+  {
+   "fieldname": "programs_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "programs",
+   "fieldtype": "Table MultiSelect",
+   "label": "Programs",
+   "options": "Application Fee Code Program",
+   "description": "Leave blank for every program."
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes",
+   "description": "Who the code is for, for example partner churches."
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-25 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Application Fee Code",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Seminary Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:code",
+ "naming_rule": "By fieldname",
+ "track_changes": 1,
+ "description": "A code applicants enter for a discount on the application fee.",
+ "search_fields": "discount_percent"
+}

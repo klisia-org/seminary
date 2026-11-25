@@ -91,6 +91,18 @@ function add_admission_actions(frm) {
 					frappe.new_doc("Admission Decision", { student_applicant: frm.doc.name })
 				).addClass("btn-primary");
 			}
+			if (state.may_decide_waiver) {
+				frm.add_custom_button(
+					__("Approve"),
+					() => decide_fee_waiver(frm, 1, state),
+					__("Fee Waiver")
+				);
+				frm.add_custom_button(
+					__("Decline"),
+					() => decide_fee_waiver(frm, 0, state),
+					__("Fee Waiver")
+				);
+			}
 			if (status === "Approved" && state.is_staff) {
 				frm.add_custom_button(__("Enroll"), () => frm.events.enroll(frm)).addClass(
 					"btn-primary"
@@ -111,4 +123,42 @@ function add_admission_actions(frm) {
 				);
 			}
 		});
+}
+
+// A fee waiver request (decisions/113 §5): approve all or part of the fee, or
+// decline. The note is required either way, so the decision is on record.
+function decide_fee_waiver(frm, approve, state) {
+	const fields = [];
+	if (approve) {
+		fields.push({
+			fieldname: "percent",
+			fieldtype: "Percent",
+			label: __("Waive this much of the fee"),
+			default: 100,
+			reqd: 1,
+			description: state.fee_discount_percent
+				? __("The application already has {0}% off.", [state.fee_discount_percent])
+				: "",
+		});
+	}
+	fields.push({ fieldname: "note", fieldtype: "Small Text", label: __("Why"), reqd: 1 });
+	const dialog = new frappe.ui.Dialog({
+		title: approve ? __("Approve Fee Waiver") : __("Decline Fee Waiver"),
+		fields: fields,
+		primary_action_label: approve ? __("Approve") : __("Decline"),
+		primary_action(values) {
+			frappe
+				.call("seminary.seminary.application_fee.decide_waiver", {
+					applicant: frm.doc.name,
+					approve: approve,
+					percent: values.percent,
+					note: values.note,
+				})
+				.then(() => {
+					dialog.hide();
+					frm.reload_doc();
+				});
+		},
+	});
+	dialog.show();
 }

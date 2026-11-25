@@ -2,9 +2,11 @@
 # For license information, please see license.txt
 
 
+from itertools import pairwise
+
 import frappe
 from frappe import _
-from frappe.utils import today
+from frappe.utils import escape_html, flt, getdate, today
 from frappe.website.website_generator import WebsiteGenerator
 
 from seminary.seminary.utils import assert_url_safe_code, slugify
@@ -39,10 +41,33 @@ class Program(WebsiteGenerator):
 
 		self._hydrate_pacing_mode_default()
 		self._validate_admissions_unit()
+		self._validate_application_fee_windows()
 		self._validate_progression_settings()
 		self._stamp_course_disabled_on()
 		self._validate_course_term_and_credits()
 		self._validate_competency_courses()
+
+	def _validate_application_fee_windows(self):
+		"""One window per date, so an application has one window discount (decisions/113 §2)."""
+		rows = sorted(self.get("application_fee_windows") or [], key=lambda r: getdate(r.from_date))
+		for row in rows:
+			if getdate(row.to_date) < getdate(row.from_date):
+				frappe.throw(
+					_("Discount window {0}: To cannot be before From.").format(escape_html(row.label))
+				)
+			if not 0 < flt(row.discount_percent) <= 100:
+				frappe.throw(
+					_("Discount window {0}: the discount must be more than 0 and at most 100.").format(
+						escape_html(row.label)
+					)
+				)
+		for before, after in pairwise(rows):
+			if getdate(after.from_date) <= getdate(before.to_date):
+				frappe.throw(
+					_("Discount windows {0} and {1} overlap.").format(
+						escape_html(before.label), escape_html(after.label)
+					)
+				)
 
 	def on_update(self):
 		# WebsiteGenerator.on_update drives the search-index refresh; same

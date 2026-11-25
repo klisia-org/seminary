@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cstr, getdate
 
-from seminary.seminary import application_form, person_fields, requirements
+from seminary.seminary import application_fee, application_form, person_fields, requirements
 from seminary.seminary.ethnic_groups import validate_active
 
 
@@ -55,6 +55,8 @@ class StudentApplicant(Document):
 		# Questions from the program's pool, and agreements signed on the form
 		# (decisions/111 §2-4, §10).
 		application_form.validate(self)
+		# The fee discount from a window or code, and any waiver request (decisions/113).
+		application_fee.validate(self)
 		# Signed once, on the form; staff edits later never ask for a signature.
 		if self.is_new() and not frappe.flags.in_import:
 			requirements.check_application_agreements(self)

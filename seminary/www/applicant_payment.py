@@ -18,6 +18,7 @@ def get_context(context):
 	context.applicant_name = applicant_name
 	context.payment_data = None
 	context.invalid_link = False
+	context.waiver_pending = False
 
 	context.application = None
 	if applicant_name:
@@ -25,6 +26,12 @@ def get_context(context):
 		from seminary.seminary.admissions import public_status
 
 		context.application = public_status(applicant_name, key)
+		# While a fee waiver is being decided there is nothing to pay yet (decisions/113 §5).
+		context.waiver_pending = bool(
+			context.application and context.application.fee_waiver_status == "Requested"
+		)
+		if context.waiver_pending:
+			return context
 		try:
 			context.payment_data = get_application_payment_url(applicant_name, key)
 		except frappe.PermissionError:

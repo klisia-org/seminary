@@ -86,6 +86,9 @@
   "admissions_unit",
   "column_break_admission",
   "admission_rubric",
+  "application_fee_section",
+  "allow_fee_waiver_requests",
+  "application_fee_windows",
   "questions_section",
   "application_questions",
   "connections_tab"
@@ -623,6 +626,26 @@
    "label": "Application Questions",
    "options": "Program Application Question",
    "description": "The questions this program's application form asks, in this order. Questions come from the shared list of application questions."
+  },
+  {
+   "fieldname": "application_fee_section",
+   "fieldtype": "Section Break",
+   "label": "Application Fee",
+   "depends_on": "eval:!doc.is_free"
+  },
+  {
+   "fieldname": "allow_fee_waiver_requests",
+   "fieldtype": "Check",
+   "label": "Accept Fee Waiver Requests",
+   "default": "0",
+   "description": "Applicants may ask for the application fee to be waived, giving a reason. A registrar or the chair of the admissions unit decides."
+  },
+  {
+   "fieldname": "application_fee_windows",
+   "fieldtype": "Table",
+   "label": "Discount Windows",
+   "options": "Application Fee Window",
+   "description": "Applications made between these dates get this discount on the application fee. Windows cannot overlap."
   }
  ],
  "has_web_view": 1,
@@ -647,7 +670,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-11-25 09:00:00.000000",
+ "modified": "2026-11-25 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

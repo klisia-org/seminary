@@ -808,6 +808,29 @@ def seed_communication_templates():
 				"sorry that we cannot offer you a place this time.</p>"
 			),
 		},
+		# decisions/113 §5: the answer to a fee waiver request.
+		{
+			"template_key": "fee-waiver-approved",
+			"category": "Transactional",
+			"description": "Applicant notice: application fee waiver approved.",
+			"subject": "Your application fee for {{ program }}",
+			"body": (
+				"<p>Dear {{ applicant }},</p><p>We have waived {{ percent }}% of your application "
+				"fee for {{ program }}.</p><p>{{ note }}</p>"
+				'<p><a href="{{ status_url }}">See your application</a></p>'
+			),
+		},
+		{
+			"template_key": "fee-waiver-declined",
+			"category": "Transactional",
+			"description": "Applicant notice: application fee waiver declined.",
+			"subject": "Your application fee for {{ program }}",
+			"body": (
+				"<p>Dear {{ applicant }},</p><p>We are not able to waive your application fee "
+				"for {{ program }}.</p><p>{{ note }}</p>"
+				'<p><a href="{{ status_url }}">Pay the fee and see your application</a></p>'
+			),
+		},
 		{
 			"template_key": "waitlist-promoted",
 			"category": "Transactional",
