@@ -244,43 +244,31 @@ def _already_covered(pe_name, course):
 		},
 	):
 		return True
-	return bool(
-		frappe.db.exists(
-			"Program Enrollment Course",
-			{
-				"parent": pe_name,
-				"course_name": course,
-				"pec_finalgradecode": ["is", "set"],
-				"status": ["!=", "Fail"],
-			},
-		)
-	)
+	if frappe.db.exists(
+		"Program Enrollment Course",
+		{
+			"parent": pe_name,
+			"course_name": course,
+			"pec_finalgradecode": ["is", "set"],
+			"status": ["!=", "Fail"],
+		},
+	):
+		return True
+	# A course that replaces one the student passed counts as passed (114 §3).
+	from seminary.seminary.catalog import prerequisite_counted, replaces_passed
+
+	return replaces_passed(course, prerequisite_counted(pe_name))
 
 
-def unmet_prerequisites(pe_name, course):
-	"""Mandatory prerequisite courses the student lacks a graded, non-Fail PEC
-	for, scoped to this enrollment. PEC.course_name holds the underlying Course
-	(fetched from Course Schedule.course). Returns a list of Course names (empty
-	when all mandatory prerequisites are satisfied)."""
-	mandatory = frappe.get_all(
-		"Course_prerequisite",
-		filters={"parent": course, "prereq_mandatory": "Mandatory"},
-		pluck="course",
-	)
-	missing = []
-	for prereq in mandatory:
-		ok = frappe.db.exists(
-			"Program Enrollment Course",
-			{
-				"parent": pe_name,
-				"course_name": prereq,
-				"pec_finalgradecode": ["is", "set"],
-				"status": ["!=", "Fail"],
-			},
-		)
-		if not ok:
-			missing.append(prereq)
-	return missing
+def unmet_prerequisites(pe_name, course, satisfied=None):
+	"""Mandatory prerequisites the student hasn't satisfied for ``course``, as
+	labels: a course name, or "A or B" for an any-one-of group. Satisfied means
+	graded and not Fail, or counted through a 058 exemption, an approved 098
+	waiver or substitution, or a replaced course (decisions/114 §1-3). Empty
+	when all are met."""
+	from seminary.seminary.catalog import unmet_prerequisites as unmet
+
+	return unmet(pe_name, course, satisfied)
 
 
 def _prereqs_met(pe_name, course):

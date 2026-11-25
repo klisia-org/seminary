@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.website.website_generator import WebsiteGenerator
 
+from seminary.seminary import catalog
 from seminary.seminary.utils import _aretenic_enabled, slugify
 
 
@@ -22,7 +23,30 @@ class AcademicUnit(WebsiteGenerator):
 		self._validate_governance_lock()
 		self._validate_member_units()
 		self._validate_parent_unit()
+		self._validate_unit_code()
 		self._set_web_route()
+
+	def on_update(self):
+		super().on_update()
+		before = self.get_doc_before_save()
+		if before and (before.unit_code or "").strip() != (self.unit_code or "").strip():
+			catalog.rederive_unit_codes(self.name, (self.unit_code or "").strip())
+
+	def _validate_unit_code(self):
+		"""The unit code starts the code of every course the unit owns, so it must be
+		URL-safe and must not make two courses share a code (decisions/114 §4)."""
+		if self.is_new() or not frappe.db.exists("Course", {"academic_unit": self.name}):
+			return
+		prefix = (self.unit_code or "").strip()
+		catalog.assert_url_safe_prefix(prefix)
+		before = self.get_doc_before_save()
+		if before and (before.unit_code or "").strip() == prefix:
+			return
+		clashes = catalog.unit_code_clashes(self.name, prefix)
+		if clashes:
+			frappe.throw(
+				_("With this code, these course codes would already be taken: {0}").format(", ".join(clashes))
+			)
 
 	def _validate_governance_lock(self):
 		"""A governing body's chair follows its Chair seat, and only Aretenic sets or

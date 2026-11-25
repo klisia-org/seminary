@@ -264,7 +264,10 @@ class _Importer:
 		# imported course was named "-<code>" -- and the second import of any
 		# pack collided with the first (p006 §7.3, p008 F10). The manifest has
 		# carried the source's code all along.
-		course.coursecode = self._unique_coursecode(final)
+		# The pack's code becomes the Course ID; with no unit set, the code is
+		# the ID itself (decisions/114 §4).
+		course.course_id = self._unique_coursecode(final)
+		course.coursecode = course.course_id
 		course.default_grading_scale = self.grading_scale
 		course.flags.ignore_permissions = True
 		course.insert(ignore_mandatory=True)
@@ -278,7 +281,7 @@ class _Importer:
 		source = self.m.get("source") if isinstance(self.m.get("source"), dict) else {}
 		base = str(source.get("course_code") or "").strip()
 		# a code is an identifier: no markup, no path, bounded
-		base = "".join(c for c in base if c.isalnum() or c in "-_ .")[:60].strip()
+		base = "".join(c for c in base if c.isalnum() or c in "-_")[:60].strip("-_")
 		base = base or frappe.scrub(course_name).upper()[:60]
 		code, n = base, 2
 		while frappe.db.exists("Course", {"coursecode": code}):

@@ -1,1 +1,0 @@
-import{fr as e,n as t,si as n}from"./frappe-ui-DZvHZ0T5.js";var r=e(`settings`,()=>{let{isLoggedIn:e}=t();return{isSettingsOpen:n(!1)}});export{r as t};

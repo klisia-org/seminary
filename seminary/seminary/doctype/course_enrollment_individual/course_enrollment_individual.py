@@ -90,8 +90,17 @@ class CourseEnrollmentIndividual(Document):
 		if not (self.program_ce and self.course_data):
 			return
 
+		from seminary.seminary.catalog import prerequisite_counted, replaces_passed
 		from seminary.seminary.required_enrollment import unmet_prerequisites
 
+		if not self.audit and replaces_passed(self.course_data, prerequisite_counted(self.program_ce)):
+			frappe.throw(
+				_(
+					"Cannot enroll in {0}: it replaces a course already passed, so it counts as "
+					"passed. A registrar can override by ticking "
+					"“Don't check pre-requisites” on this enrollment."
+				).format(self.course_data)
+			)
 		missing = unmet_prerequisites(self.program_ce, self.course_data)
 		if missing:
 			frappe.throw(

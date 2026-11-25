@@ -148,17 +148,21 @@ def satisfied_courses(pe_name, counted=None):
 	"""Every course that counts as done for the enrollment: `counted` (the
 	passed courses unless the caller passes its own set, e.g. passed plus in
 	progress), 058 exemptions, approved course waivers, and approved
-	substitutions whose substitute is in `counted` (098 §5)."""
+	substitutions whose substitute is in `counted` (098 §5), plus every course
+	that replaces one of those (114 §3)."""
+	from seminary.seminary.catalog import replacements, with_replacements
 	from seminary.seminary.leveling import leveling_sets
 
 	if counted is None:
 		counted = passed_courses(pe_name)
+	replaced_by = replacements()
+	counted = with_replacements(counted, replaced_by)
 	exempted, _required, _leveling = leveling_sets(pe_name)
-	out = set(counted) | exempted
+	out = counted | exempted
 	for course, ex in course_exceptions(pe_name, (APPROVED,)).items():
 		if ex.kind == COURSE_WAIVER or ex.substitute_course in counted:
 			out.add(course)
-	return out
+	return with_replacements(out, replaced_by)
 
 
 # --------------------------------------------------------------------------- #

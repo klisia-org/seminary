@@ -2564,7 +2564,7 @@ def _course_category_map(pe, program):
 
 
 @frappe.whitelist()
-def get_available_courses_categorized(program_enrollment):
+def get_available_courses_categorized(program_enrollment: str):
 	"""Return available courses for enrollment with category metadata.
 
 	Each course includes its categories (Program Mandatory, Track Mandatory, Elective)
@@ -2693,15 +2693,22 @@ def get_available_courses_categorized(program_enrollment):
 			}
 		)
 
-	# Fetch descriptions in one query
-	course_descriptions = {
-		d.name: d.description
-		for d in frappe.get_all(
-			"Course",
-			filters={"name": ["in", available_courses]},
-			fields=["name", "description"],
-		)
-	}
+	# Fetch descriptions and units in one query
+	from seminary.seminary.catalog import joint_label
+
+	course_rows = frappe.get_all(
+		"Course",
+		filters={"name": ["in", available_courses]},
+		fields=["name", "description", "academic_unit"],
+	)
+	course_descriptions = {d.name: d.description for d in course_rows}
+	# "Offered jointly by X and Y" for a course homed in an Academic Interdepartment (114 §6).
+	unit_labels = {}
+	course_joint = {}
+	for d in course_rows:
+		if d.academic_unit and d.academic_unit not in unit_labels:
+			unit_labels[d.academic_unit] = joint_label(d.academic_unit)
+		course_joint[d.name] = unit_labels.get(d.academic_unit) or ""
 
 	# Map which available courses are prerequisites for other courses, so the UI
 	# can flag them and students can prioritize them.
@@ -2752,6 +2759,7 @@ def get_available_courses_categorized(program_enrollment):
 				"credits": credits,
 				"course_schedules": schedule_map.get(course, []),
 				"prerequisite_for": prerequisite_for_map.get(course, []),
+				"offered_jointly_by": course_joint.get(course) or "",
 			}
 		)
 
@@ -3305,7 +3313,7 @@ def get_student_invoices(student=None):
 
 
 @frappe.whitelist()
-def courses_for_student(program_ce):
+def courses_for_student(program_ce: str):
 	require_own_enrollment(program_ce)
 	pgen_name = program_ce
 	# Get available scheduled courses for the student based on program enrollment,
@@ -3332,24 +3340,6 @@ def courses_for_student(program_ce):
                 WHERE pe.pgmenrol_active = '1'
                     AND pee.status = 'Active'
                     AND pe.name = %s)
-            )
-            AND cs.course NOT IN (
-                -- Exclude a course only when it has a mandatory prerequisite
-                -- the student has NOT passed. PEC.course_name holds the
-                -- underlying Course (PEC.course is a Course Schedule), so the
-                -- prereq match is course_name = cp.course — matching the
-                -- _prereqs_met convention in required_enrollment.py.
-                SELECT cp.parent
-                FROM `tabCourse_prerequisite` cp
-                WHERE cp.prereq_mandatory = 'Mandatory'
-                    AND NOT EXISTS (
-                        SELECT 1
-                        FROM `tabProgram Enrollment Course` pec
-                        WHERE pec.parent = %s
-                            AND pec.course_name = cp.course
-                            AND pec.pec_finalgradecode IS NOT NULL
-                            AND COALESCE(pec.status, '') != 'Fail'
-                    )
             )
             AND cs.course NOT IN (
                 SELECT pc.course
@@ -3383,12 +3373,26 @@ def courses_for_student(program_ce):
                     AND COALESCE(pec.status, '') != 'Fail'
                     AND cei.program_ce = %s
             )""",
-		(pgen_name, pgen_name, pgen_name, pgen_name, pgen_name, pgen_name),
+		(pgen_name, pgen_name, pgen_name, pgen_name, pgen_name),
 		as_list=1,
 	)
-	# Flatten the list of tuples into a list of strings
-	courses = [course[0] for course in courses]
-	return courses
+	# Prerequisites and replaced courses are checked by the same functions as
+	# individual and bulk enrollment (decisions/114 §1, §3), so the picker can't
+	# offer what enrollment would refuse.
+	from seminary.seminary.catalog import (
+		prerequisite_counted,
+		prerequisite_satisfied,
+		replaces_passed,
+		unmet_prerequisites,
+	)
+
+	satisfied = prerequisite_satisfied(pgen_name)
+	passed = prerequisite_counted(pgen_name)
+	return [
+		course
+		for course in dict.fromkeys(row[0] for row in courses)
+		if not unmet_prerequisites(pgen_name, course, satisfied) and not replaces_passed(course, passed)
+	]
 
 
 def copy_data_to_scheduled_course_roster(doc, method):

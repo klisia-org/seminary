@@ -85,8 +85,9 @@ def inquiry_route(program):
 
 def program_enrollment(program):
 	"""The live part of a program page: its open windows (Timed) or the term it
-	enrolls into (Continuous), and the apply form's route."""
+	enrolls into (Continuous), the apply form's route and the course list."""
 	from seminary.seminary.api import get_application_web_form_route
+	from seminary.seminary.catalog import program_courses
 
 	out = frappe._dict(
 		open_windows=[],
@@ -94,6 +95,8 @@ def program_enrollment(program):
 		apply_route=get_application_web_form_route(program.name),
 		fee_window_note=None,
 		inquiry_route=inquiry_route(program.name),
+		# The program's courses with prerequisites (decisions/114 §6).
+		catalog_courses=program_courses(program),
 	)
 	if program.display_cta:
 		# The discount window open today, next to Apply (decisions/113 §2).

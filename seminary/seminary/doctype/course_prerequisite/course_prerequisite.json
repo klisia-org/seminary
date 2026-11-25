@@ -7,7 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "course",
-  "prereq_mandatory"
+  "prereq_mandatory",
+  "prereq_group"
  ],
  "fields": [
   {
@@ -26,12 +27,21 @@
    "in_list_view": 1,
    "label": "Mandatory or Recommended?",
    "options": "\nMandatory\nRecommended"
+  },
+  {
+   "depends_on": "eval:doc.prereq_mandatory=='Mandatory'",
+   "description": "Mandatory rows with the same number form an \"any one of\" group: passing one of them is enough. Leave blank when the course is required on its own.",
+   "fieldname": "prereq_group",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Any-One-Of Group",
+   "non_negative": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-02-26 17:47:25.709917",
+ "modified": "2026-11-25 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course_prerequisite",

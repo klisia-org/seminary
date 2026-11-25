@@ -159,6 +159,9 @@ GUEST_ALLOWED = {
 	# @rate_limit 300/3600s ip_based; whether a program charges an application fee,
 	# takes waiver requests, and its open discount window -- configuration (decisions/113)
 	"seminary.seminary.application_fee.form_options",
+	# @rate_limit 60/3600s ip_based; answers only a token signed by the app that sent the
+	# applicant the link (hmac under compare_digest), with APPLICANT_PREFILL_FIELDS only
+	"seminary.seminary.api.applicant_prefill",
 	# resolves through a readable File row; content-hash keys are not enumerable (p004)
 	"seminary.storage.api.download_file",
 }

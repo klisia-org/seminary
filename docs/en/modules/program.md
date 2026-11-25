@@ -190,6 +190,9 @@ row:
   without deleting history. Students who already took it keep their record; new
   students no longer see it. The system stamps **Disabled On** automatically.
 
+Course codes, prerequisites and replaced courses live on the Course itself: see
+[Course catalog](course-catalog.md). The program page lists these courses for applicants.
+
 > **List every course here.** Even courses that only matter to one track or
 > emphasis must appear in this main Courses table. The track tables below just
 > point at courses that already exist here.

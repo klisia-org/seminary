@@ -114,6 +114,9 @@
                 </Tooltip>
               </h3>
               <span class="text-sm text-ink-gray-5">{{ course.credits }} {{ __('credits') }}</span>
+              <p v-if="course.offered_jointly_by" class="text-xs text-ink-gray-5">
+                {{ __('Offered jointly by {0}').format(course.offered_jointly_by) }}
+              </p>
             </div>
             <Tooltip v-if="course.prerequisite_for && course.prerequisite_for.length" :hover-delay="0.2">
               <Badge theme="green" :label="__('Prerequisite')" />

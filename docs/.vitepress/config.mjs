@@ -85,6 +85,7 @@ export default withMermaid(defineConfig({
               { text: 'Graduation Requirements', link: '/modules/graduation-requirements' },
               { text: 'Graduation Request', link: '/modules/graduation-request' },
               { text: 'Academic Units & Faculty', link: '/modules/academic-units' },
+              { text: 'Course Catalog', link: '/modules/course-catalog' },
               { text: 'Internships', link: '/modules/internship' },
               { text: 'Scholarships', link: '/modules/scholarships' },
               { text: 'Alumni', link: '/modules/alumni' },

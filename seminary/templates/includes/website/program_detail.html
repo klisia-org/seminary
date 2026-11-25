@@ -10,6 +10,14 @@
 .pgm-blurb { font-size: 1.1rem; color: #444; margin: 1.5rem 0; line-height: 1.5; }
 .pgm-section { margin: 1.5rem 0; }
 .pgm-section h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+.pgm-courses { list-style: none; padding: 0; margin: 0; }
+.pgm-course { padding: 0.75rem 0; border-top: 1px solid #e0e0e0; }
+.pgm-course:first-child { border-top: 0; }
+.pgm-course-head { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; align-items: baseline; }
+.pgm-course-code { font-weight: 600; white-space: nowrap; }
+.pgm-course-credits { margin-left: auto; color: #555; white-space: nowrap; }
+.pgm-course-desc { margin: 0.25rem 0 0; color: #444; }
+.pgm-course-meta { margin: 0.25rem 0 0; font-size: 0.9rem; color: #555; }
 </style>
 
 <div class="pgm-hero" {% if hero_image %}style="background-image: url('{{ hero_image }}');"{% endif %}>
@@ -59,6 +67,26 @@
 <section class="pgm-section">
     <h2>{{ _("Program Requirements") }}</h2>
     {{ program_requirements }}
+</section>
+{% endif %}
+
+{% if catalog_courses %}
+<section class="pgm-section">
+    <h2>{{ _("Courses") }}</h2>
+    <ul class="pgm-courses">
+        {% for c in catalog_courses %}
+        <li class="pgm-course">
+            <div class="pgm-course-head">
+                {% if c.code %}<span class="pgm-course-code">{{ c.code | e }}</span>{% endif %}
+                <span>{{ c.name | e }}</span>
+                {% if c.credits %}<span class="pgm-course-credits">{{ _("{0} credits").format(c.credits) }}</span>{% endif %}
+            </div>
+            {% if c.description %}<p class="pgm-course-desc">{{ c.description | e }}</p>{% endif %}
+            {% if c.prerequisites %}<p class="pgm-course-meta">{{ _("Prerequisites:") }} {{ c.prerequisites | join("; ") | e }}</p>{% endif %}
+            {% if c.joint %}<p class="pgm-course-meta">{{ _("Offered jointly by {0}").format(c.joint | e) }}</p>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
 </section>
 {% endif %}
 
