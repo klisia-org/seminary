@@ -162,11 +162,16 @@ GUEST_ALLOWED = {
 	# @rate_limit 60/3600s ip_based; answers only a token signed by the app that sent the
 	# applicant the link (hmac under compare_digest), with APPLICANT_PREFILL_FIELDS only
 	"seminary.seminary.api.applicant_prefill",
+	# @rate_limit 5/3600s ip_based; only creates registrar ToDos from what was typed, and
+	# answers the same whoever asks, so it says nothing about records on file (decisions/118 §1)
+	"seminary.seminary.returning.request_access",
 	# resolves through a readable File row; content-hash keys are not enumerable (p004)
 	"seminary.storage.api.download_file",
 }
 
 STUDENT_ALLOWED = {
+	# decisions/118 §1: the caller's own Person, nothing else; Guest gets {}
+	"seminary.seminary.returning.signed_in_prefill",
 	# decisions/100d-a §9: the caller's own time zone, read and set on their
 	# own User only; nothing about anyone else.
 	"seminary.seminary.time_zones.report",

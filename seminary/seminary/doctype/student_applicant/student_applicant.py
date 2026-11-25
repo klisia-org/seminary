@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cstr, getdate
 
-from seminary.seminary import application_fee, application_form, person_fields, requirements
+from seminary.seminary import application_fee, application_form, person_fields, requirements, returning
 from seminary.seminary.ethnic_groups import validate_active
 
 
@@ -50,6 +50,8 @@ class StudentApplicant(Document):
 		self.validate_tax_id()
 		self.validate_term()
 		self.set_access_key()
+		# A signed-in applicant applies as themselves (decisions/118 §1).
+		returning.bind_signed_in(self)
 		person_fields.assert_capture_complete(self)
 		self.freeze_captured_fields()
 		# Questions from the program's pool, and agreements signed on the form
@@ -164,6 +166,8 @@ class StudentApplicant(Document):
 		# here (a guest can't write Person directly) and promotes them on
 		# insert — no User exists yet.
 		self._promote_to_person()
+		# A Person who already holds a Student is a returning applicant (decisions/118 §2).
+		returning.refresh(self)
 		# Files sent with the application become Person Documents (decisions/091 §10).
 		from seminary.seminary.requirements import adopt_applicant_documents
 
@@ -178,6 +182,7 @@ class StudentApplicant(Document):
 
 	def on_update(self):
 		self._repromote_to_person()
+		returning.refresh(self)
 		self._flag_requirement_review()
 		# A row staff add on the desk is adopted too; adopted rows are skipped.
 		from seminary.seminary.requirements import adopt_applicant_documents
@@ -228,6 +233,7 @@ class StudentApplicant(Document):
 
 		person = person_spine.ensure_person(
 			email=self.student_email_id,
+			user=returning.signed_in_user(),
 			**person_fields.spine_kwargs(self),
 		)
 		self.db_set("person", person, update_modified=False)

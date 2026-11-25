@@ -59,6 +59,14 @@ function add_admission_actions(frm) {
 		.then((r) => {
 			const state = r.message || {};
 			const status = frm.doc.application_status;
+			// A returning student (decisions/118 §2, §6); the text is escaped on the server.
+			if (state.returning && state.returning.text) {
+				frm.dashboard.add_comment(
+					state.returning.text,
+					state.returning.readmission_review ? "red" : "blue",
+					true
+				);
+			}
 			if (status === "Applied") {
 				if ((state.missing || []).length) {
 					frm.dashboard.set_headline(

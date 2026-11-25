@@ -25,6 +25,9 @@
   "term_admission",
   "image",
   "person",
+  "returning_student",
+  "prior_standing",
+  "readmission_review",
   "column_break_lvby",
   "academic_year",
   "academic_term",
@@ -185,6 +188,33 @@
    "options": "Person",
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "returning_student",
+   "fieldtype": "Link",
+   "label": "Returning Student",
+   "options": "Student",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "eval:doc.returning_student",
+   "description": "The Student this person already holds. Admission adds the new program to it."
+  },
+  {
+   "fieldname": "prior_standing",
+   "fieldtype": "Data",
+   "label": "Standing When Applying",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "eval:doc.returning_student"
+  },
+  {
+   "fieldname": "readmission_review",
+   "fieldtype": "Check",
+   "label": "Readmission Review",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "eval:doc.readmission_review",
+   "description": "Previously dismissed or suspended. The application is always reviewed, and admitting needs a rationale saying what has changed."
   },
   {
    "fieldname": "column_break_lvby",
@@ -529,7 +559,7 @@
    "group": "Admission"
   }
  ],
- "modified": "2026-11-25 12:00:00.000000",
+ "modified": "2026-11-25 22:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",

@@ -12,6 +12,14 @@ frappe.ui.form.on("Application Review", {
 			.call("seminary.seminary.admissions.review_panel", { review: frm.doc.name })
 			.then((r) => {
 				const data = r.message || {};
+				// A returning student (decisions/118 §2); the text is escaped on the server.
+				if (data.returning && data.returning.text) {
+					frm.dashboard.add_comment(
+						data.returning.text,
+						data.returning.readmission_review ? "red" : "blue",
+						true
+					);
+				}
 				draw_scores(frm, data);
 				draw_others(frm, data.others);
 				if (data.can_edit) add_actions(frm);

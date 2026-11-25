@@ -27,6 +27,7 @@ class AdmissionDecision(Document):
 		if self.decision != "Admit with conditions":
 			self.conditions = None
 			self.requires_leveling = 0
+		self.validate_readmission()
 		counts, majority = admissions.tally(self.student_applicant)
 		self.tally = admissions.tally_text(counts)
 		self.majority = majority
@@ -41,6 +42,24 @@ class AdmissionDecision(Document):
 				),
 				title=_("Rationale needed"),
 			)
+
+	def validate_readmission(self):
+		"""A dismissed or suspended student is readmitted only on a written reason (decisions/118
+		§2). A committee's own record carries its reasoning."""
+		from seminary.seminary import returning
+
+		if self.flags.from_record_decision or self.decision not in admissions.ADMIT:
+			return
+		if (self.rationale or "").strip() or not returning.is_flagged(self.student_applicant):
+			return
+		standing = frappe.db.get_value("Student Applicant", self.student_applicant, "prior_standing")
+		frappe.throw(
+			_(
+				"This applicant was previously {0}. Give the rationale: what has changed since, so "
+				"that they can be admitted again."
+			).format(_(standing or "Dismissed").lower()),
+			title=_("Rationale needed"),
+		)
 
 	def before_submit(self):
 		if not self.flags.from_record_decision and not admissions.may_decide(self.program):

@@ -157,6 +157,33 @@ To change a decision, cancel it and amend it; the earlier one is kept. The
 applicant is emailed the outcome and can see their status and any conditions on
 their application page, never the reviews.
 
+### Returning students
+
+A student keeps one record across programs and readmissions. The application
+form asks guests whether they have studied with you before:
+
+- **Sign in** — they apply from their account. The application uses their
+  account's email and fills in their details, and admission adds the new
+  program to the record they already have.
+- **I can't use my old email** — a short form sends the registrars a to-do with
+  their name, birth date, old and new email, phone and program. Confirm who they
+  are, change the email on their Person and User, and send them a password
+  reset, so they can sign in and apply.
+
+When the applicant already has a student record, the application shows it with
+their programs and the standing they had when they applied. If they were
+**dismissed** or **suspended**, the application is marked **Readmission
+Review**:
+
+- it is reviewed even when the program admits automatically;
+- reviewers see the active holds and their reasons;
+- admitting needs a rationale that says what has changed since.
+
+Admitting lifts their disciplinary and academic holds, and their standing
+returns to Good Standing once the new program enrollment is submitted.
+Cancelling the decision puts the holds back. Financial and administrative
+holds stay.
+
 ### Cost and payment gating
 
 - **Free Program** — bypasses enrollment invoicing and skips Financial Review on

@@ -4,6 +4,7 @@
 **Status:** Accepted 2026-11-25; implemented 2026-11-25
 **Delivers:** SIS-CUR-02 (Yes)
 **Amends:** 012 (policy resolution by date), 024 §"Versioning by workflow" (Change Version)
+**Amended by:** 117 §6 (the course picker reads the student's catalog)
 **Related:** 058 (leveling), 098 (substitutions and waivers), 114 (course catalog)
 
 ## Context

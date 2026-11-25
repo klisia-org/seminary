@@ -16,7 +16,9 @@
   "source_doctype",
   "source_name",
   "lifted_on",
-  "lifted_by"
+  "lifted_by",
+  "lifted_through_doctype",
+  "lifted_through"
  ],
  "fields": [
   {
@@ -86,12 +88,26 @@
    "fieldtype": "Link",
    "label": "Lifted By",
    "options": "User"
+  },
+  {
+   "fieldname": "lifted_through_doctype",
+   "fieldtype": "Link",
+   "label": "Lifted Through Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lifted_through",
+   "fieldtype": "Dynamic Link",
+   "label": "Lifted Through",
+   "options": "lifted_through_doctype",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-06-01 20:35:00.000000",
+ "modified": "2026-11-25 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Hold",

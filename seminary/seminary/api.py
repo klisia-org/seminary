@@ -2796,6 +2796,17 @@ def enroll_student(source_name: str):
 		frappe.throw(_("Only an application with an admission decision to admit can be enrolled."))
 	frappe.publish_realtime("enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user)
 
+	# A Person holds one Student: a returning or second-degree student is enrolled on the one
+	# they have (decisions/118 §4).
+	existing = frappe.db.get_value("Student", {"person": intake.person_for_applicant(source_name)}, "name")
+	if existing:
+		student = frappe.get_doc("Student", existing)
+		if not student.enabled:
+			student.enabled = 1
+			student.save(ignore_permissions=True)
+		frappe.db.set_value("Student Applicant", source_name, "application_status", "Admitted")
+		return _enrollment_for_applicant(source_name, student)
+
 	student = get_mapped_doc(
 		"Student Applicant",
 		source_name,
@@ -2820,6 +2831,11 @@ def enroll_student(source_name: str):
 	)
 	student.person = intake.person_for_applicant(source_name)
 	student.save()
+	return _enrollment_for_applicant(source_name, student)
+
+
+def _enrollment_for_applicant(source_name, student):
+	from seminary.seminary import admissions
 
 	student_applicant = frappe.db.get_value(
 		"Student Applicant",
@@ -2832,6 +2848,7 @@ def enroll_student(source_name: str):
 	program_enrollment.student_name = student.student_name
 	program_enrollment.program = student_applicant.program
 	program_enrollment.academic_term = student_applicant.academic_term
+	program_enrollment.student_applicant = source_name
 	latest = admissions.latest_decision(source_name)
 	if latest and latest.conditions:
 		program_enrollment.admission_conditions = latest.conditions
