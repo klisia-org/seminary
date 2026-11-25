@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-24
 **Status:** Accepted 2026-11-24
-**Delivers:** SIS-ADM-04 (Partial)
+**Delivers:** SIS-ADM-04 (Partial), SIS-ADM-06 (Yes)
 **Related:** 019 (term admissions), 058 (requirement review), 091 (agreements and documents),
 095 (rubrics), 111 (application questions)
 

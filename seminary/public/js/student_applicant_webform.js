@@ -558,3 +558,22 @@ frappe.ready(function () {
     apply(null);
     load(wf.doc && wf.doc.program);
 });
+
+// A new application opened from a signed link (`?prefill=<token>`) fills the applicant's name,
+// contact and program from what they already gave us, so nothing is typed twice. An app that
+// sends such links answers through the `seminary_applicant_prefill` hook.
+frappe.ready(() => {
+	const token = new URLSearchParams(window.location.search).get("prefill");
+	const form = window.frappe && frappe.web_form;
+	if (!token || !form || !form.is_new) return;
+	frappe
+		.call({ method: "seminary.seminary.api.applicant_prefill", args: { token } })
+		.then((r) => {
+			const values = r.message || {};
+			Object.keys(values).forEach((fieldname) => {
+				if (form.fields_dict && form.fields_dict[fieldname] && !form.get_value(fieldname)) {
+					form.set_value(fieldname, values[fieldname]);
+				}
+			});
+		});
+});

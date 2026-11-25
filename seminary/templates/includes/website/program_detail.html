@@ -29,6 +29,10 @@
 
 {% include "templates/includes/website/admission_windows.html" %}
 
+{% if inquiry_route %}
+<p class="pgm-inquiry"><a class="btn btn-default" href="{{ inquiry_route }}"{% if inquiry_target %} target="{{ inquiry_target }}"{% endif %}>{{ _("Request information") }}</a></p>
+{% endif %}
+
 {% if enrollment_mode == "Continuous" and display_cta and continuous_term %}
 <section class="enrollment-cta">
     <h2 style="margin-top: 0;">{{ _("Apply Anytime") }}</h2>
