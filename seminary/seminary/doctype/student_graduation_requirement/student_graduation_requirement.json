@@ -19,6 +19,13 @@
   "fulfilled_on",
   "required_count",
   "attended_count",
+  "attendance_measure",
+  "percentage_period",
+  "required_percentage",
+  "minimum_held",
+  "attendance_rate",
+  "term_rates",
+  "counted_cohort_types",
   "section_break_choice",
   "student_choice",
   "choice_pending",
@@ -128,8 +135,8 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.requirement_type=='Chapel Attendance'",
-   "description": "Snapshot of the required number of chapel services to attend.",
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type)",
+   "description": "Snapshot of the number to attend (Count).",
    "fieldname": "required_count",
    "fieldtype": "Int",
    "label": "Required Count",
@@ -137,8 +144,8 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.requirement_type=='Chapel Attendance'",
-   "description": "Chapel services this student has checked in to (auto-counted from Chapel Attendance).",
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type)",
+   "description": "Chapels or cohort meetings attended (auto-counted).",
    "fieldname": "attended_count",
    "fieldtype": "Int",
    "label": "Attended Count",
@@ -374,13 +381,73 @@
    "fieldtype": "Data",
    "label": "Chosen From",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "read_only": 1,
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type)",
+   "fieldname": "attendance_measure",
+   "fieldtype": "Data",
+   "label": "Measure"
+  },
+  {
+   "allow_on_submit": 1,
+   "read_only": 1,
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type) && doc.attendance_measure=='Percentage'",
+   "fieldname": "percentage_period",
+   "fieldtype": "Data",
+   "label": "Percentage Over"
+  },
+  {
+   "allow_on_submit": 1,
+   "read_only": 1,
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type) && doc.attendance_measure=='Percentage'",
+   "fieldname": "required_percentage",
+   "fieldtype": "Int",
+   "label": "Required Percentage",
+   "description": "Snapshot of the percentage to attend."
+  },
+  {
+   "allow_on_submit": 1,
+   "read_only": 1,
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type) && doc.attendance_measure=='Percentage'",
+   "fieldname": "minimum_held",
+   "fieldtype": "Int",
+   "label": "Minimum Held"
+  },
+  {
+   "allow_on_submit": 1,
+   "read_only": 1,
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type) && doc.attendance_measure=='Percentage'",
+   "fieldname": "attendance_rate",
+   "fieldtype": "Percent",
+   "label": "Attendance Rate",
+   "description": "Present as a share of those held, Excused and leave left out. For Each term, the latest judged term."
+  },
+  {
+   "allow_on_submit": 1,
+   "read_only": 1,
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type) && doc.attendance_measure=='Percentage'",
+   "fieldname": "term_rates",
+   "fieldtype": "Small Text",
+   "label": "Term Rates",
+   "description": "One line per judged term."
+  },
+  {
+   "allow_on_submit": 1,
+   "read_only": 1,
+   "hidden": 1,
+   "fieldname": "counted_cohort_types",
+   "fieldtype": "Small Text",
+   "label": "Counted Cohort Types",
+   "description": "Snapshot of the cohort types whose meetings count, one per line."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-11-01 12:00:00.000000",
+ "modified": "2026-11-25 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Graduation Requirement",

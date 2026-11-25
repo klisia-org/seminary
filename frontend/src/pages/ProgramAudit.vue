@@ -106,7 +106,7 @@
         <!-- Progress Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <!-- Credits Card -->
-          <div v-if="audit.data.program_type === 'Credits-based'" class="border rounded-lg p-4 bg-surface-white">
+          <div v-if="audit.data.program_type === 'Credits-based' && audit.data.counts_credits !== false" class="border rounded-lg p-4 bg-surface-white">
             <div class="text-sm text-ink-gray-5 mb-1">{{ __('Program Credits') }}</div>
             <div class="text-lg font-bold text-ink-gray-8 mb-2">
               {{ audit.data.credits_earned }} / {{ audit.data.effective_credits_required }}
@@ -140,7 +140,7 @@
           </div>
 
           <!-- Elective Credits Card -->
-          <div v-if="audit.data.program_type === 'Credits-based'" class="border rounded-lg p-4 bg-surface-white">
+          <div v-if="audit.data.program_type === 'Credits-based' && audit.data.counts_credits !== false" class="border rounded-lg p-4 bg-surface-white">
             <div class="text-sm text-ink-gray-5 mb-1">{{ __('Elective Credits') }}</div>
             <div class="text-lg font-bold text-ink-gray-8 mb-2">
               {{ audit.data.elective_credits_earned }} / {{ audit.data.elective_credits_needed || '—' }}
@@ -242,6 +242,31 @@
           </div>
         </div>
 
+        <!-- Sections other apps add (title, items with label/status/detail) -->
+        <div v-for="(section, i) in audit.data.extra_sections || []" :key="'extra-' + i" class="mb-6">
+          <h3 class="text-md font-semibold text-ink-gray-7 mb-1">{{ section.title }}</h3>
+          <p v-if="section.description" class="text-xs text-ink-gray-5 mb-3">{{ section.description }}</p>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b text-left text-ink-gray-6">
+                <th v-for="col in section.columns" :key="col" class="py-2 px-3 font-medium">{{ col }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, j) in section.items" :key="j" class="border-b">
+                <td class="py-2 px-3">
+                  {{ item.label }}
+                  <div v-if="item.detail" class="text-xs text-ink-gray-5">{{ item.detail }}</div>
+                </td>
+                <td class="py-2 px-3">{{ item.level || '—' }}</td>
+                <td class="py-2 px-3">
+                  <Badge :theme="item.met ? 'green' : item.status_theme || 'gray'" :label="item.status" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Graduation Requirements (non-course evidence) -->
         <div v-if="hasGradRequirements" class="mb-6">
           <h3 class="text-md font-semibold text-ink-gray-7 mb-1">
@@ -291,9 +316,16 @@
                 <td class="py-2 px-3 text-xs text-ink-gray-5">{{ req.requirement_type }}</td>
                 <td class="py-2 px-3">
                   <Badge :theme="statusTheme(req.status)" :label="req.status" />
-                  <div v-if="req.requirement_type === 'Chapel Attendance'" class="text-xs text-ink-gray-5 mt-1">
-                    {{ req.attended_count || 0 }} / {{ req.required_count || 0 }}
-                  </div>
+                  <template v-if="isAttendanceRequirement(req)">
+                    <div v-if="req.attendance_measure === 'Percentage'" class="text-xs text-ink-gray-5 mt-1">
+                      {{ __('{0}% (target {1}%)', [req.attendance_rate || 0, req.required_percentage || 0]) }}
+                      <span v-if="req.percentage_period === 'Each term'">{{ __('each term') }}</span>
+                      <div v-if="req.term_rates" class="whitespace-pre-line">{{ req.term_rates }}</div>
+                    </div>
+                    <div v-else class="text-xs text-ink-gray-5 mt-1">
+                      {{ req.attended_count || 0 }} / {{ req.required_count || 0 }}
+                    </div>
+                  </template>
                 </td>
                 <td class="py-2 px-3 text-xs text-ink-gray-5">{{ req.due_date || '—' }}</td>
                 <td class="py-2 px-3">
@@ -792,6 +824,10 @@ async function onStudentEvidenceUploaded(req, file) {
   } catch (e) {
     toast.error(e.message || __('Failed to submit evidence'))
   }
+}
+
+function isAttendanceRequirement(req) {
+  return ['Chapel Attendance', 'Cohort Meeting Attendance'].includes(req.requirement_type)
 }
 
 function canCheckInChapel(req) {

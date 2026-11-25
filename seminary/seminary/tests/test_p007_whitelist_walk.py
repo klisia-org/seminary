@@ -308,6 +308,10 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+	# decisions/116 §5: the chapel roll, Chaplain or school staff.
+	"seminary.seminary.chapel.get_roll",
+	"seminary.seminary.chapel.save_roll",
+	"seminary.seminary.chapel.search_contacts",
 	# decisions/100 §5: require_grader.
 	"seminary.seminary.oral.step_choices",
 	# decisions/100b: require_grader, then the section's own staff.

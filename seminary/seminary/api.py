@@ -2320,6 +2320,12 @@ def _program_audit(program_enrollment):
 				"options": _requirement_choice_options(sgr),
 				"required_count": sgr.required_count or 0,
 				"attended_count": sgr.attended_count or 0,
+				# decisions/116: Count or Percentage, over the program or each term.
+				"attendance_measure": sgr.attendance_measure or "Count",
+				"percentage_period": sgr.percentage_period,
+				"required_percentage": sgr.required_percentage or 0,
+				"attendance_rate": sgr.attendance_rate or 0,
+				"term_rates": sgr.term_rates,
 			}
 		)
 
@@ -2329,6 +2335,16 @@ def _program_audit(program_enrollment):
 
 	if grad_requirements_blocking:
 		graduation_eligible = False
+
+	# Sections other apps add to the audit: each `program_audit_sections` hook is
+	# fn(pe, program_view) -> [{title, items: [{label, status, detail}], blocking}].
+	result["counts_credits"] = program.get("counts_credits", True)
+	result["extra_sections"] = []
+	for path in frappe.get_hooks("program_audit_sections") or []:
+		for section in frappe.get_attr(path)(pe, program) or []:
+			result["extra_sections"].append(section)
+			if section.get("blocking"):
+				graduation_eligible = False
 
 	result["graduation_eligible"] = graduation_eligible
 

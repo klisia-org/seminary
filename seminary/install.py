@@ -33,6 +33,7 @@ def after_install():
 	create_external_examiner_role()
 	create_program_chair_role()
 	create_seminary_manager_role()
+	create_chaplain_role()
 	create_cohort_participant_role()
 	seed_assessment_criteria()
 	seed_course_cancellation_reasons()
@@ -1725,6 +1726,16 @@ def create_seminary_manager_role():
 		frappe.get_doc({"doctype": "Role", "role_name": "Seminary Manager", "desk_access": 1}).save()
 
 
+def create_chaplain_role():
+	"""Schedules chapel and takes its roll (decisions/116 §5). Its access comes
+	from Chapel, Chapel Attendance and Room; the Chapel Team picks Contacts
+	through `chapel.search_contacts`, so Contact's own rules stay untouched."""
+	if not frappe.db.exists("Role", "Chaplain"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Chaplain", "desk_access": 1}).insert(
+			ignore_permissions=True
+		)
+
+
 # update_company_in_item_details moved to the oikonomos bridge
 # (oikonomos.financial.seed._update_item_company_defaults) — it operates on
 # ERPNext Item Defaults, which a Frappe-only seminary doesn't have.
@@ -1788,6 +1799,7 @@ def after_migrate():
 	create_external_examiner_role()
 	create_program_chair_role()
 	create_seminary_manager_role()
+	create_chaplain_role()
 	setup_withdrawal_workflow()
 	seed_assessment_criteria()
 	seed_course_cancellation_reasons()

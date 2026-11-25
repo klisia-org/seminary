@@ -1,7 +1,7 @@
 # 114 — Course catalog: prerequisites, equivalencies and course codes
 
 **Date:** 2026-11-25
-**Status:** Accepted 2026-11-25
+**Status:** Accepted 2026-11-25; Implemented 2026-11-25
 **Delivers:** SIS-CUR-01 (Yes)
 **Related:** 005 (partner course equivalence), 023 (course lifecycle), 058 (leveling), 059 (academic
 units, one home per course), 061 (public programs), 098 (substitutions and waivers)

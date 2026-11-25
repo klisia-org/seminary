@@ -654,9 +654,20 @@ doc_events = {
 	# Attendance graduation requirement(s) on each check-in / removal.
 	# (Chapel's own Event mirroring lives in the Chapel controller's lifecycle
 	# methods, so it needs no doc_events entry.)
+	# (decisions/116: a roll or an Excused mark changes the record, and a chapel
+	# confirmed, moved or removed changes every percentage's base.)
 	"Chapel Attendance": {
-		"after_insert": "seminary.seminary.chapel.reflect_attendance",
-		"on_trash": "seminary.seminary.chapel.reflect_attendance",
+		"on_update": "seminary.seminary.formation_attendance.on_chapel_attendance",
+		# after_delete: on_trash runs while the record still counts.
+		"after_delete": "seminary.seminary.formation_attendance.on_chapel_attendance",
+	},
+	"Chapel": {
+		"on_update": "seminary.seminary.formation_attendance.on_chapel_change",
+		"after_delete": "seminary.seminary.formation_attendance.on_chapel_change",
+	},
+	# A leader's roll counts toward formation requirements (decisions/116).
+	"Cohort Meeting": {
+		"on_update": "seminary.seminary.formation_attendance.on_cohort_meeting",
 	},
 	# Recompute the student's per-course attendance standing (absence tally,
 	# limit, alert level + once-per-crossing notifications) on every change.
@@ -843,6 +854,9 @@ scheduler_events = {
 		# Expire documents, renew per term/year, and remind on due dates
 		# (decisions/091 §5, §11).
 		"seminary.seminary.requirements.daily",
+		# Percentage attendance requirements: an occasion held but not attended
+		# lowers the rate, and a term just ended is judged (decisions/116 §4).
+		"seminary.seminary.formation_attendance.daily",
 		# A scheduled catalog year takes effect when its first term starts (decisions/115 §4).
 		"seminary.seminary.catalog_year.activate_due",
 		# decisions/112 §2: a fee paid elsewhere completes an application.

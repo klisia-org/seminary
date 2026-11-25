@@ -15,6 +15,12 @@
   "column_break_gwiy",
   "requirement_type",
   "academic_unit",
+  "section_break_attendance",
+  "attendance_measure",
+  "percentage_period",
+  "minimum_held",
+  "column_break_attendance",
+  "cohort_types",
   "section_break_euxl",
   "event_custom_category",
   "column_break_jscs",
@@ -66,7 +72,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Requirement Type",
-   "options": "Event Attendance\nChapel Attendance\nManual Verification\nLinked Document\nChoose Option",
+   "options": "Event Attendance\nChapel Attendance\nCohort Meeting Attendance\nManual Verification\nLinked Document\nChoose Option",
    "reqd": 1
   },
   {
@@ -129,8 +135,8 @@
   },
   {
    "default": "1",
-   "depends_on": "eval:doc.requirement_type=='Manual Verification' || doc.requirement_type=='Chapel Attendance'",
-   "description": "Default number of instances the student must satisfy. For Chapel Attendance, the number of chapel services the student must check in to (e.g. 30). For Manual Verification, the number of instances. Event Attendance and Linked Document always count as 1.",
+   "depends_on": "eval:['Manual Verification','Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type)",
+   "description": "Default number of instances the student must satisfy. For Chapel and Cohort Meeting Attendance: with Count, the number to attend (e.g. 30); with Percentage, the percentage of those held (e.g. 75). For Manual Verification, the number of instances. Event Attendance and Linked Document always count as 1.",
    "fieldname": "default_quantity",
    "fieldtype": "Int",
    "label": "Default Quantity"
@@ -204,12 +210,57 @@
    "label": "Culminating Project Types Allowed",
    "mandatory_depends_on": "eval:doc.requirement_type=='Linked Document' && doc.link_doctype=='Culminating Project'",
    "options": "Grad Req Item Culm Proj Type"
+  },
+  {
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type)",
+   "fieldname": "section_break_attendance",
+   "fieldtype": "Section Break",
+   "label": "Attendance"
+  },
+  {
+   "default": "Count",
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type)",
+   "description": "Count: attend a number of them. Percentage: attend a share of those held. Excused and leave-of-absence dates are left out of the share.",
+   "fieldname": "attendance_measure",
+   "fieldtype": "Select",
+   "label": "Measure",
+   "options": "Count\nPercentage"
+  },
+  {
+   "default": "Whole program",
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type) && doc.attendance_measure=='Percentage'",
+   "description": "Each term: every completed term must meet the percentage, and a term below it needs a waiver.",
+   "fieldname": "percentage_period",
+   "fieldtype": "Select",
+   "label": "Percentage Over",
+   "options": "Whole program\nEach term"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:['Chapel Attendance','Cohort Meeting Attendance'].includes(doc.requirement_type) && doc.attendance_measure=='Percentage'",
+   "description": "Meetings that must have been held (Excused and leave left out) before the percentage is judged, over the program or within a term.",
+   "fieldname": "minimum_held",
+   "fieldtype": "Int",
+   "label": "Minimum Held"
+  },
+  {
+   "fieldname": "column_break_attendance",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Cohort Meeting Attendance'",
+   "mandatory_depends_on": "eval:doc.requirement_type=='Cohort Meeting Attendance'",
+   "description": "Meetings of cohorts of these types count, for example Mentoring Group.",
+   "fieldname": "cohort_types",
+   "fieldtype": "Table MultiSelect",
+   "label": "Counted Cohort Types",
+   "options": "Graduation Requirement Cohort Type"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-29 18:14:21.215936",
+ "modified": "2026-11-25 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Graduation Requirement Item",

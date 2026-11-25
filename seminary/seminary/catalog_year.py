@@ -35,6 +35,48 @@ SCALARS = (
 	"emphasis_overlap_policy",
 )
 
+# Fields another app adds to both the Program and the catalog, through the `catalog_fields` hook: a
+# scalar or a Table with the same child doctype on both. They are copied, laid over, written back and
+# compared like the fields above. `catalog_view` hooks then adjust the view (fn(view)), and
+# `catalog_changes` hooks describe what changed in them (fn(old, new) -> sentences, on the
+# `extensions` of two curricula).
+
+
+def extension_fields():
+	"""The `catalog_fields` both doctypes carry on this site, in hook order."""
+	program, catalog = frappe.get_meta("Program"), frappe.get_meta(CATALOG)
+	out = []
+	for field in frappe.get_hooks("catalog_fields") or []:
+		a, b = program.get_field(field), catalog.get_field(field)
+		if a and b and a.fieldtype == b.fieldtype and field not in out:
+			out.append(field)
+	return out
+
+
+def _is_table(field):
+	df = frappe.get_meta(CATALOG).get_field(field)
+	return bool(df and df.fieldtype == "Table")
+
+
+def _extension_value(source, field):
+	if _is_table(field):
+		return [
+			{k: v for k, v in row.as_dict().items() if k not in ROW_META} for row in source.get(field) or []
+		]
+	return source.get(field)
+
+
+def _set_extensions(target, source):
+	for field in extension_fields():
+		value = _extension_value(source, field)
+		if isinstance(value, list):
+			target.set(field, [])
+			for row in value:
+				target.append(field, row)
+		else:
+			target.set(field, value)
+
+
 ROW_META = (
 	"name",
 	"parent",
@@ -127,7 +169,7 @@ def view(program, catalog=None):
 	out.catalog = None
 	out.catalog_year = None
 	if not catalog:
-		return out
+		return _adjusted(out)
 	cat = frappe.get_cached_doc(CATALOG, catalog)
 	for field in SCALARS:
 		out[field] = cat.get(field)
@@ -161,8 +203,17 @@ def view(program, catalog=None):
 	out.honors_levels = [
 		frappe._dict(honor_name=r.honor_name, min_gpa=flt(r.min_gpa)) for r in cat.honors_levels or []
 	]
+	for field in extension_fields():
+		value = _extension_value(cat, field)
+		out[field] = [frappe._dict(r) for r in value] if isinstance(value, list) else value
 	out.catalog = cat.name
 	out.catalog_year = cat.catalog_year
+	return _adjusted(out)
+
+
+def _adjusted(out):
+	for path in frappe.get_hooks("catalog_view") or []:
+		frappe.get_attr(path)(out)
 	return out
 
 
@@ -300,6 +351,7 @@ def copy_from_program(catalog, program):
 	catalog.set("honors_levels", [])
 	for row in program.honors_levels or []:
 		catalog.append("honors_levels", {"honor_name": row.honor_name, "min_gpa": row.min_gpa})
+	_set_extensions(catalog, program)
 
 
 def _copy_rows(source, target, fieldname):
@@ -482,6 +534,7 @@ def apply_to_program(catalog):
 	program.set("honors_levels", [])
 	for row in catalog.honors_levels or []:
 		program.append("honors_levels", {"honor_name": row.honor_name, "min_gpa": row.min_gpa})
+	_set_extensions(program, catalog)
 	program.flags.ignore_permissions = True
 	program.flags.from_catalog_year = catalog.name
 	program.save()
@@ -544,6 +597,7 @@ def curriculum(source):
 		}
 	out["track_courses"] = track_rows
 	out["honors"] = {r.honor_name: flt(r.min_gpa) for r in source.honors_levels or [] if r.honor_name}
+	out["extensions"] = {field: _extension_value(source, field) for field in extension_fields()}
 	return out
 
 
@@ -630,6 +684,9 @@ def changes(old, new):
 	for key in sorted(before.keys() & after.keys()):
 		if before[key] != after[key]:
 			out.append(f"{key}: {_('minimum GPA')} {before[key]} {arrow} {after[key]}")
+
+	for path in frappe.get_hooks("catalog_changes") or []:
+		out.extend(frappe.get_attr(path)(old.get("extensions") or {}, new.get("extensions") or {}))
 	return out
 
 
