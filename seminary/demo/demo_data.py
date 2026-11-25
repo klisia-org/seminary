@@ -30,6 +30,7 @@ def install_demo_data():
 		create_academic_terms()
 		create_courses()
 		create_programs()
+		create_catalog_years()
 		create_users()
 		create_students()
 		create_instructor_categories()
@@ -175,6 +176,26 @@ def create_programs():
 			doc = insert_demo_doc("Program", {**program, "name": program["program_name"]})
 			frappe.logger().info(f"Created program: '{doc.name}' / '{doc.program_name}'")
 			print(f"Created program: '{doc.name}' / '{doc.program_name}'")
+
+
+def create_catalog_years():
+	"""Each demo program's catalog year, from the earliest demo term (decisions/115 §7)."""
+	from seminary.seminary.catalog_year import has_catalog, publish_first_catalog
+
+	first = frappe.get_all(
+		"Academic Term",
+		filters={"term_start_date": ("is", "set")},
+		pluck="name",
+		order_by="term_start_date asc",
+	)
+	if not first:
+		return
+	for program in load_json("programs.json"):
+		name = program["program_name"]
+		if program.get("is_ongoing") or not frappe.db.exists("Program", name) or has_catalog(name):
+			continue
+		catalog = publish_first_catalog(name, first[0])
+		frappe.get_doc("Program Graduation Requirement", catalog).add_tag(DEMO_TAG)
 
 
 def create_courses():

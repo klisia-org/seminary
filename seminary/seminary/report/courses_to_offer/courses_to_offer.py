@@ -63,54 +63,50 @@ def get_data(filters):
 	if not enrollments:
 		return []
 
-	# Get program credit requirements
-	program_credits = {}
-	for pe in enrollments:
-		if pe.program not in program_credits:
-			program_credits[pe.program] = frappe.db.get_value("Program", pe.program, "credits_complete") or 0
+	from seminary.seminary.catalog_year import for_enrollment, track_courses
+
+	# Each student's demand comes from their own catalog year (decisions/115 §4):
+	# its credits, required courses and track courses.
+	catalogs = {pe.name: for_enrollment(pe.name) for pe in enrollments}
 
 	# Collect all mandatory courses across programs
 	# Key: course name -> aggregated counts
 	course_demand = {}
 
 	for pe in enrollments:
-		credits_complete = program_credits[pe.program]
+		catalog = catalogs[pe.name]
+		credits_complete = catalog.credits_complete or 0
 		credits_remaining = max(0, credits_complete - (pe.totalcredits or 0))
 
 		# Estimate terms to graduation (assume ~15 credits per term)
 		credits_per_term = 15
 		terms_to_grad = round(credits_remaining / credits_per_term) if credits_per_term else 99
 
-		# Get mandatory program courses not yet passed by this student
-		mandatory_not_passed = frappe.db.sql(
-			"""SELECT pc.course, pc.course_name
-			FROM `tabProgram Course` pc
-			WHERE pc.parent = %s AND pc.required = 1 AND pc.disabled = 0
-				AND pc.course NOT IN (
-					SELECT pec.course_name
-					FROM `tabProgram Enrollment Course` pec
-					WHERE pec.parent = %s AND pec.status = 'Pass'
-				)""",
-			(pe.program, pe.name),
-			as_dict=True,
+		passed = set(
+			frappe.get_all(
+				"Program Enrollment Course",
+				filters={"parent": pe.name, "status": "Pass"},
+				pluck="course_name",
+			)
 		)
+		# Mandatory courses not yet passed by this student
+		mandatory_not_passed = [
+			pc for pc in catalog.courses if pc.required and not pc.disabled and pc.course not in passed
+		]
 
-		# Get mandatory track courses not yet passed
-		mandatory_track_not_passed = frappe.db.sql(
-			"""SELECT ptc.program_track_course AS course
-			FROM `tabProgram Track Courses` ptc
-			INNER JOIN `tabProgram Enrollment Emphasis` pee
-				ON pee.parent = %s AND pee.emphasis_track = ptc.program_track
-				AND pee.status IN ('Active', 'Completed')
-			WHERE ptc.parent = %s AND ptc.pgm_track_course_mandatory = 1
-				AND ptc.program_track_course NOT IN (
-					SELECT pec.course_name
-					FROM `tabProgram Enrollment Course` pec
-					WHERE pec.parent = %s AND pec.status = 'Pass'
-				)""",
-			(pe.name, pe.program, pe.name),
-			as_dict=True,
+		# Mandatory track courses not yet passed
+		tracks = set(
+			frappe.get_all(
+				"Program Enrollment Emphasis",
+				filters={"parent": pe.name, "status": ("in", ("Active", "Completed"))},
+				pluck="emphasis_track",
+			)
 		)
+		mandatory_track_not_passed = [
+			frappe._dict(course=r.program_track_course)
+			for r in track_courses(catalog, mandatory=1)
+			if r.program_track in tracks and r.program_track_course not in passed
+		]
 
 		all_needed = set()
 		for row in mandatory_not_passed:

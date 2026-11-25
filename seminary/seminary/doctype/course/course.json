@@ -10,6 +10,7 @@
  "engine": "InnoDB",
  "field_order": [
   "course_name",
+  "course_id",
   "coursecode",
   "academic_unit",
   "course_credits",
@@ -24,6 +25,8 @@
   "disable_reason",
   "prerequisites_section",
   "course_prerequisite",
+  "replaced_courses_section",
+  "replaced_courses",
   "community_cohort_section",
   "forms_community_cohort",
   "cohort_type",
@@ -50,16 +53,18 @@
    "fieldname": "academic_unit",
    "fieldtype": "Link",
    "label": "Academic Unit",
-   "options": "Academic Unit"
+   "options": "Academic Unit",
+   "permlevel": 1
   },
   {
    "fieldname": "course_credits",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Course Credits (Default)"
+   "label": "Course Credits (Default)",
+   "permlevel": 1
   },
   {
-   "description": "Optional advisory minimum number of enrolled students for a Course Schedule of this course. Informational only \u2014 used by the Term Enrollment Status report. Course Schedules can override this.",
+   "description": "Optional advisory minimum number of enrolled students for a Course Schedule of this course. Informational only — used by the Term Enrollment Status report. Course Schedules can override this.",
    "fieldname": "default_minimum_enrollment",
    "fieldtype": "Int",
    "label": "Default Minimum Enrollment",
@@ -89,7 +94,7 @@
    "options": "Course Assessment Criteria"
   },
   {
-   "description": "Pre-selected source schedule when 'Import Course Template' is run on a Course Schedule of this course. Optional \u2014 the import dialog still allows picking any schedule.",
+   "description": "Pre-selected source schedule when 'Import Course Template' is run on a Course Schedule of this course. Optional — the import dialog still allows picking any schedule.",
    "fieldname": "default_cs_template",
    "fieldtype": "Link",
    "label": "Default Course Schedule Template",
@@ -124,7 +129,8 @@
    "fieldname": "course_prerequisite",
    "fieldtype": "Table",
    "label": "Course Prerequisites",
-   "options": "Course_prerequisite"
+   "options": "Course_prerequisite",
+   "permlevel": 1
   },
   {
    "fieldname": "community_cohort_section",
@@ -148,14 +154,16 @@
    "options": "Cohort Type"
   },
   {
-   "description": "Short slug-safe code (letters, numbers, - and _ only). Used in CLO codes and URLs.",
+   "description": "Set from the Academic Unit's code and the Course ID (ST-501). Used in CLO codes and URLs.",
    "fieldname": "coursecode",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course Code",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 0,
+   "unique": 1,
+   "read_only": 1,
+   "permlevel": 1
   },
   {
    "default": "0",
@@ -189,11 +197,34 @@
    "label": "Course Type",
    "mask": 1,
    "options": "Course Type"
+  },
+  {
+   "description": "Number only, without the prefix: the prefix comes from the Academic Unit. Letters, numbers, - and _ only.",
+   "fieldname": "course_id",
+   "fieldtype": "Data",
+   "label": "Course ID",
+   "permlevel": 1,
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:(doc.replaced_courses || []).length",
+   "fieldname": "replaced_courses_section",
+   "fieldtype": "Section Break",
+   "label": "Replaced Courses"
+  },
+  {
+   "description": "Older courses this course replaces, for example after renumbering or a merge into an Academic Interdepartment. A student who passed one of them counts as having passed this course.",
+   "fieldname": "replaced_courses",
+   "fieldtype": "Table",
+   "label": "Replaced Courses",
+   "options": "Replaced Course",
+   "permlevel": 1
   }
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2026-06-09 21:50:50.132321",
+ "modified": "2026-11-25 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course",
@@ -208,13 +239,25 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Program Chair",
+   "role": "Registrar",
    "share": 1,
    "write": 1
   },
   {
    "create": 1,
    "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -256,6 +299,40 @@
    "report": 1,
    "role": "Student",
    "share": 0
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Registrar",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Administrator",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Instructor"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Student"
   }
  ],
  "row_format": "Dynamic",
@@ -263,5 +340,6 @@
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

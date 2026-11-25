@@ -46,6 +46,13 @@ class Program(WebsiteGenerator):
 		self._stamp_course_disabled_on()
 		self._validate_course_term_and_credits()
 		self._validate_competency_courses()
+		self._validate_catalog_year()
+
+	def _validate_catalog_year(self):
+		"""A graduating program is published only once it has a catalog year (decisions/115 §7)."""
+		from seminary.seminary.catalog_year import validate_program
+
+		validate_program(self)
 
 	def _validate_application_fee_windows(self):
 		"""One window per date, so an application has one window discount (decisions/113 §2)."""

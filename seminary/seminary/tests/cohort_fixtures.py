@@ -220,6 +220,9 @@ def make_program(program_type="Time-based", program_level=None, framework=None):
 
 
 def make_enrollment(student, program, submit=True):
+	from seminary.seminary.tests.catalog_fixtures import ensure_catalog
+
+	ensure_catalog(program)
 	doc = frappe.get_doc(
 		{
 			"doctype": "Program Enrollment",

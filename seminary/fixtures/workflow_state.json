@@ -262,5 +262,13 @@
   "name": "Concluded",
   "style": "Success",
   "workflow_state_name": "Concluded"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-calendar",
+  "name": "Scheduled",
+  "style": "Info",
+  "workflow_state_name": "Scheduled"
  }
 ]

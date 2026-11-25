@@ -9,11 +9,14 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, today
 
 from seminary.seminary import website_data
+from seminary.seminary.tests.catalog_fixtures import ensure_catalog
 from seminary.seminary.tests.cohort_fixtures import make_program, uid
 
 
 def _program(published=1, **values):
 	doc = make_program()
+	if published:
+		ensure_catalog(doc)
 	doc.update(
 		{
 			"published": published,

@@ -159,6 +159,9 @@ GUEST_ALLOWED = {
 	# @rate_limit 300/3600s ip_based; whether a program charges an application fee,
 	# takes waiver requests, and its open discount window -- configuration (decisions/113)
 	"seminary.seminary.application_fee.form_options",
+	# @rate_limit 60/3600s ip_based; answers only a token signed by the app that sent the
+	# applicant the link (hmac under compare_digest), with APPLICANT_PREFILL_FIELDS only
+	"seminary.seminary.api.applicant_prefill",
 	# resolves through a readable File row; content-hash keys are not enumerable (p004)
 	"seminary.storage.api.download_file",
 }
@@ -484,6 +487,12 @@ STAFF_ONLY = {
 	# lookup or write.
 	"seminary.seminary.gradebook_weights.get_categories",
 	"seminary.seminary.gradebook_weights.set_excused",
+	# --- Catalog years (decisions/115): read or create on Program Graduation
+	# Requirement, before any lookup.
+	"seminary.seminary.catalog_year.compare",
+	"seminary.seminary.catalog_year.new_catalog_year",
+	"seminary.seminary.catalog_year.program_course_query",
+	"seminary.seminary.catalog_year.program_status",
 }
 
 # Whitelisted functions in the walked modules that are neither student-facing
@@ -1159,6 +1168,14 @@ KWARG_OVERRIDES = {
 	"seminary.seminary.doctype.exam_submission.exam_submission.add_exam_grading_comment": {"comment": "x"},
 	"seminary.seminary.api.insert_cs_assessment": {"criteria": {"parent": "ZZT-x"}},
 	"seminary.seminary.api.save_course_assessment": {"assessment_data": "[]"},
+	"seminary.seminary.catalog_year.program_course_query": {
+		"doctype": "Course",
+		"txt": "",
+		"searchfield": "name",
+		"start": 0,
+		"page_len": 5,
+		"filters": {},
+	},
 	"seminary.seminary.api.room_search": {
 		"doctype": "Room",
 		"txt": "",

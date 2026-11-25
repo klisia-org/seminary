@@ -124,6 +124,28 @@ def get_data(filters):
 		as_dict=True,
 	)
 
+	# Credits required come from each student's catalog year (decisions/115 §5).
+	bound = dict(
+		frappe.get_all(
+			"Program Enrollment",
+			filters={"name": ("in", [r.program_enrollment for r in rows] or ["\x00"])},
+			fields=["name", "graduation_policy"],
+			as_list=True,
+		)
+	)
+	catalog_credits = dict(
+		frappe.get_all(
+			"Program Graduation Requirement",
+			filters={"name": ("in", [c for c in bound.values() if c] or ["\x00"])},
+			fields=["name", "credits_complete"],
+			as_list=True,
+		)
+	)
+	for row in rows:
+		catalog = bound.get(row.program_enrollment)
+		if catalog in catalog_credits:
+			row.credits_required = catalog_credits[catalog] or 0
+
 	today = getdate()
 	data = []
 

@@ -1368,7 +1368,7 @@ def get_course(program):
 
 
 @frappe.whitelist()
-def get_student_programs(student):
+def get_student_programs(student: str):
 	"""Return list of programs for a particular student, with their grades and PE summary.
 	:param student: Student
 	"""
@@ -1391,7 +1391,10 @@ def get_student_programs(student):
 	for row in grades:
 		pe_name = row.program_enrollment
 		if pe_name not in pe_summary:
-			credits_complete = frappe.db.get_value("Program", row.program, "credits_complete") or 0
+			from seminary.seminary.catalog_year import for_enrollment, track
+
+			catalog_view = for_enrollment(pe_name)
+			credits_complete = catalog_view.credits_complete or 0
 			emphases = frappe.get_all(
 				"Program Enrollment Emphasis",
 				filters={"parent": pe_name, "status": ["in", ["Active", "Completed"]]},
@@ -1399,8 +1402,9 @@ def get_student_programs(student):
 			)
 			emphasis_summary = []
 			for emph in emphases:
-				track_name = frappe.db.get_value("Program Track", emph.emphasis_track, "track_name")
-				addcredits = frappe.db.get_value("Program Track", emph.emphasis_track, "addcredits") or 0
+				track_row = track(catalog_view, emph.emphasis_track)
+				track_name = track_row.track_name if track_row else None
+				addcredits = (track_row.addcredits if track_row else 0) or 0
 				emphasis_summary.append(
 					{
 						"track_name": track_name,
@@ -1629,7 +1633,7 @@ def _resolve_display_terms():
 
 
 @frappe.whitelist()
-def get_student_enrollments_for_term(program_enrollment):
+def get_student_enrollments_for_term(program_enrollment: str):
 	"""Return the student's CEIs for the current academic term (with a graceful
 	fallback during inter-term gaps — see _resolve_display_terms)."""
 	require_own_enrollment(program_enrollment)
@@ -1644,7 +1648,9 @@ def get_student_enrollments_for_term(program_enrollment):
 
 	# Same Required / Track / Elective badges the enrollment picker shows, so a
 	# student can see whether an already-enrolled course is required or elective.
-	category_map = _course_category_map(pe, frappe.get_cached_doc("Program", pe.program))
+	from seminary.seminary.catalog_year import for_enrollment
+
+	category_map = _course_category_map(pe, for_enrollment(pe))
 
 	ceis = frappe.get_all(
 		"Course Enrollment Individual",
@@ -1866,21 +1872,15 @@ def credits_pe_track():
 			fields=["name", "emphasis_track"],
 		)
 
-		for emphasis in emphases:
-			credits = frappe.db.sql(
-				"""SELECT COALESCE(SUM(pec.credits), 0)
-                FROM `tabProgram Enrollment Course` pec
-                INNER JOIN `tabProgram Track Courses` ptc
-                    ON ptc.program_track_course = pec.course_name
-                    AND ptc.parent = %s
-                    AND ptc.program_track = %s
-                WHERE pec.parent = %s
-                    AND pec.status = 'Pass'""",
-				(pe.program, emphasis.emphasis_track, pe.name),
-			)[0][0]
+		from seminary.seminary.catalog_year import for_enrollment, track, track_credits_passed
 
-			# Apply credit ceiling if set
-			max_credits = frappe.db.get_value("Program Track", emphasis.emphasis_track, "max_credits")
+		catalog_view = for_enrollment(pe.name) if emphases else None
+		for emphasis in emphases:
+			credits = track_credits_passed(pe.name, catalog_view, emphasis.emphasis_track)
+
+			# Apply the catalog's credit ceiling if set
+			track_row = track(catalog_view, emphasis.emphasis_track)
+			max_credits = track_row.max_credits if track_row else 0
 			if max_credits and max_credits > 0 and credits > max_credits:
 				credits = max_credits
 
@@ -2042,11 +2042,16 @@ def _mandatory_course_line(course, student_courses, in_progress_courses, exempte
 def _program_audit(program_enrollment):
 	"""Server callers (alumni portal, the program progress report) gate on
 	their own terms and call this."""
+	from seminary.seminary.catalog_year import for_enrollment, track, track_courses
+
 	pe = frappe.get_doc("Program Enrollment", program_enrollment)
-	program = frappe.get_cached_doc("Program", pe.program)
+	# The student's catalog year decides what they must complete (decisions/115 §5).
+	program = for_enrollment(pe)
 
 	result = {
 		"program": pe.program,
+		"catalog": program.catalog,
+		"catalog_year": program.catalog_year,
 		"program_enrollment": pe.name,
 		"student": pe.student,
 		"student_name": pe.student_name,
@@ -2100,29 +2105,13 @@ def _program_audit(program_enrollment):
 	courses_in_emphases = set()  # courses shown under an emphasis — exclude from program list
 
 	for emphasis in active_emphases:
-		track = frappe.db.get_value(
-			"Program Track",
-			emphasis.emphasis_track,
-			["track_name", "addcredits", "max_credits", "advisory_only"],
-			as_dict=True,
-		)
-		if not track:
+		emphasis_track = track(program, emphasis.emphasis_track)
+		if not emphasis_track:
 			continue
-
-		# Get mandatory track courses
-		track_courses = frappe.get_all(
-			"Program Track Courses",
-			filters={
-				"parent": pe.program,
-				"program_track": emphasis.emphasis_track,
-				"pgm_track_course_mandatory": 1,
-			},
-			fields=["program_track_course"],
-		)
 
 		mandatory_remaining = []
 		track_mandatory_courses = []
-		for tc in track_courses:
+		for tc in track_courses(program, emphasis.emphasis_track, mandatory=1):
 			course_name_display = tc.program_track_course
 			# Try to get a readable name from Program Course table
 			pc_info = program_courses.get(tc.program_track_course)
@@ -2159,20 +2148,21 @@ def _program_audit(program_enrollment):
 
 		credits_earned = emphasis.trackcredits or 0
 		credits_capped = credits_earned
-		if track.max_credits and track.max_credits > 0 and credits_earned > track.max_credits:
-			credits_capped = track.max_credits
+		max_credits = emphasis_track.max_credits or 0
+		if max_credits > 0 and credits_earned > max_credits:
+			credits_capped = max_credits
 
 		emphases_data.append(
 			{
-				"track_name": track.track_name,
+				"track_name": emphasis_track.track_name,
 				"emphasis_track": emphasis.emphasis_track,
-				"credits_required": track.addcredits or 0,
+				"credits_required": emphasis_track.addcredits or 0,
 				"credits_earned": credits_earned,
 				"credits_capped": credits_capped,
-				"max_credits": track.max_credits or 0,
+				"max_credits": max_credits,
 				"mandatory_remaining": mandatory_remaining,
 				"mandatory_courses": track_mandatory_courses,
-				"advisory_only": track.advisory_only,
+				"advisory_only": emphasis_track.advisory_only,
 				"status": emphasis.status,
 			}
 		)
@@ -2277,24 +2267,12 @@ def _program_audit(program_enrollment):
 
 	# Fallback emphasis check
 	if not active_emphases and program.fallback_emphasis:
-		fallback_track = frappe.db.get_value(
-			"Program Track",
-			program.fallback_emphasis,
-			["addcredits", "max_credits", "advisory_only"],
-			as_dict=True,
-		)
+		from seminary.seminary.catalog_year import track_credits_passed
+
+		fallback_track = track(program, program.fallback_emphasis)
 		if fallback_track and not fallback_track.advisory_only:
 			# Check fallback track credits
-			fallback_credits = frappe.db.sql(
-				"""SELECT COALESCE(SUM(pec.credits), 0)
-                FROM `tabProgram Enrollment Course` pec
-                INNER JOIN `tabProgram Track Courses` ptc
-                    ON ptc.program_track_course = pec.course_name
-                    AND ptc.parent = %s
-                    AND ptc.program_track = %s
-                WHERE pec.parent = %s AND pec.status = 'Pass'""",
-				(pe.program, program.fallback_emphasis, pe.name),
-			)[0][0]
+			fallback_credits = track_credits_passed(pe.name, program, program.fallback_emphasis)
 			if fallback_track.max_credits and fallback_track.max_credits > 0:
 				fallback_credits = min(fallback_credits, fallback_track.max_credits)
 			if fallback_credits < (fallback_track.addcredits or 0):
@@ -2522,18 +2500,12 @@ def _course_category_map(pe, program):
 	Required / Track / Elective badges read identically in both. Mirrors the
 	Program Mandatory + active-emphasis Track logic; defaults to Elective.
 	"""
+	from seminary.seminary.catalog_year import track_courses
+
 	active_tracks = {e.emphasis_track for e in (pe.emphases or []) if e.status == "Active"}
 	track_course_map = {}
 	if active_tracks:
-		for tc in frappe.get_all(
-			"Program Track Courses",
-			filters={"parent": pe.program},
-			fields=[
-				"program_track",
-				"program_track_course",
-				"pgm_track_course_mandatory",
-			],
-		):
+		for tc in track_courses(program):
 			if tc.program_track not in active_tracks:
 				continue
 			track_course_map.setdefault(tc.program_track_course, []).append(
@@ -2560,21 +2532,39 @@ def _course_category_map(pe, program):
 				}
 			)
 		category_map[pc.course] = cats or [{"type": "Elective"}]
+	# A course offered now that the student's catalog year doesn't list is an
+	# elective for them (decisions/115 §5).
+	if program.get("catalog"):
+		for pc in frappe.get_cached_doc("Program", pe.program).courses or []:
+			if pc.disabled or pc.course in category_map:
+				continue
+			category_map[pc.course] = [
+				{
+					"type": "Track Mandatory" if ti["mandatory"] else "Track Elective",
+					"track": ti["track"],
+					"track_name": ti["track_name"],
+				}
+				for ti in track_course_map.get(pc.course, [])
+			] or [{"type": "Elective"}]
 	return category_map
 
 
 @frappe.whitelist()
-def get_available_courses_categorized(program_enrollment):
+def get_available_courses_categorized(program_enrollment: str):
 	"""Return available courses for enrollment with category metadata.
 
 	Each course includes its categories (Program Mandatory, Track Mandatory, Elective)
 	and available course schedules.
 	"""
+	from seminary.seminary.catalog_year import for_enrollment
 	from seminary.seminary.utils import student_schedule_conflicts
 
 	require_own_enrollment(program_enrollment)
 	pe = frappe.get_doc("Program Enrollment", program_enrollment)
-	program = frappe.get_cached_doc("Program", pe.program)
+	# What is offered comes from the Program; what is required of the student,
+	# and the credits they earn, from their catalog year (decisions/115 §5).
+	offered = frappe.get_cached_doc("Program", pe.program)
+	program = for_enrollment(pe)
 
 	# Get all available courses using existing logic
 	available_courses = courses_for_student(program_enrollment)
@@ -2584,14 +2574,15 @@ def get_available_courses_categorized(program_enrollment):
 
 	# Build lookup maps
 	program_course_map = {}
-	for pc in program.courses:
-		if pc.disabled:
-			continue
-		program_course_map[pc.course] = {
-			"required": pc.required,
-			"credits": pc.pgmcourse_credits or 0,
-			"course_name": pc.course_name,
-		}
+	for source in (offered, program):
+		for pc in source.courses:
+			if pc.disabled:
+				continue
+			program_course_map[pc.course] = {
+				"required": pc.required if source is program else 0,
+				"credits": pc.pgmcourse_credits or 0,
+				"course_name": pc.course_name,
+			}
 
 	# course -> [category badges]; shared with the My Enrollments list so a
 	# course's Required / Track / Elective badges read identically in both.
@@ -2693,15 +2684,22 @@ def get_available_courses_categorized(program_enrollment):
 			}
 		)
 
-	# Fetch descriptions in one query
-	course_descriptions = {
-		d.name: d.description
-		for d in frappe.get_all(
-			"Course",
-			filters={"name": ["in", available_courses]},
-			fields=["name", "description"],
-		)
-	}
+	# Fetch descriptions and units in one query
+	from seminary.seminary.catalog import joint_label
+
+	course_rows = frappe.get_all(
+		"Course",
+		filters={"name": ["in", available_courses]},
+		fields=["name", "description", "academic_unit"],
+	)
+	course_descriptions = {d.name: d.description for d in course_rows}
+	# "Offered jointly by X and Y" for a course homed in an Academic Interdepartment (114 §6).
+	unit_labels = {}
+	course_joint = {}
+	for d in course_rows:
+		if d.academic_unit and d.academic_unit not in unit_labels:
+			unit_labels[d.academic_unit] = joint_label(d.academic_unit)
+		course_joint[d.name] = unit_labels.get(d.academic_unit) or ""
 
 	# Map which available courses are prerequisites for other courses, so the UI
 	# can flag them and students can prioritize them.
@@ -2752,6 +2750,7 @@ def get_available_courses_categorized(program_enrollment):
 				"credits": credits,
 				"course_schedules": schedule_map.get(course, []),
 				"prerequisite_for": prerequisite_for_map.get(course, []),
+				"offered_jointly_by": course_joint.get(course) or "",
 			}
 		)
 
@@ -3305,7 +3304,7 @@ def get_student_invoices(student=None):
 
 
 @frappe.whitelist()
-def courses_for_student(program_ce):
+def courses_for_student(program_ce: str):
 	require_own_enrollment(program_ce)
 	pgen_name = program_ce
 	# Get available scheduled courses for the student based on program enrollment,
@@ -3332,24 +3331,6 @@ def courses_for_student(program_ce):
                 WHERE pe.pgmenrol_active = '1'
                     AND pee.status = 'Active'
                     AND pe.name = %s)
-            )
-            AND cs.course NOT IN (
-                -- Exclude a course only when it has a mandatory prerequisite
-                -- the student has NOT passed. PEC.course_name holds the
-                -- underlying Course (PEC.course is a Course Schedule), so the
-                -- prereq match is course_name = cp.course — matching the
-                -- _prereqs_met convention in required_enrollment.py.
-                SELECT cp.parent
-                FROM `tabCourse_prerequisite` cp
-                WHERE cp.prereq_mandatory = 'Mandatory'
-                    AND NOT EXISTS (
-                        SELECT 1
-                        FROM `tabProgram Enrollment Course` pec
-                        WHERE pec.parent = %s
-                            AND pec.course_name = cp.course
-                            AND pec.pec_finalgradecode IS NOT NULL
-                            AND COALESCE(pec.status, '') != 'Fail'
-                    )
             )
             AND cs.course NOT IN (
                 SELECT pc.course
@@ -3383,12 +3364,26 @@ def courses_for_student(program_ce):
                     AND COALESCE(pec.status, '') != 'Fail'
                     AND cei.program_ce = %s
             )""",
-		(pgen_name, pgen_name, pgen_name, pgen_name, pgen_name, pgen_name),
+		(pgen_name, pgen_name, pgen_name, pgen_name, pgen_name),
 		as_list=1,
 	)
-	# Flatten the list of tuples into a list of strings
-	courses = [course[0] for course in courses]
-	return courses
+	# Prerequisites and replaced courses are checked by the same functions as
+	# individual and bulk enrollment (decisions/114 §1, §3), so the picker can't
+	# offer what enrollment would refuse.
+	from seminary.seminary.catalog import (
+		prerequisite_counted,
+		prerequisite_satisfied,
+		replaces_passed,
+		unmet_prerequisites,
+	)
+
+	satisfied = prerequisite_satisfied(pgen_name)
+	passed = prerequisite_counted(pgen_name)
+	return [
+		course
+		for course in dict.fromkeys(row[0] for row in courses)
+		if not unmet_prerequisites(pgen_name, course, satisfied) and not replaces_passed(course, passed)
+	]
 
 
 def copy_data_to_scheduled_course_roster(doc, method):
@@ -4530,26 +4525,21 @@ def send_grades(doc=None, **kwargs):
 
 
 def _recalculate_emphasis_credits(pe_name):
-	"""Recalculate track credits for all emphases on a single Program Enrollment."""
+	"""Recalculate track credits for all emphases on a single Program Enrollment,
+	from the tracks of the student's catalog year (decisions/115 §5)."""
+	from seminary.seminary.catalog_year import for_enrollment, track, track_credits_passed
+
 	pe = frappe.get_doc("Program Enrollment", pe_name)
-	program_name = pe.program
+	catalog_view = for_enrollment(pe)
 
 	for emphasis in pe.emphases or []:
 		if emphasis.status not in ("Active", "Completed"):
 			continue
 
-		credits = frappe.db.sql(
-			"""SELECT COALESCE(SUM(pec.credits), 0)
-            FROM `tabProgram Enrollment Course` pec
-            INNER JOIN `tabProgram Track Courses` ptc
-                ON ptc.program_track_course = pec.course_name
-                AND ptc.parent = %s
-                AND ptc.program_track = %s
-            WHERE pec.parent = %s AND pec.status = 'Pass'""",
-			(program_name, emphasis.emphasis_track, pe_name),
-		)[0][0]
+		credits = track_credits_passed(pe_name, catalog_view, emphasis.emphasis_track)
 
-		max_credits = frappe.db.get_value("Program Track", emphasis.emphasis_track, "max_credits")
+		track_row = track(catalog_view, emphasis.emphasis_track)
+		max_credits = track_row.max_credits if track_row else 0
 		if max_credits and max_credits > 0 and credits > max_credits:
 			credits = max_credits
 
@@ -4558,8 +4548,11 @@ def _recalculate_emphasis_credits(pe_name):
 
 def _check_auto_grant_emphases(pe_name):
 	"""Check if any auto-grant emphases should be awarded for this PE."""
+	from seminary.seminary.catalog_year import for_enrollment, track_courses, track_credits_passed
+
 	pe = frappe.get_doc("Program Enrollment", pe_name)
-	program = frappe.get_cached_doc("Program", pe.program)
+	# The tracks' courses and credits come from the student's catalog year (decisions/115 §5).
+	program = for_enrollment(pe)
 
 	existing_tracks = {e.emphasis_track for e in (pe.emphases or [])}
 
@@ -4570,15 +4563,7 @@ def _check_auto_grant_emphases(pe_name):
 			continue
 
 		# Check if student meets requirements: all mandatory track courses passed
-		mandatory_track_courses = frappe.get_all(
-			"Program Track Courses",
-			filters={
-				"parent": pe.program,
-				"program_track": track.name,
-				"pgm_track_course_mandatory": 1,
-			},
-			fields=["program_track_course"],
-		)
+		mandatory_track_courses = track_courses(program, track.name, mandatory=1)
 
 		all_mandatory_passed = True
 		for tc in mandatory_track_courses:
@@ -4598,16 +4583,7 @@ def _check_auto_grant_emphases(pe_name):
 			continue
 
 		# Check track credit requirement
-		track_credits = frappe.db.sql(
-			"""SELECT COALESCE(SUM(pec.credits), 0)
-            FROM `tabProgram Enrollment Course` pec
-            INNER JOIN `tabProgram Track Courses` ptc
-                ON ptc.program_track_course = pec.course_name
-                AND ptc.parent = %s
-                AND ptc.program_track = %s
-            WHERE pec.parent = %s AND pec.status = 'Pass'""",
-			(pe.program, track.name, pe_name),
-		)[0][0]
+		track_credits = track_credits_passed(pe_name, program, track.name)
 
 		if track_credits >= (track.addcredits or 0):
 			# Auto-grant this emphasis

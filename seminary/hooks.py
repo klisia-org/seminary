@@ -843,6 +843,8 @@ scheduler_events = {
 		# Expire documents, renew per term/year, and remind on due dates
 		# (decisions/091 §5, §11).
 		"seminary.seminary.requirements.daily",
+		# A scheduled catalog year takes effect when its first term starts (decisions/115 §4).
+		"seminary.seminary.catalog_year.activate_due",
 		# decisions/112 §2: a fee paid elsewhere completes an application.
 		"seminary.seminary.admissions.daily",
 		# A geocode that failed because the provider was down that afternoon
@@ -1038,6 +1040,7 @@ fixtures = [
 					"Withdrawn",
 					"Active",
 					"Superseded",
+					"Scheduled",
 					"Retired",
 					"Waitlisted",
 					"Unseated",
@@ -1082,7 +1085,6 @@ fixtures = [
 					"Submit & Skip Academic Review",
 					"Submit & Complete",
 					"Mark as Paid",
-					"Change Version",
 					"Activate",
 					"Send for Final Review",
 					"Return for Revisions",

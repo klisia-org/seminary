@@ -339,11 +339,12 @@ def _seats_left(course_schedule):
 
 
 def _charge_text(backend, pes, course_schedule, program, course):
-	credits = (
-		frappe.db.get_value("Program Course", {"parent": program, "course": course}, "pgmcourse_credits") or 0
-	)
+	from seminary.seminary.catalog_year import course_credits
+
 	totals, unpriced = [], 0
 	for pe in pes:
+		# Each student is charged the credits of their own catalog year (decisions/115 §5).
+		credits = course_credits(pe, course)
 		lines = backend.preview_enrollment_charges(pe, course_schedule, credits, False)
 		if any(line.get("amount") is None for line in lines):
 			unpriced += 1

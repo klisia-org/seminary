@@ -9,15 +9,39 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import today
 
+from seminary.seminary import catalog
 from seminary.seminary.utils import assert_url_safe_code
 
 
 class Course(Document):
+	def before_validate(self):
+		self.set_course_code()
+
 	def validate(self):
+		assert_url_safe_code(self.course_id, _("Course ID"))
 		assert_url_safe_code(self.coursecode, _("Course Code"))
+		catalog.validate_prerequisite_rows(self)
+		catalog.validate_replaced_rows(self)
 		self.validate_assessment_criteria()
 		self.clean_name()
 		self.set_disabled_on()
+
+	def on_update(self):
+		before = self.get_doc_before_save()
+		if before and before.coursecode != self.coursecode:
+			catalog.refresh_code_copies(self.name, self.coursecode)
+
+	def set_course_code(self):
+		"""coursecode = <unit code>-<course_id> (decisions/114 §4). A new course
+		given only a code (Data Import, older callers) has its Course ID taken
+		from it. An existing course without a Course ID keeps its code, and the
+		mandatory Course ID asks for one."""
+		prefix = catalog.unit_prefix(self.academic_unit)
+		if not self.course_id and self.is_new():
+			self.course_id = catalog.split_code(self.coursecode, prefix) or (self.coursecode or "").strip()
+		if self.course_id:
+			self.course_id = self.course_id.strip()
+			self.coursecode = catalog.course_code(self.course_id, prefix)
 
 	def set_disabled_on(self):
 		if self.disabled and not self.disabled_on:

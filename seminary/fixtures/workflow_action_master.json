@@ -170,12 +170,6 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
-  "name": "Change Version",
-  "workflow_action_name": "Change Version"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
   "name": "Activate",
   "workflow_action_name": "Activate"
  },

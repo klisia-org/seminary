@@ -19,6 +19,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint, today
 
+from seminary.seminary.catalog_year import for_enrollment
 from seminary.seminary.term_plan import expected_courses
 
 AT_LEAST_ONE = "At least one course is passed"
@@ -66,7 +67,8 @@ def evaluate(pe_name, academic_term):
 	)
 	if not pe or pe.docstatus != 1 or not pe.pgmenrol_active:
 		return None
-	program = frappe.get_cached_doc("Program", pe.program)
+	# The final term is the one the student's catalog year sets (decisions/115 §5).
+	program = for_enrollment(pe_name)
 	if program.program_type != "Time-based" or program.is_ongoing:
 		return None
 	if pe.advanced_from_term == academic_term:

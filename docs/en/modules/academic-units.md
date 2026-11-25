@@ -21,8 +21,8 @@ Every Academic Unit has a **type** that declares what it owns or does:
 
 | Type | Owns / does |
 | --- | --- |
-| **Academic Department** | Owns **courses**. Its **Code** (e.g. `ST`) is the source of the course prefix. |
-| **Academic Interdepartment** | A neutral home for a course two departments genuinely **co-own**. Lists its member departments; its faculty are the union of theirs (see below). |
+| **Academic Department** | Owns **courses**. Its **Code** (e.g. `ST`) starts the code of each of its courses (`ST-501`, see [Course catalog](course-catalog.md)). |
+| **Academic Interdepartment** | A neutral home for a course two departments genuinely **co-own**. Lists its member departments; its faculty are the union of theirs (see below). The course takes this unit's code and shows as offered jointly by the member departments. |
 | **Program Committee** | Owns **programs** (optional — degree programs span departments, so academic ownership usually flows through courses, not the program). |
 | **Program Admissions** | Reviews and decides the **applications** of the programs that name it as their **Admissions Unit**. Its members and chair review; the chair decides (see [Programs](program.md#reviewing-and-deciding-applications)). |
 | **Board** / **Other Committee** | Governance and faculty groupings (rosters, future web pages). |

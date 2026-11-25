@@ -3,8 +3,8 @@
 Aggregates PEC rows where count_in_gpa = 1 and pec_finalgradenum is set.
 For each row, the raw numeric is converted to grade points on the Program's
 basis_for_gpa scale, then the per-row points are credit-weighted (or simple-meaned)
-into Program Enrollment.current_gpa. The matching honors level is written to
-current_honor.
+into Program Enrollment.current_gpa. The matching honors level of the student's catalog year is
+written to current_honor.
 
 Hooked from:
 - seminary.api.send_grades (after grades are sent for a Course Schedule)
@@ -32,8 +32,11 @@ def recompute_program_enrollment_gpa(pe_name):
 
 
 def _recompute_gpa_only(pe_name):
+	from seminary.seminary.catalog_year import for_enrollment
+
 	pe = frappe.get_doc("Program Enrollment", pe_name)
-	program = frappe.get_cached_doc("Program", pe.program)
+	# Honors levels come from the student's catalog year (decisions/115 §1).
+	program = for_enrollment(pe)
 	if program.is_ongoing:
 		return
 	basis = float(program.basis_for_gpa or 0)

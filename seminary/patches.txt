@@ -99,3 +99,5 @@ seminary.seminary.patches.adr105_category_actions
 seminary.seminary.patches.adr106_question_rows
 seminary.seminary.patches.p027_meeting_attendance_share
 seminary.seminary.patches.adr111_application_questions
+seminary.seminary.patches.adr114_course_id
+seminary.seminary.patches.adr115_catalog_years

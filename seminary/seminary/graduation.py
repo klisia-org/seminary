@@ -26,45 +26,15 @@ LINKED_DOC_HOOK_FLAG = "_seminary_grad_link_doctypes"
 
 
 def resolve_policy(program, on_date):
-	"""Return the name of the active Program Graduation Requirement for the
-	given program at on_date, or None if no policy applies.
-
-	Picks the policy whose [active_from, active_until] interval covers on_date.
-	If multiple match (data-entry bug; PGR.validate prevents this on the same
-	program), the one with the latest active_from wins.
-
-	Returns None for ongoing programs (no graduation concept).
-	"""
+	"""The catalog year (Program Graduation Requirement) of `program` whose window contains
+	`on_date`, or None (decisions/115 §2). None for ongoing programs."""
 	if not program or not on_date:
 		return None
-
 	if frappe.db.get_value("Program", program, "is_ongoing"):
 		return None
+	from seminary.seminary.catalog_year import resolve
 
-	on_date = getdate(on_date)
-	# Only submitted, Active policies bind. Draft successors (spawned by the
-	# 'Change Version' action) sit at docstatus 0 and must never be resolved.
-	candidates = frappe.get_all(
-		"Program Graduation Requirement",
-		filters={"program_name": program, "active": 1, "docstatus": 1},
-		fields=["name", "active_from", "active_until"],
-	)
-
-	matches = []
-	for cand in candidates:
-		start = getdate(cand.active_from) if cand.active_from else None
-		end = getdate(cand.active_until) if cand.active_until else None
-		if start and on_date < start:
-			continue
-		if end and on_date > end:
-			continue
-		matches.append((start or getdate("1900-01-01"), cand.name))
-
-	if not matches:
-		return None
-
-	matches.sort(key=lambda x: x[0], reverse=True)
-	return matches[0][1]
+	return resolve(program, on_date)
 
 
 # ---------------------------------------------------------------------------
@@ -74,11 +44,14 @@ def resolve_policy(program, on_date):
 
 def snapshot_graduation_requirements(program_enrollment_doc):
 	"""Populate Program Enrollment's graduation_requirements child table from
-	the resolved policy. Idempotent: skips if already populated."""
+	the enrollment's catalog year: the one it is bound to, else the one its
+	entry term resolves to. Idempotent: skips if already populated."""
 	if program_enrollment_doc.get("graduation_requirements"):
 		return
 
-	policy_name = resolve_policy(program_enrollment_doc.program, program_enrollment_doc.enrollment_date)
+	from seminary.seminary.catalog_year import catalog_of
+
+	policy_name = catalog_of(program_enrollment_doc)
 	if not policy_name:
 		return
 
@@ -269,23 +242,39 @@ def _apply_initial_choice_state(row, library):
 
 
 @frappe.whitelist()
-def resnapshot(program_enrollment, preserve_waivers=1):
-	"""Registrar action: rebuild the snapshot from the currently-resolved
-	policy. Preserves waived rows by default.
+def resnapshot(program_enrollment: str, preserve_waivers: int = 1, catalog: str | None = None):
+	"""Registrar action: move a student to a catalog year and rebuild their
+	snapshot from it (decisions/115 §7). `catalog` defaults to the program's
+	latest catalog. Preserves waived rows by default, and logs the move.
 
 	Gated in p008a G6: it had no role check, and rebuilding a student's
 	graduation snapshot is not something the permission model can undo."""
+	from seminary.seminary import catalog_year
+
 	require_registrar()
 	preserve_waivers = int(preserve_waivers or 0)
 	enrollment = frappe.get_doc("Program Enrollment", program_enrollment)
+	target = catalog or catalog_year.latest(enrollment.program)
+	if not target:
+		frappe.throw(_("{0} has no catalog year to move to.").format(enrollment.program))
+	values = frappe.db.get_value(
+		catalog_year.CATALOG, target, ["program_name", "docstatus", "catalog_year"], as_dict=True
+	)
+	if not values or values.program_name != enrollment.program or values.docstatus != 1:
+		frappe.throw(_("Choose a submitted catalog year of {0}.").format(enrollment.program))
+	previous = enrollment.graduation_policy
 
 	keep = []
 	if preserve_waivers:
 		keep = [row.as_dict() for row in enrollment.graduation_requirements if row.waived]
 
 	enrollment.graduation_requirements = []
-	enrollment.graduation_policy = None
+	enrollment.graduation_policy = target
 	snapshot_graduation_requirements(enrollment)
+	owed = {r.course for r in enrollment.required_on_enroll_courses or []}
+	for pc in catalog_year.view(enrollment.program, target).courses:
+		if pc.pgm_course_reqonenroll and pc.course not in owed:
+			enrollment.append("required_on_enroll_courses", {"course": pc.course})
 
 	if keep:
 		_merge_preserved_waivers(enrollment, keep)
@@ -295,7 +284,13 @@ def resnapshot(program_enrollment, preserve_waivers=1):
 		from seminary.seminary.exceptions import relink_after_resnapshot
 
 		relink_after_resnapshot(enrollment)
-	return {"requirements": len(enrollment.graduation_requirements)}
+	enrollment.add_comment(
+		"Info",
+		_("Moved to catalog year {0} (was {1}).").format(
+			values.catalog_year or target, previous or _("none")
+		),
+	)
+	return {"requirements": len(enrollment.graduation_requirements), "catalog": target}
 
 
 def _merge_preserved_waivers(enrollment, keep):
@@ -425,8 +420,10 @@ def _resolve_anchor_date(anchor, program_enrollment):
 	if anchor == "Program Starts":
 		return program_enrollment.get("enrollment_date")
 	if anchor == "Last Term Starts":
-		# Walk forward from the enrollment term by Program.terms_complete - 1.
-		program = frappe.get_cached_doc("Program", program_enrollment.program)
+		# Walk forward from the enrollment term by the catalog's terms_complete - 1.
+		from seminary.seminary.catalog_year import for_enrollment
+
+		program = for_enrollment(program_enrollment)
 		terms = int(program.get("terms_complete") or 0) or 1
 		start_term = program_enrollment.get("academic_term")
 		last_term = _shift_term(start_term, terms - 1) if start_term else None
@@ -502,7 +499,7 @@ def compute_expected_graduation_date(program_enrollment):
 	"""Default the expected graduation date.
 
 	Strategy:
-	1. If Program.terms_complete is set, walk that many academic terms forward
+	1. If the catalog's terms_complete is set, walk that many academic terms forward
 	   from the enrollment term and use the last term's end date.
 	2. Otherwise, fall back to enrollment_date + 4 years as a generic seminary
 	   program length. The registrar can always override.
@@ -513,8 +510,10 @@ def compute_expected_graduation_date(program_enrollment):
 	if not program_enrollment.get("program"):
 		return None
 
-	program = frappe.get_cached_doc("Program", program_enrollment.program)
-	if program.is_ongoing:
+	from seminary.seminary.catalog_year import for_enrollment
+
+	program = for_enrollment(program_enrollment)
+	if not program or program.is_ongoing:
 		return None
 	terms = int(program.get("terms_complete") or 0)
 	enrollment_date = program_enrollment.get("enrollment_date")

@@ -29,6 +29,12 @@ def _programs_with_courses():
 	return len(with_courses), len(programs)
 
 
+def _programs_with_catalog():
+	from seminary.seminary.catalog_year import programs_with_catalog
+
+	return programs_with_catalog()
+
+
 def _staff_roles():
 	"""A person other than Administrator holds each office the school runs on."""
 	roles = ("Seminary Manager", "Registrar")
@@ -125,6 +131,19 @@ def setup_steps():
 				"check": _programs_with_courses,
 				"route": "/desk/course",
 				"manual": f"{GUIDE}#14-manual-input-or-import-the-following-data",
+				"roles": REGISTRARS,
+			},
+			{
+				"key": "catalog-years",
+				"title": _("Publish each program's catalog year"),
+				"description": _(
+					"Open each program and use New Catalog Year. Students can't be enrolled, and the "
+					"program can't be published, until it has one."
+				),
+				"tier": "Go-live",
+				"check": _programs_with_catalog,
+				"route": "/desk/program-graduation-requirement",
+				"manual": f"{GUIDE}#11-program",
 				"roles": REGISTRARS,
 			},
 			{

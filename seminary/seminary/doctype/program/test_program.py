@@ -62,4 +62,7 @@ def make_program_and_linked_courses(program_name, course_name_list):
 		if course not in existing:
 			program.append("courses", {"course": course, "required": 1})
 	program.save(ignore_permissions=True)
+	from seminary.seminary.tests.catalog_fixtures import ensure_catalog
+
+	ensure_catalog(program.name)
 	return program

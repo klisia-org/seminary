@@ -342,4 +342,15 @@ class TestOrphans(ADR098Case):
 			0,
 		)
 		frappe.clear_document_cache("Program", self.program.name)
+		# An edit on the Program alone doesn't change what the student owes (decisions/115).
+		self.assertNotIn(ex.name, [r.name for r in exceptions.orphaned([self.pe.name])])
+		# Moving them to a catalog year that no longer requires the course does.
+		from frappe.model.workflow import apply_workflow
+
+		from seminary.seminary import catalog_year as cy
+		from seminary.seminary.graduation import resnapshot
+
+		draft = frappe.get_doc(cy.CATALOG, cy.new_catalog_year(self.program.name))
+		apply_workflow(draft, "Submit")
+		resnapshot(self.pe.name, catalog=draft.name)
 		self.assertIn(ex.name, [r.name for r in exceptions.orphaned([self.pe.name])])

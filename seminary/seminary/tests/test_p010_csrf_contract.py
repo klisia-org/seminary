@@ -59,6 +59,8 @@ SENDERS = {
 	# Oral assessment (decisions/100): multipart bodies frappe-ui's call() cannot send.
 	"components/OralActivity.vue": "fetch upload_recording (a recorded file)",
 	"components/OralRecorder.vue": "fetch upload_chunk (recording in pieces, retried)",
+	# Rich-text editor uploads (decisions/109): XHR for progress on large media.
+	"utils/editorUpload.js": "XHR upload_file (progress)",
 }
 
 HEADER = "X-Frappe-CSRF-Token"

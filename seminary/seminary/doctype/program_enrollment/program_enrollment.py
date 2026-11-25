@@ -31,6 +31,10 @@ class ProgramEnrollment(Document):
 			self.student_name = frappe.db.get_value("Student", self.student, "student_name")
 
 	def before_submit(self):
+		from seminary.seminary.catalog_year import bind_enrollment
+
+		# Bound to the catalog year its entry term falls in (decisions/115 §7).
+		bind_enrollment(self)
 		self.snapshot_graduation_requirements()
 		self.snapshot_required_on_enroll_courses()
 
@@ -135,7 +139,7 @@ class ProgramEnrollment(Document):
 				)
 
 	def set_max_graduation_date(self):
-		"""Auto-populate max_graduation_date from enrollment_date + Program.max_time_enrolled.
+		"""Auto-populate max_graduation_date from enrollment_date + the catalog's max_time_enrolled.
 
 		No-op when:
 		  - max_graduation_date already set (registrar override / amendment)
@@ -144,12 +148,9 @@ class ProgramEnrollment(Document):
 		"""
 		if self.max_graduation_date:
 			return
-		program = frappe.db.get_value(
-			"Program",
-			self.program,
-			["max_time_enrolled", "is_ongoing"],
-			as_dict=True,
-		)
+		from seminary.seminary.catalog_year import for_enrollment
+
+		program = for_enrollment(self)
 		if not program or program.is_ongoing:
 			return
 		years = float(program.max_time_enrolled or 0)
@@ -180,22 +181,21 @@ class ProgramEnrollment(Document):
 		_snapshot(self)
 
 	def snapshot_required_on_enroll_courses(self):
-		"""Freeze the set of courses flagged `pgm_course_reqonenroll` on the
-		Program at submit time. Deferred auto-enrollment matches this frozen
+		"""Freeze the set of courses flagged `pgm_course_reqonenroll` in the
+		student's catalog year (decisions/115 §5) at submit time. Deferred auto-enrollment matches this frozen
 		list (not the live Program flag), so toggling the flag later does not
 		retroactively enroll already-enrolled students. Mirrors
 		snapshot_graduation_requirements. See ADR 035."""
 		if self.required_on_enroll_courses:
 			return
-		rows = frappe.get_all(
-			"Program Course",
-			filters={
-				"parent": self.program,
-				"pgm_course_reqonenroll": 1,
-				"disabled": 0,
-			},
-			pluck="course",
-		)
+		from seminary.seminary.catalog_year import for_enrollment
+
+		program = for_enrollment(self)
+		rows = [
+			pc.course
+			for pc in (program.courses if program else [])
+			if pc.pgm_course_reqonenroll and not pc.disabled
+		]
 		for course in rows:
 			self.append("required_on_enroll_courses", {"course": course})
 
