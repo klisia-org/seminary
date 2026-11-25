@@ -1,0 +1,228 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "One reviewer's reading of one application: a recommendation, comments and rubric scores.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student_applicant",
+  "applicant_name",
+  "program",
+  "column_break_main",
+  "reviewer",
+  "reviewer_name",
+  "status",
+  "due_date",
+  "submitted_on",
+  "review_section",
+  "recommendation",
+  "overall_percent",
+  "column_break_review",
+  "rubric",
+  "comments_section",
+  "comments",
+  "scores_html",
+  "conflict_note",
+  "others_section",
+  "others_html"
+ ],
+ "fields": [
+  {
+   "fieldname": "student_applicant",
+   "fieldtype": "Link",
+   "label": "Applicant",
+   "options": "Student Applicant",
+   "reqd": 1,
+   "read_only": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name",
+   "fetch_from": "student_applicant.title",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "fetch_from": "student_applicant.program",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reviewer",
+   "fieldtype": "Link",
+   "label": "Reviewer",
+   "options": "User",
+   "reqd": 1,
+   "read_only": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "reviewer_name",
+   "fieldtype": "Data",
+   "label": "Reviewer Name",
+   "fetch_from": "reviewer.full_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Open\nSubmitted\nRecused",
+   "default": "Open",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Review"
+  },
+  {
+   "fieldname": "recommendation",
+   "fieldtype": "Select",
+   "label": "Recommendation",
+   "options": "\nAdmit\nAdmit with conditions\nWaitlist\nDecline",
+   "in_list_view": 1,
+   "read_only_depends_on": "eval:doc.status!='Open'"
+  },
+  {
+   "fieldname": "overall_percent",
+   "fieldtype": "Percent",
+   "label": "Overall Score",
+   "read_only": 1,
+   "description": "From the rubric scores, weighted as the rubric says."
+  },
+  {
+   "fieldname": "column_break_review",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rubric",
+   "fieldtype": "Link",
+   "label": "Rubric",
+   "options": "Rubric",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comments_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text",
+   "label": "Comments",
+   "read_only_depends_on": "eval:doc.status!='Open'"
+  },
+  {
+   "fieldname": "scores_html",
+   "fieldtype": "HTML",
+   "label": "Rubric Scores"
+  },
+  {
+   "fieldname": "conflict_note",
+   "fieldtype": "Small Text",
+   "label": "Conflict of Interest",
+   "read_only": 1,
+   "depends_on": "eval:doc.status=='Recused'"
+  },
+  {
+   "fieldname": "others_section",
+   "fieldtype": "Section Break",
+   "label": "Other Reviews"
+  },
+  {
+   "fieldname": "others_html",
+   "fieldtype": "HTML",
+   "label": "Other Reviews"
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Application Review",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "System Manager"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "Registrar"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "print": 1,
+   "role": "Desk User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "APR-.#####",
+ "title_field": "applicant_name",
+ "track_changes": 1,
+ "search_fields": "applicant_name,reviewer_name",
+ "show_title_field_in_link": 1,
+ "naming_rule": "Expression"
+}

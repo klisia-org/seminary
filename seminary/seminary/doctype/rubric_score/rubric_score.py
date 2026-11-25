@@ -17,6 +17,15 @@ class RubricScore(Document):
 		self.validate_unique()
 
 	def set_context(self):
+		if self.submission_doctype == "Application Review":
+			# A reviewer's score on an application (decisions/112 §4): no student yet.
+			if not frappe.db.exists("Application Review", self.submission):
+				frappe.throw(_("Application Review {0} does not exist.").format(self.submission))
+			self.student = self.course_schedule = self.assess_criteria = None
+			if self.is_new() or self.has_value_changed("level") or self.has_value_changed("comment"):
+				self.graded_by = frappe.session.user
+				self.graded_on = now_datetime()
+			return
 		if self.submission_doctype not in rubrics.SUBMISSIONS:
 			frappe.throw(_("Rubrics are only for assignments and discussions."))
 		_a, _f, section_field = rubrics.SUBMISSIONS[self.submission_doctype]

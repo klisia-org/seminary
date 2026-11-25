@@ -1,0 +1,174 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "A qualification a person holds or is studying for, such as a degree or a diploma.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "person",
+  "person_name",
+  "institution",
+  "country",
+  "column_break_main",
+  "degree",
+  "level",
+  "field_of_study",
+  "year_completed",
+  "evidence_section",
+  "person_document",
+  "student_applicant",
+  "column_break_evidence",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "options": "Person",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "person_name",
+   "fieldtype": "Data",
+   "label": "Person Name",
+   "fetch_from": "person.full_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "institution",
+   "fieldtype": "Data",
+   "label": "Institution",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "degree",
+   "fieldtype": "Data",
+   "label": "Degree or Qualification",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "label": "Level",
+   "options": "\nSecondary school\nCertificate or Diploma\nBachelor's\nMaster's\nDoctoral\nOther",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "field_of_study",
+   "fieldtype": "Data",
+   "label": "Field of Study"
+  },
+  {
+   "fieldname": "year_completed",
+   "fieldtype": "Int",
+   "label": "Year Completed",
+   "non_negative": 1,
+   "description": "Leave blank while still studying."
+  },
+  {
+   "fieldname": "evidence_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "person_document",
+   "fieldtype": "Link",
+   "label": "Diploma",
+   "options": "Person Document",
+   "description": "The uploaded diploma or certificate, if there is one."
+  },
+  {
+   "fieldname": "student_applicant",
+   "fieldtype": "Link",
+   "label": "From Application",
+   "options": "Student Applicant",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_evidence",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Person Education",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "System Manager"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "Registrar"
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "PEDU-.#####",
+ "title_field": "degree",
+ "track_changes": 1,
+ "search_fields": "person_name,institution,degree",
+ "naming_rule": "Expression"
+}

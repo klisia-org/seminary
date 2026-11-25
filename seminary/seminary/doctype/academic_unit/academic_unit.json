@@ -47,13 +47,13 @@
    "label": "Code"
   },
   {
-   "description": "What this unit owns/does. Academic Department owns courses; Program Committee owns programs; Academic Interdepartment co-owns joint courses (lists its member units below); Board / Other Committee are governance groupings; Administrative Office / Task Force are non-academic organizational units.",
+   "description": "What this unit owns/does. Academic Department owns courses; Program Committee owns programs; Program Admissions reviews and decides the applications of the programs that name it; Academic Interdepartment co-owns joint courses (lists its member units below); Board / Other Committee are governance groupings; Administrative Office / Task Force are non-academic organizational units.",
    "fieldname": "unit_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "Academic Department\nAcademic Interdepartment\nMentoring Department\nProgram Committee\nBoard\nOther Committee\nAdministrative Office\nTask Force\nSenate\nFaculty Council\nStudent Government\nAdvisory Council",
+   "options": "Academic Department\nAcademic Interdepartment\nMentoring Department\nProgram Committee\nProgram Admissions\nBoard\nOther Committee\nAdministrative Office\nTask Force\nSenate\nFaculty Council\nStudent Government\nAdvisory Council",
    "reqd": 1
   },
   {
@@ -142,7 +142,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-02 09:21:08.013126",
+ "modified": "2026-11-25 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Academic Unit",

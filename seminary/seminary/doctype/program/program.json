@@ -26,7 +26,6 @@
   "registrar_block_cei",
   "enrollment_mode",
   "applicant_naming_series",
-  "application_web_form",
   "section_break_pgmtype",
   "terms_complete",
   "progression_rule",
@@ -81,6 +80,14 @@
   "requirements_tab",
   "enrollment_requirements",
   "add_missing_requirements",
+  "application_tab",
+  "admission_section",
+  "admission_mode",
+  "admissions_unit",
+  "column_break_admission",
+  "admission_rubric",
+  "questions_section",
+  "application_questions",
   "connections_tab"
  ],
  "fields": [
@@ -203,7 +210,7 @@
   {
    "default": "1",
    "depends_on": "eval:!doc.is_ongoing",
-   "description": "When checked, GPA is credit-weighted: \u03a3(points \u00d7 credits) / \u03a3(credits). When unchecked, GPA is the simple mean of points across counted rows.",
+   "description": "When checked, GPA is credit-weighted: Σ(points × credits) / Σ(credits). When unchecked, GPA is the simple mean of points across counted rows.",
    "fieldname": "is_weighted",
    "fieldtype": "Check",
    "label": "Credit-weighted GPA"
@@ -245,7 +252,7 @@
   },
   {
    "default": "0",
-   "description": "Maximum share of class meetings a student may miss before being flagged at risk of failing for absences. Each Course Schedule converts this to a whole-number limit (% \u00d7 scheduled meetings), which the registrar can override. 0 = no attendance limit by default.",
+   "description": "Maximum share of class meetings a student may miss before being flagged at risk of failing for absences. Each Course Schedule converts this to a whole-number limit (% × scheduled meetings), which the registrar can override. 0 = no attendance limit by default.",
    "fieldname": "default_max_absence_percent",
    "fieldtype": "Percent",
    "label": "Default Max Absence %"
@@ -503,14 +510,6 @@
    "label": "Applicant Naming Series"
   },
   {
-   "description": "Web Form prospective students use to apply to this program. Leave blank to use the seminary default.",
-   "fieldname": "application_web_form",
-   "fieldtype": "Link",
-   "label": "Application Web Form",
-   "link_filters": "[[\"Web Form\",\"doc_type\",\"=\",\"Student Applicant\"]]",
-   "options": "Web Form"
-  },
-  {
    "default": "0",
    "description": "Show open Term Admission windows on the public Program page. Has no effect for Continuous programs.",
    "fieldname": "display_enrollment_window",
@@ -542,7 +541,7 @@
    "label": "Order in Programs and Degrees"
   },
   {
-   "description": "Optional Program Committee that owns this program. Degree programs span academic departments, so academic ownership flows through courses, not the program.",
+   "description": "Optional Program Committee that owns this program. Degree programs span academic departments, so academic ownership flows through courses, not the program. Admissions go to the Admissions Unit on the Application tab, not to this unit.",
    "fieldname": "academic_unit",
    "fieldtype": "Link",
    "label": "Academic Unit",
@@ -573,6 +572,57 @@
   {
    "fieldname": "column_break_cbe",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "application_tab",
+   "fieldtype": "Tab Break",
+   "label": "Application"
+  },
+  {
+   "fieldname": "admission_section",
+   "fieldtype": "Section Break",
+   "label": "Admission"
+  },
+  {
+   "fieldname": "admission_mode",
+   "fieldtype": "Select",
+   "label": "Admission Mode",
+   "options": "Reviewed\nAutomatic",
+   "default": "Reviewed",
+   "reqd": 1,
+   "description": "Reviewed: each application is reviewed and decided once it is complete. Automatic: a complete application is admitted at once."
+  },
+  {
+   "depends_on": "eval:doc.admission_mode=='Reviewed'",
+   "description": "The Program Admissions unit whose members review this program's applications. Its chair may decide. Several programs may share one unit. Leave blank and the program director, or the Registrars, review.",
+   "fieldname": "admissions_unit",
+   "fieldtype": "Link",
+   "label": "Admissions Unit",
+   "options": "Academic Unit"
+  },
+  {
+   "fieldname": "column_break_admission",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "admission_rubric",
+   "fieldtype": "Link",
+   "label": "Review Rubric",
+   "options": "Rubric",
+   "read_only": 1,
+   "description": "The rubric reviewers score applications with. Use Edit Review Rubric to change it."
+  },
+  {
+   "fieldname": "questions_section",
+   "fieldtype": "Section Break",
+   "label": "Application Questions"
+  },
+  {
+   "fieldname": "application_questions",
+   "fieldtype": "Table",
+   "label": "Application Questions",
+   "options": "Program Application Question",
+   "description": "The questions this program's application form asks, in this order. Questions come from the shared list of application questions."
   }
  ],
  "has_web_view": 1,
@@ -597,7 +647,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-10-20 12:00:00.000000",
+ "modified": "2026-11-25 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

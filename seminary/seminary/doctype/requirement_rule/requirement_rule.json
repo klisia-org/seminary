@@ -73,8 +73,8 @@
    "fieldname": "ask_on_application",
    "fieldtype": "Check",
    "label": "Ask on Application",
-   "depends_on": "eval:doc.kind=='Document' && parent.doctype=='Program'",
-   "description": "The application form asks for this document."
+   "depends_on": "eval:parent.doctype=='Program'",
+   "description": "The application form asks for this document, or asks the applicant to sign this agreement."
   },
   {
    "fieldname": "instructions",
@@ -83,7 +83,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-20 12:00:00.000000",
+ "modified": "2026-11-24 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Requirement Rule",

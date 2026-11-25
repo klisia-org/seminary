@@ -11,51 +11,7 @@ frappe.ui.form.on("Student Applicant", {
 			};
 		});
 
-		if (!frm.is_new() && frm.doc.application_status === "Applied") {
-			frm.add_custom_button(
-				__("Approve"),
-				function () {
-					frm.set_value("application_status", "Approved");
-					frm.save_or_update();
-				},
-				"Actions"
-			);
-
-			frm.add_custom_button(
-				__("Reject"),
-				function () {
-					frm.set_value("application_status", "Rejected");
-					frm.save_or_update();
-				},
-				"Actions"
-			);
-		}
-
-		if (!frm.is_new() && frm.doc.application_status === "Approved") {
-			frm.add_custom_button(__("Enroll"), function () {
-				frm.events.enroll(frm);
-			});
-
-			frm.add_custom_button(
-				__("Reject"),
-				function () {
-					frm.set_value("application_status", "Rejected");
-					frm.save_or_update();
-				},
-				"Actions"
-			);
-		}
-
-		if (!frm.is_new() && frm.doc.application_status === "Rejected") {
-			frm.add_custom_button(
-				__("Approve"),
-				function () {
-					frm.set_value("application_status", "Approved");
-					frm.save_or_update();
-				},
-				"Actions"
-			);
-		}
+		if (!frm.is_new()) add_admission_actions(frm);
 
 		frappe.realtime.on("enroll_student_progress", function (data) {
 			if (data.progress) {
@@ -93,4 +49,66 @@ function bind_tax_id(frm) {
 		country_fields: ["nationality", "country"],
 		subject: "person",
 	});
+}
+
+// Admission (decisions/112): status follows the decision, so the form offers
+// the next step instead of status buttons.
+function add_admission_actions(frm) {
+	frappe
+		.call("seminary.seminary.admissions.form_state", { applicant: frm.doc.name })
+		.then((r) => {
+			const state = r.message || {};
+			const status = frm.doc.application_status;
+			if (status === "Applied") {
+				if ((state.missing || []).length) {
+					frm.dashboard.set_headline(
+						__("Review starts when these are in: {0}", [
+							state.missing.map(frappe.utils.escape_html).join(", "),
+						])
+					);
+				}
+				frm.add_custom_button(__("Check and Start Review"), () =>
+					frappe
+						.call("seminary.seminary.admissions.check_now", {
+							applicant: frm.doc.name,
+						})
+						.then(() => frm.reload_doc())
+				);
+			}
+			if (state.claimed && ["In Review", "Waitlisted"].includes(status)) {
+				frm.dashboard.set_headline(
+					__("This application is decided by {0}.", [
+						frappe.utils.escape_html(state.claimed),
+					])
+				);
+			}
+			if (
+				state.may_decide &&
+				!state.claimed &&
+				["In Review", "Waitlisted"].includes(status)
+			) {
+				frm.add_custom_button(__("Decide"), () =>
+					frappe.new_doc("Admission Decision", { student_applicant: frm.doc.name })
+				).addClass("btn-primary");
+			}
+			if (status === "Approved" && state.is_staff) {
+				frm.add_custom_button(__("Enroll"), () => frm.events.enroll(frm)).addClass(
+					"btn-primary"
+				);
+			}
+			if (state.is_staff && !["Admitted", "Withdrawn"].includes(status)) {
+				frm.add_custom_button(
+					__("Withdraw"),
+					() =>
+						frappe.confirm(__("Withdraw this application?"), () =>
+							frappe
+								.call("seminary.seminary.admissions.withdraw", {
+									applicant: frm.doc.name,
+								})
+								.then(() => frm.reload_doc())
+						),
+					__("Actions")
+				);
+			}
+		});
 }

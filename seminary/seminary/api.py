@@ -76,26 +76,9 @@ DEFAULT_APPLICATION_WEB_FORM_ROUTE = "student-applicant"
 
 
 def get_application_web_form_route(program: str | None = None) -> str:
-	"""Resolve the apply Web Form route for a program.
-
-	Resolution order: the program's own ``application_web_form`` →
-	``Seminary Settings.default_application_web_form`` → the built-in
-	``student-applicant`` form. Blank links or forms that no longer exist are
-	skipped so a deleted/renamed web form degrades gracefully to the fallback.
-	"""
-
-	def _route(web_form: str | None) -> str | None:
-		if not web_form:
-			return None
-		return frappe.db.get_value("Web Form", web_form, "route")
-
-	if program:
-		route = _route(frappe.db.get_value("Program", program, "application_web_form"))
-		if route:
-			return route
-
-	route = _route(frappe.db.get_single_value("Seminary Settings", "default_application_web_form"))
-	return route or DEFAULT_APPLICATION_WEB_FORM_ROUTE
+	"""The apply route for a program. There is one application form; it shows
+	each program's own questions (decisions/111 §11)."""
+	return DEFAULT_APPLICATION_WEB_FORM_ROUTE
 
 
 def sanitize_html(html):
@@ -2785,14 +2768,18 @@ def get_available_courses_categorized(program_enrollment):
 
 
 @frappe.whitelist()
-def enroll_student(source_name):
+def enroll_student(source_name: str):
 	"""Creates a Student Record and returns a Program Enrollment.
 
 	:param source_name: Student Applicant.
 	"""
 	require_registrar()
+	from seminary.seminary import admissions, intake
+
+	# Only an admitted application enrols (decisions/112 §7).
+	if frappe.db.get_value("Student Applicant", source_name, "application_status") != "Approved":
+		frappe.throw(_("Only an application with an admission decision to admit can be enrolled."))
 	frappe.publish_realtime("enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user)
-	from seminary.seminary import intake
 
 	student = get_mapped_doc(
 		"Student Applicant",
@@ -2810,12 +2797,9 @@ def enroll_student(source_name):
 					"person": "person",
 				},
 			},
-			# Child tables are skipped unless mapped, so the emergency contacts
-			# and references collected on the public form were being discarded
-			# at admission. Both applicant fields use this child doctype and
-			# land in `Student.contacts`; the row's `emergency` flag is what
-			# distinguishes a contact from a reference.
-			"Student Contacts": {"doctype": "Student Contacts"},
+			# Child tables are not mapped: emergency contacts and education
+			# already went to the Person when the application was saved, and
+			# references belong to the application (decisions/111 §5-6).
 		},
 		ignore_permissions=True,
 	)
@@ -2833,6 +2817,9 @@ def enroll_student(source_name):
 	program_enrollment.student_name = student.student_name
 	program_enrollment.program = student_applicant.program
 	program_enrollment.academic_term = student_applicant.academic_term
+	latest = admissions.latest_decision(source_name)
+	if latest and latest.conditions:
+		program_enrollment.admission_conditions = latest.conditions
 	program_enrollment.save()
 
 	frappe.publish_realtime("enroll_student_progress", {"progress": [2, 4]}, user=frappe.session.user)
@@ -3000,19 +2987,6 @@ def make_attendance_records(student, stuname_roster, status, course_schedule=Non
 	# student ahead of the class is not taking the roll.
 	if meeting and not (status == "Excused" and date and getdate(date) > getdate()):
 		frappe.db.set_value("Course Schedule Meeting Dates", meeting, "attendance", 1)
-
-
-def get_student_contacts(student):
-	"""Returns List of contacts of a Student.
-
-	:param student: Student.
-	"""
-	contacts = frappe.get_all(
-		"Student Contacts",
-		fields=["contact_name", "relation", "emergency"],
-		filters={"parent": student},
-	)
-	return contacts
 
 
 @frappe.whitelist()
@@ -4746,32 +4720,6 @@ def course_event(name):
 	event.insert()
 
 	return "event created"
-
-
-@frappe.whitelist(allow_guest=True)
-@rate_limit(limit=300, seconds=3600, ip_based=True)
-def get_doctrinal_statement():
-	"""Return the current admission Doctrinal Statement for the web form.
-
-	Picks the most recently created submitted DS that is both `active` and
-	flagged `use_in_student_admission`. Returns `{name, title, body}` or
-	None if none configured. The body is the HTML stored in the DS's
-	`doctrinal_statement` field, ready for direct injection.
-	"""
-	row = frappe.db.get_value(
-		"Doctrinal Statement",
-		{
-			"active": 1,
-			"use_in_student_admission": 1,
-			"docstatus": 1,
-		},
-		["name", "ds_title", "doctrinal_statement"],
-		as_dict=True,
-		order_by="creation desc",
-	)
-	if not row:
-		return None
-	return {"name": row.name, "title": row.ds_title, "body": row.doctrinal_statement}
 
 
 # p006 F11 made the `access_key` check constant-time with one message for a

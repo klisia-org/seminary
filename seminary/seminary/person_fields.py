@@ -698,9 +698,8 @@ def capture_required():
 def assert_capture_complete(doc, doctype=None):
 	"""Refuse a role record that skipped a required shared attribute.
 
-	`Program.application_web_form` and
-	`Seminary Settings.default_application_web_form` let an admin point intake
-	at any Web Form built against Student Applicant. A form that simply omits
+	Applications also arrive from Desk, imports and API clients, not only the
+	built-in Web Form. A form or client that simply omits
 	a field cannot be caught on the client — the shared script prompts, but a
 	prompt is not a guarantee — and the omission is invisible afterwards,
 	because the applicant record looks complete and only the Person is empty.

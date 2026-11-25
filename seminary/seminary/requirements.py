@@ -38,6 +38,8 @@ from seminary.seminary.guards import SCHOOL_ROLES, _deny, _roles, require_regist
 OPEN = ("Pending", "Submitted")
 NOT_RENEWED = "Not needed"
 SUBJECTS = ("Program Enrollment", "Instructor")
+# Signs on the application form, before any requirement row exists (decisions/111 §10).
+APPLICANT = "Student Applicant"
 # Other apps' records a Person can owe requirements for (ADR 092).
 SUBJECT_HOOK = "requirement_subjects"
 RULE_FIELDS = (
@@ -294,6 +296,8 @@ def compute_status(row):
 			order_by="creation desc",
 		)
 		if not sa:
+			sa = _signed_on_application(row)
+		if not sa:
 			return "Pending", None, None
 		if sa.status == "Complete":
 			return "Satisfied", "Signed Agreement", sa.name
@@ -305,6 +309,23 @@ def compute_status(row):
 	if doc:
 		return "Submitted", "Person Document", doc.name
 	return "Pending", None, None
+
+
+def _signed_on_application(row):
+	"""An agreement the person signed on their application (decisions/111 §10)
+	satisfies the enrollment's row for the same template. A renewed row only
+	counts a signature made since the row started."""
+	filters = {
+		"person": row.person,
+		"agreement_template": row.agreement_template,
+		"reference_doctype": APPLICANT,
+		"docstatus": 1,
+	}
+	if row.renewal != NOT_RENEWED and row.start_date:
+		filters["signed_on"] = [">=", getdate(row.start_date)]
+	return frappe.db.get_value(
+		"Signed Agreement", filters, ["name", "status"], as_dict=True, order_by="creation desc"
+	)
 
 
 def recompute(name):
@@ -576,15 +597,19 @@ def agreement_context(row):
 		)
 	elif row.reference_doctype == "Instructor":
 		ctx.instructor = _as_dict("Instructor", row.reference_name)
+	elif row.reference_doctype == APPLICANT:
+		program = row.get("program") or frappe.db.get_value(APPLICANT, row.reference_name, "program")
+		ctx.program = _as_dict("Program", program, escape=False)
 	# Another app's record gets none; its agreement_context adds the one it
 	# wants (ADR 092 §4).
 	ctx.doctrinal_statement = (
 		_doctrinal_statement(row.reference_doctype == "Instructor")
-		if row.reference_doctype in SUBJECTS
+		if row.reference_doctype in (*SUBJECTS, APPLICANT)
 		else frappe._dict(title="", body="")
 	)
 	# Empty signature lines; the PDFs fill them (ADR 091 §8, amended).
-	ctx.signature = _slot("signature", frappe.db.get_value("Person", row.person, "full_name") or "")
+	signer = (frappe.db.get_value("Person", row.person, "full_name") if row.person else None) or ""
+	ctx.signature = _slot("signature", signer)
 	ctx.countersignature = _slot("countersignature", ctx.school.name, escaped=True)
 	# oikonomos / tamias add fees and payment plans here, so seminary never names
 	# a billing doctype.
@@ -732,7 +757,7 @@ def sign(row, signer_name, signature=None):
 	sa = frappe.get_doc(
 		{
 			"doctype": "Signed Agreement",
-			"person_requirement": row.name,
+			"person_requirement": row.get("name"),
 			"person": row.person,
 			"agreement_template": template.name,
 			"template_version": version.version,
@@ -1273,3 +1298,107 @@ def adopt_applicant_documents(applicant):
 def accepted_valid_until(document_type, on=None):
 	months = cint(frappe.db.get_value("Document Type", document_type, "valid_months"))
 	return add_months(getdate(on or today()), months) if months else None
+
+
+# --------------------------------------------------------------------------- #
+# Signing on the application (decisions/111 §10)
+# --------------------------------------------------------------------------- #
+def _application_agreement_rules(program):
+	if not program or not frappe.db.exists("Program", program):
+		return []
+	rows = frappe.get_all(
+		"Requirement Rule",
+		filters={
+			"parent": program,
+			"parenttype": "Program",
+			"parentfield": "enrollment_requirements",
+			"kind": "Agreement",
+			"ask_on_application": 1,
+		},
+		fields=["agreement_template", "instructions"],
+		order_by="idx asc",
+	)
+	return [r for r in rows if frappe.db.get_value("Agreement Template", r.agreement_template, "is_active")]
+
+
+# The public form reads school configuration, rate-limited; nothing about any person.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep.rules.security.guest-whitelisted-method
+@rate_limit(limit=300, seconds=3600, ip_based=True)
+def application_agreements(program: str | None = None):
+	"""The agreements the public application form asks the applicant to sign,
+	with the text of each as it would be signed for this program."""
+	out = []
+	for r in _application_agreement_rules(program):
+		preview = frappe._dict(
+			name=None,
+			person=None,
+			reference_doctype=APPLICANT,
+			reference_name=None,
+			program=program,
+			agreement_template=r.agreement_template,
+			academic_term=None,
+			academic_year=None,
+		)
+		try:
+			template, _version, html = render_agreement(preview)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "application agreement preview failed")
+			continue
+		out.append(
+			{
+				"agreement_template": r.agreement_template,
+				"title": template.title,
+				"instructions": r.instructions or "",
+				"html": fill_slots(html),
+			}
+		)
+	return out
+
+
+def check_application_agreements(applicant):
+	"""Each agreement the program asks for is on the form, ticked, named and drawn."""
+	asked = {r.agreement_template for r in _application_agreement_rules(applicant.program)}
+	rows = [
+		r for r in applicant.get("agreements") or [] if r.agreement_template in asked or r.signed_agreement
+	]
+	applicant.set("agreements", rows)
+	have = {r.agreement_template for r in rows}
+	for template in asked - have:
+		applicant.append("agreements", {"agreement_template": template})
+	for r in applicant.get("agreements"):
+		if r.signed_agreement:
+			continue
+		title = (
+			frappe.db.get_value("Agreement Template", r.agreement_template, "title") or r.agreement_template
+		)
+		if not cint(r.agreed) or not (r.signer_name or "").strip() or not r.signature:
+			frappe.throw(
+				_("Read {0}, tick I agree, type your full name and sign.").format(title),
+				title=_("Agreement not signed"),
+			)
+		r.signer_name = _clean_name(r.signer_name)
+		_check_signature(r.signature)
+
+
+def sign_application_agreements(applicant):
+	"""Each signed row on the application becomes a submitted Signed Agreement
+	for the applicant's Person, which their enrollment later finds."""
+	if not applicant.person:
+		return
+	for r in applicant.get("agreements") or []:
+		if r.signed_agreement or not (r.agreement_template and r.signature and r.signer_name):
+			continue
+		row = frappe._dict(
+			name=None,
+			person=applicant.person,
+			reference_doctype=APPLICANT,
+			reference_name=applicant.name,
+			program=applicant.program,
+			agreement_template=r.agreement_template,
+			academic_term=applicant.academic_term,
+			academic_year=applicant.academic_year,
+		)
+		sa = sign(row, r.signer_name, r.signature)
+		r.db_set("signed_agreement", sa.name, update_modified=False)
+		# The drawn image now lives on the Signed Agreement, with its evidence.
+		r.db_set("signature", None, update_modified=False)

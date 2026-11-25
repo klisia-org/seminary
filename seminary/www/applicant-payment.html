@@ -2,12 +2,34 @@
 
 {% block page_content %}
 <div class="sem-page" style="max-width: 680px;">
+	{% if application and application.status not in ("Applied", "In Review") %}
+	<div class="sem-panel">
+		<h1>{{ _("Your application") }}</h1>
+		{% if application.status in ("Approved", "Admitted") %}
+		<p class="sem-lead">{{ _("You are admitted.") }}</p>
+		{% if application.conditions %}
+		<h2>{{ _("Conditions of your admission") }}</h2>
+		<p>{{ application.conditions | e }}</p>
+		{% endif %}
+		{% elif application.status == "Waitlisted" %}
+		<p class="sem-lead">{{ _("Your application is on our waiting list.") }}</p>
+		{% elif application.status == "Rejected" %}
+		<p class="sem-lead">{{ _("We are sorry that we cannot offer you a place this time.") }}</p>
+		{% elif application.status == "Withdrawn" %}
+		<p class="sem-lead">{{ _("This application was withdrawn.") }}</p>
+		{% endif %}
+	</div>
+	{% else %}
 	<div class="sem-success">
 		<div class="sem-success__check">&#10003;</div>
 		<h1>{{ _("Congratulations!") }}</h1>
 		<p class="sem-lead">{{ _("You have successfully applied to the seminary!") }}</p>
 		<p>{{ _("We have everything to get back to you, after we review your application. This is a manual and prayerful process, so it may take about 2 weeks for us to get back to you.") }}</p>
 	</div>
+	{% if application and application.status == "In Review" %}
+	<p class="sem-panel">{{ _("Your application is complete and in review.") }}</p>
+	{% endif %}
+	{% endif %}
 
 	{% if payment_data and payment_data.payment_url %}
 	<div class="sem-panel sem-panel--accent" style="text-align: center;">

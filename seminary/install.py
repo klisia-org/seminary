@@ -55,6 +55,7 @@ def after_install():
 	seed_internship_types()
 	seed_internship_communication()
 	seed_public_website_defaults()
+	seed_application_questions()
 	seed_website_branding()
 	seed_website_navigation()
 	seed_website_pages()
@@ -763,6 +764,50 @@ def seed_communication_templates():
 	if not frappe.db.exists("DocType", "Communication Template"):
 		return
 	defaults = [
+		# decisions/112 §9: one notice per admission decision.
+		{
+			"template_key": "admission-admitted",
+			"category": "Transactional",
+			"description": "Applicant notice: admitted.",
+			"subject": "You are admitted to {{ program }}",
+			"body": (
+				"<p>Dear {{ applicant }},</p><p>We are glad to tell you that you are admitted "
+				"to {{ program }}. We will be in touch about your enrollment.</p>"
+				'<p><a href="{{ status_url }}">See your application</a></p>'
+			),
+		},
+		{
+			"template_key": "admission-admitted-conditions",
+			"category": "Transactional",
+			"description": "Applicant notice: admitted on conditions.",
+			"subject": "You are admitted to {{ program }}",
+			"body": (
+				"<p>Dear {{ applicant }},</p><p>We are glad to tell you that you are admitted "
+				"to {{ program }} on these conditions:</p><p>{{ conditions }}</p>"
+				'<p><a href="{{ status_url }}">See your application</a></p>'
+			),
+		},
+		{
+			"template_key": "admission-waitlisted",
+			"category": "Transactional",
+			"description": "Applicant notice: placed on the waiting list.",
+			"subject": "Your application to {{ program }}",
+			"body": (
+				"<p>Dear {{ applicant }},</p><p>Your application to {{ program }} is on our "
+				"waiting list. We will write again as soon as a place opens.</p>"
+				'<p><a href="{{ status_url }}">See your application</a></p>'
+			),
+		},
+		{
+			"template_key": "admission-declined",
+			"category": "Transactional",
+			"description": "Applicant notice: not admitted.",
+			"subject": "Your application to {{ program }}",
+			"body": (
+				"<p>Dear {{ applicant }},</p><p>Thank you for applying to {{ program }}. We are "
+				"sorry that we cannot offer you a place this time.</p>"
+			),
+		},
 		{
 			"template_key": "waitlist-promoted",
 			"category": "Transactional",
@@ -1929,3 +1974,11 @@ def setup_genders():
 		keep = name in DEFAULT_GENDERS or name in [_(g) for g in DEFAULT_GENDERS]
 		if not keep:
 			frappe.db.set_value("Gender", name, "disabled", 1, update_modified=False)
+
+
+def seed_application_questions():
+	"""decisions/111: the shared pool starts with the questions the form used to
+	hard-code. Install only; a question a school deletes is not recreated."""
+	from seminary.seminary import application_form
+
+	application_form.setup()

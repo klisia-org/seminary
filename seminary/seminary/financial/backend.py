@@ -145,6 +145,11 @@ class FinancialBackend(ABC):
 	def application_payment_url(self, applicant_name: str) -> dict | None:
 		"""Payment URL + instructions for an applicant's Application invoice."""
 
+	def application_fee_outstanding(self, applicant_name: str) -> bool:
+		"""Whether an application fee is still owed. Read only: unlike
+		`application_payment_url` it creates nothing (decisions/112 §2)."""
+		return False
+
 	@abstractmethod
 	def invoice_payment_url(self, invoice_name: str) -> dict | None:
 		"""Gateway payment URL for one of the student's invoices."""

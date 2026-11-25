@@ -78,6 +78,8 @@ REVIEWED_MODULES = (
 	"seminary.seminary.discipleship.reading_plan_pack",
 	"seminary.seminary.discipleship.reading_plans",
 	"seminary.seminary.requirements",
+	"seminary.seminary.application_form",
+	"seminary.seminary.admissions",
 	"seminary.seminary.discipleship.scripture",
 	"seminary.seminary.oral",
 	"seminary.seminary.oral_exams",
@@ -122,7 +124,6 @@ GUEST_ALLOWED = {
 	"seminary.seminary.api.get_translations",
 	"seminary.seminary.api.get_user_info",
 	"seminary.seminary.api.get_school_abbr_logo",
-	"seminary.seminary.api.get_doctrinal_statement",
 	"seminary.seminary.api.get_application_payment_url",
 	"seminary.seminary.api.get_default_phone_country",
 	"seminary.seminary.api.active_term",
@@ -151,6 +152,10 @@ GUEST_ALLOWED = {
 	# @rate_limit 300/3600s ip_based; the document types a program's public form
 	# asks for -- configuration, nothing about any person (decisions/091 §10)
 	"seminary.seminary.requirements.application_documents",
+	# @rate_limit 300/3600s ip_based; a program's application questions and the
+	# text of the agreements its form asks to sign -- configuration (decisions/111)
+	"seminary.seminary.application_form.application_questions",
+	"seminary.seminary.requirements.application_agreements",
 	# resolves through a readable File row; content-hash keys are not enumerable (p004)
 	"seminary.storage.api.download_file",
 }
@@ -483,6 +488,17 @@ STAFF_ONLY = {
 # project's student/advisor checks) and are covered by their own test module.
 OWN_RULE = (
 	{
+		# decisions/112: each resolves the applicant, review or program and checks
+		# its own rule (has_permission on the record, reviewer == caller, staff for
+		# withdraw); covered by test_adr111_112_admissions.
+		"seminary.seminary.admissions.check_now",
+		"seminary.seminary.admissions.edit_review_rubric",
+		"seminary.seminary.admissions.form_state",
+		"seminary.seminary.admissions.recuse",
+		"seminary.seminary.admissions.review_panel",
+		"seminary.seminary.admissions.save_review_scores",
+		"seminary.seminary.admissions.submit_review",
+		"seminary.seminary.admissions.withdraw",
 		# disciplinary: these two carry their own rule rather than a throw -- an
 		# unauthorized caller gets [] (fail-closed, no leak), so they are not
 		# STAFF_ONLY in this test's "must raise PermissionError" sense.

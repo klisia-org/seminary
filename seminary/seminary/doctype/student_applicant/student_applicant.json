@@ -44,15 +44,9 @@
   "ethnic",
   "marital",
   "education_section",
-  "highdegree",
-  "stueducation",
-  "reading",
-  "compliteracy",
-  "useemail",
+  "education",
+  "requests_requirement_review",
   "documents",
-  "disabilities_section",
-  "disablechk",
-  "disable_accom",
   "address_tab",
   "home_address",
   "address_line_1",
@@ -63,40 +57,12 @@
   "pincode",
   "country",
   "relations_tab",
-  "contactsrefs",
-  "employment_tab",
-  "employment_section",
-  "employer",
-  "position",
-  "empladdress",
-  "emplcity",
-  "emplzip",
-  "column_break_pkyb",
-  "stdate",
-  "supervisor",
-  "suphone",
-  "churchsection",
-  "churchname",
-  "churchaddress",
-  "churchcity",
-  "churchstate",
-  "churchzip",
-  "column_break_zlgs",
-  "who_should_we_contact_to_confirm_your_church_participation",
-  "titlechurch",
-  "phonechurch",
-  "emailchurch",
-  "doctrine_tab",
-  "doctrinal_agreement_section",
-  "ds_body",
-  "ds2",
-  "signdoctrine",
-  "section_break_qktc",
-  "gospelunderst",
-  "testimony",
-  "pgmexpect",
-  "requests_requirement_review",
   "contacts",
+  "references",
+  "questions_tab",
+  "answers",
+  "agreements_tab",
+  "agreements",
   "access_key"
  ],
  "fields": [
@@ -122,23 +88,10 @@
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
-   "fieldname": "program",
+   "fieldname": "titleresp",
    "fieldtype": "Link",
-   "in_filter": 1,
-   "in_global_search": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Program of Interest",
-   "options": "Program",
-   "reqd": 1,
-   "search_index": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "paid",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Paid"
+   "label": "Salutation",
+   "options": "Salutation"
   },
   {
    "fieldname": "column_break_8",
@@ -153,20 +106,75 @@
    "set_only_once": 1
   },
   {
-   "allow_on_submit": 1,
+   "default": "Today",
+   "fieldname": "application_date",
+   "fieldtype": "Date",
+   "label": "Application Date"
+  },
+  {
    "fieldname": "application_status",
    "fieldtype": "Select",
    "in_filter": 1,
    "label": "Application Status",
    "no_copy": 1,
-   "options": "Applied\nApproved\nRejected\nAdmitted",
-   "read_only": 1
+   "options": "Applied\nIn Review\nApproved\nWaitlisted\nRejected\nWithdrawn\nAdmitted",
+   "read_only": 1,
+   "description": "Follows the admission decision. It cannot be set by hand.",
+   "allow_on_submit": 1
   },
   {
-   "default": "Today",
-   "fieldname": "application_date",
-   "fieldtype": "Date",
-   "label": "Application Date"
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program of Interest",
+   "options": "Program",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_xuzu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "This will also be your username for login. Preferably, use a personal email that you will keep.",
+   "fieldname": "student_email_id",
+   "fieldtype": "Data",
+   "label": "Student Email Address",
+   "options": "Email",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\"",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "The published Term Admission window the applicant is responding to. Optional for Continuous-enrollment programs.",
+   "fieldname": "term_admission",
+   "fieldtype": "Link",
+   "label": "Term Admission",
+   "options": "Term Admission"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
+  },
+  {
+   "description": "Identity spine record. Promoted from this form on insert; intake fields stay editable (and re-promote) until admission, then flip to read-only mirrors.",
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "no_copy": 1,
+   "options": "Person",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_lvby",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "academic_term.academic_year",
@@ -187,18 +195,35 @@
    "search_index": 1
   },
   {
-   "description": "The published Term Admission window the applicant is responding to. Optional for Continuous-enrollment programs.",
-   "fieldname": "term_admission",
-   "fieldtype": "Link",
-   "label": "Term Admission",
-   "options": "Term Admission"
+   "default": "0",
+   "fieldname": "paid",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Paid"
   },
   {
-   "fieldname": "image",
-   "fieldtype": "Attach Image",
+   "fieldname": "section_break_23",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
    "hidden": 1,
-   "label": "Image",
-   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
+   "label": "Title"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Applicant",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "personal_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Personal Details"
   },
   {
    "fieldname": "section_break_4",
@@ -226,18 +251,16 @@
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
-   "fieldname": "column_break_12",
-   "fieldtype": "Column Break"
+   "description": "National tax or registration number. Which format is required follows Nationality, or Country when no nationality is given.",
+   "fieldname": "tax_id",
+   "fieldtype": "Data",
+   "label": "Tax ID",
+   "length": 32,
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
-   "description": "This will also be your username for login. Preferably, use a personal email that you will keep.",
-   "fieldname": "student_email_id",
-   "fieldtype": "Data",
-   "label": "Student Email Address",
-   "options": "Email",
-   "read_only_depends_on": "eval:doc.application_status==\"Admitted\"",
-   "reqd": 1,
-   "unique": 1
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "student_mobile_number",
@@ -246,21 +269,56 @@
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
-   "description": "Identity spine record. Promoted from this form on insert; intake fields stay editable (and re-promote) until admission, then flip to read-only mirrors.",
-   "fieldname": "person",
-   "fieldtype": "Link",
-   "label": "Person",
-   "no_copy": 1,
-   "options": "Person",
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
    "fieldname": "nationality",
    "fieldtype": "Link",
    "label": "Nationality",
    "options": "Country",
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
+  },
+  {
+   "fieldname": "ethnic",
+   "fieldtype": "Link",
+   "label": "Ethnic Group",
+   "options": "Ethnic Group",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
+  },
+  {
+   "fieldname": "marital",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
+  },
+  {
+   "fieldname": "education_section",
+   "fieldtype": "Section Break",
+   "label": "Education"
+  },
+  {
+   "fieldname": "education",
+   "fieldtype": "Table",
+   "label": "Education History",
+   "options": "Student Applicant Education",
+   "description": "Each row is copied to the person's education when the application is saved."
+  },
+  {
+   "default": "None",
+   "description": "Self-reported circumstance that may need leveling (remedial courses) or advanced-standing exemptions. Flags the registrar to review your requirements; it does not change them.",
+   "fieldname": "requests_requirement_review",
+   "fieldtype": "Select",
+   "label": "Requesting requirement review?",
+   "options": "None\nLeveling\nExemption / Advanced Standing\nBoth"
+  },
+  {
+   "fieldname": "documents",
+   "fieldtype": "Table",
+   "label": "Documents",
+   "options": "Student Applicant Document"
+  },
+  {
+   "fieldname": "address_tab",
+   "fieldtype": "Tab Break",
+   "label": "Address"
   },
   {
    "fieldname": "home_address",
@@ -279,14 +337,14 @@
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
-   "fieldname": "column_break_23",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "city",
    "fieldtype": "Data",
    "label": "City",
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "state",
@@ -295,52 +353,10 @@
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
-   "fieldname": "contacts",
-   "fieldtype": "Table",
-   "label": "Contacts",
-   "options": "Student Contacts"
-  },
-  {
-   "fieldname": "section_break_23",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "title",
+   "fieldname": "pincode",
    "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Title"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Student Applicant",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_xuzu",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_lvby",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "personal_details_tab",
-   "fieldtype": "Tab Break",
-   "label": "Personal Details"
-  },
-  {
-   "fieldname": "relations_tab",
-   "fieldtype": "Tab Break",
-   "label": "Contacts"
-  },
-  {
-   "fieldname": "address_tab",
-   "fieldtype": "Tab Break",
-   "label": "Address"
+   "label": "ZIP / Postal Code",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "country",
@@ -350,272 +366,46 @@
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
-   "fieldname": "titleresp",
-   "fieldtype": "Link",
-   "label": "Salutation",
-   "options": "Salutation"
-  },
-  {
-   "fieldname": "pincode",
-   "fieldtype": "Data",
-   "label": "ZIP / Postal Code",
-   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
-  },
-  {
-   "description": "National tax or registration number. Which format is required follows Nationality, or Country when no nationality is given.",
-   "fieldname": "tax_id",
-   "fieldtype": "Data",
-   "label": "Tax ID",
-   "length": 32,
-   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
-  },
-  {
-   "fieldname": "ethnic",
-   "fieldtype": "Link",
-   "label": "Ethnic Group",
-   "options": "Ethnic Group",
-   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
-  },
-  {
-   "fieldname": "disabilities_section",
-   "fieldtype": "Section Break",
-   "label": "Disabilities"
-  },
-  {
-   "default": "0",
-   "fieldname": "disablechk",
-   "fieldtype": "Check",
-   "label": "Are you disabled?"
-  },
-  {
-   "depends_on": "disablechk == 1",
-   "fieldname": "disable_accom",
-   "fieldtype": "Data",
-   "label": "If you are disabled, what accommodations will you require?"
-  },
-  {
-   "fieldname": "marital",
-   "fieldtype": "Select",
-   "label": "Marital Status",
-   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)",
-   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
-  },
-  {
-   "fieldname": "employment_tab",
+   "fieldname": "relations_tab",
    "fieldtype": "Tab Break",
-   "label": "Employment & Church"
+   "label": "Contacts"
   },
   {
-   "fieldname": "employer",
-   "fieldtype": "Data",
-   "label": "Place of Employment"
+   "fieldname": "contacts",
+   "fieldtype": "Table",
+   "label": "Emergency Contacts",
+   "options": "Person Emergency Contact",
+   "description": "Copied to the person when the application is saved."
   },
   {
-   "fieldname": "position",
-   "fieldtype": "Data",
-   "label": "Position"
+   "fieldname": "references",
+   "fieldtype": "Table",
+   "label": "References",
+   "options": "Student Applicant Reference"
   },
   {
-   "fieldname": "empladdress",
-   "fieldtype": "Data",
-   "label": "Employer Business Address"
-  },
-  {
-   "fieldname": "emplcity",
-   "fieldtype": "Data",
-   "label": "Employer City"
-  },
-  {
-   "fieldname": "emplzip",
-   "fieldtype": "Data",
-   "label": "Employer ZIP code"
-  },
-  {
-   "fieldname": "column_break_pkyb",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "stdate",
-   "fieldtype": "Date",
-   "label": "Start Date"
-  },
-  {
-   "fieldname": "supervisor",
-   "fieldtype": "Data",
-   "label": "Direct Supervisor"
-  },
-  {
-   "fieldname": "suphone",
-   "fieldtype": "Phone",
-   "label": "Phone"
-  },
-  {
-   "fieldname": "education_section",
-   "fieldtype": "Section Break",
-   "label": "Education"
-  },
-  {
-   "fieldname": "highdegree",
-   "fieldtype": "Select",
-   "label": "What is your highest academic degree?",
-   "options": "\nDoctorate\nMaster\nBachelor\nHigh School Diploma\nLess than High School"
-  },
-  {
-   "fieldname": "reading",
-   "fieldtype": "Select",
-   "label": "Regarding your reading habits, which option best describes you?",
-   "options": "\nI read books, magazines, and articles frequently\nI read books and magazines occasionally\nI don't have the habit of reading, but I used to\nI never developed the habit of reading"
-  },
-  {
-   "fieldname": "compliteracy",
-   "fieldtype": "Select",
-   "label": "Regarding your computer literacy, which option best describes you?",
-   "options": "\nI am familiar with and have access to a computer with internet, word processor, and email\nI have a computer but I struggle with new programs\nI am proficient in email, internet, and word processors, but I don't have a computer\nI don't have a computer and my computer skills need development"
-  },
-  {
-   "default": "0",
-   "fieldname": "useemail",
-   "fieldtype": "Check",
-   "label": "Do you check your email daily (Mon-Sat)?"
-  },
-  {
-   "fieldname": "doctrine_tab",
+   "fieldname": "questions_tab",
    "fieldtype": "Tab Break",
-   "label": "Doctrine"
+   "label": "Questions"
   },
   {
-   "description": "By signing here, I certify that I read and fully agree with the doctrinal statement above.",
-   "fieldname": "signdoctrine",
-   "fieldtype": "Signature",
-   "label": "Sign here"
-  },
-  {
-   "fieldname": "doctrinal_agreement_section",
-   "fieldtype": "Section Break",
-   "label": "Doctrinal Agreement"
-  },
-  {
-   "fieldname": "section_break_qktc",
-   "fieldtype": "Section Break",
-   "label": "Faith and Practice"
-  },
-  {
-   "fieldname": "gospelunderst",
-   "fieldtype": "Long Text",
-   "label": "Please explain your understanding of the gospel and the Christian life."
-  },
-  {
-   "fieldname": "testimony",
-   "fieldtype": "Long Text",
-   "label": "How did you become a believer? What changed in your life?"
-  },
-  {
-   "fieldname": "pgmexpect",
-   "fieldtype": "Long Text",
-   "label": "How enrolling in this program will help you serve the church?"
-  },
-  {
-   "default": "None",
-   "description": "Self-reported circumstance that may need leveling (remedial courses) or advanced-standing exemptions. Flags the registrar to review your requirements; it does not change them.",
-   "fieldname": "requests_requirement_review",
-   "fieldtype": "Select",
-   "label": "Requesting requirement review?",
-   "options": "None\nLeveling\nExemption / Advanced Standing\nBoth"
-  },
-  {
-   "fieldname": "employment_section",
-   "fieldtype": "Section Break",
-   "label": "Employment"
-  },
-  {
-   "fieldname": "churchsection",
-   "fieldtype": "Section Break",
-   "label": "Church"
-  },
-  {
-   "fieldname": "churchname",
-   "fieldtype": "Data",
-   "label": "Name of the Church"
-  },
-  {
-   "fieldname": "churchaddress",
-   "fieldtype": "Data",
-   "label": "Church Address"
-  },
-  {
-   "fieldname": "churchcity",
-   "fieldtype": "Data",
-   "label": "Church City"
-  },
-  {
-   "fieldname": "churchstate",
-   "fieldtype": "Data",
-   "label": "State"
-  },
-  {
-   "fieldname": "churchzip",
-   "fieldtype": "Data",
-   "label": "ZIP code"
-  },
-  {
-   "fieldname": "column_break_zlgs",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "who_should_we_contact_to_confirm_your_church_participation",
-   "fieldtype": "Data",
-   "label": "Who should we contact to confirm your church participation?"
-  },
-  {
-   "fieldname": "titlechurch",
-   "fieldtype": "Data",
-   "label": "Title of this person"
-  },
-  {
-   "fieldname": "phonechurch",
-   "fieldtype": "Phone",
-   "label": "Phone number"
-  },
-  {
-   "description": "This email must be of someone who can endorse your active involvement in a local church.",
-   "fieldname": "emailchurch",
-   "fieldtype": "Data",
-   "label": "Email"
-  },
-  {
-   "fieldname": "stueducation",
+   "fieldname": "answers",
    "fieldtype": "Table",
-   "label": "List your educational achievements",
-   "options": "Student Education"
+   "label": "Answers",
+   "options": "Student Applicant Answer",
+   "description": "The answers to this program's application questions. They cannot change once the application is in review."
   },
   {
-   "description": "Auto-set on insert to the most recent active Doctrinal Statement flagged 'Use in Student Admission'. Applicants confirm by submitting.",
-   "fieldname": "ds2",
-   "fieldtype": "Link",
-   "label": "Doctrinal Statement",
-   "options": "Doctrinal Statement",
-   "read_only": 1
+   "fieldname": "agreements_tab",
+   "fieldtype": "Tab Break",
+   "label": "Agreements"
   },
   {
-   "description": "Snapshot of the linked Doctrinal Statement's body, fetched on insert. Read-only; preserved at submit so the applicant's signed text is auditable even if the source DS is later amended.",
-   "fetch_from": "ds2.doctrinal_statement",
-   "fetch_if_empty": 1,
-   "fieldname": "ds_body",
-   "fieldtype": "Text Editor",
-   "label": "Please read carefully and check if you agree with our doctrinal statement",
-   "read_only": 1
-  },
-  {
-   "fieldname": "contactsrefs",
+   "fieldname": "agreements",
    "fieldtype": "Table",
-   "label": "Contacts and References",
-   "options": "Student Contacts"
-  },
-  {
-   "fieldname": "documents",
-   "fieldtype": "Table",
-   "label": "Documents",
-   "options": "Student Applicant Document"
+   "label": "Agreements",
+   "options": "Student Applicant Agreement",
+   "description": "Agreements signed on the application form."
   },
   {
    "description": "Unguessable handle for the public payment page. Not a secret the applicant needs to see; it exists so the page cannot be reached by trying docnames.",
@@ -629,8 +419,19 @@
   }
  ],
  "image_field": "image",
- "links": [],
- "modified": "2026-10-20 12:00:00.000000",
+ "links": [
+  {
+   "link_doctype": "Application Review",
+   "link_fieldname": "student_applicant",
+   "group": "Admission"
+  },
+  {
+   "link_doctype": "Admission Decision",
+   "link_fieldname": "student_applicant",
+   "group": "Admission"
+  }
+ ],
+ "modified": "2026-11-24 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",
@@ -708,6 +509,11 @@
    "report": 1,
    "role": "Program Chair",
    "share": 1
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "role": "Desk User"
   }
  ],
  "route": "apply-to-enroll",

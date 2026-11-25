@@ -10,46 +10,6 @@
 // Form-specific behaviour (e.g. the built-in form's post-submit payment
 // redirect) stays in the individual form's own script, NOT here.
 
-frappe.ready(function () {
-    if (!window.frappe || !frappe.web_form) return;
-
-    // Render the active admission Doctrinal Statement as a read-only block
-    // directly above the `signdoctrine` signature, so the applicant reads it
-    // before signing. This works on any form that includes the signature field
-    // — no `ds2` field and no per-form script required.
-    frappe.call("seminary.seminary.api.get_doctrinal_statement").then(function (r) {
-        var ds = r && r.message;
-        if (!ds || !ds.body) return;
-
-        var tries = 0;
-        var timer = setInterval(function () {
-            tries += 1;
-
-            // Already injected (e.g. script ran twice) — stop.
-            if (document.getElementById("seminary-doctrinal-statement")) {
-                clearInterval(timer);
-                return;
-            }
-
-            var $sign = $('[data-fieldname="signdoctrine"]').first();
-            if ($sign.length) {
-                clearInterval(timer);
-                var heading = {{ _("Please read carefully and check if you agree with our doctrinal statement") | tojson }};
-                var $wrap = $('<div id="seminary-doctrinal-statement" style="margin-bottom:1rem;"></div>');
-                $('<p style="font-weight:600;margin-bottom:0.5rem;"></p>').text(heading).appendTo($wrap);
-                $(
-                    '<div style="padding:1rem;border:1px solid #e0e0e0;border-radius:6px;' +
-                    'max-height:320px;overflow:auto;background:#fafafa;"></div>'
-                ).html(ds.body).appendTo($wrap);
-                $sign.before($wrap);
-            } else if (tries > 40) {
-                clearInterval(timer);
-            }
-        }, 150);
-    });
-});
-
-
 // Make the multi-page progress dots navigable.
 //
 // Frappe renders one `.slide-step` per page with a `data-step-id`, marks the
@@ -297,4 +257,240 @@ frappe.ready(function () {
         clearTimeout(timer);
         timer = setTimeout(nameLandmarks, 200);
     }).observe(document.body, { childList: true, subtree: true });
+});
+
+// The chosen program's own questions and agreements (decisions/111).
+//
+// Questions come from the school's shared pool; the program picks which ones
+// its form asks. They are drawn above the hidden `answers` table and written
+// into it as the applicant types, one row per question. Three pool entries are
+// tables (education, emergency contacts, references): those are shown only
+// when the program asks for them. Agreements are drawn above the hidden
+// `agreements` table: the applicant reads each one, ticks I agree, types their
+// name and signs. The server checks all of it again on save.
+frappe.ready(function () {
+    if (!window.frappe || !frappe.web_form) return;
+    var wf = frappe.web_form;
+    var fields = wf.fields_dict || {};
+    if (!fields.answers && !fields.agreements) return;
+
+    var TABLES = ["education", "contacts", "references"];
+    var TYPES = {
+        "Short text": { fieldtype: "Data" },
+        "Long text": { fieldtype: "Small Text" },
+        "Select": { fieldtype: "Select" },
+        "Check": { fieldtype: "Check" },
+        "Date": { fieldtype: "Date" },
+        "Number": { fieldtype: "Float" },
+        "Phone": { fieldtype: "Data", options: "Phone" },
+        "Email": { fieldtype: "Data", options: "Email" },
+    };
+
+    function setTable(fieldname, rows) {
+        wf.doc[fieldname] = rows;
+        try {
+            wf.set_value(fieldname, rows);
+        } catch (e) {
+            var grid = fields[fieldname] && fields[fieldname].grid;
+            if (grid) {
+                grid.df.data = rows;
+                grid.refresh();
+            }
+        }
+    }
+
+    function holder(fieldname, id) {
+        var field = fields[fieldname];
+        if (!field || !field.$wrapper) return null;
+        field.$wrapper.hide();
+        var $box = $("#" + id);
+        if (!$box.length) {
+            $box = $('<div id="' + id + '" class="seminary-application-block"></div>');
+            field.$wrapper.before($box);
+        }
+        return $box.empty();
+    }
+
+    // ---- questions --------------------------------------------------------
+    var questions = [];
+    var answers = {};
+
+    function writeAnswers() {
+        var rows = questions.map(function (q, i) {
+            var v = answers[q.question];
+            if (q.answer_type === "Check") v = v ? "1" : "0";
+            return {
+                doctype: "Student Applicant Answer",
+                idx: i + 1,
+                question: q.question,
+                answer: v === undefined || v === null ? "" : String(v),
+            };
+        });
+        setTable("answers", rows);
+    }
+
+    function drawQuestions() {
+        var $box = holder("answers", "seminary-application-questions");
+        if (!$box) return;
+        if (!questions.length) {
+            $('<p class="text-muted"></p>').text(__("This program has no further questions.")).appendTo($box);
+            writeAnswers();
+            return;
+        }
+        var group = null;
+        questions.forEach(function (q) {
+            if (q.group && q.group !== group) {
+                group = q.group;
+                $('<h4 class="mt-4 mb-2"></h4>').text(q.group).appendTo($box);
+            }
+            var spec = TYPES[q.answer_type] || TYPES["Short text"];
+            var df = {
+                fieldname: "q_" + q.question.replace(/[^A-Za-z0-9]/g, "_"),
+                fieldtype: spec.fieldtype,
+                label: q.label,
+                reqd: q.required ? 1 : 0,
+                description: q.help || "",
+                options: spec.options || "",
+                change: function () {
+                    answers[q.question] = control.get_value();
+                    writeAnswers();
+                },
+            };
+            if (q.answer_type === "Select") {
+                df.options = [{ value: "", label: "" }].concat(q.choices || []);
+            }
+            var $slot = $("<div></div>").appendTo($box);
+            var control = frappe.ui.form.make_control({ df: df, parent: $slot, render_input: true });
+            control.refresh();
+            if (answers[q.question] !== undefined) control.set_value(answers[q.question]);
+        });
+        writeAnswers();
+    }
+
+    function applyTables(tables) {
+        TABLES.forEach(function (fieldname) {
+            if (!fields[fieldname]) return;
+            var t = tables[fieldname];
+            wf.set_df_property(fieldname, "hidden", t ? 0 : 1);
+            if (!t) {
+                setTable(fieldname, []);
+                return;
+            }
+            wf.set_df_property(fieldname, "label", t.label);
+            wf.set_df_property(fieldname, "reqd", t.required ? 1 : 0);
+            wf.set_df_property(
+                fieldname,
+                "description",
+                [t.help, t.required ? __("Add at least one row.") : ""].filter(Boolean).join(" ")
+            );
+        });
+    }
+
+    // ---- agreements -------------------------------------------------------
+    var agreements = [];
+    var signed = {};
+
+    function writeAgreements() {
+        setTable(
+            "agreements",
+            agreements.map(function (a, i) {
+                var s = signed[a.agreement_template] || {};
+                return {
+                    doctype: "Student Applicant Agreement",
+                    idx: i + 1,
+                    agreement_template: a.agreement_template,
+                    agreed: s.agreed ? 1 : 0,
+                    signer_name: s.signer_name || "",
+                    signature: s.signature || "",
+                };
+            })
+        );
+    }
+
+    function drawAgreements() {
+        var $box = holder("agreements", "seminary-application-agreements");
+        if (!$box) return;
+        if (!agreements.length) {
+            $('<p class="text-muted"></p>').text(__("This program has no agreements to sign.")).appendTo($box);
+            writeAgreements();
+            return;
+        }
+        agreements.forEach(function (a) {
+            var s = (signed[a.agreement_template] = signed[a.agreement_template] || {});
+            var $card = $('<section class="mb-5"></section>').appendTo($box);
+            $('<h4 class="mb-2"></h4>').text(a.title).appendTo($card);
+            if (a.instructions) $('<p class="text-muted"></p>').text(a.instructions).appendTo($card);
+            $(
+                '<div tabindex="0" style="padding:1rem;border:1px solid var(--border-color, #e0e0e0);' +
+                    'border-radius:6px;max-height:320px;overflow:auto;margin-bottom:1rem;"></div>'
+            )
+                .attr("aria-label", a.title)
+                .html(a.html)
+                .appendTo($card);
+            var parts = [
+                { fieldname: "agreed", fieldtype: "Check", label: __("I have read this agreement and I agree") },
+                { fieldname: "signer_name", fieldtype: "Data", label: __("Your full name"), reqd: 1 },
+                { fieldname: "signature", fieldtype: "Signature", label: __("Signature"), reqd: 1 },
+            ];
+            parts.forEach(function (df) {
+                var $slot = $("<div></div>").appendTo($card);
+                var control = frappe.ui.form.make_control({
+                    df: Object.assign({}, df, {
+                        fieldname: df.fieldname + "_" + a.agreement_template.replace(/[^A-Za-z0-9]/g, "_"),
+                        change: function () {
+                            s[df.fieldname] = control.get_value();
+                            writeAgreements();
+                        },
+                    }),
+                    parent: $slot,
+                    render_input: true,
+                });
+                control.refresh();
+                if (s[df.fieldname]) control.set_value(s[df.fieldname]);
+            });
+        });
+        writeAgreements();
+    }
+
+    function load(program) {
+        if (!program) {
+            questions = [];
+            agreements = [];
+            applyTables({});
+            drawQuestions();
+            drawAgreements();
+            return;
+        }
+        if (fields.answers) {
+            frappe
+                .call({
+                    method: "seminary.seminary.application_form.application_questions",
+                    args: { program: program },
+                })
+                .then(function (r) {
+                    var data = (r && r.message) || {};
+                    questions = data.questions || [];
+                    applyTables(data.tables || {});
+                    drawQuestions();
+                });
+        }
+        if (fields.agreements) {
+            frappe
+                .call({
+                    method: "seminary.seminary.requirements.application_agreements",
+                    args: { program: program },
+                })
+                .then(function (r) {
+                    agreements = (r && r.message) || [];
+                    drawAgreements();
+                });
+        }
+    }
+
+    if (wf.on) {
+        wf.on("program", function (field, value) {
+            load(value);
+        });
+    }
+    load(wf.doc && wf.doc.program);
 });

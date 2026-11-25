@@ -19,7 +19,12 @@ def get_context(context):
 	context.payment_data = None
 	context.invalid_link = False
 
+	context.application = None
 	if applicant_name:
+		# Status and conditions, never the reviews (decisions/112 §9).
+		from seminary.seminary.admissions import public_status
+
+		context.application = public_status(applicant_name, key)
 		try:
 			context.payment_data = get_application_payment_url(applicant_name, key)
 		except frappe.PermissionError:

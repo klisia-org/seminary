@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cstr, getdate
 
-from seminary.seminary import person_fields
+from seminary.seminary import application_form, person_fields, requirements
 from seminary.seminary.ethnic_groups import validate_active
 
 
@@ -32,23 +32,6 @@ class StudentApplicant(Document):
 	how the address and gender an applicant typed never reached the spine.
 	"""
 
-	def before_insert(self):
-		if self.ds2 and self.ds_body:
-			return
-		ds = frappe.db.get_value(
-			"Doctrinal Statement",
-			{"active": 1, "use_in_student_admission": 1, "docstatus": 1},
-			["name", "doctrinal_statement"],
-			as_dict=True,
-			order_by="creation desc",
-		)
-		if not ds:
-			return
-		if not self.ds2:
-			self.ds2 = ds.name
-		if not self.ds_body:
-			self.ds_body = ds.doctrinal_statement
-
 	def autoname(self):
 		from frappe.model.naming import set_name_by_naming_series
 
@@ -60,6 +43,7 @@ class StudentApplicant(Document):
 		set_name_by_naming_series(self)
 
 	def validate(self):
+		self.guard_status()
 		self.set_title()
 		validate_active(self, "ethnic")  # ADR 086
 		self.validate_dates()
@@ -68,6 +52,27 @@ class StudentApplicant(Document):
 		self.set_access_key()
 		person_fields.assert_capture_complete(self)
 		self.freeze_captured_fields()
+		# Questions from the program's pool, and agreements signed on the form
+		# (decisions/111 §2-4, §10).
+		application_form.validate(self)
+		# Signed once, on the form; staff edits later never ask for a signature.
+		if self.is_new() and not frappe.flags.in_import:
+			requirements.check_application_agreements(self)
+
+	def guard_status(self):
+		"""The status follows the admission decision (decisions/112 §7): it is
+		written by `admissions.set_status` and by enrolment, never by a save."""
+		if frappe.flags.in_import or self.flags.from_admissions:
+			return
+		if self.is_new():
+			self.application_status = "Applied"
+			return
+		before = self.get_doc_before_save()
+		if before and before.application_status != self.application_status:
+			frappe.throw(
+				_("The application status follows the admission decision and cannot be set by hand."),
+				title=_("Status is derived"),
+			)
 
 	def validate_tax_id(self):
 		"""Check the tax ID before it reaches the Person (ADR 071).
@@ -161,6 +166,8 @@ class StudentApplicant(Document):
 		from seminary.seminary.requirements import adopt_applicant_documents
 
 		adopt_applicant_documents(self)
+		# Education, emergency contacts and signed agreements (decisions/111).
+		application_form.adopt(self)
 
 		# Application-fee Sales Invoice(s) are raised on insert (not on submit:
 		# web-form applicants stay at docstatus=0, so on_submit never fires) by
@@ -174,6 +181,11 @@ class StudentApplicant(Document):
 		from seminary.seminary.requirements import adopt_applicant_documents
 
 		adopt_applicant_documents(self)
+		application_form.adopt(self)
+		# A complete application starts review (decisions/112 §2).
+		from seminary.seminary import admissions
+
+		admissions.check(self)
 
 	def _flag_requirement_review(self):
 		"""ADR 058: when an applicant self-reports a circumstance needing
@@ -238,3 +250,6 @@ class StudentApplicant(Document):
 
 	def on_payment_authorized(self, *args, **kwargs):
 		self.db_set("paid", 1)
+		from seminary.seminary import admissions
+
+		admissions.check(self)

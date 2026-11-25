@@ -22,6 +22,14 @@ class Rubric(Document):
 		self.validate_locked()
 
 	def set_context(self):
+		if self.activity_doctype == "Program":
+			# A program's application review rubric (decisions/112 §4).
+			if not frappe.db.exists("Program", self.activity):
+				frappe.throw(_("Program {0} does not exist.").format(self.activity))
+			version = f" (v{self.version})" if (self.version or 1) > 1 else ""
+			self.activity_title = _("Application review: {0}").format(self.activity) + version
+			self.course = None
+			return
 		title_field = rubrics.ACTIVITIES.get(self.activity_doctype)
 		if not title_field:
 			frappe.throw(_("Rubrics are only for assignments, discussions and oral activities."))

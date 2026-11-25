@@ -1,0 +1,235 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "The decision on an application, with its conditions and the reasons for it.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student_applicant",
+  "applicant_name",
+  "program",
+  "column_break_main",
+  "decision",
+  "decided_on",
+  "decided_by",
+  "conditions_section",
+  "conditions",
+  "requires_leveling",
+  "rationale_section",
+  "tally",
+  "majority",
+  "column_break_rationale",
+  "rationale",
+  "source_section",
+  "decided_through_doctype",
+  "decided_through",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "student_applicant",
+   "fieldtype": "Link",
+   "label": "Applicant",
+   "options": "Student Applicant",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name",
+   "fetch_from": "student_applicant.title",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "fetch_from": "student_applicant.program",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "decision",
+   "fieldtype": "Select",
+   "label": "Decision",
+   "options": "\nAdmit\nAdmit with conditions\nWaitlist\nDecline",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "decided_on",
+   "fieldtype": "Date",
+   "label": "Decided On",
+   "default": "Today",
+   "reqd": 1
+  },
+  {
+   "fieldname": "decided_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "conditions_section",
+   "fieldtype": "Section Break",
+   "label": "Conditions",
+   "depends_on": "eval:doc.decision=='Admit with conditions'"
+  },
+  {
+   "fieldname": "conditions",
+   "fieldtype": "Small Text",
+   "label": "Conditions",
+   "mandatory_depends_on": "eval:doc.decision=='Admit with conditions'",
+   "description": "Copied to the program enrollment and shown to the applicant."
+  },
+  {
+   "fieldname": "requires_leveling",
+   "fieldtype": "Check",
+   "label": "Conditions Include Leveling",
+   "description": "Asks the registrars to plan leveling courses on the enrollment."
+  },
+  {
+   "fieldname": "rationale_section",
+   "fieldtype": "Section Break",
+   "label": "Reasons"
+  },
+  {
+   "fieldname": "tally",
+   "fieldtype": "Small Text",
+   "label": "Reviews",
+   "read_only": 1,
+   "description": "Counted from the submitted reviews when the decision is saved."
+  },
+  {
+   "fieldname": "majority",
+   "fieldtype": "Data",
+   "label": "Majority Recommendation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rationale",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rationale",
+   "fieldtype": "Text",
+   "label": "Rationale",
+   "description": "Required when the decision differs from the majority of reviews."
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Decided Through",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "decided_through_doctype",
+   "fieldtype": "Link",
+   "label": "Decided Through Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_through",
+   "fieldtype": "Dynamic Link",
+   "label": "Decided Through",
+   "options": "decided_through_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Admission Decision",
+   "read_only": 1,
+   "no_copy": 1,
+   "print_hide": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Admission Decision",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "System Manager",
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "Seminary Manager",
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "Registrar",
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1
+  },
+  {
+   "read": 1,
+   "create": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1,
+   "role": "Desk User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "ADM-.#####",
+ "title_field": "applicant_name",
+ "track_changes": 1,
+ "is_submittable": 1,
+ "search_fields": "applicant_name,decision",
+ "show_title_field_in_link": 1,
+ "naming_rule": "Expression"
+}

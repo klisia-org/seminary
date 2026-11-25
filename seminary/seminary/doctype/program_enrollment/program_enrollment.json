@@ -21,6 +21,7 @@
   "emphases_section",
   "emphases",
   "academic_term",
+  "admission_conditions",
   "image",
   "section_break_tfcw",
   "status",
@@ -308,7 +309,7 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "Mentors entered here directly, for a student no cohort supplies one for. Mentors who come from the student's cohort are shown above and are not repeated here \u2014 change those on the cohort. Close a row with a To Date instead of deleting it to keep the history.",
+   "description": "Mentors entered here directly, for a student no cohort supplies one for. Mentors who come from the student's cohort are shown above and are not repeated here — change those on the cohort. Close a row with a To Date instead of deleting it to keep the history.",
    "fieldname": "mentors",
    "fieldtype": "Table",
    "label": "Mentors",
@@ -448,6 +449,14 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "admission_conditions",
+   "fieldtype": "Small Text",
+   "label": "Admission Conditions",
+   "read_only": 1,
+   "depends_on": "admission_conditions",
+   "description": "The conditions the student was admitted on."
   }
  ],
  "image_field": "image",
@@ -459,7 +468,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2026-09-28 18:00:00.000000",
+ "modified": "2026-11-24 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

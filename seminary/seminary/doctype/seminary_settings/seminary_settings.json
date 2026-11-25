@@ -92,7 +92,6 @@
   "column_break_attendance_policy",
   "absence_warning_buffer",
   "show_student_application_on_login",
-  "default_application_web_form",
   "support_user",
   "messaging_section",
   "portal_messaging_rules",
@@ -417,14 +416,6 @@
    "fieldname": "show_student_application_on_login",
    "fieldtype": "Check",
    "label": "Show Student Application button on login"
-  },
-  {
-   "description": "Application form used when a Program does not specify its own. Leave blank to use the built-in form.",
-   "fieldname": "default_application_web_form",
-   "fieldtype": "Link",
-   "label": "Default Application Web Form",
-   "link_filters": "[[\"Web Form\",\"doc_type\",\"=\",\"Student Applicant\"]]",
-   "options": "Web Form"
   },
   {
    "description": "This is the system user for portal support for students. Referenced by the \"Support User\" audience in Portal Messaging Rules below.",
@@ -991,7 +982,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-23 12:00:00.000000",
+ "modified": "2026-11-24 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
