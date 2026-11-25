@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "creation": "2026-11-25 12:00:00.000000",
+ "description": "The credits a track requires of students under a catalog year.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "program_track",
+  "track_name",
+  "addcredits",
+  "max_credits"
+ ],
+ "fields": [
+  {
+   "fieldname": "program_track",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Track",
+   "options": "Program Track",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "program_track.track_name",
+   "fieldname": "track_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Track Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "addcredits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Track Credits Required",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "max_credits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Track Credits Ceiling",
+   "non_negative": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-25 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Catalog Track",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

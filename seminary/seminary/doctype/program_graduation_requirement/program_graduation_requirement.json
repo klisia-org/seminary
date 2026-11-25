@@ -3,16 +3,18 @@
  "allow_rename": 1,
  "autoname": "PGR-.#####",
  "creation": "2026-04-25 14:47:15.333793",
- "description": "A program's official set of graduation requirements that applies to the students under it. Create one to define what a program's students must complete to graduate. To change the requirements later, use Change Version, which retires the current policy and opens a draft successor to edit, keeping each student's enrollment tied to the policy in force when they enrolled.",
+ "description": "A program's catalog year: the courses, credits and other requirements that apply to the students who enter under it. Use New Catalog Year on the Program to draft the next one. It takes effect when its first term starts, and students already enrolled keep the catalog they entered under.",
  "doctype": "DocType",
  "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#layer-2-the-policy",
  "engine": "InnoDB",
  "field_order": [
   "program_name",
+  "catalog_year",
   "active",
   "column_break_mlpo",
-  "active_from",
-  "active_until",
+  "academic_term_from",
+  "academic_term_to",
+  "starts_on",
   "section_break_cqwz",
   "pgr_items",
   "section_break_versioning",
@@ -20,7 +22,22 @@
   "superseded_by",
   "column_break_version",
   "supersedes",
-  "amended_from"
+  "amended_from",
+  "tab_academic",
+  "credits_complete",
+  "terms_complete",
+  "column_break_academic",
+  "min_graduation_gpa",
+  "max_transfer_credits",
+  "max_time_enrolled",
+  "emphasis_overlap_policy",
+  "section_catalog_courses",
+  "catalog_courses",
+  "section_catalog_tracks",
+  "catalog_tracks",
+  "catalog_track_courses",
+  "section_honors",
+  "honors_levels"
  ],
  "fields": [
   {
@@ -32,10 +49,21 @@
    "reqd": 1
   },
   {
-   "default": "1",
-   "description": "System-derived from the lifecycle state: a policy is live (Active) only while its workflow state is 'Active'. Use the 'Change Version' action to retire it.",
+   "description": "The academic year of the first term.",
+   "fieldname": "catalog_year",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Catalog Year",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Set by the system: the catalog year now in force for new students.",
    "fieldname": "active",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Is Active",
    "read_only": 1
   },
@@ -44,21 +72,38 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Today",
-   "fieldname": "active_from",
-   "fieldtype": "Date",
-   "label": "Active from",
-   "search_index": 1
+   "description": "Students who enter in this term or later take this catalog, until a later catalog year starts.",
+   "fieldname": "academic_term_from",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "First Term",
+   "no_copy": 1,
+   "options": "Academic Term",
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
-   "fieldname": "active_until",
+   "description": "Set by the system: the term before the next catalog year starts.",
+   "fieldname": "academic_term_to",
+   "fieldtype": "Link",
+   "label": "Last Term",
+   "no_copy": 1,
+   "options": "Academic Term",
+   "read_only": 1
+  },
+  {
+   "fieldname": "starts_on",
    "fieldtype": "Date",
-   "label": "Active Until"
+   "hidden": 1,
+   "label": "Starts On",
+   "no_copy": 1,
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "section_break_cqwz",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Other Requirements"
   },
   {
    "fieldname": "pgr_items",
@@ -81,7 +126,7 @@
    "read_only": 1
   },
   {
-   "description": "The Draft successor spawned when this policy was retired via 'Change Version'.",
+   "description": "The catalog year that follows this one.",
    "fieldname": "superseded_by",
    "fieldtype": "Link",
    "label": "Superseded By",
@@ -94,7 +139,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "The earlier policy this version replaces.",
+   "description": "The catalog year this one follows.",
    "fieldname": "supersedes",
    "fieldtype": "Link",
    "label": "Supersedes",
@@ -111,13 +156,106 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "tab_academic",
+   "fieldtype": "Tab Break",
+   "label": "Academic Requirements"
+  },
+  {
+   "fieldname": "credits_complete",
+   "fieldtype": "Int",
+   "label": "Credits for completion",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "terms_complete",
+   "fieldtype": "Int",
+   "label": "Terms for completion",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_academic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0.0",
+   "description": "0 = no minimum.",
+   "fieldname": "min_graduation_gpa",
+   "fieldtype": "Float",
+   "label": "Minimum Graduation GPA",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
+   "default": "0",
+   "description": "0 = no limit.",
+   "fieldname": "max_transfer_credits",
+   "fieldtype": "Int",
+   "label": "Max Transfer Credits",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "description": "0 = no limit.",
+   "fieldname": "max_time_enrolled",
+   "fieldtype": "Float",
+   "label": "Max Years to Graduate",
+   "precision": "1"
+  },
+  {
+   "default": "Shared Credit Pool",
+   "fieldname": "emphasis_overlap_policy",
+   "fieldtype": "Select",
+   "label": "Emphasis Overlap Policy",
+   "options": "Shared Credit Pool\nAdditional Credits Required"
+  },
+  {
+   "description": "Copied from the Program. Only the Program's courses can be added: add a new course to the Program as disabled, and this catalog enables it when it takes effect.",
+   "fieldname": "section_catalog_courses",
+   "fieldtype": "Section Break",
+   "label": "Courses"
+  },
+  {
+   "fieldname": "catalog_courses",
+   "fieldtype": "Table",
+   "label": "Courses",
+   "options": "Catalog Course"
+  },
+  {
+   "fieldname": "section_catalog_tracks",
+   "fieldtype": "Section Break",
+   "label": "Tracks"
+  },
+  {
+   "fieldname": "catalog_tracks",
+   "fieldtype": "Table",
+   "label": "Track Credits",
+   "options": "Catalog Track"
+  },
+  {
+   "fieldname": "catalog_track_courses",
+   "fieldtype": "Table",
+   "label": "Track Courses",
+   "options": "Catalog Track Course"
+  },
+  {
+   "fieldname": "section_honors",
+   "fieldtype": "Section Break",
+   "label": "Honors"
+  },
+  {
+   "fieldname": "honors_levels",
+   "fieldtype": "Table",
+   "label": "Honors Levels",
+   "options": "Honors Levels"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-30 12:00:00.000000",
+ "modified": "2026-11-25 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Graduation Requirement",
@@ -184,6 +322,7 @@
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
+ "search_fields": "program_name,catalog_year",
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],

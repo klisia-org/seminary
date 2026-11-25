@@ -351,6 +351,17 @@ For degree programs:
 The non-course requirements a program demands (letters, chapel, projects, etc.)
 are configured separately — see [Graduation Requirements](graduation-requirements.md).
 
+## Catalog years
+
+The Program is the live offering: what is taught and registered for now. What a
+student must complete — the courses and whether each is mandatory, credits,
+terms, minimum GPA, transfer cap, maximum years and honors — is frozen in the
+program's **catalog year** when they enter. Use **New Catalog Year** on the
+Program to publish a change for future students; students already enrolled keep
+the catalog year they entered under. A program that graduates students can't be
+published, or take enrollments, until it has a catalog year. See
+[Catalog years](graduation-requirements.md#catalog-years).
+
 ## Publishing on the web
 
 The **Web** tab controls the public-facing program page: **Route** (URL slug),
@@ -358,7 +369,8 @@ The **Web** tab controls the public-facing program page: **Route** (URL slug),
 **Requirements**, duration fields for sorting/filtering, and two visibility
 switches — **Display Enrollment Windows on Web** and **Display Apply CTA on Web**
 (both off by default; the CTA has no effect for Continuous programs, which apply
-any time). Untick **Publish on web** to hide a program entirely.
+any time). Untick **Publish on web** to hide a program entirely. A new program
+starts unpublished: publish its first catalog year, then tick **Publish on web**.
 
 ## How it all shows up on the Program Audit
 

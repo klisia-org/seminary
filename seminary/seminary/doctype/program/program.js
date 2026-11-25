@@ -41,6 +41,7 @@ frappe.ui.form.on("Program", {
 			);
 		}
 		sync_pacing_options(frm);
+		show_catalog_years(frm);
 		frm.set_query("program_track", "pgm_courses_track", function () {
 			return {
 				query: "seminary.seminary.doctype.program.program.get_program_tracks",
@@ -451,3 +452,63 @@ frappe.ui.form.on("Program", {
 			});
 	},
 });
+
+// Catalog years (decisions/115): drafting the next one, and what the form
+// says about the program's catalogs.
+function show_catalog_years(frm) {
+	if (frm.is_new() || frm.doc.is_ongoing) return;
+	if (frappe.model.can_create("Program Graduation Requirement")) {
+		frm.add_custom_button(__("New Catalog Year"), () =>
+			frappe
+				.call("seminary.seminary.catalog_year.new_catalog_year", { program: frm.doc.name })
+				.then(
+					(r) =>
+						r.message &&
+						frappe.set_route("Form", "Program Graduation Requirement", r.message)
+				)
+		);
+	}
+	frappe
+		.call("seminary.seminary.catalog_year.program_status", { program: frm.doc.name })
+		.then(({ message }) => {
+			if (!message || frm.doc.name !== frm.docname) return;
+			const esc = frappe.utils.escape_html;
+			const link = (name, label) =>
+				`<a href="/app/program-graduation-requirement/${encodeURIComponent(name)}">${esc(
+					label || name
+				)}</a>`;
+			if (message.pending.length) {
+				const next = message.pending[0];
+				const text =
+					next.workflow_state === "Draft"
+						? __(
+								"Catalog year {0} is being drafted. Course changes made here will be replaced when it takes effect.",
+								[link(next.name, next.catalog_year)]
+						  )
+						: __(
+								"Catalog year {0} takes effect when {1} starts. Course changes made here will be replaced then.",
+								[
+									link(next.name, next.catalog_year),
+									esc(next.academic_term_from || ""),
+								]
+						  );
+				frm.dashboard.set_headline_alert(text, "blue");
+			} else if (!message.active) {
+				frm.dashboard.set_headline_alert(
+					__(
+						"This program has no catalog year yet. Use New Catalog Year before enrolling students or publishing it."
+					),
+					"orange"
+				);
+			} else if (message.differences.length) {
+				const items = message.differences.map((d) => `<li>${esc(d)}</li>`).join("");
+				frm.dashboard.set_headline_alert(
+					`${__(
+						"The program differs from its catalog year {0}. Students keep their catalog; publish the change with New Catalog Year.",
+						[link(message.active.name, message.active.catalog_year)]
+					)}<ul class="mt-2 mb-0">${items}</ul>`,
+					"yellow"
+				);
+			}
+		});
+}

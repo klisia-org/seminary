@@ -108,18 +108,16 @@ def _backfill_open_course_schedule(cs_name, course):
 
 
 def reconcile_required_enrollments(program=None):
-	"""Push currently-flagged mandatory-on-enrollment courses to active PEs of
-	a program. Append-only: adds any newly-flagged course missing from each
-	PE's frozen snapshot, then fulfills. Never wipes the snapshot. Returns a
-	summary dict. Callable from the Program button and from bench."""
+	"""Push mandatory-on-enrollment courses to active PEs of a program, each from
+	the student's own catalog year (decisions/115 §5). Append-only: adds any
+	flagged course missing from each PE's frozen snapshot, then fulfills. Never
+	wipes the snapshot. Returns a summary dict. Callable from the Program button
+	and from bench."""
+	from seminary.seminary.catalog_year import for_enrollment
+
 	if not program:
 		frappe.throw(_("A program is required."))
 
-	flagged = frappe.get_all(
-		"Program Course",
-		filters={"parent": program, "pgm_course_reqonenroll": 1, "disabled": 0},
-		pluck="course",
-	)
 	pes = frappe.get_all(
 		"Program Enrollment",
 		filters={"program": program, "docstatus": 1, "pgmenrol_active": 1},
@@ -127,8 +125,15 @@ def reconcile_required_enrollments(program=None):
 	)
 
 	snapshots_updated = 0
+	all_flagged = set()
 	for pe_name in pes:
 		pe_doc = frappe.get_doc("Program Enrollment", pe_name)
+		flagged = [
+			pc.course
+			for pc in for_enrollment(pe_doc).courses
+			if pc.pgm_course_reqonenroll and not pc.disabled
+		]
+		all_flagged.update(flagged)
 		existing = {r.course for r in (pe_doc.required_on_enroll_courses or [])}
 		added = [c for c in flagged if c not in existing]
 		if added:
@@ -143,7 +148,7 @@ def reconcile_required_enrollments(program=None):
 		"program": program,
 		"active_enrollments": len(pes),
 		"snapshots_updated": snapshots_updated,
-		"flagged_courses": len(flagged),
+		"flagged_courses": len(all_flagged),
 	}
 
 

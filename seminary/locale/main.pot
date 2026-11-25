@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Seminary VERSION\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
-"POT-Creation-Date: 2026-11-25 08:09-0609\n"
-"PO-Revision-Date: 2026-11-25 08:09-0609\n"
+"POT-Creation-Date: 2026-11-25 11:47-0609\n"
+"PO-Revision-Date: 2026-11-25 11:47-0609\n"
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: support@seminaryerp.org\n"
 "MIME-Version: 1.0\n"
@@ -128,7 +128,7 @@ msgstr ""
 msgid "(no subject)"
 msgstr ""
 
-#: seminary/seminary/api.py:4402 seminary/seminary/api.py:4466
+#: seminary/seminary/api.py:4393 seminary/seminary/api.py:4457
 #: seminary/seminary/doctype/activity_competency_grade/activity_competency_grade.py:57
 #: seminary/seminary/doctype/activity_competency_grade/activity_competency_grade.py:58
 #: seminary/seminary/doctype/competency_assessment/competency_assessment.py:51
@@ -146,12 +146,12 @@ msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:745
 #: seminary/public/frontend/assets/CourseAssessment-BbYyVNb7.js:4
-#: seminary/seminary/api.py:4129 seminary/seminary/api.py:4164
+#: seminary/seminary/api.py:4120 seminary/seminary/api.py:4155
 #: seminary/seminary/gradebook_weights.py:156
 msgid "(untitled)"
 msgstr ""
 
-#: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:356
+#: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:357
 #, python-brace-format
 msgid "({0} with an unpriced fee)"
 msgstr ""
@@ -208,6 +208,20 @@ msgstr ""
 #. 'Scheduled Course Roster'
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json:224
 msgid "0 = OK, 1 = within the warning band, 2 = over the limit. Drives once-per-crossing notifications."
+msgstr ""
+
+#. Description of the 'Max Transfer Credits' (Int) field in DocType 'Program
+#. Graduation Requirement'
+#. Description of the 'Max Years to Graduate' (Float) field in DocType 'Program
+#. Graduation Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:192
+msgid "0 = no limit."
+msgstr ""
+
+#. Description of the 'Minimum Graduation GPA' (Float) field in DocType
+#. 'Program Graduation Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:183
+msgid "0 = no minimum."
 msgstr ""
 
 #: frontend/src/components/ContentIssues.vue:11
@@ -872,11 +886,11 @@ msgstr ""
 msgid "A SCORM chapter's lessons come from its package."
 msgstr ""
 
-#: seminary/seminary/api.py:4978
+#: seminary/seminary/api.py:4950
 msgid "A SCORM package must be a .zip file."
 msgstr ""
 
-#: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:371
+#: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:359
 #, python-brace-format
 msgid "A Sales Invoice already exists for this enrollment: {0}"
 msgstr ""
@@ -1025,8 +1039,13 @@ msgstr ""
 msgid "A course can only be imported while the section is in Draft or Open for Enrollment."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:219
+#: seminary/seminary/exceptions.py:221
 msgid "A course cannot substitute for itself."
+msgstr ""
+
+#. Description of a DocType
+#: seminary/seminary/doctype/catalog_course/catalog_course.json:4
+msgid "A course in a catalog year, with the credits and status it has for students under that catalog."
 msgstr ""
 
 #. Description of a DocType
@@ -1034,7 +1053,7 @@ msgstr ""
 msgid "A course substitution, course waiver or graduation requirement waiver for one student, with who asked and who decided."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1153
+#: seminary/seminary/graduation.py:1152
 msgid "A culminating project already exists for this slot."
 msgstr ""
 
@@ -1411,7 +1430,7 @@ msgstr ""
 msgid "A passing score from this SCO is written to the criterion below. A grade you enter by hand replaces it and is never overwritten."
 msgstr ""
 
-#: seminary/seminary/api.py:1757
+#: seminary/seminary/api.py:1763
 msgid "A payment has already been made on this enrollment. Please request a withdrawal/refund instead."
 msgstr ""
 
@@ -1504,7 +1523,12 @@ msgstr ""
 msgid "A private reply is visible only to the post's author, its writer, and cohort leaders/staff."
 msgstr ""
 
-#: seminary/seminary/required_enrollment.py:116
+#. Description of the 'Publish on web' (Check) field in DocType 'Program'
+#: seminary/seminary/doctype/program/program.json:471
+msgid "A program is published once it has a catalog year: save it, use New Catalog Year, then publish."
+msgstr ""
+
+#: seminary/seminary/required_enrollment.py:119
 msgid "A program is required."
 msgstr ""
 
@@ -1515,7 +1539,7 @@ msgstr ""
 
 #. Description of a DocType
 #: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:6
-msgid "A program's official set of graduation requirements that applies to the students under it. Create one to define what a program's students must complete to graduate. To change the requirements later, use Change Version, which retires the current policy and opens a draft successor to edit, keeping each student's enrollment tied to the policy in force when they enrolled."
+msgid "A program's catalog year: the courses, credits and other requirements that apply to the students who enter under it. Use New Catalog Year on the Program to draft the next one. It takes effect when its first term starts, and students already enrolled keep the catalog they entered under."
 msgstr ""
 
 #: seminary/seminary/doctype/culminating_project_type/culminating_project_type.py:18
@@ -1584,11 +1608,11 @@ msgstr ""
 msgid "A reason is required"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:176
+#: seminary/seminary/exceptions.py:178
 msgid "A reason is required."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1106
+#: seminary/seminary/graduation.py:1105
 msgid "A recommendation letter already exists for this slot."
 msgstr ""
 
@@ -1919,6 +1943,11 @@ msgid "A topic used to tag and connect posts across channels. Topics can be nest
 msgstr ""
 
 #. Description of a DocType
+#: seminary/seminary/doctype/catalog_track_course/catalog_track_course.json:4
+msgid "A track's course in a catalog year."
+msgstr ""
+
+#. Description of a DocType
 #: seminary/partner/doctype/internship_requirement/internship_requirement.json:5
 msgid "A tracked internship deliverable, snapshotted from an Internship Requirement Template onto an application (or placement). Carries the three party submissions and sign-offs."
 msgstr ""
@@ -1960,7 +1989,7 @@ msgstr ""
 msgid "A waiver needs a reason."
 msgstr ""
 
-#: seminary/seminary/graduation.py:687
+#: seminary/seminary/graduation.py:686
 msgid "A waiver reason is required."
 msgstr ""
 
@@ -2312,6 +2341,12 @@ msgstr ""
 msgid "Academic Processed By"
 msgstr ""
 
+#. Label of the tab_academic (Tab Break) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:163
+msgid "Academic Requirements"
+msgstr ""
+
 #. Label of a Card Break in the Academics Workspace
 #. Label of a shortcut in the Getting Started SeminaryERP Workspace
 #: seminary/seminary/workspace/academics/academics.json:21
@@ -2429,7 +2464,7 @@ msgstr ""
 #: seminary/seminary/doctype/culminating_project/culminating_project.json:84
 #: seminary/seminary/doctype/graduation_requirement_item/graduation_requirement_item.json:77
 #: seminary/seminary/doctype/placement_assessment/placement_assessment.json:39
-#: seminary/seminary/doctype/program/program.json:550
+#: seminary/seminary/doctype/program/program.json:551
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json:679
 #: seminary/seminary/report/academic_unit_faculty_audit/academic_unit_faculty_audit.js:8
 #: seminary/seminary/report/academic_unit_faculty_audit/academic_unit_faculty_audit.py:21
@@ -2565,7 +2600,7 @@ msgid "Accept"
 msgstr ""
 
 #. Label of the allow_fee_waiver_requests (Check) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:639
+#: seminary/seminary/doctype/program/program.json:642
 msgid "Accept Fee Waiver Requests"
 msgstr ""
 
@@ -2791,7 +2826,7 @@ msgstr ""
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:307
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:323
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:335
-#: seminary/seminary/doctype/program/program.js:110
+#: seminary/seminary/doctype/program/program.js:111
 #: seminary/seminary/doctype/student_applicant/student_applicant.js:122
 msgid "Actions"
 msgstr ""
@@ -2910,30 +2945,9 @@ msgstr ""
 msgid "Active Since"
 msgstr ""
 
-#. Label of the active_until (Date) field in DocType 'Program Graduation
-#. Requirement'
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:57
-msgid "Active Until"
-msgstr ""
-
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:75
-msgid "Active Until cannot be earlier than Active From."
-msgstr ""
-
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:101
-#, python-brace-format
-msgid "Active date window overlaps with {0}. Two policies for the same program cannot be active simultaneously."
-msgstr ""
-
-#: seminary/seminary/doctype/program/program.js:95
+#: seminary/seminary/doctype/program/program.js:96
 #, python-brace-format
 msgid "Active enrollments: {0}<br>Snapshots updated: {1}<br>Flagged courses: {2}"
-msgstr ""
-
-#. Label of the active_from (Date) field in DocType 'Program Graduation
-#. Requirement'
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:50
-msgid "Active from"
 msgstr ""
 
 #: frontend/src/pages/PartnerInterns.vue:16
@@ -3323,7 +3337,7 @@ msgstr ""
 msgid "Add category"
 msgstr ""
 
-#: seminary/setup_steps.py:122
+#: seminary/setup_steps.py:128
 msgid "Add courses to every program"
 msgstr ""
 
@@ -3431,7 +3445,7 @@ msgstr ""
 msgid "Add your assignment as {0}"
 msgstr ""
 
-#: seminary/setup_steps.py:132
+#: seminary/setup_steps.py:151
 msgid "Add your instructors"
 msgstr ""
 
@@ -3516,7 +3530,10 @@ msgid "Adding…"
 msgstr ""
 
 #. Option for the 'Emphasis Overlap Policy' (Select) field in DocType 'Program'
+#. Option for the 'Emphasis Overlap Policy' (Select) field in DocType 'Program
+#. Graduation Requirement'
 #: seminary/seminary/doctype/program/program.json:378
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:211
 msgid "Additional Credits Required"
 msgstr ""
 
@@ -3685,7 +3702,7 @@ msgstr ""
 #. Label of the admission_section (Section Break) field in DocType 'Program'
 #. Group in Student's connections
 #. Group in Student Applicant's connections
-#: seminary/seminary/doctype/program/program.json:587
+#: seminary/seminary/doctype/program/program.json:588
 #: seminary/seminary/doctype/student/student.json:287
 #: seminary/seminary/doctype/student_applicant/student_applicant.json:524
 msgid "Admission"
@@ -3693,7 +3710,7 @@ msgstr ""
 
 #. Label of the admission_conditions (Small Text) field in DocType 'Program
 #. Enrollment'
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.json:456
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.json:458
 msgid "Admission Conditions"
 msgstr ""
 
@@ -3714,7 +3731,7 @@ msgid "Admission End Date cannot be earlier than Admission Start Date."
 msgstr ""
 
 #. Label of the admission_mode (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:592
+#: seminary/seminary/doctype/program/program.json:595
 msgid "Admission Mode"
 msgstr ""
 
@@ -3724,7 +3741,7 @@ msgid "Admission Start Date"
 msgstr ""
 
 #. Group in Program's connections
-#: seminary/seminary/doctype/program/program.json:657
+#: seminary/seminary/doctype/program/program.json:658
 msgid "Admission and Enrollments"
 msgstr ""
 
@@ -3734,8 +3751,8 @@ msgid "Admissions"
 msgstr ""
 
 #. Label of the admissions_unit (Link) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:603
-#: seminary/seminary/doctype/program/program.py:154
+#: seminary/seminary/doctype/program/program.json:604
+#: seminary/seminary/doctype/program/program.py:161
 msgid "Admissions Unit"
 msgstr ""
 
@@ -3790,7 +3807,7 @@ msgstr ""
 msgid "Advanced On"
 msgstr ""
 
-#: seminary/seminary/progression.py:92
+#: seminary/seminary/progression.py:94
 #, python-brace-format
 msgid "Advanced to term {0} after the grades for {1}."
 msgstr ""
@@ -4164,7 +4181,7 @@ msgstr ""
 msgid "All instructors teaching this term"
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1338
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1333
 msgid "All milestones are complete."
 msgstr ""
 
@@ -4262,7 +4279,7 @@ msgstr ""
 msgid "All terms"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:273
+#: seminary/seminary/doctype/program/program.js:274
 msgid "All tracks have sufficient courses."
 msgstr ""
 
@@ -4440,7 +4457,7 @@ msgstr ""
 msgid "Already confirmed"
 msgstr ""
 
-#: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:446
+#: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:447
 msgid "Already enrolled in or passed this course."
 msgstr ""
 
@@ -4659,7 +4676,7 @@ msgstr ""
 #: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.json:110
 #: seminary/seminary/doctype/person_import_batch/person_import_batch.json:134
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:425
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:108
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:153
 #: seminary/seminary/doctype/program_level/program_level.json:139
 #: seminary/seminary/doctype/recommendation_letter/recommendation_letter.json:220
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.json:289
@@ -4785,7 +4802,7 @@ msgstr ""
 msgid "An ethnic group a person may identify with. Each school keeps its own list, in the categories it reports; it is seeded once and curated on the desk."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1246
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1241
 msgid "An event is already scheduled for this milestone."
 msgstr ""
 
@@ -4844,6 +4861,10 @@ msgstr ""
 #. Organization'
 #: seminary/partner/doctype/partner_organization/partner_organization.json:315
 msgid "An introduction to the organization for prospective applicants."
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:323
+msgid "An ongoing program has no graduation, so it has no catalog year."
 msgstr ""
 
 #: seminary/partner/api.py:927
@@ -5182,7 +5203,7 @@ msgid "Applicant Name"
 msgstr ""
 
 #. Label of the applicant_naming_series (Data) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:513
+#: seminary/seminary/doctype/program/program.json:514
 msgid "Applicant Naming Series"
 msgstr ""
 
@@ -5209,7 +5230,7 @@ msgstr ""
 
 #. Description of the 'Accept Fee Waiver Requests' (Check) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:641
+#: seminary/seminary/doctype/program/program.json:639
 msgid "Applicants may ask for the application fee to be waived, giving a reason. A registrar or the chair of the admissions unit decides."
 msgstr ""
 
@@ -5228,7 +5249,7 @@ msgstr ""
 #: seminary/partner/doctype/internship_requirement_template/internship_requirement_template.json:71
 #: seminary/public/frontend/assets/JobApplication-BlzqanMw.js:1
 #: seminary/seminary/doctype/program/program.js:40
-#: seminary/seminary/doctype/program/program.json:582
+#: seminary/seminary/doctype/program/program.json:583
 msgid "Application"
 msgstr ""
 
@@ -5249,7 +5270,7 @@ msgstr ""
 #. Label of the application_fee_section (Section Break) field in DocType
 #. 'Program'
 #. Label of the fee_tab (Tab Break) field in DocType 'Student Applicant'
-#: seminary/seminary/doctype/program/program.json:633
+#: seminary/seminary/doctype/program/program.json:635
 #: seminary/seminary/doctype/student_applicant/student_applicant.json:437
 msgid "Application Fee"
 msgstr ""
@@ -5280,7 +5301,7 @@ msgstr ""
 
 #. Label of the questions_section (Section Break) field in DocType 'Program'
 #. Label of the application_questions (Table) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:621
+#: seminary/seminary/doctype/program/program.json:622
 msgid "Application Questions"
 msgstr ""
 
@@ -5372,7 +5393,7 @@ msgid "Applications"
 msgstr ""
 
 #. Description of the 'Discount Windows' (Table) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:648
+#: seminary/seminary/doctype/program/program.json:645
 msgid "Applications made between these dates get this discount on the application fee. Windows cannot overlap."
 msgstr ""
 
@@ -5462,7 +5483,7 @@ msgstr ""
 msgid "Apply Leveling Profile"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:75
+#: seminary/seminary/doctype/program/program.js:76
 msgid "Apply Mandatory-on-Enrollment to Active Students"
 msgstr ""
 
@@ -5517,7 +5538,7 @@ msgstr ""
 msgid "Applying as"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:86
+#: seminary/seminary/doctype/program/program.js:87
 msgid "Applying mandatory-on-enrollment requirements…"
 msgstr ""
 
@@ -6139,13 +6160,13 @@ msgid "Attach a Source CSV first."
 msgstr ""
 
 #. Description of the 'Competency Framework' (Link) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:560
+#: seminary/seminary/doctype/program/program.json:561
 msgid "Attach a framework to run this program on competencies instead of numeric grades. Every course in the program must then use the framework's grading scale and define at least one competency."
 msgstr ""
 
 #. Description of the 'Image for Blurb' (Attach Image) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:536
+#: seminary/seminary/doctype/program/program.json:537
 msgid "Attach a square image for the program list"
 msgstr ""
 
@@ -6556,7 +6577,7 @@ msgid "Autocompletes from the partner's default grading scale grade codes."
 msgstr ""
 
 #. Option for the 'Admission Mode' (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:593
+#: seminary/seminary/doctype/program/program.json:596
 msgid "Automatic"
 msgstr ""
 
@@ -6566,7 +6587,7 @@ msgstr ""
 msgid "Automatically enroll students in this course. Enrollment is deferred until an offering (Course Schedule) is open; the set is fixed at enrollment time. Distinct from 'Mandatory for this program' (graduation)."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:259
+#: seminary/seminary/doctype/program/program.js:260
 msgid "Available"
 msgstr ""
 
@@ -6754,7 +6775,7 @@ msgstr ""
 msgid "Back-pointer to the Program Enrollment that received this row post-commit."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:93
+#: seminary/seminary/doctype/program/program.js:94
 msgid "Backfill Complete"
 msgstr ""
 
@@ -7194,6 +7215,10 @@ msgstr ""
 #: seminary/seminary/doctype/competency_framework/competency_framework.json:216
 #: seminary/seminary/doctype/student_applicant/student_applicant.json:324
 msgid "Both"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:688
+msgid "Both catalog years must belong to the same program."
 msgstr ""
 
 #: seminary/seminary/duplicates.py:331
@@ -7695,7 +7720,7 @@ msgstr ""
 msgid "Cannot cancel enrollment after course has started ({0}). Please use a Withdrawal Request instead."
 msgstr ""
 
-#: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.py:93
+#: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.py:108
 #, python-brace-format
 msgid "Cannot cancel: {0} transcript row(s) from this batch still exist on Program Enrollments. Remove them first (supervised operation)."
 msgstr ""
@@ -7749,29 +7774,29 @@ msgstr ""
 msgid "Cannot resolve a Person without an email or a User."
 msgstr ""
 
-#: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.py:166
+#: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.py:181
 msgid "Cannot run dry-run on an empty batch."
 msgstr ""
 
-#: seminary/seminary/api.py:4229
+#: seminary/seminary/api.py:4220
 #, python-brace-format
 msgid "Cannot send grades for {0}: the grading scale produced no final grade. Check the section's Grading Scale — every interval needs a Pass/Fail value, and the scale type needs a calculation path."
 msgstr ""
 
-#: seminary/seminary/api.py:4162
+#: seminary/seminary/api.py:4153
 msgid "Cannot send grades yet. Not graded:"
 msgstr ""
 
-#: seminary/seminary/api.py:4183
+#: seminary/seminary/api.py:4174
 msgid "Cannot send grades yet:"
 msgstr ""
 
-#: seminary/seminary/api.py:4418
+#: seminary/seminary/api.py:4409
 #, python-brace-format
 msgid "Cannot send grades: {0} of the selected student(s) still have ungraded assessments. Fill in all grades (or 0 explicitly) before sending."
 msgstr ""
 
-#: seminary/seminary/api.py:4474
+#: seminary/seminary/api.py:4465
 #, python-brace-format
 msgid "Cannot send grades: {0} student(s) still have ungraded assessments. Fill in all grades (or 0 explicitly) before sending."
 msgstr ""
@@ -7955,10 +7980,52 @@ msgstr ""
 msgid "Cascade Done"
 msgstr ""
 
+#. Name of a DocType
+#: seminary/seminary/doctype/catalog_course/catalog_course.json:66
+msgid "Catalog Course"
+msgstr ""
+
+#. Name of a DocType
+#: seminary/seminary/doctype/catalog_track/catalog_track.json:52
+msgid "Catalog Track"
+msgstr ""
+
+#. Name of a DocType
+#: seminary/seminary/doctype/catalog_track_course/catalog_track_course.json:51
+msgid "Catalog Track Course"
+msgstr ""
+
+#. Label of the graduation_policy (Link) field in DocType 'Program Enrollment'
+#. Label of the catalog_year (Data) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.json:338
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:57
+msgid "Catalog Year"
+msgstr ""
+
 #. Label of the description (Text Editor) field in DocType 'Disciplinary
 #. Reason'
 #: seminary/seminary/doctype/disciplinary_reason/disciplinary_reason.json:37
 msgid "Catalog description for this reason"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:408
+msgid "Catalog year could not take effect"
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:102
+#, python-brace-format
+msgid "Catalog year {0} already starts in or after this first term. Choose a later term."
+msgstr ""
+
+#: seminary/seminary/doctype/program/program.js:486
+#, python-brace-format
+msgid "Catalog year {0} is being drafted. Course changes made here will be replaced when it takes effect."
+msgstr ""
+
+#: seminary/seminary/doctype/program/program.js:492
+#, python-brace-format
+msgid "Catalog year {0} takes effect when {1} starts. Course changes made here will be replaced then."
 msgstr ""
 
 #: seminary/seminary/discipleship/reading_plans.py:913
@@ -8342,7 +8409,7 @@ msgstr ""
 msgid "Chapter deleted successfully"
 msgstr ""
 
-#: seminary/seminary/api.py:5398
+#: seminary/seminary/api.py:5370
 msgid "Chapter index updated successfully."
 msgstr ""
 
@@ -8351,7 +8418,7 @@ msgstr ""
 msgid "Chapter moved successfully"
 msgstr ""
 
-#: seminary/seminary/api.py:5064
+#: seminary/seminary/api.py:5036
 msgid "Chapter not found."
 msgstr ""
 
@@ -8369,7 +8436,7 @@ msgstr ""
 msgid "Chapter updated successfully"
 msgstr ""
 
-#: seminary/seminary/api.py:5387
+#: seminary/seminary/api.py:5359
 #, python-brace-format
 msgid "Chapter {0} not found in course {1}"
 msgstr ""
@@ -8402,11 +8469,11 @@ msgstr ""
 msgid "Check"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:64
+#: seminary/seminary/doctype/program/program.js:65
 msgid "Check Term Courses & Credits"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:58
+#: seminary/seminary/doctype/program/program.js:59
 msgid "Check Track Credits"
 msgstr ""
 
@@ -8663,11 +8730,11 @@ msgstr ""
 msgid "Choose Option"
 msgstr ""
 
-#: seminary/seminary/graduation.py:1155
+#: seminary/seminary/graduation.py:1154
 msgid "Choose a Culminating Project Type for this requirement before starting the project."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1163
+#: seminary/seminary/graduation.py:1162
 msgid "Choose a Culminating Project Type for this requirement first."
 msgstr ""
 
@@ -8699,7 +8766,7 @@ msgstr ""
 msgid "Choose a folder"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:187
+#: seminary/seminary/exceptions.py:189
 msgid "Choose a graduation requirement of this enrollment."
 msgstr ""
 
@@ -8746,7 +8813,12 @@ msgstr ""
 msgid "Choose a student to lead…"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:289
+#: seminary/seminary/graduation.py:264
+#, python-brace-format
+msgid "Choose a submitted catalog year of {0}."
+msgstr ""
+
+#: seminary/seminary/exceptions.py:291
 msgid "Choose a substitution or a waiver."
 msgstr ""
 
@@ -8769,7 +8841,7 @@ msgstr ""
 msgid "Choose an image from Pexels"
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1203
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1198
 msgid "Choose an instructor, an External Examiner, or enter an external name."
 msgstr ""
 
@@ -8820,7 +8892,7 @@ msgstr ""
 msgid "Choose the date this chapter opens, or set Opens to Always open."
 msgstr ""
 
-#: seminary/setup_steps.py:77
+#: seminary/setup_steps.py:83
 msgid "Choose the default grading scale in Seminary Settings"
 msgstr ""
 
@@ -8829,7 +8901,7 @@ msgstr ""
 msgid "Choose the online class meetings in which students present. Each is recorded for this activity only; after it, confirm who took part and their submissions are created."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:195
+#: seminary/seminary/exceptions.py:197
 msgid "Choose the required course."
 msgstr ""
 
@@ -8838,7 +8910,7 @@ msgstr ""
 msgid "Choose the substitute course"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:199
+#: seminary/seminary/exceptions.py:201
 msgid "Choose the substitute course."
 msgstr ""
 
@@ -9484,12 +9556,12 @@ msgstr ""
 #. Framework'
 #. Option for the 'Pacing Mode' (Select) field in DocType 'Program'
 #: seminary/seminary/doctype/competency_framework/competency_framework.json:280
-#: seminary/seminary/doctype/program/program.json:573
+#: seminary/seminary/doctype/program/program.json:574
 msgid "Cohort-paced"
 msgstr ""
 
 #. Description of the 'Pacing Mode' (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:569
+#: seminary/seminary/doctype/program/program.json:570
 msgid "Cohort-paced: students move through the program together. Self-paced: each student progresses at their own speed. Defaults from the framework and can be changed here. Self-paced is available only in Credits-based programs."
 msgstr ""
 
@@ -9633,7 +9705,7 @@ msgstr ""
 msgid "Comment on this spot…"
 msgstr ""
 
-#: seminary/seminary/api.py:5549
+#: seminary/seminary/api.py:5521
 msgid "Comment text is required."
 msgstr ""
 
@@ -9914,8 +9986,22 @@ msgstr ""
 msgid "Compact Item Print"
 msgstr ""
 
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:41
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:145
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:160
+msgid "Compare"
+msgstr ""
+
 #: seminary/seminary/doctype/possible_duplicate/possible_duplicate.js:9
 msgid "Compare and Merge"
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:144
+msgid "Compare catalog years"
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:134
+msgid "Compare with"
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:181
@@ -10018,7 +10104,7 @@ msgstr ""
 #. Label of the competency_framework (Link) field in DocType 'Program'
 #. Label of a Sidebar Item
 #: seminary/seminary/doctype/competency_framework/competency_framework.json:334
-#: seminary/seminary/doctype/program/program.json:563
+#: seminary/seminary/doctype/program/program.json:564
 #: seminary/seminary/sidebar/seminary_setup/seminary_setup.json:393
 msgid "Competency Framework"
 msgstr ""
@@ -10108,7 +10194,7 @@ msgid "Competency {0} is already delivered by chapter {1} in this section. A com
 msgstr ""
 
 #. Label of the cbe_section (Section Break) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:557
+#: seminary/seminary/doctype/program/program.json:558
 msgid "Competency-Based Education"
 msgstr ""
 
@@ -10703,12 +10789,12 @@ msgid "Continue your application"
 msgstr ""
 
 #. Option for the 'Enrollment Mode' (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:506
+#: seminary/seminary/doctype/program/program.json:507
 msgid "Continuous"
 msgstr ""
 
 #. Description of the 'Enrollment Mode' (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:501
+#: seminary/seminary/doctype/program/program.json:502
 msgid "Continuous: applicants can apply any time; the public CTA tags them to the current Academic Term. Timed: applications are only accepted during published Term Admission windows."
 msgstr ""
 
@@ -10805,6 +10891,12 @@ msgstr ""
 #: seminary/seminary/doctype/bible_api_settings/bible_api_settings.js:131
 #, python-brace-format
 msgid "Copied Bible ID: {0}"
+msgstr ""
+
+#. Description of the 'Courses' (Section Break) field in DocType 'Program
+#. Graduation Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:214
+msgid "Copied from the Program. Only the Program's courses can be added: add a new course to the Program as disabled, and this catalog enables it when it takes effect."
 msgstr ""
 
 #. Description of the 'Emergency Contacts' (Table) field in DocType 'Student
@@ -11661,6 +11753,8 @@ msgstr ""
 #. Label of the course (Link) field in DocType 'Assignment Activity'
 #. Label of the course (Link) field in DocType 'Bulk Course Enrollment Course'
 #. Label of the course (Link) field in DocType 'Bulk Course Enrollment Result'
+#. Label of the course (Link) field in DocType 'Catalog Course'
+#. Label of the course (Link) field in DocType 'Catalog Track Course'
 #. Name of a DocType
 #. Label of the course (Data) field in DocType 'Course Activity'
 #. Label of the course (Link) field in DocType 'Course Competency'
@@ -11726,6 +11820,8 @@ msgstr ""
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json:84
 #: seminary/seminary/doctype/bulk_course_enrollment_course/bulk_course_enrollment_course.json:49
 #: seminary/seminary/doctype/bulk_course_enrollment_result/bulk_course_enrollment_result.json:35
+#: seminary/seminary/doctype/catalog_course/catalog_course.json:21
+#: seminary/seminary/doctype/catalog_track_course/catalog_track_course.json:27
 #: seminary/seminary/doctype/course/course.json:230
 #: seminary/seminary/doctype/course_activity/course_activity.json:34
 #: seminary/seminary/doctype/course_competency/course_competency.json:31
@@ -11746,7 +11842,7 @@ msgstr ""
 #: seminary/seminary/doctype/leveling_profile_item/leveling_profile_item.json:31
 #: seminary/seminary/doctype/oral_activity/oral_activity.json:35
 #: seminary/seminary/doctype/oral_activity_submission/oral_activity_submission.json:85
-#: seminary/seminary/doctype/program/program.js:359
+#: seminary/seminary/doctype/program/program.js:360
 #: seminary/seminary/doctype/program_course/program_course.json:26
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:461
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:521
@@ -12078,6 +12174,7 @@ msgstr ""
 #. Label of the course_name (Link) field in DocType 'Assignment Submission'
 #. Label of the course_name (Data) field in DocType 'Bulk Course Enrollment
 #. Course'
+#. Label of the course_name (Data) field in DocType 'Catalog Course'
 #. Label of the course_name (Data) field in DocType 'Course'
 #. Label of the course_data (Data) field in DocType 'Course Enrollment
 #. Individual'
@@ -12089,9 +12186,10 @@ msgstr ""
 #. Label of the course_name (Data) field in DocType 'Withdrawal Request'
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json:202
 #: seminary/seminary/doctype/bulk_course_enrollment_course/bulk_course_enrollment_course.json:58
+#: seminary/seminary/doctype/catalog_course/catalog_course.json:30
 #: seminary/seminary/doctype/course/course.json:47
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json:184
-#: seminary/seminary/doctype/program/program.js:362
+#: seminary/seminary/doctype/program/program.js:363
 #: seminary/seminary/doctype/program_course/program_course.json:35
 #: seminary/seminary/doctype/program_enrollment_course/program_enrollment_course.json:48
 #: seminary/seminary/doctype/program_enrollment_required_course/program_enrollment_required_course.json:29
@@ -12285,7 +12383,7 @@ msgstr ""
 msgid "Course Schedule for an internal course offering the student attended. Leave blank for transferred/legacy rows."
 msgstr ""
 
-#: seminary/seminary/api.py:1488
+#: seminary/seminary/api.py:1492
 msgid "Course Schedule not found"
 msgstr ""
 
@@ -12299,13 +12397,13 @@ msgstr ""
 msgid "Course Schedule {0} does not exist."
 msgstr ""
 
-#: seminary/seminary/api.py:4647
+#: seminary/seminary/api.py:4619
 #, python-brace-format
 msgid "Course Schedule {0} has no start and end date, so it cannot be placed on a calendar."
 msgstr ""
 
 #: seminary/partner/doctype/internship_application/internship_application.py:266
-#: seminary/seminary/api.py:4389
+#: seminary/seminary/api.py:4380
 #: seminary/seminary/doctype/culminating_project/culminating_project.py:583
 #, python-brace-format
 msgid "Course Schedule {0} not found."
@@ -12404,6 +12502,11 @@ msgstr ""
 msgid "Course Withdrawal Rules"
 msgstr ""
 
+#: seminary/seminary/catalog_year.py:581
+#, python-brace-format
+msgid "Course added: {0}"
+msgstr ""
+
 #: seminary/seminary/api.py:748
 msgid "Course and assignment are required."
 msgstr ""
@@ -12497,6 +12600,11 @@ msgstr ""
 msgid "Course page summary"
 msgstr ""
 
+#: seminary/seminary/catalog_year.py:583
+#, python-brace-format
+msgid "Course removed: {0}"
+msgstr ""
+
 #. Option for the 'Category' (Select) field in DocType 'Cohort Type'
 #: seminary/seminary/doctype/cohort_type/cohort_type.json:66
 msgid "Course scoped"
@@ -12558,7 +12666,7 @@ msgstr ""
 msgid "Course {0} already has a competency with the code {1} ({2})."
 msgstr ""
 
-#: seminary/seminary/required_enrollment.py:379
+#: seminary/seminary/required_enrollment.py:384
 #, python-brace-format
 msgid "Course {0} could not be auto-enrolled for enrollment {1} during term roll: {2}. Review and enroll the student manually if appropriate."
 msgstr ""
@@ -12573,12 +12681,12 @@ msgstr ""
 msgid "Course {0} is not in any self-paced competency-based program, so this section cannot be open ended. Give it an end date, or set the program's pacing to Self-paced."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:248
+#: seminary/seminary/doctype/program/program.py:255
 #, python-brace-format
 msgid "Course {0}: Credits are required for Credits-based programs."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:244
+#: seminary/seminary/doctype/program/program.py:251
 #, python-brace-format
 msgid "Course {0}: Term number is required for Time-based programs."
 msgstr ""
@@ -12609,6 +12717,10 @@ msgstr ""
 #. Enrollment'
 #. Label of the courses (Table) field in DocType 'Bulk Course Enrollment'
 #. Label of the courses (Table) field in DocType 'Program Enrollment'
+#. Label of the section_catalog_courses (Section Break) field in DocType
+#. 'Program Graduation Requirement'
+#. Label of the catalog_courses (Table) field in DocType 'Program Graduation
+#. Requirement'
 #. Label of the courses_count (Int) field in DocType 'Salary Slip Instructor
 #. Summary'
 #. Label of a Link in the Academics Workspace
@@ -12655,6 +12767,7 @@ msgstr ""
 #: seminary/public/frontend/assets/index-BBe4MQz2.js:1
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.json:101
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:415
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:217
 #: seminary/seminary/doctype/salary_slip_instructor_summary/salary_slip_instructor_summary.json:53
 #: seminary/seminary/workspace/academics/academics.json:40
 #: seminary/templates/includes/website/program_detail.html:75
@@ -12710,7 +12823,7 @@ msgstr ""
 msgid "Courses to Offer"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:384
+#: seminary/seminary/doctype/program/program.js:385
 msgid "Courses under \"Unassigned\" have no Term number and will not be auto-enrolled."
 msgstr ""
 
@@ -12882,15 +12995,19 @@ msgstr ""
 msgid "Create split"
 msgstr ""
 
-#: seminary/setup_steps.py:95
+#: seminary/seminary/catalog_year.py:326
+msgid "Create the academic term the catalog year starts in first."
+msgstr ""
+
+#: seminary/setup_steps.py:101
 msgid "Create the academic year"
 msgstr ""
 
-#: seminary/setup_steps.py:104
+#: seminary/setup_steps.py:110
 msgid "Create the coming academic term"
 msgstr ""
 
-#: seminary/setup_steps.py:68
+#: seminary/setup_steps.py:74
 msgid "Create the grading scale"
 msgstr ""
 
@@ -12918,7 +13035,7 @@ msgstr ""
 msgid "Create your first posting — it goes live after a quick staff review."
 msgstr ""
 
-#: seminary/setup_steps.py:113
+#: seminary/setup_steps.py:119
 msgid "Create your programs"
 msgstr ""
 
@@ -13125,7 +13242,7 @@ msgstr ""
 
 #. Option for the 'Duration (unit of measure)' (Select) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:479
+#: seminary/seminary/doctype/program/program.json:480
 msgid "Credit-hours"
 msgstr ""
 
@@ -13147,7 +13264,7 @@ msgstr ""
 #: seminary/public/frontend/assets/PartnerInternshipApplicant-C_weZ6pa.js:1
 #: seminary/public/frontend/assets/ProgramAudit-Bjpl-zKX.js:1
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json:323
-#: seminary/seminary/doctype/program/program.js:365
+#: seminary/seminary/doctype/program/program.js:366
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:437
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:463
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:508
@@ -13188,11 +13305,17 @@ msgid "Credits completed for this emphasis. Calculated automatically."
 msgstr ""
 
 #. Label of the credits_complete (Int) field in DocType 'Program'
+#. Label of the credits_complete (Int) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/catalog_year.py:552
 #: seminary/seminary/doctype/program/program.json:160
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:168
 msgid "Credits for completion"
 msgstr ""
 
+#. Label of the credits (Int) field in DocType 'Catalog Course'
 #. Label of the pgmcourse_credits (Int) field in DocType 'Program Course'
+#: seminary/seminary/doctype/catalog_course/catalog_course.json:50
 #: seminary/seminary/doctype/program_course/program_course.json:59
 msgid "Credits for this program"
 msgstr ""
@@ -15148,21 +15271,21 @@ msgid "Discount From"
 msgstr ""
 
 #. Label of the application_fee_windows (Table) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:646
+#: seminary/seminary/doctype/program/program.json:648
 msgid "Discount Windows"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:56
+#: seminary/seminary/doctype/program/program.py:63
 #, python-brace-format
 msgid "Discount window {0}: To cannot be before From."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:60
+#: seminary/seminary/doctype/program/program.py:67
 #, python-brace-format
 msgid "Discount window {0}: the discount must be more than 0 and at most 100."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:67
+#: seminary/seminary/doctype/program/program.py:74
 #, python-brace-format
 msgid "Discount windows {0} and {1} overlap."
 msgstr ""
@@ -15337,12 +15460,12 @@ msgid "Dismissed"
 msgstr ""
 
 #. Label of the display_cta (Check) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:527
+#: seminary/seminary/doctype/program/program.json:528
 msgid "Display Apply CTA on Web"
 msgstr ""
 
 #. Label of the display_enrollment_window (Check) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:520
+#: seminary/seminary/doctype/program/program.json:521
 msgid "Display Enrollment Windows on Web"
 msgstr ""
 
@@ -15699,6 +15822,10 @@ msgstr ""
 msgid "Draft = saved by the student but not yet submitted; hidden from the partner until submitted."
 msgstr ""
 
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:108
+msgid "Draft catalog year. Edit its courses here; the program is unchanged until it takes effect, when its first term starts."
+msgstr ""
+
 #: frontend/src/pages/Jobs.vue:238
 #: seminary/public/frontend/assets/Jobs-C-1QvRWq.js:1
 msgid "Draft discarded."
@@ -15717,11 +15844,6 @@ msgstr ""
 #: frontend/src/components/PartnerPlacementCard.vue:160
 #: seminary/public/frontend/assets/PartnerInternshipApplicant-C_weZ6pa.js:1
 msgid "Draft saved."
-msgstr ""
-
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:66
-#, python-brace-format
-msgid "Draft version {0} created. Edit and submit it to activate the new policy."
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:1163
@@ -16050,7 +16172,7 @@ msgid "Duration (seconds)"
 msgstr ""
 
 #. Label of the duration_unit (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:478
+#: seminary/seminary/doctype/program/program.json:479
 msgid "Duration (unit of measure)"
 msgstr ""
 
@@ -16594,7 +16716,10 @@ msgid "Emphasis Declaration"
 msgstr ""
 
 #. Label of the emphasis_overlap_policy (Select) field in DocType 'Program'
+#. Label of the emphasis_overlap_policy (Select) field in DocType 'Program
+#. Graduation Requirement'
 #: seminary/seminary/doctype/program/program.json:377
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:210
 msgid "Emphasis Overlap Policy"
 msgstr ""
 
@@ -16614,6 +16739,10 @@ msgstr ""
 #. Emphasis'
 #: seminary/seminary/doctype/program_enrollment_emphasis/program_enrollment_emphasis.json:23
 msgid "Emphasis Track"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:557
+msgid "Emphasis overlap policy"
 msgstr ""
 
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.py:334
@@ -16911,7 +17040,7 @@ msgstr ""
 msgid "Enroll students in their next term's courses when they advance"
 msgstr ""
 
-#: seminary/setup_steps.py:150
+#: seminary/setup_steps.py:169
 msgid "Enroll students in their programs"
 msgstr ""
 
@@ -17010,7 +17139,7 @@ msgid "Enrollment Dates"
 msgstr ""
 
 #. Label of the enrollment_mode (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:505
+#: seminary/seminary/doctype/program/program.json:506
 msgid "Enrollment Mode"
 msgstr ""
 
@@ -17708,17 +17837,17 @@ msgstr ""
 msgid "Exception removed"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:509
+#: seminary/seminary/exceptions.py:511
 #, python-brace-format
 msgid "Exception requested: {0}"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:520
+#: seminary/seminary/exceptions.py:522
 #, python-brace-format
 msgid "Exception {0}: {1}"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:174
+#: seminary/seminary/exceptions.py:176
 msgid "Exceptions can only be recorded on a submitted Program Enrollment."
 msgstr ""
 
@@ -18221,7 +18350,7 @@ msgstr ""
 msgid "Failed for absence"
 msgstr ""
 
-#: seminary/seminary/api.py:3996
+#: seminary/seminary/api.py:3987
 #, python-brace-format
 msgid "Failed for absences ({0}) by {1}."
 msgstr ""
@@ -18310,7 +18439,7 @@ msgstr ""
 msgid "Failure Reason"
 msgstr ""
 
-#: seminary/seminary/api.py:4046
+#: seminary/seminary/api.py:4037
 #, python-brace-format
 msgid "Failure-for-absences cleared by {0}."
 msgstr ""
@@ -18752,6 +18881,12 @@ msgstr ""
 msgid "First Name"
 msgstr ""
 
+#. Label of the academic_term_from (Link) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:79
+msgid "First Term"
+msgstr ""
+
 #: frontend/src/pages/PartnerPeople.vue:50
 #: seminary/public/frontend/assets/PartnerPeople-NM2gu32r.js:1
 msgid "First name"
@@ -18913,6 +19048,11 @@ msgstr ""
 #: frontend/src/components/OralDefense.vue:58
 #: seminary/public/frontend/assets/frappe-ui-oNJ9kxba.js:121
 msgid "Follow-up:"
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:122
+#, python-brace-format
+msgid "Followed by {0}. Students who entered under this catalog year keep it."
 msgstr ""
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:143
@@ -19282,7 +19422,7 @@ msgstr ""
 #. Description of the 'Required on Enrollment' (Table) field in DocType
 #. 'Program Enrollment'
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:398
-msgid "Frozen at submit. Toggling the Program flag later does not change this list; use the Program form's backfill button to push new requirements."
+msgid "Frozen at submit from the student's catalog year. Use the Program form's backfill button to push courses newly flagged there."
 msgstr ""
 
 #. Label of the fudgepoints_scac (Float) field in DocType 'Scheduled Course
@@ -19617,7 +19757,7 @@ msgstr ""
 msgid "Give a reason for changing the deduction."
 msgstr ""
 
-#: seminary/seminary/progression.py:233
+#: seminary/seminary/progression.py:235
 msgid "Give a reason for changing the term."
 msgstr ""
 
@@ -19633,7 +19773,7 @@ msgstr ""
 msgid "Give a reason for replacing the computed value for this competency."
 msgstr ""
 
-#: seminary/setup_steps.py:86
+#: seminary/setup_steps.py:92
 msgid "Give the Seminary Manager and Registrar roles to your staff"
 msgstr ""
 
@@ -20380,10 +20520,8 @@ msgstr ""
 msgid "Graduation Eligible"
 msgstr ""
 
-#. Label of the graduation_policy (Link) field in DocType 'Program Enrollment'
 #. Label of the graduation_policy_section (Section Break) field in DocType
 #. 'Program Level'
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.json:338
 #: seminary/seminary/doctype/program_level/program_level.json:111
 msgid "Graduation Policy"
 msgstr ""
@@ -20509,7 +20647,7 @@ msgstr ""
 msgid "Graduation candidates only"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:434
+#: seminary/seminary/exceptions.py:436
 #, python-brace-format
 msgid "Graduation requirement {0} not found on this enrollment."
 msgstr ""
@@ -20648,7 +20786,7 @@ msgid "Growth from baseline to final."
 msgstr ""
 
 #. Name of a role
-#: seminary/seminary/doctype/program/program.json:720
+#: seminary/seminary/doctype/program/program.json:721
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json:1015
 #: seminary/seminary/doctype/term_admission/term_admission.json:134
 msgid "Guest"
@@ -20943,10 +21081,29 @@ msgstr ""
 msgid "Honor Name"
 msgstr ""
 
+#: seminary/seminary/catalog_year.py:627
+#, python-brace-format
+msgid "Honor added: {0} ({1})"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:629
+#, python-brace-format
+msgid "Honor removed: {0}"
+msgstr ""
+
+#. Label of the section_honors (Section Break) field in DocType 'Program
+#. Graduation Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:245
+msgid "Honors"
+msgstr ""
+
 #. Name of a DocType
 #. Label of the honors_levels (Table) field in DocType 'Program'
+#. Label of the honors_levels (Table) field in DocType 'Program Graduation
+#. Requirement'
 #: seminary/seminary/doctype/honors_levels/honors_levels.json:32
 #: seminary/seminary/doctype/program/program.json:248
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:250
 msgid "Honors Levels"
 msgstr ""
 
@@ -21737,7 +21894,7 @@ msgid "Image description (alt text)"
 msgstr ""
 
 #. Label of the image_blurb (Attach Image) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:539
+#: seminary/seminary/doctype/program/program.json:540
 msgid "Image for Blurb"
 msgstr ""
 
@@ -21812,7 +21969,7 @@ msgstr ""
 msgid "Import Summary"
 msgstr ""
 
-#: seminary/setup_steps.py:168
+#: seminary/setup_steps.py:187
 msgid "Import grades from your previous system"
 msgstr ""
 
@@ -21820,7 +21977,7 @@ msgstr ""
 msgid "Import into"
 msgstr ""
 
-#: seminary/setup_steps.py:141
+#: seminary/setup_steps.py:160
 msgid "Import your students"
 msgstr ""
 
@@ -22426,7 +22583,7 @@ msgstr ""
 #: seminary/seminary/doctype/personal_development_plan/personal_development_plan.json:153
 #: seminary/seminary/doctype/placement_assessment/placement_assessment.json:142
 #: seminary/seminary/doctype/plagiarism_check_result/plagiarism_check_result.json:196
-#: seminary/seminary/doctype/program/program.json:710
+#: seminary/seminary/doctype/program/program.json:711
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:523
 #: seminary/seminary/doctype/question/question.json:200
 #: seminary/seminary/doctype/quiz/quiz.json:173
@@ -22963,7 +23120,7 @@ msgstr ""
 msgid "Invalid"
 msgstr ""
 
-#: seminary/seminary/api.py:1483
+#: seminary/seminary/api.py:1487
 msgid "Invalid Program Enrollment"
 msgstr ""
 
@@ -23108,7 +23265,7 @@ msgstr ""
 #: seminary/seminary/doctype/external_examiner/external_examiner.json:71
 #: seminary/seminary/doctype/faculty_capability/faculty_capability.json:61
 #: seminary/seminary/doctype/placement_assessment/placement_assessment.json:48
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:39
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:67
 #: seminary/seminary/doctype/skill_tag/skill_tag.json:39
 msgid "Is Active"
 msgstr ""
@@ -23993,6 +24150,12 @@ msgstr ""
 msgid "Last Served"
 msgstr ""
 
+#. Label of the academic_term_to (Link) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:89
+msgid "Last Term"
+msgstr ""
+
 #. Option for the 'Offset Anchor' (Select) field in DocType 'Program Grad Req
 #. Items'
 #: seminary/seminary/doctype/program_grad_req_items/program_grad_req_items.json:218
@@ -24498,7 +24661,7 @@ msgstr ""
 msgid "Legal name is required"
 msgstr ""
 
-#: seminary/seminary/api.py:2429
+#: seminary/seminary/api.py:2407
 msgid "Legal name is required."
 msgstr ""
 
@@ -24581,7 +24744,7 @@ msgstr ""
 msgid "Lesson history"
 msgstr ""
 
-#: seminary/seminary/api.py:5315
+#: seminary/seminary/api.py:5287
 msgid "Lesson index updated successfully."
 msgstr ""
 
@@ -24609,12 +24772,12 @@ msgstr ""
 msgid "Lesson video"
 msgstr ""
 
-#: seminary/seminary/api.py:5350
+#: seminary/seminary/api.py:5322
 #, python-brace-format
 msgid "Lesson {0} not found in chapter {1}"
 msgstr ""
 
-#: seminary/seminary/api.py:5361
+#: seminary/seminary/api.py:5333
 #, python-brace-format
 msgid "Lesson {0} not linked to source chapter {1}"
 msgstr ""
@@ -25675,7 +25838,9 @@ msgstr ""
 msgid "Mandatory Remaining"
 msgstr ""
 
+#. Label of the required (Check) field in DocType 'Catalog Course'
 #. Label of the required (Check) field in DocType 'Program Course'
+#: seminary/seminary/doctype/catalog_course/catalog_course.json:38
 #: seminary/seminary/doctype/program_course/program_course.json:43
 msgid "Mandatory for this program"
 msgstr ""
@@ -25686,8 +25851,10 @@ msgstr ""
 msgid "Mandatory milestones must be Approved/Waived before the project can be Completed."
 msgstr ""
 
+#. Label of the required_on_enroll (Check) field in DocType 'Catalog Course'
 #. Label of the pgm_course_reqonenroll (Check) field in DocType 'Program
 #. Course'
+#: seminary/seminary/doctype/catalog_course/catalog_course.json:57
 #: seminary/seminary/doctype/program_course/program_course.json:69
 msgid "Mandatory on program enrollment"
 msgstr ""
@@ -25710,13 +25877,15 @@ msgstr ""
 msgid "Mandatory-on-Enrollment Courses"
 msgstr ""
 
-#: seminary/seminary/required_enrollment.py:330
+#: seminary/seminary/required_enrollment.py:335
 #, python-brace-format
 msgid "Mandatory-on-enrollment course {0} could not be auto-enrolled for enrollment {1}: prerequisites are not met. Review sequencing or enroll the student manually once prerequisites are satisfied."
 msgstr ""
 
+#. Label of the mandatory (Check) field in DocType 'Catalog Track Course'
 #. Label of the pgm_track_course_mandatory (Check) field in DocType 'Program
 #. Track Courses'
+#: seminary/seminary/doctype/catalog_track_course/catalog_track_course.json:36
 #: seminary/seminary/doctype/program_track_courses/program_track_courses.json:40
 msgid "Mandatory?"
 msgstr ""
@@ -25976,7 +26145,7 @@ msgstr ""
 msgid "Match Students and Mentors"
 msgstr ""
 
-#: seminary/seminary/api.py:6182
+#: seminary/seminary/api.py:6154
 msgid "Match not found."
 msgstr ""
 
@@ -26120,12 +26289,18 @@ msgid "Max Students"
 msgstr ""
 
 #. Label of the max_transfer_credits (Int) field in DocType 'Program'
+#. Label of the max_transfer_credits (Int) field in DocType 'Program Graduation
+#. Requirement'
 #: seminary/seminary/doctype/program/program.json:169
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:195
 msgid "Max Transfer Credits"
 msgstr ""
 
 #. Label of the max_time_enrolled (Float) field in DocType 'Program'
+#. Label of the max_time_enrolled (Float) field in DocType 'Program Graduation
+#. Requirement'
 #: seminary/seminary/doctype/program/program.json:178
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:203
 msgid "Max Years to Graduate"
 msgstr ""
 
@@ -26143,6 +26318,14 @@ msgstr ""
 #. Label of the duration (Float) field in DocType 'Exam Activity'
 #: seminary/seminary/doctype/exam_activity/exam_activity.json:61
 msgid "Max time in minutes"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:555
+msgid "Max transfer credits"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:556
+msgid "Max years to graduate"
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:423
@@ -26918,7 +27101,7 @@ msgid "Milestone Sign-off"
 msgstr ""
 
 #: seminary/seminary/doctype/culminating_project/culminating_project.py:424
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1230
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1225
 #, python-brace-format
 msgid "Milestone {0} not found on this project."
 msgstr ""
@@ -27002,8 +27185,11 @@ msgid "Minimum GPA"
 msgstr ""
 
 #. Label of the min_graduation_gpa (Float) field in DocType 'Program'
+#. Label of the min_graduation_gpa (Float) field in DocType 'Program Graduation
+#. Requirement'
 #. Label of the min_graduation_gpa (Float) field in DocType 'Program Level'
 #: seminary/seminary/doctype/program/program.json:235
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:186
 #: seminary/seminary/doctype/program_level/program_level.json:119
 msgid "Minimum Graduation GPA"
 msgstr ""
@@ -27061,6 +27247,10 @@ msgstr ""
 #. Description of the 'Minimum Payment %' (Percent) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json:421
 msgid "Minimum cumulative payment (as a percentage of the CEI's invoiced total) required to advance from 'Awaiting Payment' to 'Submitted'. 100 = fully paid; 50 = half-down accepted."
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:554
+msgid "Minimum graduation GPA"
 msgstr ""
 
 #: frontend/src/pages/PartnerInternshipPostingForm.vue:25
@@ -27405,6 +27595,11 @@ msgstr ""
 msgid "Moved by you."
 msgstr ""
 
+#: seminary/seminary/graduation.py:289
+#, python-brace-format
+msgid "Moved to catalog year {0} (was {1})."
+msgstr ""
+
 #: frontend/src/components/CourseOutline.vue:767
 #: seminary/public/frontend/assets/CourseOutline-By7xe4zd.js:1
 #, python-brace-format
@@ -27740,7 +27935,7 @@ msgstr ""
 
 #. Description of the 'Applicant Naming Series' (Data) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:510
+#: seminary/seminary/doctype/program/program.json:511
 msgid "Naming series for Student Applicant records created for this program (e.g., MDIV-APP-.####.). Leave blank to use the system default."
 msgstr ""
 
@@ -27864,6 +28059,10 @@ msgstr ""
 #: frontend/src/pages/AssignmentForm.vue:302
 #: seminary/public/frontend/assets/AssignmentForm-D4iag4vc.js:1
 msgid "New Assignment"
+msgstr ""
+
+#: seminary/seminary/doctype/program/program.js:461
+msgid "New Catalog Year"
 msgstr ""
 
 #: seminary/seminary/doctype/course_schedule/course_schedule_list.js:35
@@ -28039,6 +28238,7 @@ msgstr ""
 #: seminary/public/frontend/assets/DiscussionActivities-CXwSJoWV.js:1
 #: seminary/public/frontend/assets/OralActivities-CNMF4YJ4.js:1
 #: seminary/public/frontend/assets/PartnerJobPosting-CuwGa2bW.js:1
+#: seminary/seminary/catalog_year.py:562
 #: seminary/seminary/doctype/cohort_meeting_vote/cohort_meeting_vote.json:43
 #: seminary/seminary/doctype/graduation_request/graduation_request.js:121
 #: seminary/seminary/doctype/graduation_request/graduation_request.js:122
@@ -28279,6 +28479,11 @@ msgstr ""
 msgid "No capture method can record this meeting."
 msgstr ""
 
+#: seminary/seminary/catalog_year.py:759
+#, python-brace-format
+msgid "No catalog year of {0} covers this enrollment's term. Publish one with New Catalog Year on the program."
+msgstr ""
+
 #: frontend/src/pages/CourseAssessment.vue:749
 #: frontend/src/pages/CourseAssessment.vue:758
 #: frontend/src/pages/Gradebook.vue:470
@@ -28373,6 +28578,10 @@ msgstr ""
 #: frontend/src/pages/SelfDevelopmentPlans.vue:84
 #: seminary/public/frontend/assets/SelfDevelopmentPlans-MEB_5HrN.js:2
 msgid "No development plans yet."
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:163
+msgid "No differences."
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivities.vue:63
@@ -28824,11 +29033,11 @@ msgstr ""
 msgid "No recipients matched the selected audience."
 msgstr ""
 
-#: seminary/seminary/api.py:5838
+#: seminary/seminary/api.py:5810
 msgid "No recipients to build labels for."
 msgstr ""
 
-#: seminary/seminary/api.py:5860
+#: seminary/seminary/api.py:5832
 msgid "No recipients to print letters for."
 msgstr ""
 
@@ -29110,7 +29319,7 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: seminary/seminary/api.py:5842
+#: seminary/seminary/api.py:5814
 #, python-brace-format
 msgid "None of the {0} recipient(s) have a postal address on file."
 msgstr ""
@@ -29361,6 +29570,11 @@ msgstr ""
 msgid "Not in a module"
 msgstr ""
 
+#: seminary/seminary/catalog_year.py:441
+#, python-brace-format
+msgid "Not in the {0} catalog"
+msgstr ""
+
 #: frontend/src/pages/AlumniProfile.vue:55
 #: seminary/public/frontend/assets/AlumniProfile-BZJpbQMe.js:1
 msgid "Not listed"
@@ -29392,8 +29606,8 @@ msgid "Not on the roster of this course."
 msgstr ""
 
 #: seminary/seminary/api.py:970 seminary/seminary/api.py:1000
-#: seminary/seminary/api.py:1810 seminary/seminary/api.py:1829
-#: seminary/seminary/api.py:6085 seminary/seminary/course_checkin.py:398
+#: seminary/seminary/api.py:1816 seminary/seminary/api.py:1835
+#: seminary/seminary/api.py:6057 seminary/seminary/course_checkin.py:398
 #: seminary/seminary/rubrics.py:444
 msgid "Not permitted"
 msgstr ""
@@ -29415,7 +29629,7 @@ msgstr ""
 msgid "Not permitted to modify Program {0}"
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1374
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1369
 msgid "Not permitted to review this project."
 msgstr ""
 
@@ -29431,7 +29645,7 @@ msgstr ""
 #: seminary/scorm/grades.py:275 seminary/scorm/runtime.py:188
 #: seminary/seminary/api.py:297 seminary/seminary/api.py:307
 #: seminary/seminary/api.py:595 seminary/seminary/api.py:831
-#: seminary/seminary/api.py:2457 seminary/seminary/cbe_api.py:87
+#: seminary/seminary/api.py:2435 seminary/seminary/cbe_api.py:87
 #: seminary/seminary/cbe_api.py:2166 seminary/seminary/cbe_api.py:2737
 #: seminary/seminary/cbe_api.py:2999 seminary/seminary/cbe_api.py:3017
 #: seminary/seminary/comms.py:904 seminary/seminary/comms.py:1050
@@ -29503,7 +29717,7 @@ msgstr ""
 msgid "Not yet"
 msgstr ""
 
-#: seminary/seminary/api.py:2474
+#: seminary/seminary/api.py:2452
 msgid "Not yet a graduation candidate."
 msgstr ""
 
@@ -29561,7 +29775,7 @@ msgstr ""
 msgid "Note: The courses available on the previous page should be ALL the courses in the program. Use this only to specify what is mandatory for students on a particular track."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:523
+#: seminary/seminary/exceptions.py:525
 #, python-brace-format
 msgid "Note: {0}"
 msgstr ""
@@ -30438,11 +30652,11 @@ msgstr ""
 msgid "Only a processing step can suggest a moment."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:315
+#: seminary/seminary/exceptions.py:317
 msgid "Only a requested exception can be decided."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:334
+#: seminary/seminary/exceptions.py:336
 msgid "Only a requested exception can be withdrawn."
 msgstr ""
 
@@ -30463,15 +30677,15 @@ msgstr ""
 msgid "Only active groups may be chosen for a new value."
 msgstr ""
 
-#: seminary/seminary/api.py:2789
+#: seminary/seminary/api.py:2780
 msgid "Only an application with an admission decision to admit can be enrolled."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:345
+#: seminary/seminary/exceptions.py:347
 msgid "Only an approved exception can be revoked."
 msgstr ""
 
-#: seminary/seminary/api.py:1752
+#: seminary/seminary/api.py:1758
 msgid "Only an unpaid 'Awaiting Payment' enrollment can be released here."
 msgstr ""
 
@@ -30497,7 +30711,7 @@ msgstr ""
 msgid "Only document file is allowed."
 msgstr ""
 
-#: seminary/seminary/api.py:1724
+#: seminary/seminary/api.py:1730
 msgid "Only draft enrollments can be cancelled"
 msgstr ""
 
@@ -30625,7 +30839,7 @@ msgstr ""
 msgid "Only students who started in this term. Choose the term being enrolled to enroll new students."
 msgstr ""
 
-#: seminary/seminary/api.py:4066
+#: seminary/seminary/api.py:4057
 msgid "Only teaching staff and the registrar can send grades."
 msgstr ""
 
@@ -30641,7 +30855,7 @@ msgstr ""
 msgid "Only teaching staff can see disciplinary history."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1161
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1156
 msgid "Only the advisor may manage the committee."
 msgstr ""
 
@@ -30658,7 +30872,7 @@ msgstr ""
 msgid "Only the author or staff can edit this plan."
 msgstr ""
 
-#: seminary/seminary/api.py:5598
+#: seminary/seminary/api.py:5570
 msgid "Only the comment author may edit its text."
 msgstr ""
 
@@ -30674,7 +30888,7 @@ msgstr ""
 msgid "Only the registrar or Program Chair can change the attendance policy."
 msgstr ""
 
-#: seminary/seminary/api.py:3907
+#: seminary/seminary/api.py:3898
 msgid "Only the registrar or Program Chair can fail a student for absences."
 msgstr ""
 
@@ -30690,7 +30904,7 @@ msgstr ""
 msgid "Only the registrars can withdraw an application."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:332
+#: seminary/seminary/exceptions.py:334
 msgid "Only the requester can withdraw this."
 msgstr ""
 
@@ -30711,7 +30925,7 @@ msgstr ""
 msgid "Only the student, their mentor or the registrar can request this."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1152
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1147
 #, python-brace-format
 msgid "Only the {0} or the advisor may record this sign-off."
 msgstr ""
@@ -30820,10 +31034,6 @@ msgstr ""
 msgid "Open Job Openings"
 msgstr ""
 
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:30
-msgid "Open New Version"
-msgstr ""
-
 #: frontend/src/utils/upload.js:84
 #: seminary/public/frontend/assets/frappe-ui-oNJ9kxba.js:124
 #: seminary/seminary/doctype/signed_agreement/signed_agreement.js:16
@@ -30858,6 +31068,10 @@ msgstr ""
 #: frontend/src/components/HelpWidget.vue:31
 #: seminary/public/frontend/assets/index-BBe4MQz2.js:1
 msgid "Open documentation"
+msgstr ""
+
+#: seminary/setup_steps.py:140
+msgid "Open each program and use New Catalog Year. Students can't be enrolled, and the program can't be published, until it has one."
 msgstr ""
 
 #. Label of the open (Check) field in DocType 'Academic Term'
@@ -31107,7 +31321,7 @@ msgid "Optional JSON body template; the literal {{text}} is replaced with the su
 msgstr ""
 
 #. Description of the 'Academic Unit' (Link) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:547
+#: seminary/seminary/doctype/program/program.json:548
 msgid "Optional Program Committee that owns this program. Degree programs span academic departments, so academic ownership flows through courses, not the program. Admissions go to the Admissions Unit on the Application tab, not to this unit."
 msgstr ""
 
@@ -31549,7 +31763,7 @@ msgid "Oral questions on this assessment are answered in writing by this student
 msgstr ""
 
 #. Label of the order_pd (Data) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:544
+#: seminary/seminary/doctype/program/program.json:545
 msgid "Order in Programs and Degrees"
 msgstr ""
 
@@ -31745,6 +31959,12 @@ msgstr ""
 #. Option for the 'Payer Type' (Select) field in DocType 'Withdrawal Refunds'
 #: seminary/seminary/doctype/withdrawal_refunds/withdrawal_refunds.json:18
 msgid "Other Payers"
+msgstr ""
+
+#. Label of the section_break_cqwz (Section Break) field in DocType 'Program
+#. Graduation Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:106
+msgid "Other Requirements"
 msgstr ""
 
 #. Label of the others_section (Section Break) field in DocType 'Application
@@ -32201,7 +32421,7 @@ msgid "Pacing"
 msgstr ""
 
 #. Label of the pacing_mode (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:572
+#: seminary/seminary/doctype/program/program.json:573
 msgid "Pacing Mode"
 msgstr ""
 
@@ -32526,12 +32746,12 @@ msgstr ""
 msgid "Partner Seminary"
 msgstr ""
 
-#: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.py:116
+#: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.py:131
 #, python-brace-format
 msgid "Partner Seminary '{0}' default conversion policy '{1}' must be submitted before importing."
 msgstr ""
 
-#: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.py:104
+#: seminary/seminary/doctype/partner_transcript_import_batch/partner_transcript_import_batch.py:119
 #, python-brace-format
 msgid "Partner Seminary '{0}' has status '{1}' and cannot accept new imports."
 msgstr ""
@@ -33589,7 +33809,7 @@ msgstr ""
 msgid "Plagiarism Text Hash"
 msgstr ""
 
-#: seminary/seminary/api.py:6115
+#: seminary/seminary/api.py:6087
 msgid "Plagiarism checking is disabled."
 msgstr ""
 
@@ -33742,7 +33962,7 @@ msgid "Please log in to view the job board."
 msgstr ""
 
 #: seminary/partner/portal.py:114 seminary/partner/portal.py:133
-#: seminary/seminary/api.py:5698 seminary/seminary/requirements.py:1082
+#: seminary/seminary/api.py:5670 seminary/seminary/requirements.py:1082
 msgid "Please log in."
 msgstr ""
 
@@ -34542,7 +34762,7 @@ msgstr ""
 msgid "Preview Recipients"
 msgstr ""
 
-#: seminary/seminary/api.py:5741
+#: seminary/seminary/api.py:5713
 msgid "Preview is only available on draft announcements."
 msgstr ""
 
@@ -34551,7 +34771,7 @@ msgstr ""
 msgid "Preview — nothing you do here is recorded"
 msgstr ""
 
-#: seminary/seminary/api.py:5942
+#: seminary/seminary/api.py:5914
 #, python-brace-format
 msgid "Preview — personalized for {0}"
 msgstr ""
@@ -34911,10 +35131,10 @@ msgstr ""
 #: seminary/seminary/doctype/graduation_request/graduation_request.json:67
 #: seminary/seminary/doctype/instructor_category/instructor_category.json:77
 #: seminary/seminary/doctype/leveling_profile/leveling_profile.json:32
-#: seminary/seminary/doctype/program/program.json:676
+#: seminary/seminary/doctype/program/program.json:677
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:409
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:122
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:30
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:47
 #: seminary/seminary/doctype/requirement_exception/requirement_exception.json:63
 #: seminary/seminary/doctype/rubric/rubric.json:25
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json:65
@@ -34973,7 +35193,7 @@ msgid "Program Audit is only available for Students"
 msgstr ""
 
 #. Label of the blurb (Text Editor) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:533
+#: seminary/seminary/doctype/program/program.json:534
 msgid "Program Blurb"
 msgstr ""
 
@@ -35072,9 +35292,9 @@ msgstr ""
 #: seminary/seminary/doctype/personal_development_plan/personal_development_plan.json:165
 #: seminary/seminary/doctype/placement_assessment/placement_assessment.json:109
 #: seminary/seminary/doctype/plagiarism_check_result/plagiarism_check_result.json:187
-#: seminary/seminary/doctype/program/program.json:700
+#: seminary/seminary/doctype/program/program.json:701
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:514
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:164
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:302
 #: seminary/seminary/doctype/question/question.json:188
 #: seminary/seminary/doctype/quiz/quiz.json:161
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json:209
@@ -35152,7 +35372,7 @@ msgid "Program Details"
 msgstr ""
 
 #. Label of the program_director (Link) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:496
+#: seminary/seminary/doctype/program/program.json:497
 msgid "Program Director"
 msgstr ""
 
@@ -35161,7 +35381,7 @@ msgid "Program Duration"
 msgstr ""
 
 #. Label of the duration_txt (Text Editor) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:485
+#: seminary/seminary/doctype/program/program.json:486
 msgid "Program Duration (text)"
 msgstr ""
 
@@ -35276,7 +35496,7 @@ msgstr ""
 msgid "Program Enrollment Status History"
 msgstr ""
 
-#: seminary/seminary/api.py:2461
+#: seminary/seminary/api.py:2439
 msgid "Program Enrollment is not active."
 msgstr ""
 
@@ -35304,7 +35524,7 @@ msgstr ""
 msgid "Program Enrollment {0} is not on Leave of Absence."
 msgstr ""
 
-#: seminary/seminary/api.py:2446
+#: seminary/seminary/api.py:2424
 #: seminary/seminary/doctype/graduation_request/graduation_request.py:119
 #, python-brace-format
 msgid "Program Enrollment {0} not found."
@@ -35323,7 +35543,7 @@ msgid "Program Grad Req Items"
 msgstr ""
 
 #. Name of a DocType
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:123
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:261
 msgid "Program Graduation Requirement"
 msgstr ""
 
@@ -35361,7 +35581,7 @@ msgstr ""
 
 #. Label of the pgr_items (Table) field in DocType 'Program Graduation
 #. Requirement'
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:66
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:111
 msgid "Program Requirement Items"
 msgstr ""
 
@@ -35403,8 +35623,12 @@ msgstr ""
 msgid "Program Tier"
 msgstr ""
 
+#. Label of the program_track (Link) field in DocType 'Catalog Track'
+#. Label of the program_track (Link) field in DocType 'Catalog Track Course'
 #. Name of a DocType
 #. Label of the program_track (Link) field in DocType 'Program Track Courses'
+#: seminary/seminary/doctype/catalog_track/catalog_track.json:19
+#: seminary/seminary/doctype/catalog_track_course/catalog_track_course.json:19
 #: seminary/seminary/doctype/program_track/program_track.json:128
 #: seminary/seminary/doctype/program_track_courses/program_track_courses.json:21
 msgid "Program Track"
@@ -35456,7 +35680,7 @@ msgstr ""
 msgid "Program {0} is listed more than once."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:221
+#: seminary/seminary/doctype/program/program.py:228
 #, python-brace-format
 msgid "Program {0} uses competency framework {1}."
 msgstr ""
@@ -35786,9 +36010,17 @@ msgstr ""
 msgid "Publish Applications Received"
 msgstr ""
 
+#: seminary/seminary/catalog_year.py:743
+msgid "Publish a catalog year before publishing the program: save it unpublished, then use New Catalog Year."
+msgstr ""
+
 #: frontend/src/components/ContentIssues.vue:32
 #: seminary/public/frontend/assets/contentCheck-DmUgocQJ.js:1
 msgid "Publish anyway"
+msgstr ""
+
+#: seminary/setup_steps.py:138
+msgid "Publish each program's catalog year"
 msgstr ""
 
 #. Label of the publish (Check) field in DocType 'Internship Position'
@@ -35810,7 +36042,7 @@ msgid "Publish on the student portal. Partner-created positions are reviewed by 
 msgstr ""
 
 #. Label of the published (Check) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:473
+#: seminary/seminary/doctype/program/program.json:474
 msgid "Publish on web"
 msgstr ""
 
@@ -35842,7 +36074,7 @@ msgstr ""
 msgid "Published On"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:78
+#: seminary/seminary/doctype/program/program.js:79
 msgid "Push currently-flagged mandatory-on-enrollment courses to all active enrollments and auto-enroll where an offering is open. This is append-only and cannot remove existing snapshot entries. Continue?"
 msgstr ""
 
@@ -37332,7 +37564,7 @@ msgstr ""
 #: seminary/seminary/doctype/placement_assessment/placement_assessment.json:133
 #: seminary/seminary/doctype/possible_duplicate/possible_duplicate.json:144
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:503
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:152
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:290
 #: seminary/seminary/doctype/reading_plan/reading_plan.json:137
 #: seminary/seminary/doctype/reading_plan_progress/reading_plan_progress.json:98
 #: seminary/seminary/doctype/recommendation_letter/recommendation_letter.json:277
@@ -38282,7 +38514,7 @@ msgstr ""
 #: seminary/public/frontend/assets/Enrollment-Bi9K1Rz9.js:1
 #: seminary/seminary/doctype/competency_framework_evaluator/competency_framework_evaluator.json:80
 #: seminary/seminary/doctype/mandatory_personal_field/mandatory_personal_field.json:37
-#: seminary/seminary/doctype/program/program.js:256
+#: seminary/seminary/doctype/program/program.js:257
 #: seminary/seminary/doctype/program_application_question/program_application_question.json:45
 #: seminary/seminary/doctype/program_enrollment_leveling/program_enrollment_leveling.json:76
 msgid "Required"
@@ -38380,7 +38612,7 @@ msgstr ""
 msgid "Requirement"
 msgstr ""
 
-#: seminary/seminary/graduation.py:875
+#: seminary/seminary/graduation.py:874
 #, python-brace-format
 msgid "Requirement '{0}' is not a Culminating Project; it cannot carry a project type."
 msgstr ""
@@ -38434,7 +38666,22 @@ msgstr ""
 msgid "Requirement Waiver rows require a Graduation Requirement."
 msgstr ""
 
-#: seminary/seminary/events.py:178 seminary/seminary/graduation.py:807
+#: seminary/seminary/catalog_year.py:653
+#, python-brace-format
+msgid "Requirement added: {0}"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:672
+#, python-brace-format
+msgid "Requirement changed: {0}"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:655
+#, python-brace-format
+msgid "Requirement removed: {0}"
+msgstr ""
+
+#: seminary/seminary/events.py:178 seminary/seminary/graduation.py:806
 #, python-brace-format
 msgid "Requirement {0} not found on this enrollment."
 msgstr ""
@@ -38824,7 +39071,7 @@ msgid "Review Questions Before the Defense Opens"
 msgstr ""
 
 #. Label of the admission_rubric (Link) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:613
+#: seminary/seminary/doctype/program/program.json:615
 msgid "Review Rubric"
 msgstr ""
 
@@ -38860,7 +39107,7 @@ msgstr ""
 #. Option for the 'Admission Mode' (Select) field in DocType 'Program'
 #: seminary/seminary/doctype/cohort_content_flag/cohort_content_flag.json:87
 #: seminary/seminary/doctype/personal_development_plan/personal_development_plan.json:80
-#: seminary/seminary/doctype/program/program.json:593
+#: seminary/seminary/doctype/program/program.json:596
 msgid "Reviewed"
 msgstr ""
 
@@ -38892,7 +39139,7 @@ msgid "Reviewed On"
 msgstr ""
 
 #. Description of the 'Admission Mode' (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:596
+#: seminary/seminary/doctype/program/program.json:592
 msgid "Reviewed: each application is reviewed and decided once it is complete. Automatic: a complete application is admitted at once."
 msgstr ""
 
@@ -38956,7 +39203,7 @@ msgstr ""
 msgid "Revisions Required"
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1353
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1348
 #, python-brace-format
 msgid "Revisions were requested on “{0}” — submit a revision."
 msgstr ""
@@ -39237,7 +39484,7 @@ msgstr ""
 #: seminary/partner/doctype/internship_position/internship_position.json:236
 #: seminary/partner/doctype/partner_job_opening/partner_job_opening.json:146
 #: seminary/seminary/doctype/academic_unit/academic_unit.json:125
-#: seminary/seminary/doctype/program/program.json:490
+#: seminary/seminary/doctype/program/program.json:491
 msgid "Route"
 msgstr ""
 
@@ -39273,7 +39520,7 @@ msgstr ""
 msgid "Row Status"
 msgstr ""
 
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:124
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:125
 #, python-brace-format
 msgid "Row {0}: '{1}' is not a valid workflow_state or status value on {2}."
 msgstr ""
@@ -39348,6 +39595,16 @@ msgstr ""
 msgid "Row {0}: sessions cannot be negative."
 msgstr ""
 
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:84
+#, python-brace-format
+msgid "Row {0}: that track course is listed twice."
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:79
+#, python-brace-format
+msgid "Row {0}: that track isn't one of the program's tracks."
+msgstr ""
+
 #: seminary/seminary/doctype/student_group/student_group.py:43
 #, python-brace-format
 msgid "Row {0}: {1} cannot leave before joining."
@@ -39374,6 +39631,7 @@ msgid "Row {0}: {1} is in a chapter that delivers {2}, so it cannot be filed und
 msgstr ""
 
 #: seminary/seminary/catalog.py:226
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:74
 #, python-brace-format
 msgid "Row {0}: {1} is listed twice."
 msgstr ""
@@ -39396,6 +39654,11 @@ msgstr ""
 #: seminary/seminary/doctype/personal_development_plan/personal_development_plan.py:102
 #, python-brace-format
 msgid "Row {0}: {1} is not a question in this framework."
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:69
+#, python-brace-format
+msgid "Row {0}: {1} isn't one of the program's courses. Add it to the program first."
 msgstr ""
 
 #. Label of the rows (Int) field in DocType 'Mailing Label Format'
@@ -39618,7 +39881,7 @@ msgstr ""
 msgid "SCORM chapter '{0}'"
 msgstr ""
 
-#: seminary/seminary/api.py:4948 seminary/seminary/api.py:4974
+#: seminary/seminary/api.py:4920 seminary/seminary/api.py:4946
 msgid "SCORM package not found."
 msgstr ""
 
@@ -39995,7 +40258,7 @@ msgstr ""
 msgid "Save the draft first, then preview."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:435
+#: seminary/seminary/doctype/program/program.js:436
 msgid "Save the program first."
 msgstr ""
 
@@ -40134,7 +40397,7 @@ msgstr ""
 msgid "Say why the document cannot be accepted."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:347
+#: seminary/seminary/exceptions.py:349
 msgid "Say why the exception is revoked."
 msgstr ""
 
@@ -40246,7 +40509,7 @@ msgstr ""
 msgid "Schedule overlap"
 msgstr ""
 
-#: seminary/setup_steps.py:159
+#: seminary/setup_steps.py:178
 msgid "Schedule the coming term's courses"
 msgstr ""
 
@@ -40293,6 +40556,11 @@ msgstr ""
 #. Description of a DocType
 #: seminary/seminary/doctype/chapel/chapel.json:6
 msgid "Scheduled chapel service that is open to all students, instructors, and the public. Use it to plan each service, assign the preacher and worship team, and let students check in for attendance."
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:116
+#, python-brace-format
+msgid "Scheduled: takes effect when {0} starts, and then replaces the program's courses."
 msgstr ""
 
 #. Label of the schedule_note (Small Text) field in DocType 'Oral Activity
@@ -41084,13 +41352,13 @@ msgstr ""
 msgid "Select at least one student (checkbox)."
 msgstr ""
 
-#: seminary/seminary/api.py:4380
+#: seminary/seminary/api.py:4371
 #: seminary/seminary/doctype/event_custom_category/event_custom_category_list.js:55
 #: seminary/seminary/events.py:241
 msgid "Select at least one student."
 msgstr ""
 
-#: seminary/setup_steps.py:123
+#: seminary/setup_steps.py:129
 msgid "Select courses in the Course list and use Actions, Add to Program."
 msgstr ""
 
@@ -41209,7 +41477,7 @@ msgstr ""
 msgid "Self-assessment: where I am starting"
 msgstr ""
 
-#: seminary/seminary/api.py:1447
+#: seminary/seminary/api.py:1451
 msgid "Self-enrollment from the portal is not enabled."
 msgstr ""
 
@@ -41217,19 +41485,19 @@ msgstr ""
 #. Framework'
 #. Option for the 'Pacing Mode' (Select) field in DocType 'Program'
 #: seminary/seminary/doctype/competency_framework/competency_framework.json:280
-#: seminary/seminary/doctype/program/program.json:573
+#: seminary/seminary/doctype/program/program.json:574
 msgid "Self-paced"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:408
+#: seminary/seminary/doctype/program/program.js:409
 msgid "Self-paced is available only in Credits-based programs, so Pacing Mode is now Cohort-paced."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:138
+#: seminary/seminary/doctype/program/program.py:145
 msgid "Self-paced is available only in Credits-based programs, so this Time-based program uses Cohort-paced."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:162
+#: seminary/seminary/doctype/program/program.py:169
 msgid "Self-paced is available only in Credits-based programs. A Time-based program moves students term by term."
 msgstr ""
 
@@ -41246,7 +41514,7 @@ msgstr ""
 
 #. Option for the 'Duration (unit of measure)' (Select) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:479
+#: seminary/seminary/doctype/program/program.json:480
 msgid "Semesters"
 msgstr ""
 
@@ -41260,7 +41528,7 @@ msgstr ""
 #: seminary/partner/doctype/internship_requirement_template/internship_requirement_template.json:163
 #: seminary/public/frontend/assets/index-BBe4MQz2.js:1
 #: seminary/seminary/workspace/seminary/seminary.json:20
-#: seminary/setup_steps.py:62
+#: seminary/setup_steps.py:68
 msgid "Seminary"
 msgstr ""
 
@@ -41480,9 +41748,9 @@ msgstr ""
 #: seminary/seminary/doctype/plagiarism_check_result/plagiarism_check_result.json:176
 #: seminary/seminary/doctype/plagiarism_provider_account/plagiarism_provider_account.json:169
 #: seminary/seminary/doctype/possible_duplicate/possible_duplicate.json:135
-#: seminary/seminary/doctype/program/program.json:740
+#: seminary/seminary/doctype/program/program.json:741
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:488
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:179
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:317
 #: seminary/seminary/doctype/program_level/program_level.json:191
 #: seminary/seminary/doctype/question/question.json:212
 #: seminary/seminary/doctype/quiz/quiz.json:185
@@ -41668,7 +41936,7 @@ msgstr ""
 msgid "Send Grades for Selected"
 msgstr ""
 
-#: seminary/seminary/api.py:4401 seminary/seminary/api.py:4465
+#: seminary/seminary/api.py:4392 seminary/seminary/api.py:4456
 #, python-brace-format
 msgid "Send Grades is only available while the course is in the Grading state. Current state: {0}."
 msgstr ""
@@ -41972,7 +42240,7 @@ msgstr ""
 msgid "Set Withdrawal dates per Academic Term"
 msgstr ""
 
-#: seminary/seminary/api.py:3962
+#: seminary/seminary/api.py:3953
 msgid "Set a 'Code for Failure for Absences' on the course's Grading Scale first."
 msgstr ""
 
@@ -42057,6 +42325,18 @@ msgstr ""
 #. 'Internship Hours Log'
 #: seminary/partner/doctype/internship_hours_log/internship_hours_log.json:86
 msgid "Set by the site supervisor. Required for hours to count when the type tracks with supervisor confirmation."
+msgstr ""
+
+#. Description of the 'Is Active' (Check) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:63
+msgid "Set by the system: the catalog year now in force for new students."
+msgstr ""
+
+#. Description of the 'Last Term' (Link) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:86
+msgid "Set by the system: the term before the next catalog year starts."
 msgstr ""
 
 #. Description of the 'Course Code' (Data) field in DocType 'Course'
@@ -42284,7 +42564,10 @@ msgid "Share something…"
 msgstr ""
 
 #. Option for the 'Emphasis Overlap Policy' (Select) field in DocType 'Program'
+#. Option for the 'Emphasis Overlap Policy' (Select) field in DocType 'Program
+#. Graduation Requirement'
 #: seminary/seminary/doctype/program/program.json:378
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:211
 msgid "Shared Credit Pool"
 msgstr ""
 
@@ -42524,7 +42807,7 @@ msgstr ""
 
 #. Description of the 'Display Enrollment Windows on Web' (Check) field in
 #. DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:517
+#: seminary/seminary/doctype/program/program.json:518
 msgid "Show open Term Admission windows on the public Program page. Has no effect for Continuous programs."
 msgstr ""
 
@@ -42535,7 +42818,7 @@ msgstr ""
 
 #. Description of the 'Display Apply CTA on Web' (Check) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:524
+#: seminary/seminary/doctype/program/program.json:525
 msgid "Show the 'Apply to be our student' CTA on the public Program page. For Timed programs, one CTA is rendered per open window."
 msgstr ""
 
@@ -43692,6 +43975,12 @@ msgstr ""
 msgid "Starts"
 msgstr ""
 
+#. Label of the starts_on (Date) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:98
+msgid "Starts On"
+msgstr ""
+
 #. Label of the starts_on (Datetime) field in DocType 'Chapel'
 #: seminary/seminary/doctype/chapel/chapel.json:41
 msgid "Starts on"
@@ -43891,7 +44180,7 @@ msgstr ""
 #: seminary/seminary/doctype/personal_development_plan_goal/personal_development_plan_goal.json:65
 #: seminary/seminary/doctype/plagiarism_check_result/plagiarism_check_result.json:78
 #: seminary/seminary/doctype/possible_duplicate/possible_duplicate.json:41
-#: seminary/seminary/doctype/program/program.js:262
+#: seminary/seminary/doctype/program/program.js:263
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:129
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:138
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:152
@@ -43957,7 +44246,7 @@ msgstr ""
 msgid "Stays in original"
 msgstr ""
 
-#: seminary/seminary/progression.py:100
+#: seminary/seminary/progression.py:102
 #, python-brace-format
 msgid "Stays in term {0}: {1} of {2} courses passed in {3}."
 msgstr ""
@@ -44332,7 +44621,7 @@ msgstr ""
 #: seminary/seminary/doctype/personal_development_plan/personal_development_plan.json:193
 #: seminary/seminary/doctype/plagiarism_check_result/plagiarism_check_result.json:58
 #: seminary/seminary/doctype/plagiarism_matched_source/plagiarism_matched_source.json:36
-#: seminary/seminary/doctype/program/program.json:729
+#: seminary/seminary/doctype/program/program.json:730
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json:72
 #: seminary/seminary/doctype/quiz/quiz.json:196
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json:245
@@ -44377,7 +44666,7 @@ msgstr ""
 
 #. Group in Program's connections
 #. Group in Student's connections
-#: seminary/seminary/doctype/program/program.json:667
+#: seminary/seminary/doctype/program/program.json:668
 #: seminary/seminary/doctype/student/student.json:292
 msgid "Student Activity"
 msgstr ""
@@ -45118,6 +45407,12 @@ msgstr ""
 msgid "Students waiting for a cohort"
 msgstr ""
 
+#. Description of the 'First Term' (Link) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:75
+msgid "Students who enter in this term or later take this catalog, until a later catalog year starts."
+msgstr ""
+
 #: seminary/seminary/page/cohort_planner/cohort_planner.js:593
 msgid "Students will see this. Left empty, it is named after the mentor."
 msgstr ""
@@ -45297,13 +45592,13 @@ msgstr ""
 msgid "Submission name is required."
 msgstr ""
 
-#: seminary/seminary/api.py:6117 seminary/seminary/oral_defense.py:452
+#: seminary/seminary/api.py:6089 seminary/seminary/oral_defense.py:452
 #: seminary/seminary/oral_defense.py:606
 #: seminary/seminary/plagiarism/service.py:166
 msgid "Submission not found."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1378
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1373
 #, python-brace-format
 msgid "Submission round {0} not found."
 msgstr ""
@@ -45463,7 +45758,7 @@ msgstr ""
 msgid "Submit your final self-assessment; your mentors’ views appear here once they have all submitted theirs."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1346
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1341
 #, python-brace-format
 msgid "Submit your work for “{0}”."
 msgstr ""
@@ -45784,7 +46079,7 @@ msgstr ""
 
 #. Label of the superseded_by (Link) field in DocType 'Program Graduation
 #. Requirement'
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:87
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:132
 msgid "Superseded By"
 msgstr ""
 
@@ -45794,7 +46089,7 @@ msgstr ""
 #. Requirement'
 #: seminary/seminary/doctype/competency_framework/competency_framework.json:92
 #: seminary/seminary/doctype/course_folder/course_folder.json:72
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:100
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:145
 msgid "Supersedes"
 msgstr ""
 
@@ -46025,8 +46320,8 @@ msgstr ""
 #: seminary/seminary/doctype/plagiarism_check_result/plagiarism_check_result.json:164
 #: seminary/seminary/doctype/plagiarism_provider_account/plagiarism_provider_account.json:157
 #: seminary/seminary/doctype/possible_duplicate/possible_duplicate.json:154
-#: seminary/seminary/doctype/program/program.json:688
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:137
+#: seminary/seminary/doctype/program/program.json:689
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:275
 #: seminary/seminary/doctype/program_level/program_level.json:178
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json:275
 #: seminary/seminary/doctype/reading_plan/reading_plan.json:101
@@ -46055,12 +46350,6 @@ msgstr ""
 #. Label of the user (Link) field in DocType 'Instructor'
 #: seminary/seminary/doctype/instructor/instructor.json:57
 msgid "System User"
-msgstr ""
-
-#. Description of the 'Is Active' (Check) field in DocType 'Program Graduation
-#. Requirement'
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:36
-msgid "System-derived from the lifecycle state: a policy is live (Active) only while its workflow state is 'Active'. Use the 'Change Version' action to retire it."
 msgstr ""
 
 #. Description of the 'Milestones Complete' (Check) field in DocType
@@ -46344,6 +46633,7 @@ msgstr ""
 #. Label of the term (Int) field in DocType 'Bulk Course Enrollment Course'
 #. Label of the current_std_term (Int) field in DocType 'Bulk Course Enrollment
 #. Student'
+#. Label of the term (Int) field in DocType 'Catalog Track Course'
 #. Label of the source_term (Data) field in DocType 'Plagiarism Matched Source'
 #. Label of the term (Int) field in DocType 'Program Track Courses'
 #: frontend/src/pages/CbeOverview.vue:26
@@ -46353,6 +46643,7 @@ msgstr ""
 #: seminary/seminary/doctype/academic_term/academic_term.js:89
 #: seminary/seminary/doctype/bulk_course_enrollment_course/bulk_course_enrollment_course.json:41
 #: seminary/seminary/doctype/bulk_course_enrollment_student/bulk_course_enrollment_student.json:65
+#: seminary/seminary/doctype/catalog_track_course/catalog_track_course.json:42
 #: seminary/seminary/doctype/plagiarism_matched_source/plagiarism_matched_source.json:49
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:303
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:447
@@ -46384,7 +46675,7 @@ msgstr ""
 msgid "Term Admission Program"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:389
+#: seminary/seminary/doctype/program/program.js:390
 msgid "Term Courses & Credits"
 msgstr ""
 
@@ -46444,12 +46735,14 @@ msgstr ""
 msgid "Term Withdrawal Rules are automatically created for Academic Terms, but it is advised to confirm these dates."
 msgstr ""
 
-#: seminary/seminary/progression.py:247
+#: seminary/seminary/progression.py:249
 #, python-brace-format
 msgid "Term changed from {0} to {1} by {2}. Reason: {3}"
 msgstr ""
 
+#. Label of the course_term (Int) field in DocType 'Catalog Course'
 #. Label of the course_term (Int) field in DocType 'Program Course'
+#: seminary/seminary/doctype/catalog_course/catalog_course.json:44
 #: seminary/seminary/doctype/program_course/program_course.json:50
 msgid "Term number"
 msgstr ""
@@ -46459,7 +46752,7 @@ msgstr ""
 msgid "Term runs"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:323
+#: seminary/seminary/doctype/program/program.js:324
 #, python-brace-format
 msgid "Term {0}"
 msgstr ""
@@ -46488,7 +46781,11 @@ msgid "Terminated"
 msgstr ""
 
 #. Label of the terms_complete (Int) field in DocType 'Program'
+#. Label of the terms_complete (Int) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/catalog_year.py:553
 #: seminary/seminary/doctype/program/program.json:134
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:174
 msgid "Terms for completion"
 msgstr ""
 
@@ -46808,12 +47105,6 @@ msgstr ""
 msgid "The DocType a student's requirement links to (e.g. Culminating Project, Internship Application)."
 msgstr ""
 
-#. Description of the 'Superseded By' (Link) field in DocType 'Program
-#. Graduation Requirement'
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:84
-msgid "The Draft successor spawned when this policy was retired via 'Change Version'."
-msgstr ""
-
 #: seminary/install.py:1594
 msgid "The Gospel of Mark, a chapter a day."
 msgstr ""
@@ -46835,19 +47126,13 @@ msgid "The Pexels URL did not return an image."
 msgstr ""
 
 #. Description of the 'Admissions Unit' (Link) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:600
+#: seminary/seminary/doctype/program/program.json:601
 msgid "The Program Admissions unit whose members review this program's applications. Its chair may decide. Several programs may share one unit. Leave blank and the program director, or the Registrars, review."
 msgstr ""
 
 #. Description of the 'Program Blurb' (Text Editor) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:530
+#: seminary/seminary/doctype/program/program.json:531
 msgid "The Program Blurb will appear on the Programs and Degrees page (alongside the program image and duration) and on top of its own page."
-msgstr ""
-
-#. Description of the 'Graduation Policy' (Link) field in DocType 'Program
-#. Enrollment'
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.json:335
-msgid "The Program Graduation Requirement policy this enrollment is bound to. Snapshotted on submit; change only via registrar re-snapshot."
 msgstr ""
 
 #: seminary/install.py:1605
@@ -46886,6 +47171,12 @@ msgstr ""
 
 #: seminary/seminary/doctype/culminating_project/culminating_project.py:286
 msgid "The abstract can no longer be edited after the defense."
+msgstr ""
+
+#. Description of the 'Catalog Year' (Data) field in DocType 'Program
+#. Graduation Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:52
+msgid "The academic year of the first term."
 msgstr ""
 
 #: seminary/seminary/financial/backend.py:228
@@ -46989,6 +47280,24 @@ msgstr ""
 msgid "The cartridge's imsmanifest.xml could not be read."
 msgstr ""
 
+#. Description of the 'Superseded By' (Link) field in DocType 'Program
+#. Graduation Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:129
+msgid "The catalog year that follows this one."
+msgstr ""
+
+#. Description of the 'Catalog Year' (Link) field in DocType 'Program
+#. Enrollment'
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.json:335
+msgid "The catalog year this enrollment is bound to: the one its entry term falls in. Set on submit; change it only with Resnapshot."
+msgstr ""
+
+#. Description of the 'Supersedes' (Link) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:142
+msgid "The catalog year this one follows."
+msgstr ""
+
 #: seminary/seminary/gradebook_weights.py:149
 #, python-brace-format
 msgid "The category weights total {0}%. They must total 100%."
@@ -47067,7 +47376,7 @@ msgstr ""
 
 #. Description of the 'Admission Conditions' (Small Text) field in DocType
 #. 'Program Enrollment'
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.json:459
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.json:455
 msgid "The conditions the student was admitted on."
 msgstr ""
 
@@ -47123,6 +47432,11 @@ msgstr ""
 
 #: seminary/install.py:182
 msgid "The course was removed from or changed in the curriculum after the schedule was published."
+msgstr ""
+
+#. Description of a DocType
+#: seminary/seminary/doctype/catalog_track/catalog_track.json:4
+msgid "The credits a track requires of students under a catalog year."
 msgstr ""
 
 #. Description of a DocType
@@ -47242,12 +47556,6 @@ msgstr ""
 msgid "The earlier framework this one replaces. Keeps past cohorts on the rules they started under."
 msgstr ""
 
-#. Description of the 'Supersedes' (Link) field in DocType 'Program Graduation
-#. Requirement'
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:97
-msgid "The earlier policy this version replaces."
-msgstr ""
-
 #: frontend/src/overrides/frappe-ui/InsertIframe.vue:133
 msgid "The embed could not be inserted. Check the address and try again."
 msgstr ""
@@ -47306,6 +47614,10 @@ msgstr ""
 #: seminary/seminary/lms_migration/archive.py:39
 #: seminary/seminary/lms_migration/importer.py:181 seminary/seminary/qti.py:50
 msgid "The file is too large to import."
+msgstr ""
+
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.py:43
+msgid "The first term needs a start date."
 msgstr ""
 
 #: frontend/src/components/RubricEditor.vue:210
@@ -47739,7 +48051,12 @@ msgstr ""
 msgid "The program cohorts of this type belong to. Required by Paced Program, which moves its members together and so cannot be defined at level scope. Also asked for when leaders must be alumni of the bound program — fill this or Program Tier, or choose Any alumnus instead."
 msgstr ""
 
-#: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:444
+#: seminary/seminary/doctype/program/program.js:508
+#, python-brace-format
+msgid "The program differs from its catalog year {0}. Students keep their catalog; publish the change with New Catalog Year."
+msgstr ""
+
+#: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:445
 msgid "The program enrollment is no longer active."
 msgstr ""
 
@@ -47796,7 +48113,7 @@ msgstr ""
 
 #. Description of the 'Application Questions' (Table) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:628
+#: seminary/seminary/doctype/program/program.json:625
 msgid "The questions this program's application form asks, in this order. Questions come from the shared list of application questions."
 msgstr ""
 
@@ -47898,7 +48215,7 @@ msgid "The row on the enrollment's Graduation Requirements table."
 msgstr ""
 
 #. Description of the 'Review Rubric' (Link) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:616
+#: seminary/seminary/doctype/program/program.json:612
 msgid "The rubric reviewers score applications with. Use Edit Review Rubric to change it."
 msgstr ""
 
@@ -48074,7 +48391,7 @@ msgstr ""
 msgid "The student has started the defense; its questions cannot change."
 msgstr ""
 
-#: seminary/seminary/progression.py:238
+#: seminary/seminary/progression.py:240
 #, python-brace-format
 msgid "The student is already in term {0}."
 msgstr ""
@@ -48170,7 +48487,7 @@ msgstr ""
 msgid "The take that is graded. The answer above holds its transcript."
 msgstr ""
 
-#: seminary/seminary/progression.py:231
+#: seminary/seminary/progression.py:233
 msgid "The term must be 1 or more."
 msgstr ""
 
@@ -48475,17 +48792,17 @@ msgstr ""
 msgid "These are two different records. They will not be proposed again."
 msgstr ""
 
-#: seminary/seminary/api.py:4126
+#: seminary/seminary/api.py:4117
 #, python-brace-format
 msgid "These assessments have no competency, so they cannot be graded: {0}. Choose a competency for each in Configure Assessments, or remove it."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:217
+#: seminary/seminary/doctype/program/program.py:224
 #, python-brace-format
 msgid "These courses define no active competency: {0}."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:211
+#: seminary/seminary/doctype/program/program.py:218
 #, python-brace-format
 msgid "These courses do not use the framework's grading scale {0}: {1}."
 msgstr ""
@@ -48504,12 +48821,12 @@ msgstr ""
 msgid "These prerequisites make a loop: {0} would wait on a chapter that waits on it. Remove one of them."
 msgstr ""
 
-#: seminary/seminary/api.py:4411
+#: seminary/seminary/api.py:4402
 #, python-brace-format
 msgid "These rosters do not belong to this section: {0}."
 msgstr ""
 
-#: seminary/seminary/api.py:4211
+#: seminary/seminary/api.py:4202
 msgid "These students have not submitted a development plan yet:"
 msgstr ""
 
@@ -48994,7 +49311,7 @@ msgstr ""
 msgid "This course is not competency-based."
 msgstr ""
 
-#: seminary/seminary/api.py:1490
+#: seminary/seminary/api.py:1494
 msgid "This course is not open for enrollment"
 msgstr ""
 
@@ -49020,11 +49337,11 @@ msgstr ""
 msgid "This document has already been sent."
 msgstr ""
 
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:92
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:96
 msgid "This enrollment has a Graduation Request. Delete or cancel the graduation request first, then change the emphasis."
 msgstr ""
 
-#: seminary/seminary/api.py:1845
+#: seminary/seminary/api.py:1851
 #, python-brace-format
 msgid "This enrollment is {0}. Resolve it through a Withdrawal Request to keep the financial and grade record intact."
 msgstr ""
@@ -49087,7 +49404,7 @@ msgstr ""
 msgid "This file is not a Course Pack (not a zip archive)."
 msgstr ""
 
-#: seminary/scorm/explode.py:155 seminary/seminary/api.py:4946
+#: seminary/scorm/explode.py:155 seminary/seminary/api.py:4918
 msgid "This file is not a SCORM package (not a zip archive)."
 msgstr ""
 
@@ -49413,7 +49730,7 @@ msgstr ""
 msgid "This method records only meetings on a school meeting account; add one."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1244
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1239
 msgid "This milestone has no Event Category set on its project type."
 msgstr ""
 
@@ -49494,7 +49811,7 @@ msgstr ""
 msgid "This pair is not open."
 msgstr ""
 
-#: seminary/seminary/api.py:4754
+#: seminary/seminary/api.py:4726
 msgid "This payment link is invalid or has expired."
 msgstr ""
 
@@ -49520,11 +49837,6 @@ msgstr ""
 msgid "This plan is still a draft. There is nothing to respond to until the student submits it."
 msgstr ""
 
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:34
-#, python-brace-format
-msgid "This policy was superseded by {0}."
-msgstr ""
-
 #: seminary/seminary/discipleship/meetings.py:483
 msgid "This poll is closed."
 msgstr ""
@@ -49534,12 +49846,16 @@ msgstr ""
 msgid "This profile is not available."
 msgstr ""
 
-#: seminary/seminary/api.py:2469
+#: seminary/seminary/api.py:2447
 msgid "This program does not allow Graduation Requests."
 msgstr ""
 
 #: seminary/public/js/student_applicant_webform.js:414
 msgid "This program has no agreements to sign."
+msgstr ""
+
+#: seminary/seminary/doctype/program/program.js:498
+msgid "This program has no catalog year yet. Use New Catalog Year before enrolling students or publishing it."
 msgstr ""
 
 #: seminary/public/js/student_applicant_webform.js:336
@@ -49712,7 +50028,7 @@ msgstr ""
 msgid "This reflection could not be loaded."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:205
+#: seminary/seminary/exceptions.py:207
 msgid "This requirement already has an open exception."
 msgstr ""
 
@@ -49742,23 +50058,23 @@ msgstr ""
 msgid "This requirement has no Event Category to create an event from."
 msgstr ""
 
-#: seminary/seminary/graduation.py:738
+#: seminary/seminary/graduation.py:737
 msgid "This requirement has no linked document to withdraw. Use Cancel or Waive instead."
 msgstr ""
 
-#: seminary/seminary/graduation.py:984
+#: seminary/seminary/graduation.py:983
 msgid "This requirement is not a Choose Option umbrella."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1151
+#: seminary/seminary/graduation.py:1150
 msgid "This requirement is not a Culminating Project slot."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1004
+#: seminary/seminary/graduation.py:1003
 msgid "This requirement is not a Culminating Project."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1104
+#: seminary/seminary/graduation.py:1103
 msgid "This requirement is not a Recommendation Letter slot."
 msgstr ""
 
@@ -49810,7 +50126,7 @@ msgstr ""
 msgid "This section applies to workflow and website features."
 msgstr ""
 
-#: seminary/seminary/api.py:4393
+#: seminary/seminary/api.py:4384
 msgid "This section has an end date, so grades are sent for the whole class at once. Sending grades for selected students is only available for open-ended sections in self-paced programs."
 msgstr ""
 
@@ -49840,7 +50156,7 @@ msgstr ""
 msgid "This section is graded numerically. Use the gradebook instead."
 msgstr ""
 
-#: seminary/seminary/api.py:1771
+#: seminary/seminary/api.py:1777
 msgid "This section is no longer open for enrollment, so the seat can't be self-released. Please contact the registrar or file a Withdrawal Request."
 msgstr ""
 
@@ -50231,7 +50547,7 @@ msgid "Time-to-Graduate Risk"
 msgstr ""
 
 #. Option for the 'Enrollment Mode' (Select) field in DocType 'Program'
-#: seminary/seminary/doctype/program/program.json:506
+#: seminary/seminary/doctype/program/program.json:507
 msgid "Timed"
 msgstr ""
 
@@ -50704,13 +51020,13 @@ msgstr ""
 msgid "Total number of pages the student is expected to read for this report."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:373
+#: seminary/seminary/doctype/program/program.js:374
 #: seminary/seminary/report/program_term_courses/program_term_courses.py:105
 #, python-brace-format
 msgid "Total: {0} course(s)"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:253
+#: seminary/seminary/doctype/program/program.js:254
 msgid "Track"
 msgstr ""
 
@@ -50720,11 +51036,25 @@ msgstr ""
 msgid "Track Attendance for Online Meetings"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:278
+#. Label of the catalog_track_courses (Table) field in DocType 'Program
+#. Graduation Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:239
+msgid "Track Courses"
+msgstr ""
+
+#: seminary/seminary/doctype/program/program.js:279
 msgid "Track Credit Sufficiency"
 msgstr ""
 
+#. Label of the catalog_tracks (Table) field in DocType 'Program Graduation
+#. Requirement'
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:233
+msgid "Track Credits"
+msgstr ""
+
+#. Label of the max_credits (Int) field in DocType 'Catalog Track'
 #. Label of the max_credits (Int) field in DocType 'Program Track'
+#: seminary/seminary/doctype/catalog_track/catalog_track.json:42
 #: seminary/seminary/doctype/program_track/program_track.json:58
 msgid "Track Credits Ceiling"
 msgstr ""
@@ -50735,7 +51065,9 @@ msgstr ""
 msgid "Track Credits Earned"
 msgstr ""
 
+#. Label of the addcredits (Int) field in DocType 'Catalog Track'
 #. Label of the addcredits (Int) field in DocType 'Program Track'
+#: seminary/seminary/doctype/catalog_track/catalog_track.json:35
 #: seminary/seminary/doctype/program_track/program_track.json:48
 msgid "Track Credits Required"
 msgstr ""
@@ -50750,7 +51082,9 @@ msgstr ""
 msgid "Track Elective"
 msgstr ""
 
+#. Label of the track_name (Data) field in DocType 'Catalog Track'
 #. Label of the track_name (Data) field in DocType 'Program Track'
+#: seminary/seminary/doctype/catalog_track/catalog_track.json:28
 #: seminary/seminary/doctype/program_track/program_track.json:29
 msgid "Track Name"
 msgstr ""
@@ -50766,6 +51100,26 @@ msgstr ""
 msgid "Track Requirements"
 msgstr ""
 
+#: seminary/seminary/catalog_year.py:597
+#, python-brace-format
+msgid "Track added: {0}"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:615
+#, python-brace-format
+msgid "Track course added: {0}"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:617
+#, python-brace-format
+msgid "Track course removed: {0}"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:599
+#, python-brace-format
+msgid "Track removed: {0}"
+msgstr ""
+
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.py:338
 #, python-brace-format
 msgid "Track {0} does not belong to program {1}."
@@ -50778,7 +51132,10 @@ msgstr ""
 
 #. Label of the tracks_tab (Tab Break) field in DocType 'Program'
 #. Label of the tracks_section (Section Break) field in DocType 'Program'
+#. Label of the section_catalog_tracks (Section Break) field in DocType
+#. 'Program Graduation Requirement'
 #: seminary/seminary/doctype/program/program.json:340
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:228
 msgid "Tracks"
 msgstr ""
 
@@ -51191,7 +51548,7 @@ msgstr ""
 msgid "Unable to load this request."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:323
+#: seminary/seminary/doctype/program/program.js:324
 msgid "Unassigned"
 msgstr ""
 
@@ -51294,7 +51651,7 @@ msgstr ""
 msgid "Unknown action."
 msgstr ""
 
-#: seminary/seminary/api.py:5556
+#: seminary/seminary/api.py:5528
 #, python-brace-format
 msgid "Unknown anchor_type: {0}"
 msgstr ""
@@ -51391,7 +51748,7 @@ msgstr ""
 msgid "Unmet Demand"
 msgstr ""
 
-#: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:449
+#: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:450
 #: seminary/seminary/report/time_based_enrollment_gaps/time_based_enrollment_gaps.py:212
 #, python-brace-format
 msgid "Unmet prerequisite: {0}"
@@ -51777,7 +52134,7 @@ msgstr ""
 
 #. Description of the 'Program Duration (text)' (Text Editor) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:482
+#: seminary/seminary/doctype/program/program.json:483
 msgid "Use this to describe details of program duration, before the searchable fields below."
 msgstr ""
 
@@ -52082,7 +52439,7 @@ msgstr ""
 
 #. Label of the section_break_versioning (Section Break) field in DocType
 #. 'Program Graduation Requirement'
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:72
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:117
 msgid "Versioning"
 msgstr ""
 
@@ -53933,7 +54290,7 @@ msgstr ""
 #: seminary/seminary/doctype/culminating_project/culminating_project.json:229
 #: seminary/seminary/doctype/graduation_request/graduation_request.json:180
 #: seminary/seminary/doctype/graduation_requirement_item/graduation_requirement_item.json:173
-#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:78
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.json:123
 #: seminary/seminary/doctype/recommendation_letter/recommendation_letter.json:212
 #: seminary/seminary/doctype/withdrawal_request/withdrawal_request.json:404
 #: seminary/seminary/report/term_enrollment_status/term_enrollment_status.js:16
@@ -54182,7 +54539,7 @@ msgstr ""
 
 #. Option for the 'Duration (unit of measure)' (Select) field in DocType
 #. 'Program'
-#: seminary/seminary/doctype/program/program.json:479
+#: seminary/seminary/doctype/program/program.json:480
 msgid "Years"
 msgstr ""
 
@@ -54199,6 +54556,7 @@ msgstr ""
 #: seminary/public/frontend/assets/DiscussionActivities-CXwSJoWV.js:1
 #: seminary/public/frontend/assets/OralActivities-CNMF4YJ4.js:1
 #: seminary/public/frontend/assets/PartnerJobPosting-CuwGa2bW.js:1
+#: seminary/seminary/catalog_year.py:562
 #: seminary/seminary/doctype/cohort_meeting_vote/cohort_meeting_vote.json:43
 #: seminary/seminary/doctype/graduation_request/graduation_request.js:121
 #: seminary/seminary/doctype/graduation_request/graduation_request.js:122
@@ -54347,11 +54705,11 @@ msgstr ""
 msgid "You are not permitted to create course enrollments."
 msgstr ""
 
-#: seminary/seminary/graduation.py:970
+#: seminary/seminary/graduation.py:969
 msgid "You are not permitted to set this requirement's choice."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:912
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:907
 msgid "You are not permitted to view this project."
 msgstr ""
 
@@ -54432,7 +54790,7 @@ msgstr ""
 msgid "You can only act on your own exam submission."
 msgstr ""
 
-#: seminary/seminary/api.py:1726 seminary/seminary/api.py:1749
+#: seminary/seminary/api.py:1732 seminary/seminary/api.py:1755
 msgid "You can only cancel your own enrollments"
 msgstr ""
 
@@ -54457,7 +54815,7 @@ msgstr ""
 msgid "You can only edit your own reply."
 msgstr ""
 
-#: seminary/seminary/api.py:1442
+#: seminary/seminary/api.py:1446
 msgid "You can only enroll in courses under your own program enrollment."
 msgstr ""
 
@@ -54465,7 +54823,7 @@ msgstr ""
 msgid "You can only leave on your own behalf."
 msgstr ""
 
-#: seminary/seminary/api.py:5652
+#: seminary/seminary/api.py:5624
 msgid "You can only pay your own invoices."
 msgstr ""
 
@@ -54477,7 +54835,7 @@ msgstr ""
 msgid "You can only request a withdrawal for yourself."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1098
+#: seminary/seminary/graduation.py:1097
 msgid "You can only request recommendations for your own enrollment."
 msgstr ""
 
@@ -54485,11 +54843,11 @@ msgstr ""
 msgid "You can only see the students you teach or mentor."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1145
+#: seminary/seminary/graduation.py:1144
 msgid "You can only start a project for your own enrollment."
 msgstr ""
 
-#: seminary/seminary/graduation.py:773
+#: seminary/seminary/graduation.py:772
 msgid "You can only submit evidence for your own enrollment."
 msgstr ""
 
@@ -54650,15 +55008,15 @@ msgstr ""
 msgid "You don't have permission to access this file"
 msgstr ""
 
-#: seminary/seminary/api.py:5553
+#: seminary/seminary/api.py:5525
 msgid "You don't have permission to comment on this submission."
 msgstr ""
 
-#: seminary/seminary/api.py:5614
+#: seminary/seminary/api.py:5586
 msgid "You don't have permission to delete this comment."
 msgstr ""
 
-#: seminary/seminary/api.py:5594
+#: seminary/seminary/api.py:5566
 msgid "You don't have permission to edit this comment."
 msgstr ""
 
@@ -55332,7 +55690,7 @@ msgstr ""
 msgid "Your review of {0} is ready"
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1358
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1353
 #, python-brace-format
 msgid "Your reviewer is reviewing your submission for “{0}”."
 msgstr ""
@@ -55367,7 +55725,7 @@ msgstr ""
 msgid "Your school could not accept the {0} you uploaded: {1}"
 msgstr ""
 
-#: seminary/seminary/api.py:1453
+#: seminary/seminary/api.py:1457
 msgid "Your school enrolls you in the courses of this program."
 msgstr ""
 
@@ -55390,7 +55748,7 @@ msgstr ""
 msgid "Your user account is not linked to an instructor record."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1362
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1357
 #, python-brace-format
 msgid "Your work on “{0}” was accepted — awaiting reader sign-off."
 msgstr ""
@@ -55465,7 +55823,7 @@ msgstr ""
 msgid "about {0}"
 msgstr ""
 
-#: seminary/seminary/api.py:1847
+#: seminary/seminary/api.py:1853
 msgid "active"
 msgstr ""
 
@@ -55598,7 +55956,7 @@ msgstr ""
 msgid "blocked"
 msgstr ""
 
-#: seminary/seminary/api.py:6030
+#: seminary/seminary/api.py:6002
 msgid "busy"
 msgstr ""
 
@@ -55631,7 +55989,7 @@ msgstr ""
 msgid "cap"
 msgstr ""
 
-#: seminary/seminary/api.py:6026
+#: seminary/seminary/api.py:5998
 #, python-brace-format
 msgid "cap {0}"
 msgstr ""
@@ -55728,7 +56086,16 @@ msgstr ""
 #: frontend/src/pages/Enrollment.vue:116 frontend/src/pages/Grades.vue:22
 #: seminary/public/frontend/assets/Enrollment-Bi9K1Rz9.js:2
 #: seminary/public/frontend/assets/Grades-D7rxX37N.js:1
+#: seminary/seminary/catalog_year.py:588
 msgid "credits"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:602
+msgid "credits ceiling"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:602
+msgid "credits required"
 msgstr ""
 
 #: seminary/seminary/qti.py:265
@@ -55968,7 +56335,7 @@ msgstr ""
 msgid "frappe-email"
 msgstr ""
 
-#: seminary/seminary/api.py:6030
+#: seminary/seminary/api.py:6002
 msgid "free"
 msgstr ""
 
@@ -56187,6 +56554,14 @@ msgstr ""
 msgid "lowest {0} dropped"
 msgstr ""
 
+#: seminary/seminary/catalog_year.py:587 seminary/seminary/catalog_year.py:621
+msgid "mandatory"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:590
+msgid "mandatory on enrollment"
+msgstr ""
+
 #. Option for the 'Conversion Method' (Select) field in DocType 'Grade
 #. Conversion Policy'
 #: seminary/seminary/doctype/grade_conversion_policy/grade_conversion_policy.json:40
@@ -56229,6 +56604,10 @@ msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:292
 msgid "mine"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:632
+msgid "minimum GPA"
 msgstr ""
 
 #. Option for the 'Conversion Warning' (Select) field in DocType 'Program
@@ -56292,7 +56671,7 @@ msgstr ""
 msgid "no question text"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:203
+#: seminary/seminary/doctype/program/program.py:210
 msgid "no scale"
 msgstr ""
 
@@ -56307,6 +56686,7 @@ msgstr ""
 #: seminary/seminary/doctype/plagiarism_provider_account/plagiarism_provider_account.py:35
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.js:223
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.py:56
+#: seminary/seminary/graduation.py:290
 msgid "none"
 msgstr ""
 
@@ -56586,7 +56966,7 @@ msgstr ""
 msgid "same student"
 msgstr ""
 
-#: seminary/seminary/api.py:5936
+#: seminary/seminary/api.py:5908
 msgid "sample recipient"
 msgstr ""
 
@@ -56670,6 +57050,10 @@ msgstr ""
 #. Account'
 #: seminary/seminary/doctype/channel_provider_account/channel_provider_account.json:54
 msgid "telegram"
+msgstr ""
+
+#: seminary/seminary/catalog_year.py:589 seminary/seminary/catalog_year.py:623
+msgid "term"
 msgstr ""
 
 #. Option for the 'Enrollment Open Anchor' (Select) field in DocType 'Seminary
@@ -56844,7 +57228,7 @@ msgstr ""
 msgid "waived"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:497 seminary/seminary/exceptions.py:498
+#: seminary/seminary/exceptions.py:499 seminary/seminary/exceptions.py:500
 #, python-brace-format
 msgid "waiver of {0}"
 msgstr ""
@@ -56967,7 +57351,7 @@ msgstr ""
 msgid "{0} already has different dates for {1}. Edit that one instead."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:227
+#: seminary/seminary/exceptions.py:229
 #, python-brace-format
 msgid "{0} already stands in for another requirement."
 msgstr ""
@@ -57034,7 +57418,7 @@ msgstr ""
 msgid "{0} applications received"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:510
+#: seminary/seminary/exceptions.py:512
 #, python-brace-format
 msgid "{0} asks for {1} ({2}). Reason: {3}"
 msgstr ""
@@ -57163,12 +57547,17 @@ msgstr ""
 msgid "{0} cohorts created."
 msgstr ""
 
+#: seminary/seminary/doctype/program_graduation_requirement/program_graduation_requirement.js:158
+#, python-brace-format
+msgid "{0} compared with {1}"
+msgstr ""
+
 #: seminary/seminary/report/course_competency_coverage/course_competency_coverage.py:233
 #, python-brace-format
 msgid "{0} competencies defined but grading scale {1} is not competency-based"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:346
+#: seminary/seminary/doctype/program/program.js:347
 #, python-brace-format
 msgid "{0} course(s)"
 msgstr ""
@@ -57281,12 +57670,12 @@ msgstr ""
 msgid "{0} for {1} ({2}), {3} outside their hours"
 msgstr ""
 
-#: seminary/seminary/exceptions.py:521
+#: seminary/seminary/exceptions.py:523
 #, python-brace-format
 msgid "{0} for {1} has been {2}."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1258
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1253
 #, python-brace-format
 msgid "{0} for {1}."
 msgstr ""
@@ -57338,7 +57727,7 @@ msgstr ""
 msgid "{0} has joined a cohort of this type since the plan was made."
 msgstr ""
 
-#: seminary/seminary/graduation.py:757
+#: seminary/seminary/graduation.py:756
 #, python-brace-format
 msgid "{0} has no 'Withdrawn' state; withdraw it manually, then Cancel here."
 msgstr ""
@@ -57351,6 +57740,11 @@ msgstr ""
 #: seminary/seminary/discipleship/planner.py:845
 #, python-brace-format
 msgid "{0} has no Person record, so they cannot lead a cohort."
+msgstr ""
+
+#: seminary/seminary/graduation.py:259
+#, python-brace-format
+msgid "{0} has no catalog year to move to."
 msgstr ""
 
 #: seminary/seminary/gradebook_weights.py:155
@@ -57373,7 +57767,7 @@ msgstr ""
 msgid "{0} has no open graduation requirement for this internship type, so they aren't eligible to apply."
 msgstr ""
 
-#: seminary/seminary/graduation.py:753
+#: seminary/seminary/graduation.py:752
 #, python-brace-format
 msgid "{0} has no workflow; withdraw it manually, then Cancel here."
 msgstr ""
@@ -57432,7 +57826,7 @@ msgstr ""
 msgid "{0} images have no alt text. Describe them for students who can’t see them."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:495
+#: seminary/seminary/exceptions.py:497
 #, python-brace-format
 msgid "{0} in place of {1}"
 msgstr ""
@@ -57462,8 +57856,8 @@ msgstr ""
 msgid "{0} is already in {1} of these, which is as many as this kind of cohort allows at one time. Close the other membership first, or raise Cohorts Per Member on {2}."
 msgstr ""
 
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1179
-#: seminary/seminary/doctype/culminating_project/culminating_project.py:1187
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1174
+#: seminary/seminary/doctype/culminating_project/culminating_project.py:1182
 #, python-brace-format
 msgid "{0} is already on the committee."
 msgstr ""
@@ -57493,7 +57887,7 @@ msgstr ""
 msgid "{0} is due today."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:222
+#: seminary/seminary/exceptions.py:224
 #, python-brace-format
 msgid "{0} is itself a required course and cannot stand in for another."
 msgstr ""
@@ -57523,7 +57917,7 @@ msgstr ""
 msgid "{0} is not a Cohort Type."
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.py:153
+#: seminary/seminary/doctype/program/program.py:160
 #, python-brace-format
 msgid "{0} is not a Program Admissions unit."
 msgstr ""
@@ -57568,7 +57962,7 @@ msgstr ""
 msgid "{0} is not a personal detail this system records. This list ships with the application; it is not something to add to."
 msgstr ""
 
-#: seminary/seminary/exceptions.py:212
+#: seminary/seminary/exceptions.py:214
 #, python-brace-format
 msgid "{0} is not a required course of this program or the student's emphases."
 msgstr ""
@@ -57583,7 +57977,7 @@ msgstr ""
 msgid "{0} is not a student on this section."
 msgstr ""
 
-#: seminary/seminary/graduation.py:864
+#: seminary/seminary/graduation.py:863
 #, python-brace-format
 msgid "{0} is not a valid option for requirement '{1}'."
 msgstr ""
@@ -57608,12 +58002,12 @@ msgstr ""
 msgid "{0} is not an active student on this section."
 msgstr ""
 
-#: seminary/seminary/graduation.py:883
+#: seminary/seminary/graduation.py:882
 #, python-brace-format
 msgid "{0} is not an allowed Culminating Project Type for requirement '{1}'."
 msgstr ""
 
-#: seminary/seminary/graduation.py:1010 seminary/seminary/graduation.py:1165
+#: seminary/seminary/graduation.py:1009 seminary/seminary/graduation.py:1164
 #, python-brace-format
 msgid "{0} is not an allowed project type for this requirement."
 msgstr ""
@@ -57633,7 +58027,7 @@ msgstr ""
 msgid "{0} is not an installed billing app. Choose one of: {1}"
 msgstr ""
 
-#: seminary/seminary/graduation.py:989
+#: seminary/seminary/graduation.py:988
 #, python-brace-format
 msgid "{0} is not an option for this requirement."
 msgstr ""
@@ -58002,7 +58396,7 @@ msgstr ""
 msgid "{0} replied in {1}"
 msgstr ""
 
-#: seminary/seminary/doctype/program/program.js:446
+#: seminary/seminary/doctype/program/program.js:447
 #, python-brace-format
 msgid "{0} requirement(s) added to active enrollments."
 msgstr ""
@@ -58328,11 +58722,11 @@ msgstr ""
 msgid "—"
 msgstr ""
 
-#: seminary/seminary/api.py:6028
+#: seminary/seminary/api.py:6000
 msgid "✓ fits"
 msgstr ""
 
-#: seminary/seminary/api.py:6028
+#: seminary/seminary/api.py:6000
 #, python-brace-format
 msgid "✗ missing {0}"
 msgstr ""

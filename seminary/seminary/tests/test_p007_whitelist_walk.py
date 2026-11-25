@@ -487,6 +487,12 @@ STAFF_ONLY = {
 	# lookup or write.
 	"seminary.seminary.gradebook_weights.get_categories",
 	"seminary.seminary.gradebook_weights.set_excused",
+	# --- Catalog years (decisions/115): read or create on Program Graduation
+	# Requirement, before any lookup.
+	"seminary.seminary.catalog_year.compare",
+	"seminary.seminary.catalog_year.new_catalog_year",
+	"seminary.seminary.catalog_year.program_course_query",
+	"seminary.seminary.catalog_year.program_status",
 }
 
 # Whitelisted functions in the walked modules that are neither student-facing
@@ -1162,6 +1168,14 @@ KWARG_OVERRIDES = {
 	"seminary.seminary.doctype.exam_submission.exam_submission.add_exam_grading_comment": {"comment": "x"},
 	"seminary.seminary.api.insert_cs_assessment": {"criteria": {"parent": "ZZT-x"}},
 	"seminary.seminary.api.save_course_assessment": {"assessment_data": "[]"},
+	"seminary.seminary.catalog_year.program_course_query": {
+		"doctype": "Course",
+		"txt": "",
+		"searchfield": "name",
+		"start": 0,
+		"page_len": 5,
+		"filters": {},
+	},
 	"seminary.seminary.api.room_search": {
 		"doctype": "Room",
 		"txt": "",

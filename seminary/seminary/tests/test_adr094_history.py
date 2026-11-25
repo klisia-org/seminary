@@ -10,6 +10,7 @@ from frappe.utils import add_days, add_months, getdate, today
 
 from seminary.seminary import comms
 from seminary.seminary.tests import cohort_fixtures as fx
+from seminary.seminary.tests.catalog_fixtures import ensure_catalog
 from seminary.seminary.tests.test_adr091_requirements import _doc_type, _program, _rule
 
 
@@ -95,6 +96,7 @@ class IntegrationTestHistory(IntegrationTestCase):
 	def setUp(self):
 		self.document_type = _doc_type(needs_review=0, valid_months=12)
 		self.program = _program([_rule("Document", self.document_type.name)])
+		ensure_catalog(self.program)
 		self.student = fx.make_student()
 
 	# §2 past enrolments arrive finished

@@ -100,18 +100,27 @@ Items without the flag are still tracked toward graduation eligibility,
 but the student can file the request and the academic review step will
 catch any leftovers.
 
-### Layer 2 — The Policy
+### Layer 2 — The Policy (the catalog year)
 
-A **Program Graduation Requirement** binds library items to a Program with
-effective dates. This is the registrar's main authoring surface.
+A **Program Graduation Requirement** is a program's **catalog year**: the
+courses, credits and other requirements that apply to the students who enter
+under it. This is the registrar's main authoring surface. See
+[Catalog years](#catalog-years) for how a new one is drafted and takes effect.
 
 Fields on the policy header:
 
-- **Program** — which program this policy applies to.
-- **Active from / Active until** — the catalog-year window. A student
-  enrolling on 2026-09-01 picks up the policy whose window contains that
-  date.
-- **Is Active** — gate to mark a draft (or superseded) vs. a published policy.
+- **Program** — which program this catalog year applies to.
+- **First Term** — students who enter in this term or later take this catalog,
+  until a later catalog year starts. **Last Term** is filled in for you when the
+  next catalog year is published.
+- **Catalog Year** — the academic year of the first term, for example
+  *2027-28*.
+
+The **Academic Requirements** tab holds the program's courses (mandatory or
+not, credits, term), its tracks and their credits, the credits and terms for
+completion, the minimum graduation GPA, the transfer-credit cap, the maximum
+years to graduate and the honors levels. They are copied from the Program when
+the catalog year is drafted.
 
 Inside the policy you list **Program Requirement Items** (the policy rows).
 Each row picks a library item and adds program-specific binding metadata:
@@ -191,18 +200,22 @@ Verification items. **Chapel Attendance** is the exception — it stays a
 *22 / 30*) rather than splitting into one slot per service.
 
 This snapshot is **frozen for that student.** A registrar publishing a new
-policy in 2027 does **not** retroactively change the requirements of a
-student who enrolled in 2025. This is the catalog-year contract — it is the
-rule seminaries traditionally honor and it is enforced by construction.
+catalog year in 2027 does **not** change the requirements of a student who
+entered in 2025: not the other requirements, and not the courses, credits,
+minimum GPA or honors either. The audit, the graduation check, the transfer
+cap and the credits a student is billed for all read the student's own catalog
+year. This is the catalog-year contract, and it is enforced by construction.
 
-The **Program Enrollment** also stores the policy it picked
-(`graduation_policy`) so anyone reviewing the file can trace exactly which
-catalog year the student is on.
+The **Program Enrollment** stores the catalog year it is bound to (**Catalog
+Year**, chosen by the term the student entered in), so anyone reviewing the file
+can trace exactly which catalog year the student is on. An enrollment can't be
+submitted until a catalog year of its program covers its term.
 
-If a registrar genuinely needs to migrate a student to the current policy
-(e.g. the student requested it, or a regulator required it), there is a
-whitelisted **Resnapshot** action on the Program Enrollment. By default it
-preserves any rows that were already waived; the action is logged.
+If a registrar genuinely needs to move a student to another catalog year (e.g.
+the student requested it, or a regulator required it), use the whitelisted
+**Resnapshot** action on the Program Enrollment and choose the catalog year. By
+default it preserves any rows that were already waived; the move is logged on
+the enrollment.
 
 ## Worked examples
 
@@ -534,24 +547,44 @@ formally requested an exception). On the SGR row:
 A waived row counts as satisfied for graduation eligibility but is clearly
 distinguished from `Fulfilled` in reports.
 
-### Publishing a new catalog year
+### Catalog years
 
-When the seminary changes its requirements, you publish a new policy
-**alongside** the old one — you do *not* edit the old one in place.
+Every program that graduates students has at least one catalog year. A program
+can't be published, and students can't be enrolled in it, until it has one.
 
-1. Duplicate the existing Program Graduation Requirement (or create a
-   new one).
-2. Set `Active from` to the date the new catalog kicks in (e.g.
-   `2027-09-01`).
-3. Set the previous policy's `Active until` to the day before
-   (e.g. `2027-08-31`).
-4. Tick `Is Active` on the new one. 
-5. Adjust the rows.
+**Drafting the next catalog year.** On the Program, click **New Catalog Year**.
+It opens a draft whose courses, tracks and credits are copied from the Program,
+and whose other requirement rows are copied from the current catalog year. Its
+**First Term** defaults to the next term without a catalog year.
 
-Students enrolling **after** the new `Active from` will snapshot against the
-new policy. Students already enrolled keep the old one. If a student
-explicitly asks to be moved to the new catalog, use **Resnapshot** on their
-Program Enrollment.
+- Edit the draft's **Academic Requirements** tab to prepare next year. The
+  Program, and so this year's offering, is untouched until the draft takes
+  effect.
+- Only the Program's own courses can be listed. To introduce a new course, add
+  it to the Program **disabled**; the catalog year enables it when it takes
+  effect.
+- If you already made the change on the Program, draft the catalog year and
+  submit it unchanged.
+
+**Taking effect.** Submitting makes the catalog year **Scheduled**. It becomes
+**Active** when its first term starts (or at once, if that term has started).
+At that moment it writes its courses, tracks and credits onto the Program:
+courses it leaves out are disabled with the reason *Not in the 2027-28
+catalog*. The previous catalog year becomes **Superseded** and keeps applying to
+the students who entered under it. While a draft or scheduled catalog year
+exists, the Program form says so, and warns that course changes made directly on
+the Program will be replaced when it takes effect. When there is no draft and
+the Program differs from its Active catalog year, the form lists the
+differences.
+
+**Comparing two catalog years.** On a catalog year, click **Compare** to see it
+beside another version of the same program — by default the one it follows:
+courses added and removed, changes in mandatory status, credits and term, the
+other academic fields, and the requirement rows added, removed or changed.
+
+Students who enter in a term on or after the new catalog year's first term are
+bound to it. Students already enrolled keep theirs. If a student explicitly asks
+to be moved, use **Resnapshot** on their Program Enrollment.
 
 ### Allowed documents
 
@@ -659,8 +692,9 @@ policy and from emphasis.
 | Place a student out of a course by exam score | Leveling row: Leveling Course + Gating Assessment + "Exempt if Score ≥"; verify the exam with a score |
 | Confirm a student satisfied something | Open the SGR row, set status = Fulfilled |
 | Excuse a student from a requirement | Open the SGR row, tick Waived, give a reason |
-| Update the seminary catalog | Publish a new Program Graduation Requirement with a new Active from date — do not edit old one |
-| Move a student onto the new catalog | Resnapshot action on their Program Enrollment |
+| Update the seminary catalog | New Catalog Year on the Program, edit the draft, submit it; it takes effect when its first term starts |
+| See what changed between catalog years | Compare on the catalog year |
+| Move a student onto another catalog year | Resnapshot action on their Program Enrollment, choosing the catalog year |
 
 ## Related
 

@@ -101,7 +101,7 @@ Create your first **Academic Term** inside the Academic Year:
 
 ## 11. Program
 
-A [**Program**](../modules/program.md) is the curriculum structure students enroll into (e.g. *M.Div.*, *Certificate in Biblical Studies*). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment. 
+A [**Program**](../modules/program.md) is the curriculum structure students enroll into (e.g. *M.Div.*, *Certificate in Biblical Studies*). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment, then publish its **catalog year** with **New Catalog Year** on the program: students can't be enrolled, and the program can't be published, until it has one (see [Catalog years](../modules/graduation-requirements.md#catalog-years)). 
 Detailed program modeling (tracks, emphases, credit requirements) is covered under [Enrollment](../modules/enrollment.md). During program enrollment, it will also be established **who** pays each fee category and what percentage (Payers Fee Category).
 
 All Fee Categories for any course of that program **must** first be linked in the Program level. 

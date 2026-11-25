@@ -9,6 +9,7 @@ DEMO_DOCTYPES = [
 	"Course Enrollment Individual",  # ← first
 	"Course Schedule",
 	"Program Enrollment",
+	"Program Graduation Requirement",
 	"Student",
 	# 2. Core demo records
 	"Instructor",

@@ -467,7 +467,8 @@
    "label": "Financial"
   },
   {
-   "default": "1",
+   "default": "0",
+   "description": "A program is published once it has a catalog year: save it, use New Catalog Year, then publish.",
    "fieldname": "published",
    "fieldtype": "Check",
    "label": "Publish on web"
@@ -587,13 +588,13 @@
    "label": "Admission"
   },
   {
+   "default": "Reviewed",
+   "description": "Reviewed: each application is reviewed and decided once it is complete. Automatic: a complete application is admitted at once.",
    "fieldname": "admission_mode",
    "fieldtype": "Select",
    "label": "Admission Mode",
    "options": "Reviewed\nAutomatic",
-   "default": "Reviewed",
-   "reqd": 1,
-   "description": "Reviewed: each application is reviewed and decided once it is complete. Automatic: a complete application is admitted at once."
+   "reqd": 1
   },
   {
    "depends_on": "eval:doc.admission_mode=='Reviewed'",
@@ -608,12 +609,12 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "The rubric reviewers score applications with. Use Edit Review Rubric to change it.",
    "fieldname": "admission_rubric",
    "fieldtype": "Link",
    "label": "Review Rubric",
    "options": "Rubric",
-   "read_only": 1,
-   "description": "The rubric reviewers score applications with. Use Edit Review Rubric to change it."
+   "read_only": 1
   },
   {
    "fieldname": "questions_section",
@@ -621,31 +622,31 @@
    "label": "Application Questions"
   },
   {
+   "description": "The questions this program's application form asks, in this order. Questions come from the shared list of application questions.",
    "fieldname": "application_questions",
    "fieldtype": "Table",
    "label": "Application Questions",
-   "options": "Program Application Question",
-   "description": "The questions this program's application form asks, in this order. Questions come from the shared list of application questions."
+   "options": "Program Application Question"
   },
   {
+   "depends_on": "eval:!doc.is_free",
    "fieldname": "application_fee_section",
    "fieldtype": "Section Break",
-   "label": "Application Fee",
-   "depends_on": "eval:!doc.is_free"
+   "label": "Application Fee"
   },
   {
+   "default": "0",
+   "description": "Applicants may ask for the application fee to be waived, giving a reason. A registrar or the chair of the admissions unit decides.",
    "fieldname": "allow_fee_waiver_requests",
    "fieldtype": "Check",
-   "label": "Accept Fee Waiver Requests",
-   "default": "0",
-   "description": "Applicants may ask for the application fee to be waived, giving a reason. A registrar or the chair of the admissions unit decides."
+   "label": "Accept Fee Waiver Requests"
   },
   {
+   "description": "Applications made between these dates get this discount on the application fee. Windows cannot overlap.",
    "fieldname": "application_fee_windows",
    "fieldtype": "Table",
    "label": "Discount Windows",
-   "options": "Application Fee Window",
-   "description": "Applications made between these dates get this discount on the application fee. Windows cannot overlap."
+   "options": "Application Fee Window"
   }
  ],
  "has_web_view": 1,

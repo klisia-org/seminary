@@ -552,7 +552,7 @@ def assign_advisor(culminating_project, advisor):
 
 
 @frappe.whitelist()
-def enroll_in_project_course(name, course_schedule):
+def enroll_in_project_course(name: str, course_schedule: str):
 	"""Provision and link a Course Enrollment Individual for this project's
 	backing course (the course mapped on its Culminating Project Type).
 
@@ -593,15 +593,10 @@ def enroll_in_project_course(name, course_schedule):
 				)
 			)
 
-	program = frappe.db.get_value("Program Enrollment", project.program_enrollment, "program")
-	credits = (
-		frappe.db.get_value(
-			"Program Course",
-			{"parent": program, "course": cs_course},
-			"pgmcourse_credits",
-		)
-		or 0
-	)
+	from seminary.seminary.catalog_year import course_credits
+
+	# The credits the course carries in the student's catalog year (decisions/115 §5).
+	credits = course_credits(project.program_enrollment, cs_course)
 
 	cei = frappe.get_doc(
 		{

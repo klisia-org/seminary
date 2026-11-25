@@ -24,19 +24,21 @@ frappe.ui.form.on("Program Graduation Requirement", {
 			filters: { program: frm.doc.program_name },
 		}));
 
-		// Once retired via 'Change Version', point the registrar at the Draft
-		// successor that was spawned for editing.
-		if (frm.doc.superseded_by) {
-			frm.add_custom_button(__("Open New Version"), () => {
-				frappe.set_route("Form", "Program Graduation Requirement", frm.doc.superseded_by);
-			});
-			frm.dashboard.set_headline(
-				__("This policy was superseded by {0}.", [
-					`<a href="/app/program-graduation-requirement/${encodeURIComponent(
-						frm.doc.superseded_by
-					)}">${frappe.utils.escape_html(frm.doc.superseded_by)}</a>`,
-				])
-			);
+		// Catalog years (decisions/115): courses come from the Program's own
+		// courses, disabled ones included, and tracks from its tracks.
+		frm.set_query("course", "catalog_courses", () => ({
+			query: "seminary.seminary.catalog_year.program_course_query",
+			filters: { program: frm.doc.program_name },
+		}));
+		for (const table of ["catalog_tracks", "catalog_track_courses"]) {
+			frm.set_query("program_track", table, () => ({
+				query: "seminary.seminary.doctype.program.program.get_program_tracks",
+				filters: { program: frm.doc.program_name },
+			}));
+		}
+		show_catalog_state(frm);
+		if (!frm.is_new()) {
+			frm.add_custom_button(__("Compare"), () => compare_catalogs(frm));
 		}
 
 		// Safety net: bind a row-click handler that opens the row's full form
@@ -94,3 +96,71 @@ frappe.ui.form.on("Program Grad Req Items", {
 			});
 	},
 });
+
+function show_catalog_state(frm) {
+	const link = (name, label) =>
+		`<a href="/app/program-graduation-requirement/${encodeURIComponent(
+			name
+		)}">${frappe.utils.escape_html(label || name)}</a>`;
+	const state = frm.doc.workflow_state;
+	if (state === "Draft" && !frm.is_new()) {
+		frm.dashboard.set_headline(
+			__(
+				"Draft catalog year. Edit its courses here; the program is unchanged until it takes effect, when its first term starts."
+			)
+		);
+	} else if (state === "Scheduled") {
+		frm.dashboard.set_headline(
+			__(
+				"Scheduled: takes effect when {0} starts, and then replaces the program's courses.",
+				[frappe.utils.escape_html(frm.doc.academic_term_from || "")]
+			)
+		);
+	} else if (state === "Superseded" && frm.doc.superseded_by) {
+		frm.dashboard.set_headline(
+			__("Followed by {0}. Students who entered under this catalog year keep it.", [
+				link(frm.doc.superseded_by),
+			])
+		);
+	}
+}
+
+function compare_catalogs(frm) {
+	frappe.prompt(
+		[
+			{
+				fieldname: "other",
+				fieldtype: "Link",
+				label: __("Compare with"),
+				options: "Program Graduation Requirement",
+				default: frm.doc.supersedes,
+				reqd: 1,
+				get_query: () => ({
+					filters: { program_name: frm.doc.program_name, name: ["!=", frm.doc.name] },
+				}),
+			},
+		],
+		(values) => show_comparison(frm, values.other),
+		__("Compare catalog years"),
+		__("Compare")
+	);
+}
+
+function show_comparison(frm, other) {
+	frappe
+		.call("seminary.seminary.catalog_year.compare", { catalog: frm.doc.name, other })
+		.then(({ message }) => {
+			if (!message) return;
+			const esc = frappe.utils.escape_html;
+			const title = message.other
+				? __("{0} compared with {1}", [
+						esc(message.catalog.catalog_year || message.catalog.name),
+						esc(message.other.catalog_year || message.other.name),
+				  ])
+				: __("Compare");
+			const body = message.changes.length
+				? `<ul>${message.changes.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>`
+				: `<p>${__("No differences.")}</p>`;
+			frappe.msgprint({ title, message: body, wide: true });
+		});
+}

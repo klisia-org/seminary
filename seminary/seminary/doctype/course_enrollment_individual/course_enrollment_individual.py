@@ -303,41 +303,29 @@ class CourseEnrollmentIndividual(Document):
 				).format(getlink("Course Enrollment Individual", CEI[0][0]))
 			)
 
+	def _catalog_credits(self):
+		"""The credits the course carries in the student's catalog year, which is
+		what they earn and are billed for (decisions/115 §5). An audit earns none."""
+		if self.audit == 1:
+			return 0
+		from seminary.seminary.catalog_year import course_credits
+
+		if self.program_ce:
+			return course_credits(self.program_ce, self.course_data)
+		credits = frappe.db.get_value(
+			"Program Course",
+			{"parent": self.program_data, "parenttype": "Program", "course": self.course_data},
+			"pgmcourse_credits",
+		)
+		return credits or 0
+
 	@frappe.whitelist()
 	def get_credits(self):
-		pe = self.program_data
-		ce = self.course_data
-		audit = self.audit
-		if audit == 1:
-			credits = 0
-		else:
-			credits = frappe.db.sql(
-				"""select pgmcourse_credits from `tabProgram Course` where parent = %s and course = %s""",
-				(pe, ce),
-			)
-			if credits:
-				credits = credits[0][0]
-			else:
-				credits = 0
-
-		return credits
+		return self._catalog_credits()
 
 	@frappe.whitelist()
 	def get_credits2(self):
-		pe = self.program_data
-		ce = self.course_data
-		audit = self.audit
-		if audit == 1:
-			credits = 0
-		else:
-			credits = frappe.db.sql(
-				"""select pgmcourse_credits from `tabProgram Course` where parent = %s and course = %s""",
-				(pe, ce),
-			)
-			credits = credits[0][0] if credits else 0
-			doc = frappe.get_doc("Course Enrollment Individual", self.name)
-			doc.credits = credits
-		return credits
+		return self._catalog_credits()
 
 	@frappe.whitelist()
 	def get_inv_data_ce(self):

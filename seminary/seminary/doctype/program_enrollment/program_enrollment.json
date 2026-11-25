@@ -332,10 +332,10 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "The Program Graduation Requirement policy this enrollment is bound to. Snapshotted on submit; change only via registrar re-snapshot.",
+   "description": "The catalog year this enrollment is bound to: the one its entry term falls in. Set on submit; change it only with Resnapshot.",
    "fieldname": "graduation_policy",
    "fieldtype": "Link",
-   "label": "Graduation Policy",
+   "label": "Catalog Year",
    "options": "Program Graduation Requirement",
    "read_only": 1
   },
@@ -395,7 +395,7 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "Frozen at submit. Toggling the Program flag later does not change this list; use the Program form's backfill button to push new requirements.",
+   "description": "Frozen at submit from the student's catalog year. Use the Program form's backfill button to push courses newly flagged there.",
    "fieldname": "required_on_enroll_courses",
    "fieldtype": "Table",
    "label": "Required on Enrollment",
@@ -451,12 +451,12 @@
    "search_index": 1
   },
   {
+   "depends_on": "admission_conditions",
+   "description": "The conditions the student was admitted on.",
    "fieldname": "admission_conditions",
    "fieldtype": "Small Text",
    "label": "Admission Conditions",
-   "read_only": 1,
-   "depends_on": "admission_conditions",
-   "description": "The conditions the student was admitted on."
+   "read_only": 1
   }
  ],
  "image_field": "image",
@@ -468,7 +468,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2026-11-24 12:00:00.000000",
+ "modified": "2026-11-25 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

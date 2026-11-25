@@ -34,13 +34,10 @@ class PartnerTranscriptImportBatch(Document):
 
 	def _validate_transfer_credit_cap(self):
 		"""Block submission when importing would push a student past the
-		Program's max_transfer_credits (ADR 057). 0 = no cap. Counts existing
-		committed transfer credits (is_transfer=1, Pass) for the student on this
-		program plus the credits this batch would add."""
-		cap = int(frappe.db.get_value("Program", self.target_program, "max_transfer_credits") or 0)
-		if cap <= 0:
-			return
-
+		max_transfer_credits of their catalog year (ADR 057, decisions/115 §5).
+		0 = no cap. Counts existing committed transfer credits (is_transfer=1,
+		Pass) for the student on this program plus the credits this batch would
+		add."""
 		new_by_student = {}
 		for row in self.rows:
 			if not row.student:
@@ -50,6 +47,9 @@ class PartnerTranscriptImportBatch(Document):
 			)
 
 		for student, new_credits in new_by_student.items():
+			cap = self._transfer_cap(student)
+			if cap <= 0:
+				continue
 			existing = frappe.db.sql(
 				"""SELECT COALESCE(SUM(pec.credits), 0)
                    FROM `tabProgram Enrollment Course` pec
@@ -67,6 +67,21 @@ class PartnerTranscriptImportBatch(Document):
 						"Remove or reduce rows for this student."
 					).format(student, new_credits, total, cap)
 				)
+
+	def _transfer_cap(self, student):
+		"""The cap of the student's catalog year, else the Program's."""
+		from seminary.seminary.catalog_year import for_enrollment
+
+		pe = frappe.get_all(
+			"Program Enrollment",
+			filters={"student": student, "program": self.target_program, "docstatus": 1},
+			pluck="name",
+			order_by="creation desc",
+			limit=1,
+		)
+		if pe:
+			return int(for_enrollment(pe[0]).max_transfer_credits or 0)
+		return int(frappe.db.get_value("Program", self.target_program, "max_transfer_credits") or 0)
 
 	def on_submit(self):
 		self._commit_rows()

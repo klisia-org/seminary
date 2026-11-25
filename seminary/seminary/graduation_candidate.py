@@ -30,7 +30,6 @@ touching the PE's modified timestamp on read-driven recomputation.
 """
 
 import frappe
-from frappe.model.document import Document
 
 # Applied when a Program leaves `graduation_request_trigger` empty. Filing as
 # soon as the in-progress courses would close out the program is the more
@@ -67,6 +66,9 @@ def evaluate_candidacy(pe_name: str) -> bool:
 			"totalcredits",
 			"current_gpa",
 			"grad_candidate",
+			"graduation_policy",
+			"academic_term",
+			"enrollment_date",
 		],
 		as_dict=True,
 	)
@@ -130,7 +132,10 @@ def _compute(pe) -> bool:
 	if pe.docstatus != 1 or not pe.pgmenrol_active:
 		return False
 
-	program = frappe.get_cached_doc("Program", pe.program)
+	# The student's catalog year decides what they must complete (decisions/115 §5).
+	from seminary.seminary.catalog_year import for_enrollment
+
+	program = for_enrollment(pe)
 	if program.is_ongoing:
 		return False
 	if not program.students_can_request_graduation:
@@ -227,12 +232,14 @@ def _course_status_sets(pe_name: str):
 	return completed, in_progress
 
 
-def _mandatory_program_courses(program: Document) -> set:
-	return {pc.course for pc in program.courses if pc.required}
+def _mandatory_program_courses(program) -> set:
+	"""Required courses of a Program or catalog view. Disabled rows aren't required."""
+	return {pc.course for pc in program.courses if pc.required and not pc.disabled}
 
 
-def _mandatory_emphasis_courses(pe, program: Document) -> set:
-	"""Mandatory courses across the student's active emphasis tracks."""
+def _mandatory_emphasis_courses(pe, program) -> set:
+	"""Mandatory courses across the student's active emphasis tracks, from the
+	catalog view (`program` is `catalog_year.for_enrollment(pe)`)."""
 	active_tracks = (
 		[e.emphasis_track for e in (pe.emphases or []) if e.status in ("Active", "Completed")]
 		if hasattr(pe, "emphases")
@@ -253,23 +260,20 @@ def _mandatory_emphasis_courses(pe, program: Document) -> set:
 	if not active_tracks:
 		return set()
 
-	rows = frappe.get_all(
-		"Program Track Courses",
-		filters={
-			"parent": program.name,
-			"program_track": ("in", active_tracks),
-			"pgm_track_course_mandatory": 1,
-		},
-		pluck="program_track_course",
-	)
-	return set(rows)
+	from seminary.seminary.catalog_year import track_courses
+
+	return {
+		r.program_track_course
+		for r in track_courses(program, mandatory=1)
+		if r.program_track in set(active_tracks)
+	}
 
 
-def _credit_sum(program: Document, course_names: set) -> float:
+def _credit_sum(program, course_names: set) -> float:
 	if not course_names:
 		return 0
 	total = 0
 	for pc in program.courses:
-		if pc.course in course_names:
+		if pc.course in course_names and not pc.disabled:
 			total += pc.pgmcourse_credits or 0
 	return total

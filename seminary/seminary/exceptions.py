@@ -99,14 +99,16 @@ def _require_requester(program_enrollment):
 # What counts as satisfied
 # --------------------------------------------------------------------------- #
 def mandatory_courses(pe):
-	"""Required program courses plus mandatory courses of the student's
-	active emphases -- the courses an exception can stand in for."""
+	"""Required courses plus mandatory courses of the student's active
+	emphases, in their catalog year -- the courses an exception can stand in
+	for (decisions/115 §5)."""
+	from seminary.seminary.catalog_year import for_enrollment
 	from seminary.seminary.graduation_candidate import (
 		_mandatory_emphasis_courses,
 		_mandatory_program_courses,
 	)
 
-	program = frappe.get_cached_doc("Program", pe.program)
+	program = for_enrollment(pe)
 	return _mandatory_program_courses(program) | _mandatory_emphasis_courses(pe, program)
 
 
