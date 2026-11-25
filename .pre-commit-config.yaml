@@ -73,7 +73,7 @@ repos:
       - id: detect-secrets
         language_version: python3.14
         args: ["--baseline", ".secrets.baseline"]
-        exclude: 'README\.md|docs/accessibility/conformance\.json|\.bandit-baseline\.json|seminary/public/frontend/.*|seminary/builder_files/.*|.*\.pot?$'
+        exclude: 'README\.md|docs/accessibility/conformance\.json|\.bandit-baseline\.json|seminary/public/frontend/.*|seminary/builder_files/.*|seminary/manuals/.*|.*\.pot?$'
 
   - repo: local
     hooks:
