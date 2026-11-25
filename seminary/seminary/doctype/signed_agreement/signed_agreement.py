@@ -13,6 +13,9 @@ class SignedAgreement(Document):
 	def before_insert(self):
 		if not self.flags.ignore_permissions:
 			frappe.throw(_("Agreements are signed from the portal."))
+		# Only the application form signs without a requirement row (decisions/111 §10).
+		if not self.person_requirement and self.reference_doctype != "Student Applicant":
+			frappe.throw(_("A Signed Agreement needs its Person Requirement."))
 
 	def on_submit(self):
 		self._recompute()
@@ -26,4 +29,5 @@ class SignedAgreement(Document):
 	def _recompute(self):
 		from seminary.seminary import requirements
 
-		requirements.recompute(self.person_requirement)
+		if self.person_requirement:
+			requirements.recompute(self.person_requirement)

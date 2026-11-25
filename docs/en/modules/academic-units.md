@@ -24,11 +24,12 @@ Every Academic Unit has a **type** that declares what it owns or does:
 | **Academic Department** | Owns **courses**. Its **Code** (e.g. `ST`) is the source of the course prefix. |
 | **Academic Interdepartment** | A neutral home for a course two departments genuinely **co-own**. Lists its member departments; its faculty are the union of theirs (see below). |
 | **Program Committee** | Owns **programs** (optional — degree programs span departments, so academic ownership usually flows through courses, not the program). |
+| **Program Admissions** | Reviews and decides the **applications** of the programs that name it as their **Admissions Unit**. Its members and chair review; the chair decides (see [Programs](program.md#reviewing-and-deciding-applications)). |
 | **Board** / **Other Committee** | Governance and faculty groupings (rosters, future web pages). |
 
-Other fields: **Code**, **Description**, **Publish on Web** (for a future public roster), **Is Active** (uncheck to retire a unit without deleting it), and **Chair** — descriptive only. *The chair field grants no permissions*; who can do what stays role-based.
+Other fields: **Code**, **Description**, **Publish on Web** (for a future public roster), **Is Active** (uncheck to retire a unit without deleting it), and **Chair**. *The chair field grants no permissions*, with one exception: the chair of a Program Admissions unit may decide its programs' applications.
 
-Courses and programs point at their unit through the **Academic Unit** field (formerly the hidden ERPNext "Department" stub). A course belongs to one Academic Department or Interdepartment; a program optionally to a Program Committee.
+Courses and programs point at their unit through the **Academic Unit** field (formerly the hidden ERPNext "Department" stub). A course belongs to one Academic Department or Interdepartment; a program optionally to a Program Committee. A program's admissions go to its separate **Admissions Unit**, not to this one.
 
 ## Faculty Capabilities
 

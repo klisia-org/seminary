@@ -46,9 +46,9 @@
    "fieldtype": "Link",
    "label": "Requirement",
    "options": "Person Requirement",
-   "reqd": 1,
    "read_only": 1,
-   "search_index": 1
+   "search_index": 1,
+   "description": "Blank for an agreement signed on the application form."
   },
   {
    "fieldname": "person",
@@ -275,7 +275,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-20 18:00:00.000000",
+ "modified": "2026-11-24 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Signed Agreement",

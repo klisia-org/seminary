@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "A question this program's application asks.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "question",
+  "answer_type",
+  "group_label",
+  "required"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Link",
+   "label": "Question",
+   "options": "Application Question",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 5,
+   "link_filters": "[[\"Application Question\",\"is_active\",\"=\",1]]"
+  },
+  {
+   "fieldname": "answer_type",
+   "fieldtype": "Data",
+   "label": "Answer Type",
+   "fetch_from": "question.answer_type",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "group_label",
+   "fieldtype": "Data",
+   "label": "Group Heading",
+   "fetch_from": "question.group_label",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "required",
+   "fieldtype": "Check",
+   "label": "Required",
+   "in_list_view": 1,
+   "columns": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Program Application Question",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

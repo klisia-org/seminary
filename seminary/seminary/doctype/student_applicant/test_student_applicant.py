@@ -176,7 +176,10 @@ class TestTheWebFormsStillMatchTheDoctype(IntegrationTestCase):
 
 	def test_every_web_form_field_exists_on_the_doctype(self):
 		meta = frappe.get_meta("Student Applicant")
-		forms = frappe.get_all("Web Form", filters={"doc_type": "Student Applicant"}, pluck="name")
+		# Unpublished forms are retired (decisions/111 §11) and may name removed fields.
+		forms = frappe.get_all(
+			"Web Form", filters={"doc_type": "Student Applicant", "published": 1}, pluck="name"
+		)
 		self.assertTrue(forms, "no Student Applicant web form to check")
 		for form in forms:
 			rows = frappe.get_all(
@@ -203,7 +206,10 @@ class TestTheWebFormsStillMatchTheDoctype(IntegrationTestCase):
 		when they pressed Submit at the end of a long multi-page form.
 		"""
 		meta = frappe.get_meta("Student Applicant")
-		forms = frappe.get_all("Web Form", filters={"doc_type": "Student Applicant"}, pluck="name")
+		# Unpublished forms are retired (decisions/111 §11) and may name removed fields.
+		forms = frappe.get_all(
+			"Web Form", filters={"doc_type": "Student Applicant", "published": 1}, pluck="name"
+		)
 		for form in forms:
 			rows = frappe.get_all(
 				"Web Form Field",
@@ -324,6 +330,14 @@ class TestTheGenderPickerIsCurated(IntegrationTestCase):
 				self.assertEqual(df.options, "Gender")
 
 
+def _admit(applicant):
+	"""Admission happens through enrolment (decisions/112 §7); the flag stands
+	in for it so these tests exercise the save that carries the transition."""
+	applicant.application_status = "Admitted"
+	applicant.flags.from_admissions = True
+	applicant.save(ignore_permissions=True)
+
+
 class TestAdmissionFreezesTheCapture(IntegrationTestCase):
 	def test_every_captured_field_is_frozen_in_the_ui_after_admission(self):
 		"""The freeze shipped on exactly five fields — the five names — which
@@ -344,8 +358,7 @@ class TestAdmissionFreezesTheCapture(IntegrationTestCase):
 		JSON flag above would give a test something to assert and an API client
 		nothing to trip over."""
 		applicant = make_applicant()
-		applicant.application_status = "Admitted"
-		applicant.save(ignore_permissions=True)
+		_admit(applicant)
 
 		applicant.city = "El Paso"
 		with self.assertRaises(frappe.ValidationError):
@@ -354,20 +367,18 @@ class TestAdmissionFreezesTheCapture(IntegrationTestCase):
 	def test_the_admitting_save_may_still_carry_a_correction(self):
 		"""The transition itself is not late; the saves after it are."""
 		applicant = make_applicant()
-		applicant.application_status = "Admitted"
 		applicant.city = "San Marcos"
-		applicant.save(ignore_permissions=True)
+		_admit(applicant)
 		self.assertEqual(applicant.city, "San Marcos")
 
 	def test_an_unrelated_field_still_saves_after_admission(self):
 		"""The freeze is about shared identity, not about sealing the record —
-		admissions staff still annotate employment, church and references."""
+		admissions staff still add references."""
 		applicant = make_applicant()
-		applicant.application_status = "Admitted"
+		_admit(applicant)
+		applicant.append("references", {"full_name": "Pastor Hill", "relation": "Pastor"})
 		applicant.save(ignore_permissions=True)
-		applicant.employer = "Hill Country Bible Church"
-		applicant.save(ignore_permissions=True)
-		self.assertEqual(applicant.employer, "Hill Country Bible Church")
+		self.assertEqual(applicant.references[0].full_name, "Pastor Hill")
 
 
 class TestTheCaptureBackstop(IntegrationTestCase):

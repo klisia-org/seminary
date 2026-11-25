@@ -10,6 +10,10 @@ frappe.ui.form.on("Program", {
 		frm.set_query("academic_unit", function () {
 			return { filters: { is_active: 1, unit_type: "Program Committee" } };
 		});
+		// Applications are reviewed by a Program Admissions unit (decisions/112 §1a).
+		frm.set_query("admissions_unit", function () {
+			return { filters: { is_active: 1, unit_type: "Program Admissions" } };
+		});
 		// A competency-based program may only contain courses that use the
 		// framework's grading scale (ADR 065). The eligible set depends on this
 		// program's framework, which link_filters cannot express, so the picker
@@ -23,6 +27,19 @@ frappe.ui.form.on("Program", {
 		});
 	},
 	refresh: function (frm) {
+		// The rubric reviewers score applications with (decisions/112 §4).
+		if (!frm.is_new() && frappe.model.can_create("Rubric")) {
+			frm.add_custom_button(
+				__("Edit Review Rubric"),
+				() =>
+					frappe
+						.call("seminary.seminary.admissions.edit_review_rubric", {
+							program: frm.doc.name,
+						})
+						.then((r) => r.message && frappe.set_route("Form", "Rubric", r.message)),
+				__("Application")
+			);
+		}
 		sync_pacing_options(frm);
 		frm.set_query("program_track", "pgm_courses_track", function () {
 			return {

@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "A question the application form can ask. Each program picks the questions it uses.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "question",
+  "answer_type",
+  "options",
+  "table_section",
+  "column_break_main",
+  "group_label",
+  "is_active",
+  "seed_key",
+  "help_section",
+  "help_text"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Data",
+   "label": "Question",
+   "reqd": 1,
+   "in_list_view": 1,
+   "length": 240
+  },
+  {
+   "fieldname": "answer_type",
+   "fieldtype": "Select",
+   "label": "Answer Type",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "default": "Short text",
+   "options": "Short text\nLong text\nSelect\nCheck\nDate\nNumber\nPhone\nEmail\nTable section"
+  },
+  {
+   "fieldname": "options",
+   "fieldtype": "Small Text",
+   "label": "Choices",
+   "depends_on": "eval:doc.answer_type=='Select'",
+   "mandatory_depends_on": "eval:doc.answer_type=='Select'",
+   "description": "One choice per line."
+  },
+  {
+   "fieldname": "table_section",
+   "fieldtype": "Select",
+   "label": "Table",
+   "options": "\nEducation history\nEmergency contacts\nReferences",
+   "depends_on": "eval:doc.answer_type=='Table section'",
+   "mandatory_depends_on": "eval:doc.answer_type=='Table section'",
+   "description": "The list the applicant fills in. Required means at least one row."
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "group_label",
+   "fieldtype": "Data",
+   "label": "Group Heading",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Questions with the same heading are shown together, for example Church or Employment."
+  },
+  {
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "seed_key",
+   "fieldtype": "Data",
+   "label": "Seed Key",
+   "read_only": 1,
+   "hidden": 1,
+   "unique": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "help_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "help_text",
+   "fieldtype": "Small Text",
+   "label": "Help Text",
+   "description": "Shown under the question."
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Application Question",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "System Manager"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1,
+   "role": "Registrar"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "AQ-.#####",
+ "title_field": "question",
+ "track_changes": 1,
+ "search_fields": "question,group_label",
+ "show_title_field_in_link": 1,
+ "naming_rule": "Expression",
+ "translated_doctype": 1
+}

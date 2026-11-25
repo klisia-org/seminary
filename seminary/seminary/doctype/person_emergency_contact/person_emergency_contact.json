@@ -1,0 +1,60 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "Someone to call in an emergency.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "contact_name",
+  "relation",
+  "phone",
+  "email"
+ ],
+ "fields": [
+  {
+   "fieldname": "contact_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "relation",
+   "fieldtype": "Select",
+   "label": "Relation",
+   "options": "\nSpouse\nParent\nChild\nRelative\nFriend\nOther",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone",
+   "options": "Phone",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "in_list_view": 1,
+   "columns": 3
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Person Emergency Contact",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

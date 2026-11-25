@@ -1,0 +1,67 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "An agreement signed on the application.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "agreement_template",
+  "agreed",
+  "signer_name",
+  "signature",
+  "signed_agreement"
+ ],
+ "fields": [
+  {
+   "fieldname": "agreement_template",
+   "fieldtype": "Link",
+   "label": "Agreement",
+   "options": "Agreement Template",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "agreed",
+   "fieldtype": "Check",
+   "label": "I agree",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "signer_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Signature",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "signed_agreement",
+   "fieldtype": "Link",
+   "label": "Signed Agreement",
+   "options": "Signed Agreement",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 3
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Applicant Agreement",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

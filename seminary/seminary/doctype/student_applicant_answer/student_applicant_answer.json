@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "An answer on the application, with the question as the applicant saw it.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "question",
+  "question_label",
+  "group_label",
+  "answer"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Link",
+   "label": "Question",
+   "options": "Application Question",
+   "read_only": 1
+  },
+  {
+   "fieldname": "question_label",
+   "fieldtype": "Data",
+   "label": "Question",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 4,
+   "length": 240
+  },
+  {
+   "fieldname": "group_label",
+   "fieldtype": "Data",
+   "label": "Group Heading",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Long Text",
+   "label": "Answer",
+   "in_list_view": 1,
+   "columns": 4
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Applicant Answer",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

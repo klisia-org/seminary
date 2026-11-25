@@ -331,6 +331,13 @@ permission_query_conditions = {
 	# decisions/098: a Program Chair lists only the programs they direct.
 	"Requirement Exception": "seminary.seminary.exceptions.query",
 	"Signed Agreement": "seminary.seminary.requirements.signed_agreement_query",
+	# decisions/111 §5: a person reads their own education; school roles read all.
+	"Person Education": "seminary.seminary.doctype.person_education.person_education.get_permission_query_conditions",
+	# decisions/112 §3-5: reviewers read the applications they review, and the
+	# others' reviews only after their own; directors decide their programs.
+	"Student Applicant": "seminary.seminary.admissions.applicant_query",
+	"Application Review": "seminary.seminary.admissions.review_query",
+	"Admission Decision": "seminary.seminary.admissions.decision_query",
 	"Partner Organization": "seminary.partner.permissions.org_query",
 	"Partner Organization Location": "seminary.partner.permissions.location_query",
 	"Partner Job Opening": "seminary.partner.permissions.opening_query",
@@ -397,6 +404,10 @@ has_permission = {
 	"Person Requirement": "seminary.seminary.requirements.person_requirement_has",
 	"Requirement Exception": "seminary.seminary.exceptions.has_permission",
 	"Signed Agreement": "seminary.seminary.requirements.signed_agreement_has",
+	"Person Education": "seminary.seminary.doctype.person_education.person_education.has_permission",
+	"Student Applicant": "seminary.seminary.admissions.applicant_has",
+	"Application Review": "seminary.seminary.admissions.review_has",
+	"Admission Decision": "seminary.seminary.admissions.decision_has",
 	"Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
 	"Partner Organization": "seminary.partner.permissions.org_has",
 	"Partner Organization Location": "seminary.partner.permissions.location_has",
@@ -832,6 +843,8 @@ scheduler_events = {
 		# Expire documents, renew per term/year, and remind on due dates
 		# (decisions/091 §5, §11).
 		"seminary.seminary.requirements.daily",
+		# decisions/112 §2: a fee paid elsewhere completes an application.
+		"seminary.seminary.admissions.daily",
 		# A geocode that failed because the provider was down that afternoon
 		# would otherwise stay missing until the address happened to change
 		# again (ADR 068 §7). Retries `Failed` only, never `Unresolvable`.
@@ -1096,3 +1109,7 @@ fixtures = [
 # Recommended only for DocTypes which have limited documents with untranslated names
 # For example: Role, Gender, etc.
 # translated_search_doctypes = []
+
+# decisions/112 §6: an app that decides admissions for some programs adds
+# `seminary_admission_deciders = ["its.module.claim"]`; `claim(program)` returns
+# {"reviewers": [user], "due_date": date, "label": str} for a program it decides.

@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "creation": "2026-11-24 12:00:00.000000",
+ "description": "A qualification listed on the application. Each row is copied to the person's education.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "institution",
+  "degree",
+  "level",
+  "field_of_study",
+  "country",
+  "year_completed",
+  "person_education"
+ ],
+ "fields": [
+  {
+   "fieldname": "institution",
+   "fieldtype": "Data",
+   "label": "Institution",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "degree",
+   "fieldtype": "Data",
+   "label": "Degree or Qualification",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "label": "Level",
+   "options": "\nSecondary school\nCertificate or Diploma\nBachelor's\nMaster's\nDoctoral\nOther",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "field_of_study",
+   "fieldtype": "Data",
+   "label": "Field of Study"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "year_completed",
+   "fieldtype": "Int",
+   "label": "Year Completed",
+   "non_negative": 1,
+   "in_list_view": 1,
+   "columns": 1,
+   "description": "Leave blank while still studying."
+  },
+  {
+   "fieldname": "person_education",
+   "fieldtype": "Link",
+   "label": "Person Education",
+   "options": "Person Education",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Applicant Education",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

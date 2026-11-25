@@ -69,49 +69,93 @@ graduation date of *enrollment date + this many years*.
 
 ### The application form
 
-The public "Apply" button opens a **Web Form** that creates a Student Applicant.
-The built-in form is intentionally thorough (personal, education, employment,
-church, doctrinal statement, signature…), which is right for a degree program but
-far heavier than a free course or continuing-education track needs.
+The public "Apply" button opens the application form, which creates a Student
+Applicant. There is one form for every program. It always asks for the
+applicant's name, contact details, address and personal details. The rest
+depends on the program.
 
-To use a lighter form, set **Application Web Form** on the program. The button
-then opens that form instead. The route is resolved in this order:
+**Application questions.** Desk → **Application Question** holds the questions
+your school asks, shared by every program. Each has an answer type (short text,
+long text, a choice, yes/no, date, number, phone or email), optional help text
+and a **group heading** such as *Church* or *Employment*. The form shows
+questions with the same heading together. A new site starts with the questions
+the form used to ask; edit, deactivate or add to them.
 
-1. The program's **Application Web Form**, if set.
-2. **Seminary Settings → Default Application Web Form**, if set (a site-wide
-   default for every program that doesn't choose its own).
-3. The built-in `student-applicant` form, as the final fallback.
+On the program's **Application** tab, the **Application Questions** table lists
+the questions this program asks, in order. Tick **Required** on the ones an
+applicant must answer. A certificate can ask three questions and an MDiv twenty.
 
-So you can leave most programs blank and only point your free/CE programs at a
-short form — or flip the *default* and reserve the long form for the few programs
-that need it.
+Three entries in the list are tables, not questions: **Your education**,
+**Emergency contacts** and **References**. Add them to a program to show that
+table on its form. **Required** then means at least one row.
 
-> **Build your own form; don't edit the built-in one.** The shipped
-> `student-applicant` form is a *standard* web form — it is re-synced from the app
-> on every update, and any changes you make in Desk are overwritten. Instead,
-> **create a new Web Form** (Desk → Web Form → New) for the *Student Applicant*
-> doctype with just the fields you want. Your own forms live in the database and
-> are never clobbered. The **Application Web Form** picker only lists Web Forms
-> built on Student Applicant.
+- Education rows are copied to the person's **Person Education** records, so a
+  graduate who applies again finds them there.
+- Emergency contacts are copied to the person.
+- References stay on the application.
 
-A few things to get right on a custom form:
+The form shows each question as it reads when the applicant applies, and the
+application keeps that wording. Editing a question later does not change old
+answers. A question someone has answered can't be deleted; untick **Active**
+instead.
 
-- **Keep the prefill fields.** Include `program` and `academic_term` (and
-  `term_admission` if you accept Timed applications). The Apply button passes
-  these in the URL, and Frappe only prefills them if the form actually contains
-  those fields. You also need the `Student Email`, as this is needed for login.
-  You do **not** need to add `academic_year` — it is derived automatically from
-  the academic term, so leave it off the form.
-- **For the doctrinal statement, just add the `signdoctrine` signature field.**
-  The current admission Doctrinal Statement is rendered automatically as a
-  read-only block directly above the signature on every Student Applicant form
-  (built-in or custom) — you don't add a `ds2` field and you don't write any
-  script.
-- **Set its own success behavior.** The built-in form redirects to the payment
-  page after submission. That redirect lives on the built-in form, so a custom
-  form for a **free** program won't carry it — set the new form's **Success URL**
-  (or a success message) to send applicants wherever makes sense, e.g. a simple
-  thank-you instead of a payment page.
+**Documents and agreements.** On the program's **Enrollment Requirements**, tick
+**Ask on Application** on a document to ask for it on the form, or on an
+agreement to have the applicant sign it there. A doctrinal statement is an
+agreement like any other: the applicant reads it, ticks *I agree*, types their
+name and signs. The signed agreement then also counts for their enrollment.
+
+Don't edit the built-in `student-applicant` Web Form in Desk. It is re-synced
+from the app on every update.
+
+### Reviewing and deciding applications
+
+An application is reviewed once it is **complete**: its required answers, the
+documents and agreements its form asks for, and any application fee are all in.
+Until then it stays *Applied*, and the applicant's form says what is missing.
+**Check and Start Review** checks again at once; otherwise a daily check does.
+
+The program's **Admission Mode** decides what happens next:
+
+- **Automatic** — a complete application is admitted at once. Use it for open
+  courses that admit everyone who applies.
+- **Reviewed** — the application goes *In Review*, and each reviewer gets an
+  **Application Review** and a to-do. Who reviews is set by the program's
+  **Admissions Unit**, shown on the Application tab for Reviewed programs:
+  - with an Admissions Unit, its active members and its chair review;
+  - without one, or if the unit has no members with a user account, the
+    **Program Director** reviews, or the registrars when there is no director.
+
+An Admissions Unit is an **Academic Unit** of type **Program Admissions**.
+Several programs can share one, for example one unit for all master's programs.
+It is separate from the program's **Academic Unit** (its Program Committee),
+which oversees the program and has no part in admissions.
+
+A reviewer opens the review, chooses a recommendation (*Admit*, *Admit with
+conditions*, *Waitlist* or *Decline*), adds comments and, if the program has a
+review rubric, scores each criterion. **Submit Review** records it. A reviewer
+with a conflict of interest uses **Recuse** and says what the conflict is. The
+other reviews of the same application are shown only after a reviewer has
+submitted or recused, so nobody reads the others first.
+
+To give the program a review rubric, use **Edit Review Rubric** on the program
+form. It uses the school's rubric scale, like an assignment rubric. Once someone
+has scored on it, editing makes a new version.
+
+The decision is an **Admission Decision**: **Decide** on the application opens
+one. The Admissions Unit's chair, the program director, a registrar or a
+Seminary Manager submits it. It
+counts the reviews for you; a decision that goes against most of them needs a
+rationale. *Admit with conditions* records the conditions, which are copied to
+the program enrollment and shown to the applicant. Tick **Conditions Include
+Leveling** to have the registrars plan leveling courses.
+
+The application's status follows the decision and can't be set by hand:
+*Approved*, *Waitlisted* or *Rejected*, then *Admitted* once **Enroll** makes
+the student. **Withdraw** closes an application the applicant no longer wants.
+To change a decision, cancel it and amend it; the earlier one is kept. The
+applicant is emailed the outcome and can see their status and any conditions on
+their application page, never the reviews.
 
 ### Cost and payment gating
 

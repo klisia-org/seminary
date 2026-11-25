@@ -38,6 +38,7 @@ class Program(WebsiteGenerator):
 			self.percent_to_pay = 0
 
 		self._hydrate_pacing_mode_default()
+		self._validate_admissions_unit()
 		self._validate_progression_settings()
 		self._stamp_course_disabled_on()
 		self._validate_course_term_and_credits()
@@ -114,6 +115,19 @@ class Program(WebsiteGenerator):
 				),
 				alert=True,
 			)
+
+	def _validate_admissions_unit(self):
+		"""Only a Reviewed program has an admissions unit, and it must be one (decisions/112 §1a)."""
+		if self.admission_mode != "Reviewed":
+			self.admissions_unit = None
+			return
+		if self.admissions_unit and self.has_value_changed("admissions_unit"):
+			unit_type = frappe.db.get_value("Academic Unit", self.admissions_unit, "unit_type")
+			if unit_type != "Program Admissions":
+				frappe.throw(
+					_("{0} is not a Program Admissions unit.").format(frappe.bold(self.admissions_unit)),
+					title=_("Admissions Unit"),
+				)
 
 	def _validate_progression_settings(self):
 		"""How students advance and who enrolls them (decisions/084)."""
