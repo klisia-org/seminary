@@ -73,6 +73,16 @@ def programs_label(count):
 	return _("Our Program") if count == 1 else _("Our Programs")
 
 
+def inquiry_route(program):
+	"""Where *Request information* on a program page leads, when an app offers an inquiry form
+	(its `program_inquiry_route` hook returns a route for the program); else None."""
+	for path in frappe.get_hooks("program_inquiry_route") or []:
+		route = frappe.get_attr(path)(program)
+		if route:
+			return route
+	return None
+
+
 def program_enrollment(program):
 	"""The live part of a program page: its open windows (Timed) or the term it
 	enrolls into (Continuous), and the apply form's route."""
@@ -82,7 +92,14 @@ def program_enrollment(program):
 		open_windows=[],
 		continuous_term=None,
 		apply_route=get_application_web_form_route(program.name),
+		fee_window_note=None,
+		inquiry_route=inquiry_route(program.name),
 	)
+	if program.display_cta:
+		# The discount window open today, next to Apply (decisions/113 §2).
+		from seminary.seminary.application_fee import window_note
+
+		out.fee_window_note = window_note(program.name)
 	if program.enrollment_mode == "Timed":
 		out.open_windows = open_admission_windows(program.name)
 	elif program.enrollment_mode == "Continuous" and program.display_cta:

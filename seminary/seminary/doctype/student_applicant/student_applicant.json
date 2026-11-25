@@ -63,6 +63,20 @@
   "answers",
   "agreements_tab",
   "agreements",
+  "fee_tab",
+  "fee_waiver_code",
+  "fee_discount_percent",
+  "fee_discount_source",
+  "column_break_fee",
+  "fee_waiver_requested",
+  "fee_waiver_reason",
+  "fee_waiver_section",
+  "fee_waiver_status",
+  "fee_waiver_percent",
+  "column_break_waiver",
+  "fee_waiver_decided_by",
+  "fee_waiver_decided_on",
+  "fee_waiver_note",
   "access_key"
  ],
  "fields": [
@@ -416,6 +430,90 @@
    "no_copy": 1,
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "fee_tab",
+   "fieldtype": "Tab Break",
+   "label": "Application Fee"
+  },
+  {
+   "fieldname": "fee_waiver_code",
+   "fieldtype": "Data",
+   "label": "Fee Code",
+   "description": "A code the school gave you for a discount on the application fee."
+  },
+  {
+   "fieldname": "fee_discount_percent",
+   "fieldtype": "Percent",
+   "label": "Fee Discount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_discount_source",
+   "fieldtype": "Select",
+   "label": "Discount From",
+   "options": "\nWindow\nCode\nRequest",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_fee",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fee_waiver_requested",
+   "fieldtype": "Check",
+   "label": "Request a fee waiver"
+  },
+  {
+   "fieldname": "fee_waiver_reason",
+   "fieldtype": "Small Text",
+   "label": "Why are you asking for a waiver?",
+   "depends_on": "eval:doc.fee_waiver_requested",
+   "mandatory_depends_on": "eval:doc.fee_waiver_requested"
+  },
+  {
+   "fieldname": "fee_waiver_section",
+   "fieldtype": "Section Break",
+   "label": "Fee Waiver Decision",
+   "depends_on": "eval:doc.fee_waiver_status"
+  },
+  {
+   "fieldname": "fee_waiver_status",
+   "fieldtype": "Select",
+   "label": "Fee Waiver",
+   "options": "\nRequested\nApproved\nDeclined",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "fee_waiver_percent",
+   "fieldtype": "Percent",
+   "label": "Waiver Granted",
+   "read_only": 1,
+   "depends_on": "eval:doc.fee_waiver_status=='Approved'"
+  },
+  {
+   "fieldname": "column_break_waiver",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fee_waiver_decided_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_waiver_decided_on",
+   "fieldtype": "Datetime",
+   "label": "Decided On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_waiver_note",
+   "fieldtype": "Small Text",
+   "label": "Decision Note",
+   "read_only": 1
   }
  ],
  "image_field": "image",
@@ -431,7 +529,7 @@
    "group": "Admission"
   }
  ],
- "modified": "2026-11-24 12:00:00.000000",
+ "modified": "2026-11-25 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",

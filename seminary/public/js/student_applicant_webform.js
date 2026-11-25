@@ -494,3 +494,86 @@ frappe.ready(function () {
     }
     load(wf.doc && wf.doc.program);
 });
+
+// The application fee (decisions/113): the fee code and the waiver request
+// are shown only for a program that charges a fee, and the request only when
+// the program accepts them. The server checks both again on save.
+frappe.ready(function () {
+    if (!window.frappe || !frappe.web_form) return;
+    var wf = frappe.web_form;
+    var fields = wf.fields_dict || {};
+    if (!fields.fee_waiver_code && !fields.fee_waiver_requested) return;
+
+    function hide(fieldname, hidden) {
+        if (!fields[fieldname]) return;
+        try {
+            wf.set_df_property(fieldname, "hidden", hidden ? 1 : 0);
+        } catch (e) {
+            fields[fieldname].$wrapper && fields[fieldname].$wrapper.toggle(!hidden);
+        }
+    }
+
+    function note(text) {
+        var field = fields.fee_waiver_code || fields.fee_waiver_requested;
+        if (!field || !field.$wrapper) return;
+        var $note = field.$wrapper.prev(".seminary-fee-window");
+        if (!$note.length) {
+            $note = $('<p class="seminary-fee-window text-muted"></p>');
+            field.$wrapper.before($note);
+        }
+        $note.text(text || "").toggle(!!text);
+    }
+
+    function apply(options) {
+        var hasFee = !!(options && options.has_fee);
+        var requests = hasFee && !!options.allow_requests;
+        hide("fee_tab", !hasFee);
+        hide("fee_waiver_code", !hasFee);
+        hide("fee_waiver_requested", !requests);
+        hide("fee_waiver_reason", !requests || !wf.doc.fee_waiver_requested);
+        if (!requests && wf.doc.fee_waiver_requested) wf.set_value("fee_waiver_requested", 0);
+        note(hasFee ? options.window : "");
+    }
+
+    function load(program) {
+        if (!program) return apply(null);
+        frappe
+            .call({
+                method: "seminary.seminary.application_fee.form_options",
+                args: { program: program },
+            })
+            .then(function (r) {
+                apply(r && r.message);
+            });
+    }
+
+    if (wf.on) {
+        wf.on("program", function (field, value) {
+            load(value);
+        });
+        wf.on("fee_waiver_requested", function (field, value) {
+            hide("fee_waiver_reason", !value);
+        });
+    }
+    apply(null);
+    load(wf.doc && wf.doc.program);
+});
+
+// A new application opened from a signed link (`?prefill=<token>`) fills the applicant's name,
+// contact and program from what they already gave us, so nothing is typed twice. An app that
+// sends such links answers through the `seminary_applicant_prefill` hook.
+frappe.ready(() => {
+	const token = new URLSearchParams(window.location.search).get("prefill");
+	const form = window.frappe && frappe.web_form;
+	if (!token || !form || !form.is_new) return;
+	frappe
+		.call({ method: "seminary.seminary.api.applicant_prefill", args: { token } })
+		.then((r) => {
+			const values = r.message || {};
+			Object.keys(values).forEach((fieldname) => {
+				if (form.fields_dict && form.fields_dict[fieldname] && !form.get_value(fieldname)) {
+					form.set_value(fieldname, values[fieldname]);
+				}
+			});
+		});
+});

@@ -22,6 +22,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint, cstr, escape_html, flt, getdate, now_datetime, today
 
+from seminary.seminary import application_fee
 from seminary.seminary.guards import _roles
 
 APPLICANT = "Student Applicant"
@@ -161,7 +162,9 @@ def missing(doc):
 		if not row.signed_agreement:
 			title = frappe.db.get_value("Agreement Template", row.agreement_template, "title")
 			out.append(_("Agreement: {0}").format(title or row.agreement_template))
-	if not cint(doc.paid):
+	if doc.get("fee_waiver_status") == "Requested":
+		out.append(_("Fee waiver decision"))
+	elif not cint(doc.paid):
 		try:
 			owed = get_financial_backend().application_fee_outstanding(doc.name)
 		except Exception:
@@ -267,6 +270,9 @@ def form_state(applicant: str):
 		"may_decide": may_decide(doc.program),
 		"claimed": (claimed.get("label") or _("a committee")) if claimed else None,
 		"missing": missing(doc) if doc.application_status == "Applied" else [],
+		"may_decide_waiver": doc.get("fee_waiver_status") == "Requested"
+		and application_fee.may_decide_waiver(doc.program),
+		"fee_discount_percent": flt(doc.get("fee_discount_percent")),
 	}
 
 
@@ -599,10 +605,11 @@ def public_status(applicant, key):
 	expected = frappe.db.get_value(APPLICANT, applicant, "access_key")
 	if not (expected and key and hmac.compare_digest(str(key), str(expected))):
 		return None
-	status = frappe.db.get_value(APPLICANT, applicant, "application_status")
+	status, waiver = frappe.db.get_value(APPLICANT, applicant, ["application_status", "fee_waiver_status"])
 	latest = latest_decision(applicant)
 	return frappe._dict(
 		status=status,
+		fee_waiver_status=waiver,
 		conditions=(latest.conditions if latest and latest.decision == "Admit with conditions" else None),
 	)
 
@@ -663,6 +670,20 @@ def edit_review_rubric(program: str):
 # --------------------------------------------------------------------------- #
 # Scheduler and events
 # --------------------------------------------------------------------------- #
+def application_fee_discount(applicant):
+	"""(percent, source) off the application fee, for the financial backend (decisions/113 §4)."""
+	return application_fee.discount(applicant)
+
+
+def on_fee_settled(applicant):
+	"""The financial app calls this when an applicant's fee is paid or credited,
+	so review starts at once (decisions/113 §6). The daily sweep is the backstop."""
+	try:
+		return check(applicant)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), f"admission check failed for {applicant}")
+
+
 def daily():
 	"""Applications completed outside a save (a fee paid elsewhere) start review."""
 	for name in frappe.get_all(APPLICANT, filters={"application_status": "Applied"}, pluck="name"):

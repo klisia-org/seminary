@@ -1113,3 +1113,8 @@ fixtures = [
 # decisions/112 §6: an app that decides admissions for some programs adds
 # `seminary_admission_deciders = ["its.module.claim"]`; `claim(program)` returns
 # {"reviewers": [user], "due_date": date, "label": str} for a program it decides.
+
+# An app with an inquiry form adds `seminary_applicant_prefill = ["its.module.prefill"]`, where
+# `prefill(token)` returns the new application's contact and program values for a signed link it
+# sent, or None; and `program_inquiry_route = ["its.module.route"]`, where `route(program)` returns
+# where a program page's *Request information* leads.

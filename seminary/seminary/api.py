@@ -4726,9 +4726,9 @@ def course_event(name):
 # missing applicant and a wrong key, so there is no oracle. What it never had
 # is an attempt *counter*: keyed on the applicant and not the IP, so guesses
 # cannot be spread across addresses (p010 H6, p005a A09-4).
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep: frappe-semgrep.rules.security.guest-whitelisted-method
 @rate_limit(key="applicant_name", limit=20, seconds=3600, ip_based=False)
-def get_application_payment_url(applicant_name, key=None):
+def get_application_payment_url(applicant_name: str, key: str | None = None):
 	"""Payment URL + instructions for an applicant's Application invoice (public
 	web form). Delegates to the financial backend; None on a Frappe-only seminary.
 
@@ -4751,7 +4751,43 @@ def get_application_payment_url(applicant_name, key=None):
 				frappe.PermissionError,
 			)
 
+	if frappe.db.get_value("Student Applicant", applicant_name, "fee_waiver_status") == "Requested":
+		# Nothing to pay while a fee waiver is being decided (decisions/113 §5).
+		return None
 	return get_financial_backend().application_payment_url(applicant_name)
+
+
+#: What an app's `seminary_applicant_prefill` may fill on a new application: contact and program
+#: fields only, never answers, documents or fees.
+APPLICANT_PREFILL_FIELDS = (
+	"first_name",
+	"middle_name",
+	"last_name",
+	"student_email_id",
+	"student_mobile_number",
+	"country",
+	"program",
+	"academic_term",
+)
+
+
+# Public: the applicant has no login yet. Only a token the app signed answers, with contact fields.
+@frappe.whitelist(allow_guest=True)  # nosemgrep
+@rate_limit(limit=60, seconds=3600, ip_based=True)
+def applicant_prefill(token: str | None = None):
+	"""Values for a new application from a signed link another app sent the applicant.
+
+	Each `seminary_applicant_prefill` hook is called with the token and returns a dict, or None
+	when the token is not its own. The first answer wins, and only APPLICANT_PREFILL_FIELDS pass.
+	"""
+	token = (token or "").strip()
+	if not token or len(token) > 200:
+		return {}
+	for path in frappe.get_hooks("seminary_applicant_prefill") or []:
+		values = frappe.get_attr(path)(token)
+		if values:
+			return {k: v for k, v in values.items() if k in APPLICANT_PREFILL_FIELDS and v}
+	return {}
 
 
 @frappe.whitelist(allow_guest=True)

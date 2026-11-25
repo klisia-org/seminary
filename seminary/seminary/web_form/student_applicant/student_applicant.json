@@ -24,7 +24,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 0,
- "modified": "2026-11-24 12:00:00.000000",
+ "modified": "2026-11-25 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "student-applicant",
@@ -539,6 +539,61 @@
    "read_only": 0,
    "reqd": 0,
    "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "options": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0,
+   "fieldname": "fee_tab",
+   "fieldtype": "Section Break",
+   "label": "Application fee"
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "options": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0,
+   "fieldname": "fee_waiver_code",
+   "fieldtype": "Data",
+   "label": "Fee code",
+   "description": "If the school gave you a code for a discount on the application fee, enter it here."
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "options": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0,
+   "fieldname": "fee_waiver_requested",
+   "fieldtype": "Check",
+   "label": "Request a fee waiver"
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "options": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0,
+   "fieldname": "fee_waiver_reason",
+   "fieldtype": "Small Text",
+   "label": "Why are you asking for a waiver?",
+   "depends_on": "eval:doc.fee_waiver_requested",
+   "mandatory_depends_on": "eval:doc.fee_waiver_requested"
   }
  ]
 }

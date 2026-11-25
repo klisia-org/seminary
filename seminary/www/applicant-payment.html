@@ -31,6 +31,13 @@
 	{% endif %}
 	{% endif %}
 
+	{% if waiver_pending %}
+	<div class="sem-panel">
+		<h2>{{ _("Your fee waiver request") }}</h2>
+		<p>{{ _("We are reviewing your request to waive the application fee. We will write to you with our answer and, if a fee is still due, how to pay it.") }}</p>
+	</div>
+	{% endif %}
+
 	{% if payment_data and payment_data.payment_url %}
 	<div class="sem-panel sem-panel--accent" style="text-align: center;">
 		<h2>{{ _("Pay your Application Fee") }}</h2>
