@@ -777,6 +777,7 @@ communication_channel_providers = {
 	"telegram": "seminary.seminary.telegram_adapter.TelegramAdapter",
 	"twilio": "seminary.seminary.twilio_adapter.TwilioAdapter",
 	"print": "seminary.seminary.comms.PrintAdapter",
+	"web-push": "seminary.seminary.web_push.WebPushAdapter",
 }
 
 # Plagiarism provider adapters. Other apps extend this hook with
@@ -826,6 +827,9 @@ page_renderer = [
 	# LTI 1.3 (decisions/110): the protocol fixes these URLs and their media
 	# types, so they are routes, not `/api/method/...`.
 	"seminary.lti.renderer.LTIRoutes",
+	# The portal's service worker and web manifest live under /seminary/, which
+	# the route rule would otherwise hand to the SPA (decisions/121 §3).
+	"seminary.seminary.web_push.PortalPushRoutes",
 ]
 
 # The other half of that split, and the half that makes it real: frappe routes
@@ -852,7 +856,11 @@ scheduler_events = {
 	# 	],
 	"cron": {
 		# Communication Log drainer (ADR 043): rate-limited per provider account.
-		"*/5 * * * *": ["seminary.seminary.comms.dispatch"],
+		"*/5 * * * *": [
+			"seminary.seminary.comms.dispatch",
+			# Email notice for portal messages still unread (decisions/121 §1).
+			"seminary.seminary.message_notices.send_unread_notices",
+		],
 		# What the meeting provider reports after a school meeting (privatedocs p027 §3).
 		"*/10 * * * *": ["seminary.seminary.school_meetings.sweep"],
 	},

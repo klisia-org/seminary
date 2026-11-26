@@ -45,6 +45,7 @@ def after_install():
 	seed_mandatory_personal_fields()
 	seed_room_features()
 	seed_communication_channels()
+	sync_provider_options()
 	seed_channel_provider_accounts()
 	seed_mailing_label_formats()
 	seed_communication_templates()
@@ -616,6 +617,7 @@ def seed_communication_channels():
 		("In-App", _("Portal inbox messages."), 1, None, _INAPP_SVG),
 		("Print", _("Generated PDF documents / printed letters."), 0, None, None),
 		("Voice", _("Voice / IVR calls."), 0, None, None),
+		("Push", _("Notifications on phones and browsers where the portal is turned on."), 0, None, None),
 	]
 	for channel_name, description, contactable, prefix, svg in defaults:
 		if not frappe.db.exists("Communication Channel", channel_name):
@@ -726,6 +728,39 @@ def seed_mailing_label_formats():
 	frappe.db.commit()
 
 
+def sync_provider_options():
+	"""Channel Provider Account.provider offers every adapter registered in the
+	``communication_channel_providers`` hook, in any installed app. The options
+	are written as a Property Setter over the doctype's own list, so another app
+	that froze the list in a setter of its own still sees new seminary providers
+	(decisions/121 §3)."""
+	if not frappe.db.exists("DocType", "Channel Provider Account"):
+		return
+	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+	from seminary.seminary.comms import get_adapter_registry
+
+	base = frappe.db.get_value(
+		"DocField",
+		{"parent": "Channel Provider Account", "fieldname": "provider"},
+		"options",
+	)
+	options = [o for o in (base or "").split("\n") if o]
+	options += [key for key in get_adapter_registry() if key not in options]
+	wanted = "\n".join(["", *options])
+	current = frappe.get_meta("Channel Provider Account").get_field("provider").options
+	if current == wanted:
+		return
+	make_property_setter(
+		"Channel Provider Account",
+		"provider",
+		"options",
+		wanted,
+		"Text",
+		validate_fields_for_doctype=False,
+	)
+
+
 def seed_channel_provider_accounts():
 	"""Default provider accounts so Email and In-App work out of the box
 	(ADR 043). Create-only-if-missing per CHANNEL — if the seminary configured
@@ -736,6 +771,8 @@ def seed_channel_provider_accounts():
 		("Default Email", "Email", "frappe-email"),
 		("Portal Inbox", "In-App", "in-app"),
 		("Print Spool", "Print", "print"),
+		# Its key pair is made when the account is created (decisions/121 §3).
+		("Device Notifications", "Push", "web-push"),
 	]
 	for account_name, channel, provider in defaults:
 		if not frappe.db.exists("Communication Channel", channel):
@@ -765,6 +802,19 @@ def seed_communication_templates():
 	if not frappe.db.exists("DocType", "Communication Template"):
 		return
 	defaults = [
+		# decisions/121 §1: portal messages still unread after 15 minutes.
+		{
+			"template_key": "portal-message-notice",
+			"category": "Community",
+			"description": "Tells a person that portal messages are waiting for them. Never includes what the messages say.",
+			"subject": "{% if count == 1 %}A new message{% else %}{{ count }} new messages{% endif %} in the portal",
+			"body": (
+				"<p>{{ senders }} sent you {% if count == 1 %}a message{% else %}{{ count }} messages{% endif %} "
+				"in the portal.</p>"
+				'<p><a href="{{ url }}">Open your inbox</a></p>'
+				"<p>To stop these emails, turn off Community email in your communication preferences.</p>"
+			),
+		},
 		# decisions/119: Incompletes and transcripts.
 		{
 			"template_key": "incomplete-reminder",
@@ -1882,6 +1932,7 @@ def after_migrate():
 	seed_mandatory_personal_fields()
 	seed_room_features()
 	seed_communication_channels()
+	sync_provider_options()
 	seed_channel_provider_accounts()
 	seed_mailing_label_formats()
 	seed_communication_templates()

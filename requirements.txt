@@ -17,3 +17,5 @@ holidays>=0.60,<1
 # resolved only because frappe happens to require `nh3~=0.3.2` -- so the
 # sanitiser would have broken at import the day frappe dropped it (p010 H11).
 nh3>=0.2.18,<0.4
+# Web Push for the portal (decisions/121 §3).
+pywebpush>=2.5,<3

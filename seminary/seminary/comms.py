@@ -49,9 +49,12 @@ VOICE_CHANNEL = "Voice"
 SMS_CHANNEL = "SMS"
 WHATSAPP_CHANNEL = "WhatsApp"
 TELEGRAM_CHANNEL = "Telegram"
+PUSH_CHANNEL = "Push"
 # Channels that don't deliver to an address — landing in the ledger (or, for
 # Print, the generated document) is the delivery, so no address is resolved.
-ADDRESSLESS_CHANNELS = {IN_APP_CHANNEL, PRINT_CHANNEL}
+# Push goes to the person's Push Subscriptions, not to an address on the
+# Person (decisions/121 §3).
+ADDRESSLESS_CHANNELS = {IN_APP_CHANNEL, PRINT_CHANNEL, PUSH_CHANNEL}
 
 # Channels whose body is HTML. Author text bound for these is rendered with
 # autoescaping on (p005a A05-7); everything else is plain text, where escaping
@@ -215,6 +218,10 @@ def reachability(
 		return "ok" if person_doc else "no_address"
 	if channel == PRINT_CHANNEL:
 		return "ok"  # addressless: a PDF can always be generated
+	if channel == PUSH_CHANNEL:
+		from seminary.seminary.web_push import has_subscription
+
+		return "ok" if person_doc and has_subscription(person_doc) else "no_address"
 	address = email if (channel == EMAIL_CHANNEL and email) else None
 	if not address and person_doc:
 		address = resolve_address(person_doc, channel, category)
@@ -385,6 +392,7 @@ def send_message(
 	follow_up_of=None,
 	in_reply_to=None,
 	attach_files=None,
+	notify_if_unread=0,
 ):
 	"""Queue a pre-rendered message (the raw path — used by the Seminary
 	Announcement port, where content is authored, not templated).
@@ -418,6 +426,9 @@ def send_message(
 		message=message,
 		media_url=media_url,
 		in_reply_to=in_reply_to,
+		# A person-to-person In-App message is announced by email if it
+		# stays unread (decisions/121 §1); other channels reach the person.
+		notify_if_unread=1 if notify_if_unread and channel == IN_APP_CHANNEL else 0,
 		reference_doctype=reference_doctype,
 		reference_name=reference_name,
 		triggered_by=triggered_by or frappe.session.user,
@@ -452,6 +463,12 @@ def send_message(
 			error=_("No active {0} address.").format(channel),
 		)
 		return _insert_log(values, dedupe_key)
+	if channel == PUSH_CHANNEL:
+		from seminary.seminary.web_push import has_subscription
+
+		if not has_subscription(person_doc):
+			values.update(status="Cancelled", error=_("No device has notifications turned on."))
+			return _insert_log(values, dedupe_key)
 
 	account = pick_account(channel, person_doc.country if person_doc else None)
 	if not account:
@@ -507,7 +524,10 @@ def _attach_inapp_files(log_name, message, attach_files=None):
 
 def _maybe_deliver_instant(log_name, account_name):
 	"""Adapters marked instant=True (In-App) deliver at queue time instead of
-	waiting for the cron drainer. Errors fall back to the normal retry path."""
+	waiting for the cron drainer. Adapters marked background=True (Push) are
+	sent by a job once the request commits: the person should not wait for the
+	drainer, and the sender should not wait on a push service. Errors fall
+	back to the normal retry path."""
 	account = frappe.get_doc("Channel Provider Account", account_name)
 	try:
 		adapter = get_adapter(account.provider)
@@ -515,6 +535,13 @@ def _maybe_deliver_instant(log_name, account_name):
 		return
 	if getattr(adapter, "instant", False):
 		_deliver(log_name, account)
+	elif getattr(adapter, "background", False):
+		frappe.enqueue(
+			"seminary.seminary.comms.deliver_now",
+			queue="short",
+			log_name=log_name,
+			enqueue_after_commit=True,
+		)
 
 
 def _publish_embedded_files(message):
@@ -735,6 +762,8 @@ def _deliver(log_name, account):
 			updates["provider_message_id"] = message_id
 		log.db_set(updates, update_modified=False)
 		_reflect_announcement(log)
+		if log.channel == IN_APP_CHANNEL:
+			_push_copy(log)
 		return True
 	except Exception as e:
 		retries = (log.retry_count or 0) + 1
@@ -759,6 +788,17 @@ def _deliver(log_name, account):
 				update_modified=False,
 			)
 		return False
+
+
+def _push_copy(log):
+	"""An In-App message also goes to the person's devices (decisions/121 §4).
+	Never fails the delivery it follows."""
+	try:
+		from seminary.seminary.web_push import push_for_inapp
+
+		push_for_inapp(log)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), f"Push copy of {log.name} failed")
 
 
 def account_settings(account):
@@ -1865,6 +1905,7 @@ def send_portal_message(
 			reference_name=course,
 			triggered_by=frappe.session.user,
 			attach_files=attach_files,
+			notify_if_unread=1,
 		):
 			sent += 1
 	return {"sent": sent}
@@ -1927,7 +1968,7 @@ def _reply_reference(in_reply_to):
 
 
 @frappe.whitelist()
-def reply_portal_message(in_reply_to, message):
+def reply_portal_message(in_reply_to: str, message: str):
 	"""Portal reply: answer a received In-App message, threaded to it. Replies
 	go to the original sender (must be within the replier's messaging scope)."""
 	me = _my_person()
@@ -1958,13 +1999,14 @@ def reply_portal_message(in_reply_to, message):
 		category="Community",
 		triggered_by=frappe.session.user,
 		in_reply_to=in_reply_to,
+		notify_if_unread=1,
 		**_reply_reference(in_reply_to),
 	)
 	return {"log": log}
 
 
 @frappe.whitelist()
-def contact_instructor(instructor, channel, message, subject=None):
+def contact_instructor(instructor: str, channel: str, message: str, subject: str | None = None):
 	"""Portal contact: a logged message to an instructor on a chosen channel
 	(ADR 042/043) — the icons on Course Detail route here instead of opening the
 	instructor's personal app, so the conversation lives in the Communication
@@ -2025,6 +2067,7 @@ def contact_instructor(instructor, channel, message, subject=None):
 		reference_doctype="Instructor",
 		reference_name=instructor,
 		triggered_by=frappe.session.user,
+		notify_if_unread=1,
 	)
 	return {"log": log}
 
@@ -2332,7 +2375,14 @@ def get_person_timeline(person, limit=50):
 
 
 @frappe.whitelist()
-def compose_communication(person, channel, subject=None, message=None, template=None, send_now=1):
+def compose_communication(
+	person: str,
+	channel: str,
+	subject: str | None = None,
+	message: str | None = None,
+	template: str | None = None,
+	send_now: int | str | bool = 1,
+):
 	"""Desk compose action ('start an email / send an SMS from the system').
 	Either renders a template or takes free-form subject/message; queues
 	through the normal consent/routing path and optionally delivers
@@ -2350,6 +2400,7 @@ def compose_communication(person, channel, subject=None, message=None, template=
 			person=person,
 			category="Transactional",
 			triggered_by=frappe.session.user,
+			notify_if_unread=1,
 		)
 	if log and frappe.utils.cint(send_now):
 		status = frappe.db.get_value("Communication Log", log, "status")
@@ -2517,7 +2568,9 @@ def mark_conversation_read(person):
 
 
 @frappe.whitelist()
-def reply_in_conversation(person, message, in_reply_to=None, channel=None):
+def reply_in_conversation(
+	person: str, message: str, in_reply_to: str | None = None, channel: str | None = None
+):
 	"""Reply to `person`, threaded to the message it answers. Person-to-person
 	desk messages go In-App by default (or the replied-to message's channel)."""
 	frappe.has_permission("Communication Log", "create", throw=True)
@@ -2534,6 +2587,7 @@ def reply_in_conversation(person, message, in_reply_to=None, channel=None):
 		category="Community",
 		triggered_by=frappe.session.user,
 		in_reply_to=in_reply_to,
+		notify_if_unread=1,
 		**_reply_reference(in_reply_to),
 	)
 	if log and frappe.db.get_value("Communication Log", log, "status") == "Queued":
@@ -2561,8 +2615,10 @@ def get_inbox_unread_count():
 
 
 def deliver_now(log_name):
-	"""Deliver a single Queued log immediately (compose 'send now'). Skips the
-	hourly budget — a deliberate human action, not a bulk drain."""
+	"""Deliver a single Queued log immediately (compose 'send now', and the
+	background job for Push). Skips the hourly budget — a deliberate human
+	action or one person's devices, not a bulk drain. A log the drainer took
+	first is left alone: _deliver only moves Queued rows."""
 	account_name = frappe.db.get_value("Communication Log", log_name, "provider_account")
 	if not account_name:
 		return False

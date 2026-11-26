@@ -24,6 +24,9 @@
   "telegram_webhook_secret",
   "telegram_bot_username",
   "public_url",
+  "vapid_public_key",
+  "vapid_private_key",
+  "vapid_subject",
   "settings_section",
   "settings"
  ],
@@ -51,7 +54,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Provider",
-   "options": "\nfrappe-email\nin-app\ntelegram\ntwilio\nprint",
+   "options": "\nfrappe-email\nin-app\ntelegram\ntwilio\nprint\nweb-push",
    "reqd": 1
   },
   {
@@ -148,6 +151,28 @@
    "label": "Public URL (override)"
   },
   {
+   "depends_on": "eval:doc.provider=='web-push'",
+   "description": "Browsers check this key on every notification. It is made when the account is created; changing it stops every device until it turns notifications on again.",
+   "fieldname": "vapid_public_key",
+   "fieldtype": "Small Text",
+   "label": "Push Public Key",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.provider=='web-push'",
+   "fieldname": "vapid_private_key",
+   "fieldtype": "Password",
+   "label": "Push Private Key",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.provider=='web-push'",
+   "description": "A mailto: or https: address the push services can contact about this site. The site's URL is used when empty.",
+   "fieldname": "vapid_subject",
+   "fieldtype": "Data",
+   "label": "Push Contact"
+  },
+  {
    "collapsible": 1,
    "fieldname": "settings_section",
    "fieldtype": "Section Break",
@@ -162,7 +187,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-10 12:00:00.000000",
+ "modified": "2026-11-26 12:00:00",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Channel Provider Account",

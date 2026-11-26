@@ -78,6 +78,8 @@ retirement.
 ## Roadmap
 Remaining on the communication roadmap: Twilio SMS / WhatsApp Cloud adapters (same shape as Telegram), Days-Before/After scheduled triggers, and surfacing inbound replies in the portal. (Portal compose + reply-from-inbox threading shipped — see addendum.)
 
+*Amended 2026-11-26 (121):* the Twilio adapter shipped on 2026-06-11 (`twilio_adapter.py`: SMS, WhatsApp through Twilio, and Voice). Only a direct WhatsApp Cloud API adapter is still open. Device notifications are the Push channel in 121.
+
 ## Addendum (2026-06-12): Portal compose — configurable audiences & private attachments
 
 The portal inbox grew a **compose** surface (person-to-person In-App messages,

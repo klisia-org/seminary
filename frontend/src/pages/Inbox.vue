@@ -65,6 +65,7 @@
 	<div v-else class="mx-auto w-full max-w-3xl space-y-3 p-5">
 		<article
 			v-for="msg in messages"
+			:id="`inbox-msg-${msg.name}`"
 			:key="msg.name"
 			class="cursor-pointer rounded-lg border border-outline-gray-1 bg-surface-white p-4 shadow-sm"
 			role="button"
@@ -317,7 +318,7 @@
 </template>
 
 <script setup>
-import { computed, inject, reactive, ref, watch, onMounted } from 'vue'
+import { computed, inject, nextTick, reactive, ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Button, Dialog, Input, FileUploader, createResource } from 'frappe-ui'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
@@ -522,6 +523,19 @@ onMounted(() => {
 		openCompose({ recipient: route.query.recipient, course: route.query.course })
 	}
 })
+
+// From a notification on the person's device: /inbox?message=<log>. Opens it
+// once the list has it, and again when a notification is clicked while the
+// portal is already open.
+function openFromLink() {
+	const name = route.query.message
+	if (!name || box.value !== 'inbox' || expanded.value.has(name)) return
+	const msg = messages.value.find((m) => m.name === name)
+	if (!msg) return
+	toggle(msg)
+	nextTick(() => document.getElementById(`inbox-msg-${name}`)?.scrollIntoView({ block: 'center' }))
+}
+watch([() => route.query.message, messages], openFromLink)
 
 const sendMessage = createResource({ url: 'seminary.seminary.comms.send_portal_message' })
 

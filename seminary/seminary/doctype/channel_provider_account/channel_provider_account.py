@@ -23,6 +23,11 @@ CONFIG_FIELDS = {
 		("bot_username", "telegram_bot_username", False),
 		("public_url", "public_url", False),
 	],
+	"web-push": [
+		("public_key", "vapid_public_key", False),
+		("private_key", "vapid_private_key", True),
+		("subject", "vapid_subject", False),
+	],
 }
 
 
@@ -32,6 +37,12 @@ class ChannelProviderAccount(Document):
 		# invent one — generate it from the bot token they paste.
 		if self.provider == "telegram" and not self.telegram_webhook_secret:
 			self.telegram_webhook_secret = frappe.generate_hash(length=32)
+		# Web Push signs every notification with the account's own key pair
+		# (decisions/121 §3), made once so nobody has to generate one.
+		if self.provider == "web-push" and not self.vapid_public_key:
+			from seminary.seminary.web_push import generate_vapid_keys
+
+			self.vapid_public_key, self.vapid_private_key = generate_vapid_keys()
 
 	def on_update(self):
 		if self.provider == "telegram" and self.enabled:

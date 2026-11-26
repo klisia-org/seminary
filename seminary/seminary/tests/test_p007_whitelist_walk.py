@@ -1082,6 +1082,12 @@ G6_STUDENT_ALLOWED = {
 	"seminary.seminary.telegram_adapter.get_my_telegram_link",
 	# seminary.seminary.telemetry
 	"seminary.seminary.telemetry.get_posthog_settings",
+	# seminary.seminary.web_push (decisions/121): the caller's own devices only;
+	# removing another user's device is refused.
+	"seminary.seminary.web_push.get_my_push_settings",
+	"seminary.seminary.web_push.remove_device",
+	"seminary.seminary.web_push.send_test_notification",
+	"seminary.seminary.web_push.subscribe",
 	# seminary.seminary.withdrawal
 	"seminary.seminary.withdrawal.calculate_dynamic_date",
 	"seminary.seminary.withdrawal.get_withdrawal_rule_for_date",
