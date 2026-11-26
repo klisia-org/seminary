@@ -4,7 +4,7 @@
 import frappe
 from frappe.model.document import Document
 
-from seminary.seminary import rubrics
+from seminary.seminary import group_work, peer_reviews, rubrics
 
 
 class OralActivitySubmission(Document):
@@ -13,10 +13,13 @@ class OralActivitySubmission(Document):
 
 		stamp_first_grading(self)
 		self.populate()
+		group_work.stamp(self)
 		rubrics.apply_grade(self)
 		# The gradebook card reads `percentage`; the grade is entered as one.
 		if self.grade is not None:
 			self.percentage = self.grade
+		# Review work is part of the grade (decisions/120 §7).
+		peer_reviews.blend(self)
 
 	def populate(self):
 		if not self.student and self.member:

@@ -167,6 +167,30 @@ class FinancialBackend(ABC):
 		names of what it created."""
 		return []
 
+	# -- Incomplete extensions and transcripts (decisions/119 §6) ------------
+	# Optional per school: a backend with no fee set up for these raises
+	# nothing, and the request goes ahead as if it were free.
+
+	def charge_incomplete_extension(self, request_name: str) -> list:
+		"""Bill an approved Incomplete Extension Request; the names of the
+		charges it raised. Empty when the school charges nothing."""
+		return []
+
+	def charge_transcript_request(self, request_name: str) -> list:
+		"""Bill a submitted Transcript Request (its `delivery` and `copies` may
+		set the price); the names of the charges it raised."""
+		return []
+
+	def payment_status_for_transcript_request(self, request_name: str) -> PaymentAggregate:
+		"""Aggregate of the charges raised for a Transcript Request. Nothing
+		raised reads as paid."""
+		return PaymentAggregate(paid_percent=100.0)
+
+	def waive_request_charges(self, doctype: str, name: str, reason: str) -> list:
+		"""Cancel or credit the open charges raised for a request; the names of
+		what it created or cancelled."""
+		return []
+
 	@abstractmethod
 	def invoice_payment_url(self, invoice_name: str) -> dict | None:
 		"""Gateway payment URL for one of the student's invoices."""

@@ -577,3 +577,52 @@ frappe.ready(() => {
 			});
 		});
 });
+
+
+// Returning students (decisions/118 §1). A guest is asked whether they have
+// studied here before: signing in files the application under their own record
+// instead of making a second one. A signed-in applicant's email is their
+// account's (the server enforces it too) and their details come from it.
+frappe.ready(() => {
+	const form = window.frappe && frappe.web_form;
+	if (!form || !form.is_new) return;
+
+	if (frappe.session.user === "Guest") {
+		const next = encodeURIComponent(window.location.pathname);
+		const $box = $(`
+			<div class="sem-returning sem-panel sem-panel--accent" style="margin: 0 0 1rem;">
+				<strong></strong>
+				<div class="sem-returning__text"></div>
+				<div style="margin-top: .5rem;">
+					<a class="btn btn-primary btn-sm sem-returning__login"></a>
+					<a class="btn btn-default btn-sm sem-returning__lost" style="margin-left: .5rem;"></a>
+				</div>
+			</div>`);
+		$box.find("strong").text(__("Have you studied with us before?"));
+		$box.find(".sem-returning__text").text(
+			__("Sign in and apply from your account, so your new program joins your record.")
+		);
+		$box.find(".sem-returning__login")
+			.text(__("Sign in"))
+			.attr("href", "/login?redirect-to=" + next);
+		$box.find(".sem-returning__lost")
+			.text(__("I can't use my old email"))
+			.attr("href", "/returning-student");
+		const $anchor = $(".web-form-introduction").first();
+		if ($anchor.length) $box.insertAfter($anchor);
+		else $box.prependTo($(".web-form").first());
+		return;
+	}
+
+	frappe.call("seminary.seminary.returning.signed_in_prefill").then((r) => {
+		const values = r.message || {};
+		Object.keys(values).forEach((fieldname) => {
+			if (form.fields_dict[fieldname] && !form.get_value(fieldname)) {
+				form.set_value(fieldname, values[fieldname]);
+			}
+		});
+		if (form.fields_dict.student_email_id) {
+			form.set_df_property("student_email_id", "read_only", 1);
+		}
+	});
+});

@@ -26,7 +26,7 @@
 				</p>
 				<div class="flex flex-wrap items-end gap-3">
 					<Button v-if="state.data.section_groups.length" @click="useSectionGroups">
-						{{ __('Use the section\'s student groups') }}
+						{{ state.data.activity_groups ? __('Use this activity\'s groups') : __('Use the section\'s student groups') }}
 					</Button>
 					<FormControl v-model.number="size" type="number" min="1" :label="__('Group size')" class="w-28" />
 					<FormControl v-model="keepZones" type="checkbox" :label="__('Keep nearby time zones together')" />

@@ -27,6 +27,14 @@
   "fgrade",
   "fgradepass",
   "grades_sent_on",
+  "incomplete_section",
+  "incomplete",
+  "incomplete_until",
+  "incomplete_granted_by",
+  "column_break_incomplete",
+  "incomplete_reason",
+  "incomplete_reminder_sent",
+  "incomplete_resolution",
   "attendance_standing_section",
   "absence_count",
   "tardy_count",
@@ -159,6 +167,55 @@
    "read_only": 1
   },
   {
+   "fieldname": "incomplete_section",
+   "fieldtype": "Section Break",
+   "label": "Incomplete",
+   "collapsible": 1,
+   "depends_on": "incomplete"
+  },
+  {
+   "fieldname": "incomplete",
+   "fieldtype": "Check",
+   "label": "Incomplete",
+   "read_only": 1
+  },
+  {
+   "fieldname": "incomplete_until",
+   "fieldtype": "Date",
+   "label": "Complete By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "incomplete_granted_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Granted By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_incomplete",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "incomplete_reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "incomplete_reminder_sent",
+   "fieldtype": "Check",
+   "label": "Reminder Sent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "incomplete_resolution",
+   "fieldtype": "Select",
+   "label": "Resolution",
+   "options": "\nCompleted\nLapsed",
+   "read_only": 1
+  },
+  {
    "fieldname": "course_progress_section",
    "fieldtype": "Section Break",
    "label": "Course Progress"
@@ -271,7 +328,7 @@
  ],
  "image_field": "stuimage",
  "links": [],
- "modified": "2026-11-20 16:00:00.000000",
+ "modified": "2026-11-25 23:30:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Roster",

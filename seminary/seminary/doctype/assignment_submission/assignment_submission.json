@@ -45,7 +45,16 @@
   "column_break_defense",
   "defense_started_on",
   "defense_done_on",
-  "defense_late"
+  "defense_late",
+  "group_work_section",
+  "activity_group",
+  "group_name",
+  "topic",
+  "topic_title",
+  "column_break_gws",
+  "grade_override",
+  "review_credit",
+  "review_credit_override"
  ],
  "fields": [
   {
@@ -308,11 +317,75 @@
    "label": "Defense Lateness",
    "permlevel": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "group_work_section",
+   "fieldtype": "Section Break",
+   "label": "Group Work and Reviews",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "activity_group",
+   "fieldtype": "Link",
+   "label": "Group",
+   "options": "Activity Group",
+   "read_only": 1,
+   "search_index": 1,
+   "permlevel": 1
+  },
+  {
+   "fieldname": "topic",
+   "fieldtype": "Link",
+   "label": "Topic",
+   "options": "Activity Topic",
+   "read_only": 1,
+   "permlevel": 1
+  },
+  {
+   "fieldname": "topic_title",
+   "fieldtype": "Data",
+   "label": "Topic Title",
+   "fetch_from": "topic.title",
+   "read_only": 1,
+   "permlevel": 1
+  },
+  {
+   "fieldname": "column_break_gws",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grade_override",
+   "fieldtype": "Check",
+   "label": "Graded Separately",
+   "description": "This member's grade is their own, not the group's.",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "review_credit",
+   "fieldtype": "Percent",
+   "label": "Review Credit",
+   "read_only": 1,
+   "description": "Share of the assigned reviews and ratings completed on time.",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "review_credit_override",
+   "fieldtype": "Check",
+   "label": "Review Credit Set by Instructor",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "group_name",
+   "fieldtype": "Data",
+   "label": "Group Name",
+   "fetch_from": "activity_group.group_name",
+   "read_only": 1,
+   "permlevel": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-21 12:00:00.000000",
+ "modified": "2026-11-26 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",

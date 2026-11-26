@@ -80,6 +80,10 @@
 			</div>
 		</section>
 
+		<DeviceNotifications
+			:description="__('Get a notification on this phone or computer when a message arrives. Which messages reach your devices follows the Push choices above.')"
+		/>
+
 		<section class="rounded-lg border border-outline-gray-1 bg-surface-white p-5 shadow-sm">
 			<h3 class="mb-1 text-base font-semibold text-ink-gray-8">
 				{{ __('Mailing address') }}
@@ -276,6 +280,7 @@ import { reactive, ref } from 'vue'
 import { Button, call, createResource, toast } from 'frappe-ui'
 import { Send } from 'lucide-vue-next'
 import { createToast } from '@/utils'
+import { DeviceNotifications } from '@seminary/portal-shell/notifications'
 
 const telegram = createResource({
 	url: 'seminary.seminary.telegram_adapter.get_my_telegram_link',

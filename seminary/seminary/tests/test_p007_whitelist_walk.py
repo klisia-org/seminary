@@ -162,11 +162,26 @@ GUEST_ALLOWED = {
 	# @rate_limit 60/3600s ip_based; answers only a token signed by the app that sent the
 	# applicant the link (hmac under compare_digest), with APPLICANT_PREFILL_FIELDS only
 	"seminary.seminary.api.applicant_prefill",
+	# @rate_limit 5/3600s ip_based; only creates registrar ToDos from what was typed, and
+	# answers the same whoever asks, so it says nothing about records on file (decisions/118 §1)
+	"seminary.seminary.returning.request_access",
 	# resolves through a readable File row; content-hash keys are not enumerable (p004)
 	"seminary.storage.api.download_file",
+	# @rate_limit 30/3600s ip_based; the emailed random key under compare_digest is the
+	# authorization, and it expires (decisions/119 §5)
+	"seminary.seminary.transcripts.download",
 }
 
 STUDENT_ALLOWED = {
+	# decisions/119: the caller's own Incompletes and transcript requests, resolved
+	# from the session's Student; anyone else gets an empty answer or a refusal.
+	"seminary.seminary.incompletes.my_incompletes",
+	# p007 §8.1: the caller's own enrolled, unpublished sections; nothing else.
+	"seminary.seminary.utils.get_unopened_courses",
+	"seminary.seminary.transcripts.my_requests",
+	"seminary.seminary.transcripts.new_request",
+	# decisions/118 §1: the caller's own Person, nothing else; Guest gets {}
+	"seminary.seminary.returning.signed_in_prefill",
 	# decisions/100d-a §9: the caller's own time zone, read and set on their
 	# own User only; nothing about anyone else.
 	"seminary.seminary.time_zones.report",
@@ -305,9 +320,43 @@ STUDENT_ALLOWED = {
 	# The rubric a student reads on an activity they can read, and their own
 	# levels on their own graded submission (decisions/095).
 	"seminary.seminary.rubrics.get_student_view",
+	# decisions/120: behind require_enrolled and the session's own Student;
+	# save_review also checks reviewer == caller.
+	"seminary.seminary.peer_reviews.get_panel",
+	"seminary.seminary.peer_reviews.join_group",
+	"seminary.seminary.peer_reviews.leave_group",
+	"seminary.seminary.peer_reviews.start_group",
+	"seminary.seminary.peer_reviews.choose_topic",
+	"seminary.seminary.peer_reviews.save_review",
+	"seminary.seminary.peer_reviews.take_extra_review",
+	"seminary.seminary.peer_reviews.save_ratings",
+	"seminary.seminary.peer_reviews.my_todos",
 }
 
 STAFF_ONLY = {
+	# decisions/120: require_grader, then the section's GRADE capability.
+	"seminary.seminary.peer_reviews.get_manage",
+	"seminary.seminary.peer_reviews.save_group",
+	"seminary.seminary.peer_reviews.move_member",
+	"seminary.seminary.peer_reviews.delete_group",
+	"seminary.seminary.peer_reviews.make_groups",
+	"seminary.seminary.peer_reviews.save_topics",
+	"seminary.seminary.peer_reviews.assign_topic",
+	"seminary.seminary.peer_reviews.draw_topics",
+	"seminary.seminary.peer_reviews.set_windows",
+	"seminary.seminary.peer_reviews.open_now",
+	"seminary.seminary.peer_reviews.release_now",
+	"seminary.seminary.peer_reviews.assign_review",
+	"seminary.seminary.peer_reviews.remove_review",
+	"seminary.seminary.peer_reviews.moderate_review",
+	"seminary.seminary.peer_reviews.extend_for_group",
+	"seminary.seminary.peer_reviews.get_grading",
+	"seminary.seminary.peer_reviews.set_separate_grade",
+	"seminary.seminary.peer_reviews.set_review_credit",
+	# decisions/116 §5: the chapel roll, Chaplain or school staff.
+	"seminary.seminary.chapel.get_roll",
+	"seminary.seminary.chapel.save_roll",
+	"seminary.seminary.chapel.search_contacts",
 	# decisions/100 §5: require_grader.
 	"seminary.seminary.oral.step_choices",
 	# decisions/100b: require_grader, then the section's own staff.
@@ -500,6 +549,11 @@ STAFF_ONLY = {
 # project's student/advisor checks) and are covered by their own test module.
 OWN_RULE = (
 	{
+		# decisions/120 §5: the review's reviewer or the section's staff;
+		# download also lets the authors read a released marked-up file.
+		# Covered by test_adr120_group_work.
+		"seminary.seminary.peer_reviews.get_review",
+		"seminary.seminary.peer_reviews.download",
 		# decisions/112: each resolves the applicant, review or program and checks
 		# its own rule (has_permission on the record, reviewer == caller, staff for
 		# withdraw); covered by test_adr111_112_admissions.
@@ -525,6 +579,29 @@ OWN_RULE = (
 		# section, resolved from the recording; covered by test_adr100a.
 		"seminary.seminary.oral.add_moment",
 		"seminary.seminary.oral.set_moment_state",
+	}
+	| {
+		# decisions/119: grading staff of the section mark, clear and send an
+		# Incomplete; the student asks for, and the owner withdraws, an extension;
+		# only Registrar/Seminary Manager decide it, issue or waive a transcript and
+		# approve a grade change (a Program Chair is refused, so not STAFF_ONLY); the
+		# student or staff read and cancel their own transcript. Covered by
+		# test_adr119_final_grades.
+		"seminary.seminary.incompletes." + n
+		for n in (
+			"mark_incomplete",
+			"clear_incomplete",
+			"send_incomplete_grade",
+			"request_extension",
+			"approve_extension",
+			"decline_extension",
+			"withdraw_extension",
+		)
+	}
+	| {"seminary.seminary.grade_changes." + n for n in ("approve", "reject", "withdraw")}
+	| {
+		"seminary.seminary.transcripts." + n
+		for n in ("unofficial", "issue", "waive_fee", "recheck", "cancel_request")
 	}
 	| {
 		# decisions/098: the student, their mentor or a decider requests; the
@@ -1005,6 +1082,12 @@ G6_STUDENT_ALLOWED = {
 	"seminary.seminary.telegram_adapter.get_my_telegram_link",
 	# seminary.seminary.telemetry
 	"seminary.seminary.telemetry.get_posthog_settings",
+	# seminary.seminary.web_push (decisions/121): the caller's own devices only;
+	# removing another user's device is refused.
+	"seminary.seminary.web_push.get_my_push_settings",
+	"seminary.seminary.web_push.remove_device",
+	"seminary.seminary.web_push.send_test_notification",
+	"seminary.seminary.web_push.subscribe",
 	# seminary.seminary.withdrawal
 	"seminary.seminary.withdrawal.calculate_dynamic_date",
 	"seminary.seminary.withdrawal.get_withdrawal_rule_for_date",

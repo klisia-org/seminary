@@ -17,6 +17,20 @@ class GraduationRequirementItem(Document):
 
 	def validate(self):
 		self._resolve_linked_document()
+		self._validate_attendance()
+
+	def _validate_attendance(self):
+		"""Chapel and cohort meeting measures (decisions/116)."""
+		if self.requirement_type not in ("Chapel Attendance", "Cohort Meeting Attendance"):
+			return
+		self.attendance_measure = self.attendance_measure or "Count"
+		if self.attendance_measure == "Percentage":
+			if not 1 <= (self.default_quantity or 0) <= 100:
+				frappe.throw(_("For a percentage, the quantity must be between 1 and 100."))
+			if (self.minimum_held or 0) < 0:
+				frappe.throw(_("Minimum held can't be negative."))
+		if self.requirement_type == "Cohort Meeting Attendance" and not self.cohort_types:
+			frappe.throw(_("Choose the cohort types whose meetings count."))
 
 	def _resolve_linked_document(self):
 		"""Derive the underlying `link_doctype` from the curated Allowed Graduation

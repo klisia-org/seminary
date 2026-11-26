@@ -11,6 +11,7 @@
   "oral_activity",
   "kind",
   "group_label",
+  "activity_group",
   "meeting",
   "column_break_a",
   "meeting_date",
@@ -250,10 +251,17 @@
    "label": "Participants",
    "options": "Oral Activity Meeting Participant",
    "read_only": 1
+  },
+  {
+   "fieldname": "activity_group",
+   "fieldtype": "Link",
+   "label": "Group",
+   "options": "Activity Group",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-11-21 16:00:00.000000",
+ "modified": "2026-11-26 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Oral Activity Meeting",

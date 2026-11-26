@@ -81,7 +81,10 @@ def recompute_standing(student):
 	elif "Academic" in active_holds:
 		standing = "Suspended"
 	else:
-		statuses = frappe.get_all("Program Enrollment", filters={"student": student}, pluck="status")
+		# A cancelled enrollment says nothing about the student.
+		statuses = frappe.get_all(
+			"Program Enrollment", filters={"student": student, "docstatus": ("!=", 2)}, pluck="status"
+		)
 		if any(s in ("Active", "Leave of Absence") for s in statuses):
 			standing = "Good Standing"
 		elif "Dismissed" in statuses:

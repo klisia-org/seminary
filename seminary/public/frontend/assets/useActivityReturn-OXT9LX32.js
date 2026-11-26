@@ -1,0 +1,1 @@
+import{Tt as e,gr as t,jr as n}from"./frappe-ui-B-kmvTnQ.js";function r(r){let i=t(),a=n(()=>e.returnContext),o=n(()=>!!a.value);function s(){let t=a.value;if(!t)return;let n=r==null?void 0:r();n&&e.setPendingInsert({type:t.insertType,id:n}),e.clearReturnContext(),i.push(t.route)}return{showBackToLesson:o,backToLesson:s}}export{r as t};

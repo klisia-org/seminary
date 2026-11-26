@@ -149,6 +149,61 @@ Three things to know:
 Extra-credit columns are tinted blue and show a "Max Extra: N" hint
 under the title instead of a weight, so they're easy to spot.
 
+## Sending grades, Incompletes and grade changes
+
+**Send Grades** writes every student's final grade to their transcript
+and closes the course. It waits until every assessment has a grade
+(type 0 for missing work).
+
+**Incompletes.** If a student can't finish on time for a good reason,
+click **Incomplete** next to their name before sending. The button shows
+only for a student with work still to do, on a course whose grading
+scale has a **Code for Incomplete**. Give the reason
+and the date they must finish by. That student no longer holds the
+class back: Send Grades goes through, the transcript shows the scale's
+Incomplete code, and their row in the Gradebook stays open. Their
+unfinished assessments are due on the completion date.
+
+- When their work is graded, click **Send Grade** on their row.
+- Two days before the date (set in Seminary Settings), the student and
+  instructor are emailed if work is still missing.
+- If the date passes, the grade is sent automatically. Unfinished work
+  counts as 0, unless the grading scale has a **Code When an Incomplete
+  Lapses** (such as F): then that is the final grade.
+- An instructor can give up to the number of days set in Seminary
+  Settings. For more time, the student asks from **My Transcripts** in
+  the portal, and the registrar decides. The school may charge a fee.
+
+**Sent grades are locked.** Once a grade is sent, it can't be edited
+anywhere. To correct it, open the student's roster row in Desk and
+click **Raise Grade Change**: list the scores to change and say why.
+The registrar approves it, and the transcript, credits and GPA update.
+Seminary Settings can require a second approver for changes made long
+after the grade was sent.
+
+## Repeated courses
+
+When a student takes a course again, the program's **Repeated Courses
+Count** setting decides which attempt counts: the most recent (the
+default) or the highest. The other attempts stay on the transcript,
+marked Repeated, with no credits and out of the GPA. A program can also
+limit how many times a course may be taken; past it, only the registrar
+can enroll the student.
+
+## Transcripts
+
+Students download an **unofficial transcript** (watermarked) from **My
+Transcripts** at any time. Staff open it from the Student form.
+
+An **official transcript** is requested by the student from the portal,
+or by the registrar from the Student form. It can go to the student, to
+an email address, or as a printed copy. A financial or administrative
+hold stops it until the hold is lifted, and the school may charge a
+fee. Each official transcript carries the registrar's signature and a
+verification code. Anyone can enter the code at `/transcript-verify`
+to confirm the student's name and issue date, and check a PDF copy
+against it.
+
 ## Rubrics
 
 A rubric grades an assignment or a discussion criterion by criterion instead of
@@ -199,6 +254,70 @@ Students graded earlier keep the version they were graded on.
 
 Rubrics are not used in competency-based courses, which grade on the
 competency's own levels, or in courses graded on a descriptive scale.
+
+## Group work and peer review
+
+Assignments and oral activities can be done in groups, can give each group or
+student a topic, and can ask students to review each other's work and rate
+their teammates. Turn these on under **Group Work, Topics and Peer Review** on
+the activity's form. Each section then manages its own groups, topics and
+reviews from **Groups, Topics and Reviews** on the activity in the lesson.
+
+**Groups.** Tick **Group work** on an assignment. An oral activity in
+*Conversation* mode is always group work. Choose how the groups are made:
+
+- **The section's student groups**: copied when the activity is first opened,
+  and editable after that. The section's student groups themselves do not
+  change.
+- **At random**, in groups of the size you give.
+- **By hand**, on the activity's group work page.
+- **Students sign up**: make empty groups, set the most students a group takes,
+  and set when sign-up closes. Anyone left over is yours to place.
+
+Any member hands in the work for the whole group, and every member sees it.
+You grade it once: the grade, rubric levels and comments go to every member.
+To grade one member differently, tick **Grade this member separately** on the
+grading page. A student who leaves a group keeps the work and grade they had
+when they left, and a student who joins gets the group's current work.
+
+The group works to the activity's due date. **Extend for the group** gives
+every member the same new dates in one step. One member's own extension does
+not move the group's date.
+
+**Topics.** Choose how topics are given: by you, drawn at random, or chosen by
+students until a date you set. List the topics for each section on the
+activity's group work page, each with how many groups or students may take it
+(one by default). Importing a course template copies the topics, and the
+section can then change them. With group work the topic belongs to the group.
+The topic shows on the submission, the grading page and the submissions list.
+
+**Peer review.** Choose how many classmates' work each student reviews and when
+reviews open: at the due date, at the cut-off, or when you open them. Each
+piece of work gets about the same number of reviews, and nobody reviews their
+own work or their group's. Reviewers use the activity's rubric (without points)
+or write comments, and may attach their own marked-up copy of the work. For an
+oral activity such as a sermon, they listen beside the transcript and can leave
+comments at moments in the recording. Names show both ways unless you tick
+**Anonymous**. Reviews are due a number of days after they open. Students see
+the reviews of their work at that date, or earlier if you release them. You can
+read every review, hide one from its author, withdraw its credit, or add a
+reviewer for work that is short of reviews. A student who has finished can
+also take on one more review.
+
+**Teammate ratings.** With group work, each member can rate every other member
+on the criteria under **Teammate Ratings** in Seminary Settings (by default:
+contributed their share, met commitments, worked well with others), from 1 to
+5, with a comment. Choose who sees them: the teammate with the rater's name,
+the teammate without names, or you only. On the grading page you see each
+member's average, how far the ratings spread, and the comments. Ratings never
+change a grade by themselves; they help you decide whether to grade someone
+separately.
+
+**Review credit.** Set **Share of the grade for reviews and ratings** to make
+the reviewing count. With 10%, for example, 90% of the grade is your grade on
+the work and 10% is the share of assigned reviews and ratings the student
+completed on time. You can set the review part by hand for one student on the
+grading page. With a share of 0, reviewing is not graded.
 
 ## A typical week
 
@@ -268,3 +387,5 @@ get there.
 - [Withdrawal](withdrawal.md) — how withdrawn students are represented
 - [Graduation Requirements](graduation-requirements.md) — non-course
   evidence that complements graded coursework
+- [Settings](../getting-started/initial-setup.md) — Incomplete days, lapse
+  rule, grade change approvers and the transcript signature

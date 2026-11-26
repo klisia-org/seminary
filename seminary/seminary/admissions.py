@@ -191,7 +191,8 @@ def check(applicant):
 
 def start_review(doc):
 	mode = frappe.db.get_value("Program", doc.program, "admission_mode") or "Reviewed"
-	if mode == "Automatic":
+	# A dismissed or suspended student's readmission is always reviewed (decisions/118 §2).
+	if mode == "Automatic" and not cint(doc.get("readmission_review")):
 		set_status(doc.name, "In Review")
 		record_decision(
 			doc.name,
@@ -235,10 +236,19 @@ def assign_review(applicant, user, due_date=None, rubric=None):
 			"date": review.due_date,
 			"description": _("Review the application of {0} for {1}.").format(
 				escape_html(applicant.title or applicant.name), escape_html(applicant.program)
-			),
+			)
+			+ _returning_note(applicant),
 		}
 	).insert(ignore_permissions=True)
 	return review.name
+
+
+def _returning_note(applicant):
+	from seminary.seminary import returning
+
+	if not cint(applicant.get("readmission_review")):
+		return ""
+	return " " + returning.summary_text(returning.summary(applicant))
 
 
 def _close_todos(review):
@@ -273,7 +283,18 @@ def form_state(applicant: str):
 		"may_decide_waiver": doc.get("fee_waiver_status") == "Requested"
 		and application_fee.may_decide_waiver(doc.program),
 		"fee_discount_percent": flt(doc.get("fee_discount_percent")),
+		"returning": _returning(doc),
 	}
+
+
+def _returning(doc):
+	"""The returning-student panel (decisions/118 §2, §6), for staff and reviewers only."""
+	from seminary.seminary import returning
+
+	info = returning.summary(doc)
+	if info:
+		info["text"] = returning.summary_text(info)
+	return info
 
 
 @frappe.whitelist()
@@ -341,6 +362,7 @@ def review_panel(review: str):
 		"can_edit": mine and doc.status == "Open",
 		"overall_percent": overall_percent(doc),
 		"others": others(doc),
+		"returning": _returning(frappe.get_doc(APPLICANT, doc.student_applicant)),
 	}
 
 
@@ -509,11 +531,19 @@ def apply_decision(doc):
 		_close_todos(review)
 	if doc.requires_leveling:
 		_leveling_todo(doc)
+	# Accepting a returning student lifts the holds it answers (decisions/118 §3).
+	if doc.decision in ADMIT:
+		from seminary.seminary import returning
+
+		returning.lift_holds(doc)
 	notify(doc)
 
 
 def revert_decision(doc):
 	"""Admission Decision.on_cancel: the status the previous decision gave, or In Review."""
+	from seminary.seminary import returning
+
+	returning.restore_holds(doc)
 	previous = frappe.get_all(
 		DECISION,
 		filters={"student_applicant": doc.student_applicant, "docstatus": 1, "name": ["!=", doc.name]},

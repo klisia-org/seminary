@@ -1,0 +1,248 @@
+{
+ "actions": [],
+ "creation": "2026-11-25 23:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "roster",
+  "course_schedule",
+  "course_title",
+  "student",
+  "student_name",
+  "column_break_main",
+  "status",
+  "grades_sent_on",
+  "old_grade",
+  "new_grade",
+  "changes_section",
+  "changes",
+  "reason",
+  "approval_section",
+  "needs_second_approval",
+  "second_approver_role",
+  "registrar_approved_by",
+  "registrar_approved_on",
+  "column_break_approval",
+  "second_approved_by",
+  "second_approved_on",
+  "decision_note"
+ ],
+ "fields": [
+  {
+   "fieldname": "roster",
+   "fieldtype": "Link",
+   "label": "Roster",
+   "options": "Scheduled Course Roster",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course Schedule",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "course_title",
+   "fieldtype": "Data",
+   "label": "Course Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Open\nApproved\nRejected\nWithdrawn",
+   "default": "Open",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "grades_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Grade Sent On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "old_grade",
+   "fieldtype": "Data",
+   "label": "Current Grade",
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_grade",
+   "fieldtype": "Data",
+   "label": "New Grade",
+   "read_only": 1
+  },
+  {
+   "fieldname": "changes_section",
+   "fieldtype": "Section Break",
+   "label": "Changes"
+  },
+  {
+   "fieldname": "changes",
+   "fieldtype": "Table",
+   "label": "Changes",
+   "options": "Grade Change Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approval_section",
+   "fieldtype": "Section Break",
+   "label": "Approval"
+  },
+  {
+   "fieldname": "needs_second_approval",
+   "fieldtype": "Check",
+   "label": "Needs a Second Approver",
+   "read_only": 1
+  },
+  {
+   "fieldname": "second_approver_role",
+   "fieldtype": "Link",
+   "label": "Second Approver Role",
+   "options": "Role",
+   "read_only": 1
+  },
+  {
+   "fieldname": "registrar_approved_by",
+   "fieldtype": "Link",
+   "label": "Registrar Approval",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "registrar_approved_on",
+   "fieldtype": "Datetime",
+   "label": "Registrar Approved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_approval",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "second_approved_by",
+   "fieldtype": "Link",
+   "label": "Second Approval",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "second_approved_on",
+   "fieldtype": "Datetime",
+   "label": "Second Approved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decision_note",
+   "fieldtype": "Small Text",
+   "label": "Decision Note",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-25 23:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Grade Change Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Registrar"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "create": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "GCR-.YYYY.-.####",
+ "naming_rule": "Expression",
+ "title_field": "student_name",
+ "show_title_field_in_link": 0,
+ "description": "A change to a grade that has already been sent. The registrar approves it."
+}

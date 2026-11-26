@@ -46,6 +46,8 @@
 						class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-sm" />
 				</div>
 				<Button variant="solid" class="w-full" :loading="saving" @click="save">{{ __('Save') }}</Button>
+				<GroupGradingPanel submission-doctype="Oral Activity Submission" :submission="submissionName"
+					:course="courseName" @changed="sub.reload()" />
 				<div v-if="sub.data.status === 'Graded'" class="text-xs text-ink-green-3">{{ __('Graded') }}</div>
 			</div>
 		</div>
@@ -57,6 +59,7 @@
 
 <script setup>
 // Grade one student's oral activity submission (decisions/100b).
+import GroupGradingPanel from '@/components/GroupGradingPanel.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { Breadcrumbs, Button, FormControl, call, createResource, toast } from 'frappe-ui'
 import { userLocale } from '@seminary/portal-shell'

@@ -136,6 +136,8 @@ const submissions = createListResource({
 		'creation',
 		'status',
 		'grade',
+		'group_name',
+		'topic_title',
 	],
 	filters: getAssignmentFilters(),
 	orderBy: 'creation desc',
@@ -180,6 +182,13 @@ const submissionColumns = computed(() => {
 			key: 'assignment_title',
 			width: 2,
 		},
+		// Group work and topics (decisions/120).
+		...(submissions.data?.some((r) => r.group_name)
+			? [{ label: __('Group'), key: 'group_name', width: 1 }]
+			: []),
+		...(submissions.data?.some((r) => r.topic_title)
+			? [{ label: __('Topic'), key: 'topic_title', width: 1 }]
+			: []),
 		{
 			label: __('Submitted'),
 			key: 'creation',

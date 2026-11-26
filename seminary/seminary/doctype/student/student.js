@@ -3,6 +3,25 @@
 
 frappe.ui.form.on("Student", {
 	refresh: function (frm) {
+		// The unofficial transcript, and an official request (decisions/119 §5).
+		if (!frm.is_new()) {
+			frm.add_custom_button(
+				__("Unofficial Transcript"),
+				() => {
+					window.open(
+						`/api/method/seminary.seminary.transcripts.unofficial?student=${encodeURIComponent(
+							frm.doc.name
+						)}`
+					);
+				},
+				__("Transcript")
+			);
+			frm.add_custom_button(
+				__("Official Transcript Request"),
+				() => frappe.new_doc("Transcript Request", { student: frm.doc.name }),
+				__("Transcript")
+			);
+		}
 		frm.set_query("user", function (doc) {
 			return {
 				filters: {

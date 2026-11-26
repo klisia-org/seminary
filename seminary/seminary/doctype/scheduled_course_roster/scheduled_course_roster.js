@@ -8,23 +8,31 @@ frappe.ui.form.on("Scheduled Course Roster", {
 		});
 	},
 	refresh(frm) {
-		frm.add_custom_button(__("Grade Student"), function () {
-			var name = frm.doc.name;
-			frappe
-				.call("seminary.seminary.api.grade_thisstudent", { name: name }) // Pass the 'name' argument
-				.then((r) => {
-					if (r.message) {
-						return frappe.call("seminary.seminary.api.fgrade_this_std", {
-							name: name,
-						});
-					}
-				})
-				.then((r) => {
-					if (r && r.message) {
-						frm.refresh();
-					}
-				});
-		});
+		// A sent grade is frozen; it changes only through a Grade Change Request (decisions/119 §3).
+		if (!frm.doc.active && !frm.doc.audit_bool && !frm.is_new()) {
+			frm.add_custom_button(__("Raise Grade Change"), () => {
+				frappe.new_doc("Grade Change Request", { roster: frm.doc.name });
+			});
+		}
+		if (frm.doc.active) {
+			frm.add_custom_button(__("Grade Student"), function () {
+				var name = frm.doc.name;
+				frappe
+					.call("seminary.seminary.api.grade_thisstudent", { name: name }) // Pass the 'name' argument
+					.then((r) => {
+						if (r.message) {
+							return frappe.call("seminary.seminary.api.fgrade_this_std", {
+								name: name,
+							});
+						}
+					})
+					.then((r) => {
+						if (r && r.message) {
+							frm.refresh();
+						}
+					});
+			});
+		}
 
 		// Registrar / Program Chair: fail (or un-fail) for unexcused absences.
 		const canFailForAbsence = [

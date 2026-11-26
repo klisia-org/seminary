@@ -568,6 +568,8 @@ COURSE_FIELD = {
 	"Oral Defense Question": "course",
 	"Oral Moment": "course_schedule",
 	"Oral Step Result": "course_schedule",
+	"Incomplete Extension Request": "course_schedule",
+	"Grade Change Request": "course_schedule",
 }
 
 
@@ -671,6 +673,24 @@ def section_access(course_schedule, user=None):
 		# Reads the course, sees no students (decisions/105 §5).
 		return "observer"
 	return None
+
+
+def unopened_sections(user=None) -> list:
+	"""Sections the user's Student is on the active roster of that the
+	instructor hasn't published yet, and that aren't cancelled. They stay
+	closed (p007 §8.1); this only lets the portal say so rather than hide them."""
+	student = current_student(_user(user))
+	if not student:
+		return []
+	return frappe.db.sql_list(
+		"""SELECT DISTINCT cs.name
+		   FROM `tabScheduled Course Roster` scr
+		   INNER JOIN `tabCourse Schedule` cs ON cs.name = scr.course_sc
+		   WHERE scr.student = %s AND scr.active = 1
+		     AND COALESCE(cs.published, 0) = 0
+		     AND COALESCE(cs.workflow_state, '') NOT IN ('Cancelled', 'Closed')""",
+		(student,),
+	)
 
 
 def observed_sections(user=None) -> list:

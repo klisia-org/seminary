@@ -33,6 +33,7 @@ def after_install():
 	create_external_examiner_role()
 	create_program_chair_role()
 	create_seminary_manager_role()
+	create_chaplain_role()
 	create_cohort_participant_role()
 	seed_assessment_criteria()
 	seed_course_cancellation_reasons()
@@ -44,6 +45,7 @@ def after_install():
 	seed_mandatory_personal_fields()
 	seed_room_features()
 	seed_communication_channels()
+	sync_provider_options()
 	seed_channel_provider_accounts()
 	seed_mailing_label_formats()
 	seed_communication_templates()
@@ -615,6 +617,7 @@ def seed_communication_channels():
 		("In-App", _("Portal inbox messages."), 1, None, _INAPP_SVG),
 		("Print", _("Generated PDF documents / printed letters."), 0, None, None),
 		("Voice", _("Voice / IVR calls."), 0, None, None),
+		("Push", _("Notifications on phones and browsers where the portal is turned on."), 0, None, None),
 	]
 	for channel_name, description, contactable, prefix, svg in defaults:
 		if not frappe.db.exists("Communication Channel", channel_name):
@@ -725,6 +728,39 @@ def seed_mailing_label_formats():
 	frappe.db.commit()
 
 
+def sync_provider_options():
+	"""Channel Provider Account.provider offers every adapter registered in the
+	``communication_channel_providers`` hook, in any installed app. The options
+	are written as a Property Setter over the doctype's own list, so another app
+	that froze the list in a setter of its own still sees new seminary providers
+	(decisions/121 §3)."""
+	if not frappe.db.exists("DocType", "Channel Provider Account"):
+		return
+	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+	from seminary.seminary.comms import get_adapter_registry
+
+	base = frappe.db.get_value(
+		"DocField",
+		{"parent": "Channel Provider Account", "fieldname": "provider"},
+		"options",
+	)
+	options = [o for o in (base or "").split("\n") if o]
+	options += [key for key in get_adapter_registry() if key not in options]
+	wanted = "\n".join(["", *options])
+	current = frappe.get_meta("Channel Provider Account").get_field("provider").options
+	if current == wanted:
+		return
+	make_property_setter(
+		"Channel Provider Account",
+		"provider",
+		"options",
+		wanted,
+		"Text",
+		validate_fields_for_doctype=False,
+	)
+
+
 def seed_channel_provider_accounts():
 	"""Default provider accounts so Email and In-App work out of the box
 	(ADR 043). Create-only-if-missing per CHANNEL — if the seminary configured
@@ -735,6 +771,8 @@ def seed_channel_provider_accounts():
 		("Default Email", "Email", "frappe-email"),
 		("Portal Inbox", "In-App", "in-app"),
 		("Print Spool", "Print", "print"),
+		# Its key pair is made when the account is created (decisions/121 §3).
+		("Device Notifications", "Push", "web-push"),
 	]
 	for account_name, channel, provider in defaults:
 		if not frappe.db.exists("Communication Channel", channel):
@@ -764,6 +802,92 @@ def seed_communication_templates():
 	if not frappe.db.exists("DocType", "Communication Template"):
 		return
 	defaults = [
+		# decisions/121 §1: portal messages still unread after 15 minutes.
+		{
+			"template_key": "portal-message-notice",
+			"category": "Community",
+			"description": "Tells a person that portal messages are waiting for them. Never includes what the messages say.",
+			"subject": "{% if count == 1 %}A new message{% else %}{{ count }} new messages{% endif %} in the portal",
+			"body": (
+				"<p>{{ senders }} sent you {% if count == 1 %}a message{% else %}{{ count }} messages{% endif %} "
+				"in the portal.</p>"
+				'<p><a href="{{ url }}">Open your inbox</a></p>'
+				"<p>To stop these emails, turn off Community email in your communication preferences.</p>"
+			),
+		},
+		# decisions/119: Incompletes and transcripts.
+		{
+			"template_key": "incomplete-reminder",
+			"category": "Transactional",
+			"description": "Student/instructor reminder: an Incomplete's completion date is near and work is unsubmitted.",
+			"subject": "{{ course }}: work due by {{ due }}",
+			"body": (
+				"<p>The Incomplete for {{ student }} in <b>{{ course }}</b> must be finished by "
+				"<b>{{ due }}</b>.</p><p>Still to hand in: {{ missing }}.</p>"
+			),
+		},
+		{
+			"template_key": "incomplete-resolved",
+			"category": "Transactional",
+			"description": "Student/instructor/registrar notice: an Incomplete's grade was sent (completed or lapsed).",
+			"subject": "{{ course }}: final grade sent",
+			"body": "<p>The Incomplete for {{ student }} in <b>{{ course }}</b> is closed ({{ resolution }}). The final grade is on the transcript.</p>",
+		},
+		{
+			"template_key": "incomplete-extension-requested",
+			"category": "Transactional",
+			"description": "Instructor/registrar notice: a student asked for more time on an Incomplete.",
+			"subject": "Extension requested: {{ course }}",
+			"body": (
+				"<p>{{ student }} asks to finish <b>{{ course }}</b> by {{ requested }} instead of {{ until }}.</p>"
+				"<p>Reason: {{ reason }}</p><p>Request {{ request }} is waiting for the registrar.</p>"
+			),
+		},
+		{
+			"template_key": "incomplete-extension-decided",
+			"category": "Transactional",
+			"description": "Student/instructor notice: the registrar decided an Incomplete extension request.",
+			"subject": "Extension {{ decision }}: {{ course }}",
+			"body": "<p>The extension request for <b>{{ course }}</b> was {{ decision }}. The completion date is {{ until }}.</p><p>{{ note }}</p>",
+		},
+		{
+			"template_key": "transcript-request-on-hold",
+			"category": "Transactional",
+			"description": "Student notice: a transcript request is held by an active hold.",
+			"subject": "Your transcript request is on hold",
+			"body": (
+				"<p>Your transcript request {{ request }} can't be issued while these holds are active:</p>"
+				"<p>{{ holds }}</p><p>Contact the office that placed the hold. The request goes ahead once it is lifted.</p>"
+			),
+		},
+		{
+			"template_key": "transcript-request-ready",
+			"category": "Transactional",
+			"description": "Registrar notice: a printed transcript is ready to issue.",
+			"subject": "Transcript to print: {{ student }}",
+			"body": "<p>Transcript request {{ request }} for {{ student }} is ready. Issue it, then print and mail the copy to {{ recipient }}.</p>",
+		},
+		{
+			"template_key": "transcript-issued",
+			"category": "Transactional",
+			"description": "Student notice: an official transcript was issued.",
+			"subject": "Your official transcript was issued",
+			"body": (
+				"<p>Your official transcript ({{ request }}) was issued. Its verification code is <b>{{ code }}</b>.</p>"
+				'<p>Anyone can confirm it at <a href="{{ verify_url }}">{{ verify_url }}</a>.</p>'
+			),
+		},
+		{
+			"template_key": "transcript-delivery",
+			"category": "Transactional",
+			"description": "Recipient email: an official transcript sent on a student's request.",
+			"subject": "Official transcript for {{ student }}",
+			"body": (
+				"<p>{{ student }} asked us to send you their official transcript.</p>"
+				'<p><a href="{{ download_url }}">Download the transcript</a> (the link works until {{ expires }}).</p>'
+				'<p>You can confirm it is authentic at <a href="{{ verify_url }}">{{ verify_url }}</a>.</p>'
+			),
+		},
 		# decisions/112 §9: one notice per admission decision.
 		{
 			"template_key": "admission-admitted",
@@ -1725,6 +1849,16 @@ def create_seminary_manager_role():
 		frappe.get_doc({"doctype": "Role", "role_name": "Seminary Manager", "desk_access": 1}).save()
 
 
+def create_chaplain_role():
+	"""Schedules chapel and takes its roll (decisions/116 §5). Its access comes
+	from Chapel, Chapel Attendance and Room; the Chapel Team picks Contacts
+	through `chapel.search_contacts`, so Contact's own rules stay untouched."""
+	if not frappe.db.exists("Role", "Chaplain"):
+		frappe.get_doc({"doctype": "Role", "role_name": "Chaplain", "desk_access": 1}).insert(
+			ignore_permissions=True
+		)
+
+
 # update_company_in_item_details moved to the oikonomos bridge
 # (oikonomos.financial.seed._update_item_company_defaults) — it operates on
 # ERPNext Item Defaults, which a Frappe-only seminary doesn't have.
@@ -1788,6 +1922,7 @@ def after_migrate():
 	create_external_examiner_role()
 	create_program_chair_role()
 	create_seminary_manager_role()
+	create_chaplain_role()
 	setup_withdrawal_workflow()
 	seed_assessment_criteria()
 	seed_course_cancellation_reasons()
@@ -1797,6 +1932,7 @@ def after_migrate():
 	seed_mandatory_personal_fields()
 	seed_room_features()
 	seed_communication_channels()
+	sync_provider_options()
 	seed_channel_provider_accounts()
 	seed_mailing_label_formats()
 	seed_communication_templates()

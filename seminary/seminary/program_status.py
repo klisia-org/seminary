@@ -119,6 +119,10 @@ def set_program_status(
 		from seminary.seminary.attendance import recompute_for_enrollment
 
 		recompute_for_enrollment(pe_doc.name)
+		# And chapel / cohort meeting percentages (decisions/116).
+		from seminary.seminary.formation_attendance import recompute_enrollment
+
+		recompute_enrollment(pe_doc.name)
 
 	# This spine writes with db_set, which bypasses Program Enrollment's
 	# on_update_after_submit — recompute candidacy here or the flag keeps

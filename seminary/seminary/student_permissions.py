@@ -79,6 +79,10 @@ CONFIG = {
 	# it belongs to every student on it, not to one field.
 	"Oral Moment": (None, "course"),
 	"Oral Step Result": (None, "course"),
+	# decisions/119: a student's own requests; staff their sections'.
+	"Incomplete Extension Request": (("student", "student"), "course"),
+	"Grade Change Request": (None, "course"),
+	"Transcript Request": (("student", "student"), None),
 }
 
 
@@ -99,6 +103,8 @@ WRITE_ACTIONS = {
 	"Quiz Submission": GRADE,
 	"Student Due Date Override": GRADE,
 	"Student Chapter Release Override": GRADE,
+	"Incomplete Extension Request": GRADE,
+	"Grade Change Request": GRADE,
 	"Oral Moment": GRADE,
 	"Oral Step Result": GRADE,
 }

@@ -262,7 +262,9 @@ def computed_deduction(doc, row=None, pol=None):
 	pol = pol if pol is not None else policy(row.parent)
 	if not pol:
 		return 0.0
-	dates = effective(row.name, doc.get("student"), row=row)
+	from seminary.seminary import group_work
+
+	dates = group_work.dates_for(doc, row=row) or effective(row.name, doc.get("student"), row=row)
 	total = interval_deduction(pol, dates.due_date, submitted_at(doc))
 	if dates.replies_due_date:
 		required = cint(frappe.db.get_value("Discussion Activity", row.discussion, "min_replies_required"))
@@ -429,7 +431,10 @@ def guard_submission(doc, method=None):
 		return
 	if not _student_authored(doc) or not _is_turn_in(doc):
 		return
-	dates = effective(doc.get("course_assess"), doc.get("student"))
+	# Group work runs on the group's dates, not one member's (decisions/120 §4).
+	from seminary.seminary import group_work
+
+	dates = group_work.dates_for(doc) or effective(doc.get("course_assess"), doc.get("student"))
 	if not dates:
 		return
 	assert_open(dates)

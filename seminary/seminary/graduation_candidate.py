@@ -182,7 +182,19 @@ def _compute(pe) -> bool:
 	if _has_pending_blocker(pe.name):
 		return False
 
+	if unmet_completion_checks(pe, program, count_in_progress):
+		return False
+
 	return True
+
+
+def unmet_completion_checks(pe, program, count_in_progress=False):
+	"""Labels of what other apps require before graduation and the student hasn't met yet: each
+	`completion_checks` hook is fn(pe, program_view, count_in_progress) -> [label, ...]."""
+	out = []
+	for path in frappe.get_hooks("completion_checks") or []:
+		out.extend(frappe.get_attr(path)(pe, program, count_in_progress) or [])
+	return out
 
 
 def _has_pending_blocker(pe_name: str) -> bool:

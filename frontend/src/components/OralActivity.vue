@@ -22,6 +22,10 @@
 				:to="{ name: 'OralActivityMeetingsConfigure', params: { courseName, activityID: activity } }">
 				<Button>{{ __('Configure meetings') }}</Button>
 			</router-link>
+			<router-link v-if="gradeable.data && usesPeerWork"
+				:to="{ name: 'ActivityGroupWork', params: { courseName, activityDoctype: 'Oral Activity', activity } }">
+				<Button>{{ __('Groups, Topics and Reviews') }}</Button>
+			</router-link>
 			<router-link :to="{ name: 'OralActivityForm', params: { activityID: activity } }">
 				<Button>{{ __('Edit activity') }}</Button>
 			</router-link>
@@ -41,6 +45,9 @@
 					{{ __('Nothing is accepted after {0}.').format(formatWhen(myDates.data.cutoff_date)) }}
 				</span>
 			</div>
+			<!-- Group, topic, reviews and ratings (decisions/120). -->
+			<ActivityPeerPanel v-if="usesPeerWork" :course="courseName" activity-doctype="Oral Activity"
+				:activity="activity" />
 			<RubricView activity-doctype="Oral Activity" :activity="activity"
 				:submission="state.data.submission?.name || null" />
 
@@ -136,6 +143,7 @@ import SafeHtml from '@/components/SafeHtml.vue'
 import OralPlayer from '@/components/OralPlayer.vue'
 import OralRecorder from '@/components/OralRecorder.vue'
 import RubricView from '@/components/RubricView.vue'
+import ActivityPeerPanel from '@/components/ActivityPeerPanel.vue'
 import { getCsrfToken } from '@/utils/csrf'
 
 const user = inject('$user')
@@ -152,8 +160,12 @@ const uploading = ref(false)
 
 const activityDoc = createResource({
 	url: 'frappe.client.get_value',
-	makeParams: () => ({ doctype: 'Oral Activity', filters: { name: props.activity }, fieldname: ['title', 'prompt', 'mode', 'capture'] }),
+	makeParams: () => ({ doctype: 'Oral Activity', filters: { name: props.activity }, fieldname: ['title', 'prompt', 'mode', 'capture', 'topic_mode', 'peer_review', 'teammate_ratings'] }),
 	auto: true,
+})
+const usesPeerWork = computed(() => {
+	const a = activityDoc.data || {}
+	return !!(a.mode === 'Conversation' || a.topic_mode || a.peer_review || a.teammate_ratings)
 })
 const whenLocal = (iso) => new Date(iso).toLocaleString(userLocale(), { dateStyle: 'full', timeStyle: 'short' })
 const timeLocal = (iso) => new Date(iso).toLocaleTimeString(userLocale(), { hour: '2-digit', minute: '2-digit' })

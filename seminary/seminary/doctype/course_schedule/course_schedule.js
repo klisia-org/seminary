@@ -16,6 +16,20 @@ frappe.ui.form.on("Course Schedule", {
 	},
 
 	refresh: function (frm) {
+		// No enrollment close date: enrollment never closes on its own, so the section
+		// never reaches Grading when grades are saved (decisions/013).
+		if (
+			!frm.is_new() &&
+			!frm.doc.enrollment_close_date &&
+			["Draft", "Open for Enrollment"].includes(frm.doc.workflow_state)
+		) {
+			frm.dashboard.set_headline_alert(
+				__(
+					"This course has no enrollment close date, so enrollment won't close on its own and grading won't begin. Set Enrollment Window Rules in Seminary Settings, set an override in this form's Lifecycle section, or use Close Enrollment."
+				),
+				"orange"
+			);
+		}
 		frm.add_web_link(`/seminary/courses/${frm.doc.name}`, "See on Website");
 		frm.trigger("render_days");
 

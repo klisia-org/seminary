@@ -381,6 +381,9 @@ permission_query_conditions = {
 	"Course Lesson": "seminary.seminary.student_permissions.query_course_lesson",
 	"Student Attendance": "seminary.seminary.student_permissions.query_student_attendance",
 	"Student Due Date Override": "seminary.seminary.student_permissions.query_student_due_date_override",
+	"Incomplete Extension Request": "seminary.seminary.student_permissions.query_incomplete_extension_request",
+	"Grade Change Request": "seminary.seminary.student_permissions.query_grade_change_request",
+	"Transcript Request": "seminary.seminary.student_permissions.query_transcript_request",
 	"Student Chapter Release Override": "seminary.seminary.student_permissions.query_student_chapter_release_override",
 	"Oral Recording": "seminary.seminary.oral.get_permission_query_conditions",
 	"Oral Defense Question": "seminary.seminary.oral_defense.get_permission_query_conditions",
@@ -451,6 +454,9 @@ has_permission = {
 	"Course Lesson": "seminary.seminary.student_permissions.has_permission_course_lesson",
 	"Student Attendance": "seminary.seminary.student_permissions.has_permission_student_attendance",
 	"Student Due Date Override": "seminary.seminary.student_permissions.has_permission_student_due_date_override",
+	"Incomplete Extension Request": "seminary.seminary.student_permissions.has_permission_incomplete_extension_request",
+	"Grade Change Request": "seminary.seminary.student_permissions.has_permission_grade_change_request",
+	"Transcript Request": "seminary.seminary.student_permissions.has_permission_transcript_request",
 	"Student Chapter Release Override": "seminary.seminary.student_permissions.has_permission_student_chapter_release_override",
 	"Oral Recording": "seminary.seminary.oral.has_permission",
 	"Oral Defense Question": "seminary.seminary.oral_defense.has_permission",
@@ -585,6 +591,9 @@ doc_events = {
 			"seminary.seminary.api.quizresult_to_card",
 			"seminary.seminary.plagiarism.service.on_submission_update",
 			"seminary.seminary.oral_defense.on_submission_update",
+			# One submission, a record per member; new work joins peer review (decisions/120).
+			"seminary.seminary.group_work.propagate",
+			"seminary.seminary.peer_reviews.on_submission_update",
 		],
 	},
 	"Exam Submission": {
@@ -602,7 +611,11 @@ doc_events = {
 		"before_save": "seminary.seminary.api.sanitize_submission",
 	},
 	"Oral Activity Submission": {
-		"on_update": "seminary.seminary.api.quizresult_to_card",
+		"on_update": [
+			"seminary.seminary.api.quizresult_to_card",
+			"seminary.seminary.group_work.propagate",
+			"seminary.seminary.peer_reviews.on_submission_update",
+		],
 		"validate": "seminary.seminary.deadlines.guard_submission",
 		"before_insert": "seminary.seminary.content_release.assert_activity_unlocked",
 	},
@@ -617,6 +630,8 @@ doc_events = {
 		"on_update": "seminary.seminary.disciplinary.on_incident_update",
 	},
 	"Course Assess Results Detail": {
+		# A sent grade is frozen whatever the path (decisions/119 §2).
+		"validate": "seminary.seminary.grade_changes.assert_card_not_frozen",
 		"on_update": [
 			"seminary.seminary.cs_lifecycle.maybe_advance_to_grading",
 			"seminary.seminary.gradebook_weights.on_card_update",
@@ -654,9 +669,20 @@ doc_events = {
 	# Attendance graduation requirement(s) on each check-in / removal.
 	# (Chapel's own Event mirroring lives in the Chapel controller's lifecycle
 	# methods, so it needs no doc_events entry.)
+	# (decisions/116: a roll or an Excused mark changes the record, and a chapel
+	# confirmed, moved or removed changes every percentage's base.)
 	"Chapel Attendance": {
-		"after_insert": "seminary.seminary.chapel.reflect_attendance",
-		"on_trash": "seminary.seminary.chapel.reflect_attendance",
+		"on_update": "seminary.seminary.formation_attendance.on_chapel_attendance",
+		# after_delete: on_trash runs while the record still counts.
+		"after_delete": "seminary.seminary.formation_attendance.on_chapel_attendance",
+	},
+	"Chapel": {
+		"on_update": "seminary.seminary.formation_attendance.on_chapel_change",
+		"after_delete": "seminary.seminary.formation_attendance.on_chapel_change",
+	},
+	# A leader's roll counts toward formation requirements (decisions/116).
+	"Cohort Meeting": {
+		"on_update": "seminary.seminary.formation_attendance.on_cohort_meeting",
 	},
 	# Recompute the student's per-course attendance standing (absence tally,
 	# limit, alert level + once-per-crossing notifications) on every change.
@@ -751,6 +777,7 @@ communication_channel_providers = {
 	"telegram": "seminary.seminary.telegram_adapter.TelegramAdapter",
 	"twilio": "seminary.seminary.twilio_adapter.TwilioAdapter",
 	"print": "seminary.seminary.comms.PrintAdapter",
+	"web-push": "seminary.seminary.web_push.WebPushAdapter",
 }
 
 # Plagiarism provider adapters. Other apps extend this hook with
@@ -800,7 +827,19 @@ page_renderer = [
 	# LTI 1.3 (decisions/110): the protocol fixes these URLs and their media
 	# types, so they are routes, not `/api/method/...`.
 	"seminary.lti.renderer.LTIRoutes",
+	# The site-wide service worker at /sw.js and each portal's web manifest
+	# (decisions/121 §3 and its addendum).
+	"seminary.seminary.web_push.PortalPushRoutes",
 ]
+
+# Web manifests for installing a portal (decisions/121 addendum §1). Other apps
+# add {portal prefix: "dotted.path"} returning seminary.seminary.web_push.build_manifest(...).
+portal_manifests = {"seminary": "seminary.seminary.web_push.seminary_manifest"}
+
+# Where a device notification about a record opens (decisions/121 addendum §4).
+# Each dotted path is called as fn(doctype, name, user) and returns a path on
+# this site or None; the first path wins. Seminary ships none.
+# push_links = []
 
 # The other half of that split, and the half that makes it real: frappe routes
 # on path and ignores `Host`, so without this the whole app would answer on the
@@ -826,7 +865,11 @@ scheduler_events = {
 	# 	],
 	"cron": {
 		# Communication Log drainer (ADR 043): rate-limited per provider account.
-		"*/5 * * * *": ["seminary.seminary.comms.dispatch"],
+		"*/5 * * * *": [
+			"seminary.seminary.comms.dispatch",
+			# Email notice for portal messages still unread (decisions/121 §1).
+			"seminary.seminary.message_notices.send_unread_notices",
+		],
 		# What the meeting provider reports after a school meeting (privatedocs p027 §3).
 		"*/10 * * * *": ["seminary.seminary.school_meetings.sweep"],
 	},
@@ -843,6 +886,9 @@ scheduler_events = {
 		# Expire documents, renew per term/year, and remind on due dates
 		# (decisions/091 §5, §11).
 		"seminary.seminary.requirements.daily",
+		# Percentage attendance requirements: an occasion held but not attended
+		# lowers the rate, and a term just ended is judged (decisions/116 §4).
+		"seminary.seminary.formation_attendance.daily",
 		# A scheduled catalog year takes effect when its first term starts (decisions/115 §4).
 		"seminary.seminary.catalog_year.activate_due",
 		# decisions/112 §2: a fee paid elsewhere completes an application.
@@ -880,6 +926,9 @@ scheduler_events = {
 		"seminary.seminary.discipleship.meetings.hourly",
 		# "Chapter X is now open" once its release date passes (decisions/107 §8).
 		"seminary.seminary.content_release.notify_opened_chapters",
+		# Peer reviews and teammate ratings open at the due date and are
+		# released when they are due (decisions/120 §5, §6).
+		"seminary.seminary.peer_reviews.hourly",
 	],
 	# 	"weekly": [
 	# 		"seminary.tasks.weekly"

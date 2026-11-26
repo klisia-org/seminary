@@ -9,6 +9,7 @@
   "exports": {
     ".": "./dist/portal-shell.js",
     "./tabs": "./dist/tabs.js",
+    "./notifications": "./dist/notifications.js",
     "./style.css": "./dist/portal-shell.css",
     "./src/*": "./src/*"
   },

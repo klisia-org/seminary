@@ -40,6 +40,7 @@ class CourseEnrollmentIndividual(Document):
 		self._hydrate_program_flags()
 		self._compute_seat_availability()
 		self._validate_prerequisites()
+		self._validate_attempt_limit()
 		self._warn_schedule_conflict()
 
 	def _warn_schedule_conflict(self):
@@ -73,6 +74,17 @@ class CourseEnrollmentIndividual(Document):
 			title=_("Schedule conflict"),
 			indicator="orange",
 		)
+
+	def _validate_attempt_limit(self):
+		"""Refuse an attempt past the Program's limit (decisions/119 §4). Only a
+		new enrollment counts; the registrar may always enroll."""
+		if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_demo_install:
+			return
+		if not self.is_new() or self.audit or not (self.program_ce and self.course_data):
+			return
+		from seminary.seminary.repeats import assert_attempts_left
+
+		assert_attempts_left(self.program_ce, self.course_data)
 
 	def _validate_prerequisites(self):
 		"""Block enrollment when the course has an unmet mandatory prerequisite.

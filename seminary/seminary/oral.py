@@ -544,7 +544,7 @@ def run_steps(recording):
 def _number(value, what):
 	try:
 		number = float(value)
-	except (TypeError, ValueError):
+	except TypeError, ValueError:
 		frappe.throw(_("{0} must be a number.").format(what))
 	if number < 0:
 		frappe.throw(_("{0} cannot be negative.").format(what))
@@ -721,7 +721,7 @@ def _is_staff_of(doc):
 
 
 @frappe.whitelist()
-def get_recording(recording):
+def get_recording(recording: str):
 	"""A recording for its player: audio, status, transcript and speakers, and
 	for the section's staff its moments. One message for missing and refused."""
 	doc = (
@@ -751,6 +751,11 @@ def get_recording(recording):
 		"is_staff": staff,
 		"moments": [],
 	}
+	if not staff and not any(p.user == frappe.session.user for p in doc.participants):
+		# A peer reviewer (decisions/120 §5) hears the work, not who made it.
+		out["people"] = []
+		out["speakers"] = [{"label": s["label"], "student": None} for s in out["speakers"]]
+		out["may_label"] = False
 	if staff:
 		out["error"] = doc.error
 		out["step_results"] = [
@@ -954,12 +959,15 @@ def has_permission(doc, ptype=None, user=None):
 	if "Instructor" in roles and _instructor_allows("Oral Recording", doc, ptype, user, "course"):
 		return True
 	if "Student" in roles and is_read_ptype(ptype):
-		return bool(
-			frappe.db.exists(
-				"Oral Recording Participant",
-				{"parent": doc.name, "parenttype": "Oral Recording", "user": user},
-			)
-		)
+		if frappe.db.exists(
+			"Oral Recording Participant",
+			{"parent": doc.name, "parenttype": "Oral Recording", "user": user},
+		):
+			return True
+		# A classmate reviewing the work it belongs to (decisions/120 §5).
+		from seminary.seminary.peer_reviews import may_review_recording
+
+		return may_review_recording(doc.name, user)
 	return False
 
 

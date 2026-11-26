@@ -13,7 +13,7 @@
 
     <!-- eslint-disable-next-line vuejs-accessibility/media-has-caption -- audio-only recording; its transcript is shown below it -->
     <audio v-if="rec.data.audio" ref="audio" :src="rec.data.audio" controls preload="metadata" class="w-full"
-      @timeupdate="now = $event.target.currentTime" />
+      @timeupdate="now = $event.target.currentTime; emit('time', now)" />
     <div v-else-if="rec.data.audio_deleted_on" class="text-xs text-ink-gray-5">
       {{ __('The audio was deleted after the retention period. The transcript is kept.') }}
     </div>
@@ -129,6 +129,8 @@ const props = defineProps({
   recording: { type: String, required: true },
   question: { type: String, default: null },
 })
+// The playing time, for a peer reviewer placing comments (decisions/120 §5).
+const emit = defineEmits(['time'])
 
 const audio = ref(null)
 const now = ref(0)
@@ -218,4 +220,5 @@ const setState = async (m, state) => {
     toast.error(e.messages?.[0] || __('The moment could not be changed.'))
   }
 }
+defineExpose({ seek })
 </script>

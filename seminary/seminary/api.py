@@ -1378,7 +1378,7 @@ def get_student_programs(student: str):
             pe.student, pe.totalcredits,
             pec.course AS course_schedule,
             pec.course_name, pec.academic_term, pec.credits,
-            pec.pec_finalgradecode, pec.pec_finalgradenum, pec.status
+            pec.pec_finalgradecode, pec.pec_finalgradenum, pec.status, pec.repeated
         FROM `tabProgram Enrollment` pe
         INNER JOIN `tabProgram Enrollment Course` pec ON pe.name = pec.parent
         WHERE pe.student = %s""",
@@ -2198,6 +2198,10 @@ def _program_audit(program_enrollment):
 
 	# Add disclaimer
 	result["disclaimer"] = "This audit reflects the declared emphasis at the time of generation."
+	# The school's letter head, rendered server-side for the printable view.
+	from seminary.seminary.doctype.seminary_announcement.seminary_announcement import letterhead_head_html
+
+	result["letterhead"] = letterhead_head_html()
 
 	# Calculate effective total required based on overlap policy
 	effective_total = program.credits_complete or 0
@@ -2320,6 +2324,12 @@ def _program_audit(program_enrollment):
 				"options": _requirement_choice_options(sgr),
 				"required_count": sgr.required_count or 0,
 				"attended_count": sgr.attended_count or 0,
+				# decisions/116: Count or Percentage, over the program or each term.
+				"attendance_measure": sgr.attendance_measure or "Count",
+				"percentage_period": sgr.percentage_period,
+				"required_percentage": sgr.required_percentage or 0,
+				"attendance_rate": sgr.attendance_rate or 0,
+				"term_rates": sgr.term_rates,
 			}
 		)
 
@@ -2329,6 +2339,16 @@ def _program_audit(program_enrollment):
 
 	if grad_requirements_blocking:
 		graduation_eligible = False
+
+	# Sections other apps add to the audit: each `program_audit_sections` hook is
+	# fn(pe, program_view) -> [{title, items: [{label, status, detail}], blocking}].
+	result["counts_credits"] = program.get("counts_credits", True)
+	result["extra_sections"] = []
+	for path in frappe.get_hooks("program_audit_sections") or []:
+		for section in frappe.get_attr(path)(pe, program) or []:
+			result["extra_sections"].append(section)
+			if section.get("blocking"):
+				graduation_eligible = False
 
 	result["graduation_eligible"] = graduation_eligible
 
@@ -2780,6 +2800,17 @@ def enroll_student(source_name: str):
 		frappe.throw(_("Only an application with an admission decision to admit can be enrolled."))
 	frappe.publish_realtime("enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user)
 
+	# A Person holds one Student: a returning or second-degree student is enrolled on the one
+	# they have (decisions/118 §4).
+	existing = frappe.db.get_value("Student", {"person": intake.person_for_applicant(source_name)}, "name")
+	if existing:
+		student = frappe.get_doc("Student", existing)
+		if not student.enabled:
+			student.enabled = 1
+			student.save(ignore_permissions=True)
+		frappe.db.set_value("Student Applicant", source_name, "application_status", "Admitted")
+		return _enrollment_for_applicant(source_name, student)
+
 	student = get_mapped_doc(
 		"Student Applicant",
 		source_name,
@@ -2804,6 +2835,11 @@ def enroll_student(source_name: str):
 	)
 	student.person = intake.person_for_applicant(source_name)
 	student.save()
+	return _enrollment_for_applicant(source_name, student)
+
+
+def _enrollment_for_applicant(source_name, student):
+	from seminary.seminary import admissions
 
 	student_applicant = frappe.db.get_value(
 		"Student Applicant",
@@ -2816,6 +2852,7 @@ def enroll_student(source_name: str):
 	program_enrollment.student_name = student.student_name
 	program_enrollment.program = student_applicant.program
 	program_enrollment.academic_term = student_applicant.academic_term
+	program_enrollment.student_applicant = source_name
 	latest = admissions.latest_decision(source_name)
 	if latest and latest.conditions:
 		program_enrollment.admission_conditions = latest.conditions
@@ -3139,6 +3176,19 @@ def quizresult_to_card(doc, method):
 		)
 		return
 	card = frappe.get_doc("Course Assess Results Detail", cardname)
+	# A sent grade is frozen (decisions/119 §2): grading a submission afterwards
+	# keeps the submission's own score and leaves the gradebook alone.
+	from seminary.seminary.grade_changes import roster_is_frozen
+
+	if roster_is_frozen(card.parent):
+		frappe.msgprint(
+			_(
+				"This student's course grade has been sent, so the gradebook wasn't changed. Raise a Grade Change Request to change it."
+			),
+			indicator="orange",
+			alert=True,
+		)
+		return
 
 	# Update the raw score and extra credit points
 	card.rawscore_card = doc.percentage if not doc.extra_credit else ""
@@ -4059,18 +4109,20 @@ def _assert_may_send_grades():
 		)
 
 
-def _ungraded_roster_count(course_schedule, rosters=None):
+def _ungraded_roster_count(course_schedule, rosters=None, include_incomplete=False):
 	"""How many still-active students have an ungraded cell.
 
 	Already-finalized students are excluded for free: finalize_roster clears
-	`active`, and this counts only active rosters.
+	`active`, and this counts only active rosters. A student marked Incomplete
+	doesn't hold the class's send back (decisions/119 §1), so they are left out
+	unless the caller is sending that student's own grade.
 	"""
 	params = [course_schedule]
-	scope = ""
+	scope = "" if include_incomplete else " AND COALESCE(scr.incomplete, 0) = 0"
 	if rosters is not None:
 		if not rosters:
 			return 0
-		scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
+		scope += " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
 		params.extend(rosters)
 
 	rows = frappe.db.sql(
@@ -4337,9 +4389,13 @@ def _conclude_enrollments(course_schedule, students=None):
 
 
 def _post_finalization(pe_names):
+	from seminary.seminary import repeats
 	from seminary.seminary.gpa import recompute_program_enrollment_gpa
 
 	for pe_name in pe_names:
+		# A retake changes which attempt counts before credits and GPA are read
+		# (decisions/119 §4).
+		repeats.apply(pe_name)
 		_recalculate_emphasis_credits(pe_name)
 		_check_auto_grant_emphases(pe_name)
 		recompute_program_enrollment_gpa(pe_name)
@@ -4435,7 +4491,7 @@ def send_selected_grades(course_schedule, rosters):
 
 
 @frappe.whitelist()
-def send_grades(doc=None, **kwargs):
+def send_grades(doc: str | dict | None = None, **kwargs):
 	_assert_may_send_grades()
 
 	if isinstance(doc, str):
@@ -4467,20 +4523,31 @@ def send_grades(doc=None, **kwargs):
 			).format(missing_count)
 		)
 
-	records = frappe.get_all(
-		"Scheduled Course Roster",
-		filters={"course_sc": docname, "active": 1, "audit_bool": 0},
-		fields=["name"],
-	)
+	from seminary.seminary import incompletes
+
+	# Students marked Incomplete stay active and are sent one by one later
+	# (decisions/119 §1); the checks below are theirs to pass then.
+	held = set(incompletes.open_rosters(docname))
+	records = [
+		r
+		for r in frappe.get_all(
+			"Scheduled Course Roster",
+			filters={"course_sc": docname, "active": 1, "audit_bool": 0},
+			fields=["name", "student"],
+		)
+		if r.name not in held
+	]
 	_assert_evaluators_finished(docname, [r.name for r in records])
 	_assert_pdp_complete(docname, [r.name for r in records])
-	absence_decisions.assert_decided(docname)
+	absence_decisions.assert_decided(docname, [r.name for r in records])
 
 	affected_pes = set()
 	for record in records:
 		pe = finalize_roster(record.name)
 		if pe:
 			affected_pes.add(pe)
+	for name in held:
+		incompletes.record_incomplete(name)
 
 	# System-driven transition: bypass the workflow validator (the "Send
 	# Grades" transition is intentionally absent from the workflow fixture
@@ -4496,7 +4563,7 @@ def send_grades(doc=None, **kwargs):
 	# likewise concluded. Withdrawn / Waitlisted / Awaiting Payment / Unseated
 	# are left untouched — they never became active enrollments here. This is
 	# what makes "currently enrolled" = workflow_state == "Submitted".
-	_conclude_enrollments(docname)
+	_conclude_enrollments(docname, [r.student for r in records] if held else None)
 
 	# After grades are sent, recalculate track credits and check auto-grant emphases
 	_post_finalization(affected_pes)
@@ -5457,16 +5524,27 @@ def _can_grade_submission(submission):
 
 
 @frappe.whitelist()
-def get_submission_comments(submission_name):
+def get_submission_comments(submission_name: str):
 	"""Read-only: return every anchored comment on a submission, with author
 	display names resolved. Ordered for stable per-type sidebar rendering."""
 	submission = frappe.get_doc("Assignment Submission", submission_name)
 	submission.check_permission("read")
 
+	# A group's work has one thread (decisions/120 §4): the comments on every
+	# member's record, unless a member is graded separately.
+	parents = [submission_name]
+	if submission.get("activity_group") and not cint(submission.get("grade_override")):
+		from seminary.seminary import group_work
+
+		parents += [
+			n
+			for n in group_work.siblings(submission)
+			if not cint(frappe.db.get_value("Assignment Submission", n, "grade_override"))
+		]
 	rows = frappe.get_all(
 		"Assignment Submission Comment",
 		filters={
-			"parent": submission_name,
+			"parent": ["in", parents],
 			"parenttype": "Assignment Submission",
 		},
 		fields=[

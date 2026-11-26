@@ -11,6 +11,7 @@ export default defineConfig({
       entry: {
         'portal-shell': resolve(__dirname, 'src/index.js'),
         tabs: resolve(__dirname, 'src/tabs.js'),
+        notifications: resolve(__dirname, 'src/notifications.js'),
       },
       formats: ['es'],
     },

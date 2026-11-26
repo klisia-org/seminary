@@ -1,0 +1,295 @@
+{
+ "actions": [],
+ "creation": "2026-11-25 23:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "program_enrollment",
+  "column_break_main",
+  "status",
+  "hold_note",
+  "delivery_section",
+  "delivery",
+  "copies",
+  "column_break_delivery",
+  "recipient_name",
+  "recipient_email",
+  "mailing_address",
+  "fee_section",
+  "charges",
+  "column_break_fee",
+  "fee_waived",
+  "fee_waiver_reason",
+  "issue_section",
+  "issued_on",
+  "issued_by",
+  "verification_code",
+  "column_break_issue",
+  "transcript_file",
+  "pdf_sha256",
+  "download_key",
+  "download_expires",
+  "cancel_reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "fetch_from": "student.student_name"
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "description": "Leave empty for a transcript of every program."
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nOn Hold\nAwaiting Payment\nReady\nIssued\nCancelled",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "hold_note",
+   "fieldtype": "Small Text",
+   "label": "Holds",
+   "read_only": 1,
+   "depends_on": "eval:doc.status=='On Hold'"
+  },
+  {
+   "fieldname": "delivery_section",
+   "fieldtype": "Section Break",
+   "label": "Delivery"
+  },
+  {
+   "fieldname": "delivery",
+   "fieldtype": "Select",
+   "label": "Send To",
+   "options": "Student\nEmail\nPrinted copy",
+   "default": "Student",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "copies",
+   "fieldtype": "Int",
+   "label": "Copies",
+   "default": "1",
+   "non_negative": 1,
+   "depends_on": "eval:doc.delivery=='Printed copy'"
+  },
+  {
+   "fieldname": "column_break_delivery",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recipient_name",
+   "fieldtype": "Data",
+   "label": "Recipient",
+   "depends_on": "eval:doc.delivery!='Student'"
+  },
+  {
+   "fieldname": "recipient_email",
+   "fieldtype": "Data",
+   "label": "Recipient Email",
+   "options": "Email",
+   "depends_on": "eval:doc.delivery=='Email'"
+  },
+  {
+   "fieldname": "mailing_address",
+   "fieldtype": "Small Text",
+   "label": "Mailing Address",
+   "depends_on": "eval:doc.delivery=='Printed copy'"
+  },
+  {
+   "fieldname": "fee_section",
+   "fieldtype": "Section Break",
+   "label": "Fee"
+  },
+  {
+   "fieldname": "charges",
+   "fieldtype": "Small Text",
+   "label": "Charges",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_fee",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fee_waived",
+   "fieldtype": "Check",
+   "label": "Fee Waived",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_waiver_reason",
+   "fieldtype": "Small Text",
+   "label": "Waiver Reason",
+   "read_only": 1,
+   "depends_on": "fee_waived"
+  },
+  {
+   "fieldname": "issue_section",
+   "fieldtype": "Section Break",
+   "label": "Issued Transcript"
+  },
+  {
+   "fieldname": "issued_on",
+   "fieldtype": "Datetime",
+   "label": "Issued On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Issued By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verification_code",
+   "fieldtype": "Data",
+   "label": "Verification Code",
+   "read_only": 1,
+   "unique": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_issue",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "transcript_file",
+   "fieldtype": "Attach",
+   "label": "Transcript PDF",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "pdf_sha256",
+   "fieldtype": "Data",
+   "label": "PDF SHA-256",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "download_key",
+   "fieldtype": "Data",
+   "label": "Download Key",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "download_expires",
+   "fieldtype": "Date",
+   "label": "Download Link Expires",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "eval:doc.delivery=='Email'"
+  },
+  {
+   "fieldname": "cancel_reason",
+   "fieldtype": "Small Text",
+   "label": "Cancellation Reason",
+   "read_only": 1,
+   "depends_on": "eval:doc.status=='Cancelled'"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-25 23:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Transcript Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Registrar"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "create": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "TRQ-.YYYY.-.####",
+ "naming_rule": "Expression",
+ "title_field": "student_name",
+ "show_title_field_in_link": 0,
+ "description": "A request for an official transcript, from the student or the registrar."
+}

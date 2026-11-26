@@ -14,7 +14,7 @@ import frappe
 from frappe import _
 from frappe.utils import add_days, flt, getdate, now_datetime, today
 
-from seminary.seminary import date_rules
+from seminary.seminary import date_rules, formation_attendance
 from seminary.seminary.guards import require_registrar
 
 LINKED_DOC_HOOK_FLAG = "_seminary_grad_link_doctypes"
@@ -209,11 +209,10 @@ def _build_sgr_row(program_enrollment_doc, pgr_item, slot_index):
 		"grad_requirement_item": library.name,
 		"pgr_item": pgr_item.name,
 	}
-	if library.requirement_type == "Chapel Attendance":
-		# Count-based: snapshot how many chapel services are required; the
-		# running count is reflected by seminary.seminary.chapel.
-		row["required_count"] = library.default_quantity or 1
-		row["attended_count"] = 0
+	if library.requirement_type in formation_attendance.TYPES:
+		# Chapel and cohort meetings (029, decisions/116): snapshot the measure
+		# and target; the figures are reflected by formation_attendance.
+		row.update(formation_attendance.snapshot_fields(library))
 	_apply_initial_choice_state(row, library)
 	due = compute_due_date(pgr_item, program_enrollment_doc)
 	if due:

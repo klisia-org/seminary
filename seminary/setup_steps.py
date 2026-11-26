@@ -16,6 +16,18 @@ def _exists(doctype, filters=None):
 	return bool(frappe.db.exists(doctype, filters or {}))
 
 
+def _window_rules():
+	"""Enrollment close and grades due both have a rule: without one, enrollment never
+	closes on its own and a section never reaches Grading (decisions/013)."""
+	s = frappe.get_cached_doc("Seminary Settings")
+	return sum(1 for f in ("enrollment_close_anchor", "grade_close_anchor") if s.get(f)), 2
+
+
+def _scales_with_incomplete_code():
+	scales = frappe.get_all("Grading Scale", filters={"docstatus": ("<", 2)}, fields=["inc_code"])
+	return sum(1 for s in scales if s.inc_code), len(scales)
+
+
 def _programs_with_courses():
 	programs = frappe.get_all("Program", pluck="name")
 	with_courses = set(
@@ -172,6 +184,29 @@ def setup_steps():
 				"route": "/desk/program-enrollment",
 				"manual": f"{GUIDE}#14-manual-input-or-import-the-following-data",
 				"roles": REGISTRARS,
+			},
+			{
+				"key": "enrollment-window",
+				"title": _("Set when enrollment closes and grades are due"),
+				"description": _(
+					"Without these rules in Seminary Settings, enrollment never closes on its own and courses "
+					"don't move to Grading when the first grade is saved."
+				),
+				"tier": "Before the first term",
+				"check": _window_rules,
+				"route": "/desk/seminary-settings",
+				"manual": f"{GUIDE}#2-seminary-settings",
+				"roles": MANAGERS,
+			},
+			{
+				"key": "incomplete-code",
+				"title": _("Set an Incomplete code on each grading scale"),
+				"description": _("Instructors can mark a student Incomplete only on a scale that has one."),
+				"tier": "Optional",
+				"check": _scales_with_incomplete_code,
+				"route": "/desk/grading-scale",
+				"manual": f"{GUIDE}#1-grading-scale",
+				"roles": MANAGERS,
 			},
 			{
 				"key": "course-schedules",

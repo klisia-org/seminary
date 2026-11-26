@@ -2,6 +2,7 @@
 
 **Date:** 2026-11-21
 **Status:** Accepted 2026-11-21; implemented 2026-11-21 (420f0983)
+**Amended:** 2026-11-26, §3 (groups for one activity are Activity Groups; see 120)
 **Amends:** [100d](100d-capture-from-virtual-meetings.md) §1, §5, §7
 **Related:** 051a (school meeting accounts), 097 (student groups), 038 (overlap)
 

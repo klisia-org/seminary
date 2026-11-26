@@ -31,6 +31,16 @@
   "grade_close_offset_days",
   "column_break_4",
   "academic_term_reqd",
+  "grades_transcripts_section",
+  "incomplete_default_days",
+  "incomplete_instructor_max_days",
+  "incomplete_reminder_days",
+  "column_break_grades_transcripts",
+  "grade_change_second_approver_role",
+  "grade_change_second_approval_days",
+  "transcript_signature",
+  "transcript_signatory_name",
+  "transcript_signatory_title",
   "section_break_qqak",
   "default_gradescale",
   "prerequisite_override_section",
@@ -137,7 +147,9 @@
   "meeting_capture_html",
   "meeting_capture_account",
   "meeting_capture_bot",
-  "meeting_attendance_min_share"
+  "meeting_attendance_min_share",
+  "teammate_ratings_section",
+  "teammate_rating_criteria"
  ],
  "fields": [
   {
@@ -221,6 +233,70 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Make Academic Term Mandatory"
+  },
+  {
+   "fieldname": "grades_transcripts_section",
+   "fieldtype": "Section Break",
+   "label": "Incompletes, Grade Changes and Transcripts"
+  },
+  {
+   "fieldname": "incomplete_default_days",
+   "fieldtype": "Int",
+   "label": "Incomplete: Default Days to Finish",
+   "default": "30",
+   "non_negative": 1,
+   "description": "The completion date offered when an instructor marks a student Incomplete, counted from the course end."
+  },
+  {
+   "fieldname": "incomplete_instructor_max_days",
+   "fieldtype": "Int",
+   "label": "Incomplete: Longest Instructor Grant (Days)",
+   "default": "60",
+   "non_negative": 1,
+   "description": "The latest completion date an instructor may set, counted from the course end. A later date needs an extension request approved by the registrar."
+  },
+  {
+   "fieldname": "incomplete_reminder_days",
+   "fieldtype": "Int",
+   "label": "Incomplete: Reminder Days Before",
+   "default": "2",
+   "non_negative": 1,
+   "description": "The student and the instructor are emailed this many days before the completion date while work is unsubmitted. 0 sends no reminder."
+  },
+  {
+   "fieldname": "column_break_grades_transcripts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grade_change_second_approver_role",
+   "fieldtype": "Link",
+   "options": "Role",
+   "label": "Grade Change: Second Approver Role",
+   "description": "Leave empty and the registrar approves grade changes alone."
+  },
+  {
+   "fieldname": "grade_change_second_approval_days",
+   "fieldtype": "Int",
+   "label": "Grade Change: Second Approval After (Days)",
+   "non_negative": 1,
+   "description": "A change requested more than this many days after the grade was sent also needs the second approver. Leave at 0 for none."
+  },
+  {
+   "fieldname": "transcript_signature",
+   "fieldtype": "Attach Image",
+   "label": "Transcript Signature",
+   "description": "The signature printed on official transcripts."
+  },
+  {
+   "fieldname": "transcript_signatory_name",
+   "fieldtype": "Data",
+   "label": "Transcript Signed By"
+  },
+  {
+   "fieldname": "transcript_signatory_title",
+   "fieldtype": "Data",
+   "label": "Signatory Title",
+   "default": "Registrar"
   },
   {
    "fieldname": "section_break_7",
@@ -978,11 +1054,23 @@
    "fieldtype": "Percent",
    "label": "Suggested attendance: least share of the meeting",
    "description": "When the meeting provider reports who joined a school meeting, Mark Present on the attendance sheet marks only students who were in it for at least this share of its time. The others show their times."
+  },
+  {
+   "fieldname": "teammate_ratings_section",
+   "fieldtype": "Section Break",
+   "label": "Teammate Ratings"
+  },
+  {
+   "fieldname": "teammate_rating_criteria",
+   "fieldtype": "Table",
+   "label": "Teammate Rating Criteria",
+   "options": "Teammate Rating Criterion",
+   "description": "What group members rate each other on, each from 1 to 5."
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-24 12:00:00.000000",
+ "modified": "2026-11-26 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

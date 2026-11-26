@@ -45,6 +45,10 @@ class ProgramEnrollment(Document):
 
 		if history.importing():
 			history.record_leaving(self)
+		# A readmitted student's standing follows the new enrollment (decisions/118 §3).
+		from seminary.seminary.student_standing import recompute_standing
+
+		recompute_standing(self.student)
 
 	def before_update_after_submit(self):
 		# validate() doesn't run on update-after-submit saves, so resolve

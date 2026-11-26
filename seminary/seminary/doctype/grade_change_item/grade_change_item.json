@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "creation": "2026-11-25 23:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "card",
+  "assessment",
+  "assessment_title",
+  "is_extra_credit",
+  "old_value",
+  "new_value"
+ ],
+ "fields": [
+  {
+   "fieldname": "card",
+   "fieldtype": "Data",
+   "label": "Result Row",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "assessment",
+   "fieldtype": "Link",
+   "label": "Assessment",
+   "options": "Scheduled Course Assess Criteria",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "assessment_title",
+   "fieldtype": "Data",
+   "label": "Assessment Title",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "is_extra_credit",
+   "fieldtype": "Check",
+   "label": "Extra Credit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "old_value",
+   "fieldtype": "Float",
+   "label": "Current Score",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "new_value",
+   "fieldtype": "Float",
+   "label": "New Score",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-25 23:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Grade Change Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1
+}

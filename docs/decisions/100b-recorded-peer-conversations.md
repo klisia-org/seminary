@@ -2,6 +2,7 @@
 
 **Date:** 2026-11-19
 **Status:** Accepted
+**Amended:** 2026-11-26, §1 (a conversation's groups are Activity Groups; see 120)
 **Parent:** [100](100-oral-assessment.md)
 **Related:** 097 (discussions, student groups)
 

@@ -147,8 +147,10 @@ class TestGroups(OralActivityCase):
 		a = self.students[0]
 		first = self.state(a)
 		self.state(self.students[1])
-		groups = oral_activities._section_groups(self.cs)
+		# The conversation's own groups (decisions/120 §2, amending 100b).
+		groups = oral_activities.conversation_groups(self.cs, self.activity)
 		self.assertEqual(len(groups), 2)
+		self.assertFalse(oral_activities._section_groups(self.cs), "no section student groups are made")
 		self.assertEqual(sorted(len(g) for g in groups.values()), [2, 2])
 		mine = next(g for g in groups.values() if a.name in g)
 		self.assertEqual([p["student"] for p in first["choosable"]], [s for s in mine if s != a.name])

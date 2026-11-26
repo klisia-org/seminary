@@ -1,0 +1,75 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="sem-page" style="max-width: 680px;">
+	<div class="sem-panel" id="returning-form-panel">
+		<h1>{{ _("Returning student") }}</h1>
+		<p class="sem-lead">{{ _("If you can no longer use the email you studied with, tell us who you are. Our registrar will confirm it, move your record to your new email and send you a link to sign in, so you can apply from your account.") }}</p>
+		<form id="returning-form">
+			<div class="form-group">
+				<label for="rs-name">{{ _("Full name") }} *</label>
+				<input id="rs-name" name="full_name" class="form-control" required maxlength="140">
+			</div>
+			<div class="form-group">
+				<label for="rs-dob">{{ _("Date of birth") }}</label>
+				<input id="rs-dob" name="date_of_birth" type="date" class="form-control">
+			</div>
+			<div class="form-group">
+				<label for="rs-old">{{ _("Email you used before, if you remember it") }}</label>
+				<input id="rs-old" name="old_email" type="email" class="form-control" maxlength="140">
+			</div>
+			<div class="form-group">
+				<label for="rs-phone">{{ _("Phone") }}</label>
+				<input id="rs-phone" name="phone" type="tel" class="form-control" maxlength="40">
+			</div>
+			<div class="form-group">
+				<label for="rs-new">{{ _("Your new email") }} *</label>
+				<input id="rs-new" name="new_email" type="email" class="form-control" required maxlength="140">
+			</div>
+			<div class="form-group">
+				<label for="rs-program">{{ _("Program you want to apply to") }}</label>
+				<select id="rs-program" name="program" class="form-control">
+					<option value=""></option>
+					{% for program in programs %}
+					<option value="{{ program | e }}">{{ program | e }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<p class="text-danger" id="rs-error" role="alert" style="display: none;"></p>
+			<button type="submit" class="sem-btn">{{ _("Send") }}</button>
+		</form>
+	</div>
+	<div class="sem-success" id="returning-done" style="display: none;" role="status">
+		<div class="sem-success__check">&#10003;</div>
+		<h1>{{ _("Thank you") }}</h1>
+		<p class="sem-lead">{{ _("We have your request. Our registrar will write to your new email.") }}</p>
+	</div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+frappe.ready(() => {
+	const form = document.getElementById("returning-form");
+	const error = document.getElementById("rs-error");
+	form.addEventListener("submit", (event) => {
+		event.preventDefault();
+		error.style.display = "none";
+		const args = Object.fromEntries(new FormData(form).entries());
+		frappe.call({
+			method: "seminary.seminary.returning.request_access",
+			type: "POST",
+			args,
+			callback: () => {
+				document.getElementById("returning-form-panel").style.display = "none";
+				document.getElementById("returning-done").style.display = "";
+			},
+			error: () => {
+				error.textContent = {{ _("We could not send your request. Check the fields and try again.") | tojson }};
+				error.style.display = "";
+			},
+		});
+	});
+});
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="sem-page" style="max-width: 680px;">
+	<div class="sem-panel">
+		<h1>{{ _("Verify a transcript") }}</h1>
+		<p class="sem-lead">{{ _("Enter the verification code printed on the transcript.") }}</p>
+		<form method="get" action="/transcript-verify">
+			<label for="code">{{ _("Verification code") }}</label>
+			<input id="code" name="code" class="form-control" value="{{ code }}" autocomplete="off" required>
+			<button type="submit" class="btn btn-primary" style="margin-top: 8px;">{{ _("Check") }}</button>
+		</form>
+	</div>
+
+	{% if searched and not result %}
+	<div class="sem-panel" role="status">
+		<h2>{{ _("No transcript found") }}</h2>
+		<p>{{ _("No official transcript was issued with this code. Check the code, or contact the registrar.") }}</p>
+	</div>
+	{% endif %}
+
+	{% if result %}
+	<div class="sem-panel" role="status">
+		<h2>{{ _("Transcript found") }}</h2>
+		<p>{{ _("Student") }}: <strong>{{ result.student_name }}</strong></p>
+		<p>{{ _("Issued") }}: <strong>{{ frappe.format(result.issued_on, {"fieldtype": "Date"}) }}</strong></p>
+		<p style="word-break: break-all;">{{ _("SHA-256") }}: <code id="expected">{{ result.sha256 }}</code></p>
+		<label for="pdf">{{ _("Check a PDF copy against it") }}</label>
+		<input id="pdf" type="file" accept="application/pdf">
+		<div id="match" role="status" aria-live="polite"
+			style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;"></div>
+		<div id="match-yes"
+			style="display: none; align-items: center; gap: 12px; margin: 12px 0; padding: 12px 16px; border-radius: 8px; background: #e7f6ec; color: #14532d; border: 1px solid #86c99b;">
+			<span aria-hidden="true"
+				style="flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: #15803d; color: #fff; font-size: 22px; font-weight: 700;">&#10003;</span>
+			<span><strong style="display: block; font-size: 1.1em;">{{ _("Verified") }}</strong>{{ _("This PDF matches the issued transcript.") }}</span>
+		</div>
+		<div id="match-no"
+			style="display: none; align-items: center; gap: 12px; margin: 12px 0; padding: 12px 16px; border-radius: 8px; background: #fdecea; color: #7f1d1d; border: 1px solid #f1a9a0;">
+			<span aria-hidden="true"
+				style="flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: #b91c1c; color: #fff; font-size: 20px; font-weight: 700;">&#10007;</span>
+			<span><strong style="display: block; font-size: 1.1em;">{{ _("Not verified") }}</strong>{{ _("This PDF does not match. It is not the transcript that was issued, or it has been changed.") }}</span>
+		</div>
+		<p class="text-muted">{{ _("The file is checked in your browser and is not uploaded. A printed copy can't be checked this way: compare it with the PDF the student was sent.") }}</p>
+	</div>
+	<script>
+		(function () {
+			var input = document.getElementById("pdf");
+			var out = document.getElementById("match");
+			var yes = document.getElementById("match-yes");
+			var no = document.getElementById("match-no");
+			var expected = document.getElementById("expected").textContent.trim();
+			input.addEventListener("change", function () {
+				var file = input.files && input.files[0];
+				yes.style.display = no.style.display = "none";
+				out.textContent = "";
+				if (!file || !window.crypto || !crypto.subtle) return;
+				file.arrayBuffer().then(function (buf) {
+					return crypto.subtle.digest("SHA-256", buf);
+				}).then(function (hash) {
+					var hex = Array.prototype.map.call(new Uint8Array(hash), function (b) {
+						return ("0" + b.toString(16)).slice(-2);
+					}).join("");
+					var match = hex === expected;
+					(match ? yes : no).style.display = "flex";
+					// Screen readers hear the verdict through the live region.
+					out.textContent = match
+						? {{ (_("Verified.") ~ " " ~ _("This PDF matches the issued transcript.")) | tojson }}
+						: {{ (_("Not verified.") ~ " " ~ _("This PDF does not match. It is not the transcript that was issued, or it has been changed.")) | tojson }};
+				});
+			});
+		})();
+	</script>
+	{% endif %}
+</div>
+{% endblock %}
