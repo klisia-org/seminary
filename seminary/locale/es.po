@@ -3,9 +3,8 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-11-26 09:08-0609\n"
-"PO-Revision-Date: 2026-11-24 00:12+0000\n"
-"Last-Translator: Automatic translation add-on <noreply-addon-"
-"autotranslate@weblate.org>\n"
+"PO-Revision-Date: 2026-11-27 19:22+0000\n"
+"Last-Translator: GitHub webhook <noreply-webhook-github@weblate.org>\n"
 "Language-Team: Spanish <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/es/>\n"
 "Language: es\n"
@@ -14350,10 +14349,8 @@ msgstr "Orientación / Atención"
 #. Option for the 'Measure' (Select) field in DocType 'Graduation Requirement
 #. Item'
 #: seminary/seminary/doctype/graduation_requirement_item/graduation_requirement_item.json:227
-#, fuzzy
-#| msgid "Country"
 msgid "Count"
-msgstr "País"
+msgstr "Recuento"
 
 #: frontend/src/pages/ProgramAudit.vue:533
 #, fuzzy
