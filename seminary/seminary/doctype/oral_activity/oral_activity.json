@@ -19,7 +19,20 @@
   "section_break_prompt",
   "prompt",
   "oral_steps",
-  "rubric"
+  "rubric",
+  "peer_work_section",
+  "group_source",
+  "topic_mode",
+  "column_break_peer_work",
+  "peer_review",
+  "reviews_per_student",
+  "review_opens",
+  "review_due_days",
+  "review_anonymous",
+  "review_form",
+  "teammate_ratings",
+  "ratings_shown",
+  "review_share"
  ],
  "fields": [
   {
@@ -103,12 +116,100 @@
    "options": "Rubric",
    "read_only": 1,
    "description": "The current version of this activity's rubric. Set from the activity's page in the portal."
+  },
+  {
+   "fieldname": "peer_work_section",
+   "fieldtype": "Section Break",
+   "label": "Group Work, Topics and Peer Review",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "group_source",
+   "fieldtype": "Select",
+   "label": "Groups",
+   "options": "\nSection groups\nBy hand\nRandom\nSelf sign-up",
+   "depends_on": "eval:doc.mode=='Conversation'",
+   "description": "Section groups copies the section's student groups when the activity opens. Random uses the group size."
+  },
+  {
+   "fieldname": "topic_mode",
+   "fieldtype": "Select",
+   "label": "Topics",
+   "options": "\nBy hand\nRandom\nStudents choose",
+   "description": "Leave blank for no topics. Each section lists its own topics."
+  },
+  {
+   "fieldname": "column_break_peer_work",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "peer_review",
+   "fieldtype": "Check",
+   "label": "Peer Review"
+  },
+  {
+   "fieldname": "reviews_per_student",
+   "fieldtype": "Int",
+   "label": "Reviews per Student",
+   "default": "2",
+   "depends_on": "peer_review"
+  },
+  {
+   "fieldname": "review_opens",
+   "fieldtype": "Select",
+   "label": "Reviews Open",
+   "options": "At the due date\nAt the cut-off\nBy hand",
+   "default": "At the due date",
+   "depends_on": "peer_review"
+  },
+  {
+   "fieldname": "review_due_days",
+   "fieldtype": "Int",
+   "label": "Days to Review",
+   "default": "7",
+   "description": "Days after reviews open until reviews and ratings are due."
+  },
+  {
+   "fieldname": "review_anonymous",
+   "fieldtype": "Check",
+   "label": "Anonymous Reviews",
+   "depends_on": "peer_review"
+  },
+  {
+   "fieldname": "review_form",
+   "fieldtype": "Select",
+   "label": "Review Form",
+   "options": "Rubric\nComments only",
+   "default": "Rubric",
+   "depends_on": "peer_review"
+  },
+  {
+   "fieldname": "teammate_ratings",
+   "fieldtype": "Check",
+   "label": "Teammate Ratings",
+   "depends_on": "eval:doc.mode=='Conversation'",
+   "description": "After the due date each member rates every other member of their group."
+  },
+  {
+   "fieldname": "ratings_shown",
+   "fieldtype": "Select",
+   "label": "Ratings Shown",
+   "options": "Named\nAnonymous\nInstructor only",
+   "default": "Named",
+   "depends_on": "teammate_ratings"
+  },
+  {
+   "fieldname": "review_share",
+   "fieldtype": "Percent",
+   "label": "Review Share of the Grade",
+   "depends_on": "eval:doc.peer_review || doc.teammate_ratings",
+   "description": "The part of the grade earned by completing the assigned reviews and ratings on time."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-21 12:00:00.000000",
+ "modified": "2026-11-26 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Oral Activity",

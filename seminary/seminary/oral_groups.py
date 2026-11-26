@@ -173,20 +173,31 @@ def group_meetings(course, activity, include_cancelled=False):
 
 
 @frappe.whitelist()
-def configure_state(course, activity):
+def configure_state(course: str, activity: str):
 	_scac, act = _staff(course, activity)
 	from seminary.seminary.oral_activities import _section_groups
 	from seminary.seminary.school_meetings import providers
 
 	people = roster(course)
 	known = {p["student"] for p in people}
-	groups = [
-		{
-			"label": frappe.db.get_value("Student Group", g, "group_name") or g,
-			"students": [s for s in members if s in known],
-		}
-		for g, members in _section_groups(course).items()
-	]
+	# The activity's own groups when it has them (decisions/120 §2), else
+	# the section's student groups to start from.
+	from seminary.seminary import group_work
+
+	own = group_work.group_rows(course, group_work.ORAL, activity)
+	if own:
+		groups = [
+			{"label": g.group_name, "students": [s for s in group_work.active_members(g.name) if s in known]}
+			for g in own
+		]
+	else:
+		groups = [
+			{
+				"label": frappe.db.get_value("Student Group", g, "group_name") or g,
+				"students": [s for s in members if s in known],
+			}
+			for g, members in _section_groups(course).items()
+		]
 	accounts = frappe.get_all(
 		"Web Meeting Account",
 		filters={"enabled": 1, "provider": ["in", list(providers()) or [""]]},
@@ -211,6 +222,7 @@ def configure_state(course, activity):
 		"mode": act.mode,
 		"students": people,
 		"section_groups": [g for g in groups if g["students"]],
+		"activity_groups": bool(own),
 		"meetings": group_meetings(course, activity),
 		"school_accounts": len(accounts),
 		"methods": methods,
@@ -595,7 +607,9 @@ def _check(slot, students, accounts, exclude=None):
 
 
 @frappe.whitelist(methods=["POST"])
-def create_meetings(course, activity, slots, capture_method, link=None):
+def create_meetings(
+	course: str, activity: str, slots: str | list | dict, capture_method: str, link: str | None = None
+):
 	"""Create a group meeting for each slot; one that now clashes is skipped
 	and named, the rest are made (§5)."""
 	scac, _act = _staff(course, activity)
@@ -642,9 +656,24 @@ def create_meetings(course, activity, slots, capture_method, link=None):
 				"members": [{"student": x, "time_zone": people[x]["time_zone"]} for x in students],
 			}
 		).insert(ignore_permissions=True)
+		doc.db_set("activity_group", _activity_group_for(course, activity, s.get("label"), students))
 		created.append(doc.name)
 		_enqueue("sync_meeting", name=doc.name, notify="created")
 	return {"created": created, "skipped": skipped}
+
+
+def _activity_group_for(course, activity, label, students):
+	"""The Activity Group a group meeting is for (decisions/120 §2, amending
+	§3 here): the group with exactly these members, else a new one."""
+	from seminary.seminary import group_work
+
+	wanted = set(students)
+	for g in group_work.group_rows(course, group_work.ORAL, activity):
+		if set(group_work.active_members(g.name)) == wanted:
+			return g.name
+	return group_work.make_group(
+		course, group_work.ORAL, activity, label or _("Group"), list(students), source="Meetings"
+	).name
 
 
 def _enqueue(fn, **kwargs):
@@ -770,7 +799,7 @@ def move_meeting(name, start=None, end=None, start_utc=None, end_utc=None):
 
 
 @frappe.whitelist(methods=["POST"])
-def move_student(student, from_meeting, to_meeting):
+def move_student(student: str, from_meeting: str, to_meeting: str):
 	src, dst = _group(from_meeting), _group(to_meeting)
 	if (src.course_schedule, src.oral_activity) != (
 		dst.course_schedule,
@@ -789,6 +818,10 @@ def move_student(student, from_meeting, to_meeting):
 	src.save(ignore_permissions=True)
 	dst.append("members", {"student": student, "time_zone": tz})
 	dst.save(ignore_permissions=True)
+	if dst.get("activity_group"):
+		from seminary.seminary import group_work
+
+		group_work.add_member(dst.activity_group, student)
 	_enqueue("tell_members", name=dst.name, change="joined", only=[student])
 	return dst.name
 

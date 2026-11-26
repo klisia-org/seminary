@@ -1025,7 +1025,7 @@ class CourseSchedule(Document):
 		oral_meetings.on_section_gone(self.name)
 
 	@frappe.whitelist()
-	def import_template(self, source_cs):
+	def import_template(self, source_cs: str):
 		"""Copy LMS structure (chapters, lessons, assessment criteria) from
 		another Course Schedule of the same course into this one.
 
@@ -1038,7 +1038,8 @@ class CourseSchedule(Document):
 		``courseassescrit_sc.reqd:1`` is overwritten). Refuses if the target
 		already has chapters or any graded data. Roster, grades, SCAC
 		due_dates and cut-offs, and student due date overrides are NOT
-		copied; the late policy and the assessment categories are.
+		copied; the late policy, the assessment categories and the activities'
+		topics are.
 		"""
 		self._validate_target_for_import(source_cs)
 		_validate_source_for_import(source_cs, self)
@@ -1075,6 +1076,11 @@ class CourseSchedule(Document):
 
 		_copy_late_policy(source_cs, self.name)
 		_copy_categories(source_cs, self.name)
+		# Topics are kept per section; the copy is then this section's to change
+		# (decisions/120 §3).
+		from seminary.seminary import group_work
+
+		group_work.copy_topics(source_cs, self.name)
 		# Other apps copy what they keep per assessment row (aretenic's
 		# outcome maps, p023); a failure rolls the import back with it.
 		for fn in frappe.get_hooks("course_template_imported"):

@@ -1,0 +1,269 @@
+{
+ "actions": [],
+ "creation": "2026-11-26 22:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "course_schedule",
+  "activity_doctype",
+  "activity",
+  "course_assess",
+  "column_break_prv1",
+  "submission_doctype",
+  "submission",
+  "activity_group",
+  "author",
+  "author_name",
+  "people_section",
+  "reviewer",
+  "reviewer_name",
+  "column_break_prv2",
+  "status",
+  "assigned_by",
+  "extra",
+  "assigned_on",
+  "submitted_on",
+  "review_section",
+  "rubric_levels",
+  "comments",
+  "attachment",
+  "moments",
+  "moderation_section",
+  "hidden",
+  "credit_withdrawn"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "activity_doctype",
+   "fieldtype": "Select",
+   "label": "Activity Type",
+   "options": "Assignment Activity\nOral Activity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "activity",
+   "fieldtype": "Dynamic Link",
+   "label": "Activity",
+   "options": "activity_doctype",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Link",
+   "label": "Assessment",
+   "options": "Scheduled Course Assess Criteria",
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_prv1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "submission_doctype",
+   "fieldtype": "Select",
+   "label": "Submission Type",
+   "options": "Assignment Submission\nOral Activity Submission",
+   "reqd": 1
+  },
+  {
+   "fieldname": "submission",
+   "fieldtype": "Dynamic Link",
+   "label": "Submission",
+   "options": "submission_doctype",
+   "reqd": 1
+  },
+  {
+   "fieldname": "activity_group",
+   "fieldtype": "Link",
+   "label": "Reviewed Group",
+   "options": "Activity Group"
+  },
+  {
+   "fieldname": "author",
+   "fieldtype": "Link",
+   "label": "Author",
+   "options": "Student",
+   "description": "For a group's work, the member whose record was reviewed; every member sees the review."
+  },
+  {
+   "fieldname": "author_name",
+   "fieldtype": "Data",
+   "label": "Author Name",
+   "fetch_from": "author.student_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "people_section",
+   "fieldtype": "Section Break",
+   "label": "Reviewer"
+  },
+  {
+   "fieldname": "reviewer",
+   "fieldtype": "Link",
+   "label": "Reviewer",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "reviewer_name",
+   "fieldtype": "Data",
+   "label": "Reviewer Name",
+   "fetch_from": "reviewer.student_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_prv2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Assigned\nSubmitted",
+   "default": "Assigned",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "assigned_by",
+   "fieldtype": "Select",
+   "label": "Assigned By",
+   "options": "Automatic\nInstructor\nReviewer",
+   "default": "Automatic"
+  },
+  {
+   "fieldname": "extra",
+   "fieldtype": "Check",
+   "label": "Extra",
+   "description": "Taken on by a reviewer who had finished; it neither adds to nor takes from their credit."
+  },
+  {
+   "fieldname": "assigned_on",
+   "fieldtype": "Datetime",
+   "label": "Assigned On"
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On"
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Review"
+  },
+  {
+   "fieldname": "rubric_levels",
+   "fieldtype": "JSON",
+   "label": "Rubric Levels"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text Editor",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Marked-up File"
+  },
+  {
+   "fieldname": "moments",
+   "fieldtype": "JSON",
+   "label": "Moments",
+   "description": "Comments placed at moments in a recording."
+  },
+  {
+   "fieldname": "moderation_section",
+   "fieldtype": "Section Break",
+   "label": "Moderation"
+  },
+  {
+   "fieldname": "hidden",
+   "fieldtype": "Check",
+   "label": "Hidden from the Author"
+  },
+  {
+   "fieldname": "credit_withdrawn",
+   "fieldtype": "Check",
+   "label": "Credit Withdrawn"
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-26 22:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Peer Review",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "Instructor",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Program Chair",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Seminary Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#group-work-and-peer-review",
+ "autoname": "PRV-.#######",
+ "naming_rule": "Expression",
+ "description": "One student's review of a classmate's (or another group's) work on an assignment or oral activity."
+}

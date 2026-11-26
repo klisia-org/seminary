@@ -8,7 +8,7 @@ from frappe.email.doctype.email_template.email_template import get_email_templat
 from frappe.model.document import Document
 from frappe.utils import sanitize_html, validate_email_address
 
-from seminary.seminary import rubrics
+from seminary.seminary import group_work, peer_reviews, rubrics
 from seminary.seminary.guards import GRADE, is_grader, require_grader, require_section_capability
 from seminary.seminary.url_policy import WEB_SCHEMES, is_safe_url
 
@@ -27,6 +27,7 @@ class AssignmentSubmission(Document):
 		self.validate_url()
 		self.validate_status()
 		self.populate()
+		group_work.stamp(self)
 		rubrics.apply_grade(self)
 		self.sync_percentage_from_grade()
 
@@ -48,6 +49,8 @@ class AssignmentSubmission(Document):
 		compute percentage on their own)."""
 		if self.grade is not None:
 			self.percentage = self.grade
+		# Review work is part of the grade (decisions/120 §7).
+		peer_reviews.blend(self)
 
 	# def after_insert(self):
 	#     if not frappe.flags.in_test:

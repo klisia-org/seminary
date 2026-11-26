@@ -147,7 +147,9 @@
   "meeting_capture_html",
   "meeting_capture_account",
   "meeting_capture_bot",
-  "meeting_attendance_min_share"
+  "meeting_attendance_min_share",
+  "teammate_ratings_section",
+  "teammate_rating_criteria"
  ],
  "fields": [
   {
@@ -1052,11 +1054,23 @@
    "fieldtype": "Percent",
    "label": "Suggested attendance: least share of the meeting",
    "description": "When the meeting provider reports who joined a school meeting, Mark Present on the attendance sheet marks only students who were in it for at least this share of its time. The others show their times."
+  },
+  {
+   "fieldname": "teammate_ratings_section",
+   "fieldtype": "Section Break",
+   "label": "Teammate Ratings"
+  },
+  {
+   "fieldname": "teammate_rating_criteria",
+   "fieldtype": "Table",
+   "label": "Teammate Rating Criteria",
+   "options": "Teammate Rating Criterion",
+   "description": "What group members rate each other on, each from 1 to 5."
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-26 21:00:00.000000",
+ "modified": "2026-11-26 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

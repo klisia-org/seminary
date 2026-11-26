@@ -591,6 +591,9 @@ doc_events = {
 			"seminary.seminary.api.quizresult_to_card",
 			"seminary.seminary.plagiarism.service.on_submission_update",
 			"seminary.seminary.oral_defense.on_submission_update",
+			# One submission, a record per member; new work joins peer review (decisions/120).
+			"seminary.seminary.group_work.propagate",
+			"seminary.seminary.peer_reviews.on_submission_update",
 		],
 	},
 	"Exam Submission": {
@@ -608,7 +611,11 @@ doc_events = {
 		"before_save": "seminary.seminary.api.sanitize_submission",
 	},
 	"Oral Activity Submission": {
-		"on_update": "seminary.seminary.api.quizresult_to_card",
+		"on_update": [
+			"seminary.seminary.api.quizresult_to_card",
+			"seminary.seminary.group_work.propagate",
+			"seminary.seminary.peer_reviews.on_submission_update",
+		],
 		"validate": "seminary.seminary.deadlines.guard_submission",
 		"before_insert": "seminary.seminary.content_release.assert_activity_unlocked",
 	},
@@ -902,6 +909,9 @@ scheduler_events = {
 		"seminary.seminary.discipleship.meetings.hourly",
 		# "Chapter X is now open" once its release date passes (decisions/107 §8).
 		"seminary.seminary.content_release.notify_opened_chapters",
+		# Peer reviews and teammate ratings open at the due date and are
+		# released when they are due (decisions/120 §5, §6).
+		"seminary.seminary.peer_reviews.hourly",
 	],
 	# 	"weekly": [
 	# 		"seminary.tasks.weekly"

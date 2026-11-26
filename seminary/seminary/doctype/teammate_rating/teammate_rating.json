@@ -1,0 +1,182 @@
+{
+ "actions": [],
+ "creation": "2026-11-26 22:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "course_schedule",
+  "activity_doctype",
+  "activity",
+  "course_assess",
+  "activity_group",
+  "column_break_tmr1",
+  "rater",
+  "rater_name",
+  "ratee",
+  "ratee_name",
+  "submitted_on",
+  "rating_section",
+  "scores",
+  "comment"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "activity_doctype",
+   "fieldtype": "Select",
+   "label": "Activity Type",
+   "options": "Assignment Activity\nOral Activity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "activity",
+   "fieldtype": "Dynamic Link",
+   "label": "Activity",
+   "options": "activity_doctype",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Link",
+   "label": "Assessment",
+   "options": "Scheduled Course Assess Criteria",
+   "search_index": 1
+  },
+  {
+   "fieldname": "activity_group",
+   "fieldtype": "Link",
+   "label": "Group",
+   "options": "Activity Group",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_tmr1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rater",
+   "fieldtype": "Link",
+   "label": "Rated By",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "rater_name",
+   "fieldtype": "Data",
+   "label": "Rated By (Name)",
+   "fetch_from": "rater.student_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ratee",
+   "fieldtype": "Link",
+   "label": "Teammate",
+   "options": "Student",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "ratee_name",
+   "fieldtype": "Data",
+   "label": "Teammate Name",
+   "fetch_from": "ratee.student_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On"
+  },
+  {
+   "fieldname": "rating_section",
+   "fieldtype": "Section Break",
+   "label": "Rating"
+  },
+  {
+   "fieldname": "scores",
+   "fieldtype": "JSON",
+   "label": "Scores"
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Small Text",
+   "label": "Comment"
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-26 22:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Teammate Rating",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "Instructor",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Program Chair",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Seminary Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#group-work-and-peer-review",
+ "autoname": "TMR-.#######",
+ "naming_rule": "Expression",
+ "description": "One group member's rating of a teammate's contribution to a group assignment."
+}

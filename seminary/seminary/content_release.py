@@ -367,6 +367,10 @@ def assert_activity_unlocked(doc, method=None):
 	Hooked onto every submission doctype. Without it the locks would live only
 	in the outline, and a direct call would walk straight past them.
 	"""
+	# A group's work copied onto a member's record is the group's, handed in
+	# by a member who had it open (decisions/120 §4).
+	if doc.flags.get("group_copy"):
+		return
 	course_schedule = getattr(doc, "coursesc", None) or getattr(doc, "course", None)
 	criteria = getattr(doc, "course_assess", None)
 	student = getattr(doc, "student", None)

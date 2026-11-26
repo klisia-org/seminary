@@ -32,7 +32,12 @@
   "column_break_lbwl",
   "fudgepoints_scac",
   "category_code",
-  "never_drop"
+  "never_drop",
+  "signup_closes_on",
+  "topics_close_on",
+  "review_opened_on",
+  "review_due_on",
+  "reviews_released_on"
  ],
  "fields": [
   {
@@ -209,12 +214,40 @@
    "fieldtype": "Check",
    "label": "Never Drop",
    "description": "Always counts, even when it is one of the lowest scores in its category."
+  },
+  {
+   "fieldname": "signup_closes_on",
+   "fieldtype": "Datetime",
+   "label": "Group Sign-up Closes"
+  },
+  {
+   "fieldname": "topics_close_on",
+   "fieldtype": "Datetime",
+   "label": "Topic Choice Closes"
+  },
+  {
+   "fieldname": "review_opened_on",
+   "fieldtype": "Datetime",
+   "label": "Reviews Opened",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_due_on",
+   "fieldtype": "Datetime",
+   "label": "Reviews Due",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviews_released_on",
+   "fieldtype": "Datetime",
+   "label": "Reviews Released",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-11-21 08:00:00.000000",
+ "modified": "2026-11-26 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Assess Criteria",

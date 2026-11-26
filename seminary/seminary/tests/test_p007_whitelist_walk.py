@@ -320,9 +320,39 @@ STUDENT_ALLOWED = {
 	# The rubric a student reads on an activity they can read, and their own
 	# levels on their own graded submission (decisions/095).
 	"seminary.seminary.rubrics.get_student_view",
+	# decisions/120: behind require_enrolled and the session's own Student;
+	# save_review also checks reviewer == caller.
+	"seminary.seminary.peer_reviews.get_panel",
+	"seminary.seminary.peer_reviews.join_group",
+	"seminary.seminary.peer_reviews.leave_group",
+	"seminary.seminary.peer_reviews.start_group",
+	"seminary.seminary.peer_reviews.choose_topic",
+	"seminary.seminary.peer_reviews.save_review",
+	"seminary.seminary.peer_reviews.take_extra_review",
+	"seminary.seminary.peer_reviews.save_ratings",
+	"seminary.seminary.peer_reviews.my_todos",
 }
 
 STAFF_ONLY = {
+	# decisions/120: require_grader, then the section's GRADE capability.
+	"seminary.seminary.peer_reviews.get_manage",
+	"seminary.seminary.peer_reviews.save_group",
+	"seminary.seminary.peer_reviews.move_member",
+	"seminary.seminary.peer_reviews.delete_group",
+	"seminary.seminary.peer_reviews.make_groups",
+	"seminary.seminary.peer_reviews.save_topics",
+	"seminary.seminary.peer_reviews.assign_topic",
+	"seminary.seminary.peer_reviews.draw_topics",
+	"seminary.seminary.peer_reviews.set_windows",
+	"seminary.seminary.peer_reviews.open_now",
+	"seminary.seminary.peer_reviews.release_now",
+	"seminary.seminary.peer_reviews.assign_review",
+	"seminary.seminary.peer_reviews.remove_review",
+	"seminary.seminary.peer_reviews.moderate_review",
+	"seminary.seminary.peer_reviews.extend_for_group",
+	"seminary.seminary.peer_reviews.get_grading",
+	"seminary.seminary.peer_reviews.set_separate_grade",
+	"seminary.seminary.peer_reviews.set_review_credit",
 	# decisions/116 §5: the chapel roll, Chaplain or school staff.
 	"seminary.seminary.chapel.get_roll",
 	"seminary.seminary.chapel.save_roll",
@@ -519,6 +549,11 @@ STAFF_ONLY = {
 # project's student/advisor checks) and are covered by their own test module.
 OWN_RULE = (
 	{
+		# decisions/120 §5: the review's reviewer or the section's staff;
+		# download also lets the authors read a released marked-up file.
+		# Covered by test_adr120_group_work.
+		"seminary.seminary.peer_reviews.get_review",
+		"seminary.seminary.peer_reviews.download",
 		# decisions/112: each resolves the applicant, review or program and checks
 		# its own rule (has_permission on the record, reviewer == caller, staff for
 		# withdraw); covered by test_adr111_112_admissions.

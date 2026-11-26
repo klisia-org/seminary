@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AbsenceDecisionModal: typeof import('./src/components/Modals/AbsenceDecisionModal.vue')['default']
     ActivityOutcomesPanel: typeof import('./src/components/ActivityOutcomesPanel.vue')['default']
+    ActivityPeerPanel: typeof import('./src/components/ActivityPeerPanel.vue')['default']
     AlumniDirectoryProfile: typeof import('./src/components/AlumniDirectoryProfile.vue')['default']
     AlumniHeader: typeof import('./src/components/AlumniHeader.vue')['default']
     AnnouncementModal: typeof import('./src/components/Modals/AnnouncementModal.vue')['default']
@@ -62,6 +63,7 @@ declare module 'vue' {
     FeedbackStatusPanel: typeof import('./src/components/FeedbackStatusPanel.vue')['default']
     FolderBlock: typeof import('./src/components/FolderBlock.vue')['default']
     FolderPlugin: typeof import('./src/components/FolderPlugin.vue')['default']
+    GroupGradingPanel: typeof import('./src/components/GroupGradingPanel.vue')['default']
     GuestLayout: typeof import('./src/components/GuestLayout.vue')['default']
     HelpWidget: typeof import('./src/components/HelpWidget.vue')['default']
     ImageViewer: typeof import('./src/components/AssignmentViewers/ImageViewer.vue')['default']
@@ -96,6 +98,7 @@ declare module 'vue' {
     PartnerPlacementCard: typeof import('./src/components/PartnerPlacementCard.vue')['default']
     PartnerReviewQuestions: typeof import('./src/components/PartnerReviewQuestions.vue')['default']
     PdfViewer: typeof import('./src/components/AssignmentViewers/PdfViewer.vue')['default']
+    PeerWorkSettings: typeof import('./src/components/PeerWorkSettings.vue')['default']
     ProfileModal: typeof import('./src/components/ProfileModal.vue')['default']
     ProgressBar: typeof import('./src/components/ProgressBar.vue')['default']
     Question: typeof import('./src/components/Modals/Question.vue')['default']

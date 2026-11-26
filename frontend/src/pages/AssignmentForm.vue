@@ -88,6 +88,7 @@
 				</div>
 			</template>
 		</div>
+		<PeerWorkSettings class="mt-8" :model="model" kind="assignment" />
 		<RubricEditor v-if="assignment.doc?.name" class="mt-8" activity-doctype="Assignment Activity"
 			:activity="assignment.doc.name" :defense="!!(defensible && model.oral_defense)"
 			@saved="outcomesPanel?.reload()" />
@@ -121,6 +122,7 @@ import { useRouter } from 'vue-router'
 import { examStore } from '@/stores/exam'
 import LinkControl from '@/components/Controls/Link.vue'
 import RubricEditor from '@/components/RubricEditor.vue'
+import PeerWorkSettings from '@/components/PeerWorkSettings.vue'
 import ActivityOutcomesPanel from '@/components/ActivityOutcomesPanel.vue'
 import { useActivityReturn } from '@/composables/useActivityReturn'
 
@@ -149,7 +151,22 @@ const model = reactive({
 	defense_window: 259200,
 	defense_review: false,
 	defense_steps: '[]',
+	// decisions/120 §1
+	group_work: false,
+	group_source: 'By hand',
+	group_size: 3,
+	topic_mode: '',
+	peer_review: false,
+	reviews_per_student: 2,
+	review_opens: 'At the due date',
+	review_due_days: 7,
+	review_anonymous: false,
+	review_form: 'Rubric',
+	teammate_ratings: false,
+	ratings_shown: 'Named',
+	review_share: 0,
 })
+const PEER_CHECKS = ['group_work', 'peer_review', 'review_anonymous', 'teammate_ratings']
 
 // The oral defense (decisions/100c): only for papers whose text can be read.
 const defensible = computed(() => ['PDF', 'Document', 'Text'].includes(model.type))
@@ -278,6 +295,8 @@ watch(assignment, () => {
 		model.oral_defense = !!model.oral_defense
 		model.defense_follow_up = !!model.defense_follow_up
 		model.defense_review = !!model.defense_review
+		PEER_CHECKS.forEach((k) => (model[k] = !!model[k]))
+		if (!model.group_source) model.group_source = 'By hand'
 	}
 });
 

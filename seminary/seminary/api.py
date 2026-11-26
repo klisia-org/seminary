@@ -5524,16 +5524,27 @@ def _can_grade_submission(submission):
 
 
 @frappe.whitelist()
-def get_submission_comments(submission_name):
+def get_submission_comments(submission_name: str):
 	"""Read-only: return every anchored comment on a submission, with author
 	display names resolved. Ordered for stable per-type sidebar rendering."""
 	submission = frappe.get_doc("Assignment Submission", submission_name)
 	submission.check_permission("read")
 
+	# A group's work has one thread (decisions/120 §4): the comments on every
+	# member's record, unless a member is graded separately.
+	parents = [submission_name]
+	if submission.get("activity_group") and not cint(submission.get("grade_override")):
+		from seminary.seminary import group_work
+
+		parents += [
+			n
+			for n in group_work.siblings(submission)
+			if not cint(frappe.db.get_value("Assignment Submission", n, "grade_override"))
+		]
 	rows = frappe.get_all(
 		"Assignment Submission Comment",
 		filters={
-			"parent": submission_name,
+			"parent": ["in", parents],
 			"parenttype": "Assignment Submission",
 		},
 		fields=[

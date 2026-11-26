@@ -67,6 +67,7 @@
 			@change="(val) => (activity.prompt = val)"
 			:placeholder="__('What should the students talk about?')" />
 		<ContentIssues ref="promptChecker" class="mt-2" :issues="promptIssues" :actionLabel="__('Save anyway')" />
+		<PeerWorkSettings class="mt-8" :model="activity" kind="oral" />
 		<RubricEditor v-if="activityDetails.data?.name" class="mt-8" activity-doctype="Oral Activity"
 			:activity="activityDetails.data.name" />
 	</div>
@@ -83,6 +84,7 @@ import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import RubricEditor from '@/components/RubricEditor.vue'
+import PeerWorkSettings from '@/components/PeerWorkSettings.vue'
 import { examStore } from '@/stores/exam'
 import { useActivityReturn } from '@/composables/useActivityReturn'
 
@@ -104,6 +106,18 @@ const activity = reactive({
 	capture: 'Browser',
 	oral_steps: '[]',
 	prompt: '',
+	// decisions/120 §1
+	group_source: '',
+	topic_mode: '',
+	peer_review: false,
+	reviews_per_student: 2,
+	review_opens: 'At the due date',
+	review_due_days: 7,
+	review_anonymous: false,
+	review_form: 'Rubric',
+	teammate_ratings: false,
+	ratings_shown: 'Named',
+	review_share: 0,
 })
 
 const stepChoices = createResource({ url: 'seminary.seminary.oral.step_choices', auto: true })
@@ -158,6 +172,7 @@ const activityDetails = createResource({
 			if (Object.hasOwn(activity, key)) activity[key] = data[key]
 		})
 		activity.allow_upload = !!activity.allow_upload
+		for (const k of ['peer_review', 'review_anonymous', 'teammate_ratings']) activity[k] = !!activity[k]
 	},
 })
 

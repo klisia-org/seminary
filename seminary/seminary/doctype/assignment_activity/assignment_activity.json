@@ -26,7 +26,22 @@
   "column_break_defense",
   "defense_window",
   "defense_review",
-  "defense_steps"
+  "defense_steps",
+  "peer_work_section",
+  "group_work",
+  "group_source",
+  "group_size",
+  "topic_mode",
+  "column_break_peer_work",
+  "peer_review",
+  "reviews_per_student",
+  "review_opens",
+  "review_due_days",
+  "review_anonymous",
+  "review_form",
+  "teammate_ratings",
+  "ratings_shown",
+  "review_share"
  ],
  "fields": [
   {
@@ -165,11 +180,112 @@
    "fieldtype": "Small Text",
    "label": "Processing Steps for Answers",
    "description": "Steps run on each recorded answer, from those the school allows. Stored as a list."
+  },
+  {
+   "fieldname": "peer_work_section",
+   "fieldtype": "Section Break",
+   "label": "Group Work, Topics and Peer Review",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "group_work",
+   "fieldtype": "Check",
+   "label": "Group Work",
+   "description": "Each group hands in one piece of work, graded once for every member."
+  },
+  {
+   "fieldname": "group_source",
+   "fieldtype": "Select",
+   "label": "Groups",
+   "options": "\nSection groups\nBy hand\nRandom\nSelf sign-up",
+   "depends_on": "eval:doc.group_work",
+   "description": "Section groups copies the section's student groups when the activity opens. Random uses the group size."
+  },
+  {
+   "fieldname": "group_size",
+   "fieldtype": "Int",
+   "label": "Group Size",
+   "depends_on": "eval:doc.group_work && ['Random','Self sign-up'].includes(doc.group_source)",
+   "description": "The size of random groups, or the most students a self sign-up group takes."
+  },
+  {
+   "fieldname": "topic_mode",
+   "fieldtype": "Select",
+   "label": "Topics",
+   "options": "\nBy hand\nRandom\nStudents choose",
+   "description": "Leave blank for no topics. Each section lists its own topics."
+  },
+  {
+   "fieldname": "column_break_peer_work",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "peer_review",
+   "fieldtype": "Check",
+   "label": "Peer Review"
+  },
+  {
+   "fieldname": "reviews_per_student",
+   "fieldtype": "Int",
+   "label": "Reviews per Student",
+   "default": "2",
+   "depends_on": "peer_review"
+  },
+  {
+   "fieldname": "review_opens",
+   "fieldtype": "Select",
+   "label": "Reviews Open",
+   "options": "At the due date\nAt the cut-off\nBy hand",
+   "default": "At the due date",
+   "depends_on": "peer_review"
+  },
+  {
+   "fieldname": "review_due_days",
+   "fieldtype": "Int",
+   "label": "Days to Review",
+   "default": "7",
+   "description": "Days after reviews open until reviews and ratings are due."
+  },
+  {
+   "fieldname": "review_anonymous",
+   "fieldtype": "Check",
+   "label": "Anonymous Reviews",
+   "depends_on": "peer_review"
+  },
+  {
+   "fieldname": "review_form",
+   "fieldtype": "Select",
+   "label": "Review Form",
+   "options": "Rubric\nComments only",
+   "default": "Rubric",
+   "depends_on": "peer_review"
+  },
+  {
+   "fieldname": "teammate_ratings",
+   "fieldtype": "Check",
+   "label": "Teammate Ratings",
+   "depends_on": "eval:doc.group_work",
+   "description": "After the due date each member rates every other member of their group."
+  },
+  {
+   "fieldname": "ratings_shown",
+   "fieldtype": "Select",
+   "label": "Ratings Shown",
+   "options": "Named\nAnonymous\nInstructor only",
+   "default": "Named",
+   "depends_on": "teammate_ratings"
+  },
+  {
+   "fieldname": "review_share",
+   "fieldtype": "Percent",
+   "label": "Review Share of the Grade",
+   "depends_on": "eval:doc.peer_review || doc.teammate_ratings",
+   "description": "The part of the grade earned by completing the assigned reviews and ratings on time."
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-21 12:00:00.000000",
+ "modified": "2026-11-26 22:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Assignment Activity",

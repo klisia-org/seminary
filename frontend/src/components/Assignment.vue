@@ -31,6 +31,13 @@
 				</div>
 			</div>
 
+			<!-- Groups, topics, peer reviews and ratings on this section (decisions/120). -->
+			<div v-if="courseName && usesPeerWork">
+				<router-link :to="{ name: 'ActivityGroupWork', params: { courseName, activityDoctype: 'Assignment Activity', activity: props.assignmentID } }">
+					<Button variant="outline" class="w-full">{{ __('Groups, Topics and Reviews') }}</Button>
+				</router-link>
+			</div>
+
 			<!-- Grading criteria info + link -->
 			<div v-if="courseName">
 				<div v-if="!isGradedAssignment"
@@ -101,6 +108,9 @@
 						@active="(a) => (rubricActive = a)" @graded="onRubricGraded" />
 					<FormControl v-if="submissionResource.doc && showScoreBox"
 						v-model="submissionResource.doc.grade" :label="__('Score')" type="number" />
+					<GroupGradingPanel v-if="submissionName && submissionName !== 'new' && usesPeerWork"
+						submission-doctype="Assignment Submission" :submission="submissionName"
+						:course="submissionResource.doc?.course || courseName" @changed="submissionResource.reload()" />
 					<div>
 						<div class="text-sm text-ink-gray-5 mb-1">
 							{{ __('Comments') }}
@@ -263,6 +273,11 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- The student's group, topic, reviews and ratings (decisions/120). -->
+		<ActivityPeerPanel v-if="!showTitle && !isInstructorView && courseName && usesPeerWork" class="mb-4"
+			:course="courseName" activity-doctype="Assignment Activity" :activity="props.assignmentID"
+			@changed="hasSubmission && submissionResource.reload()" />
 
 		<!-- Student-side review: rendered submission + read-only comments thread,
 		     mirroring the prof view. Mutually-exclusive `v-if` (not `v-else-if`)
@@ -529,6 +544,8 @@ import SubmissionViewer from '@/components/AssignmentViewers/SubmissionViewer.vu
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
 import RubricGrading from '@/components/RubricGrading.vue'
+import GroupGradingPanel from '@/components/GroupGradingPanel.vue'
+import ActivityPeerPanel from '@/components/ActivityPeerPanel.vue'
 import OralDefense from '@/components/OralDefense.vue'
 import OralDefenseReview from '@/components/OralDefenseReview.vue'
 import RubricView from '@/components/RubricView.vue'
@@ -763,14 +780,18 @@ const imageResource = createResource({
 	},
 })
 
+// frappe-ui keeps one document resource per doctype + name (and saves it in
+// the browser), ignoring `cache`. Every unsubmitted assignment used to share
+// the 'new' one, and after a first submission it held that submission, so the
+// next assignment showed another assignment's file as an unsaved attachment.
+// An unsubmitted assignment gets a resource of its own.
 const submissionResource = createDocumentResource({
 	doctype: 'Assignment Submission',
-	name: props.submissionName,
+	name: props.submissionName === 'new' ? `new-${props.assignmentID}` : props.submissionName,
 	onError(err) {
 		toast.error(err.messages?.[0] || err)
 	},
 	auto: false,
-	cache: [user.data?.name, props.assignmentID],
 })
 
 watch(submissionResource, () => {
@@ -1055,6 +1076,11 @@ const isInstructorView = computed(
 	() => user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_instructor
 )
 const courseName = computed(() => router.currentRoute.value.params.courseName)
+// Group work, topics, peer review or teammate ratings on this activity (decisions/120).
+const usesPeerWork = computed(() => {
+	const a = assignment.data || {}
+	return !!(a.group_work || a.topic_mode || a.peer_review || a.teammate_ratings)
+})
 
 const myDates = createResource({
 	url: 'seminary.seminary.deadlines.get_my_dates',

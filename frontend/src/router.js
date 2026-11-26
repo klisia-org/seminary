@@ -445,6 +445,19 @@ const routes = [
 		name: 'Mock',
 		component: () => import('@/pages/Mock.vue'),
 	},
+	// Group work, topics, peer review and teammate ratings (decisions/120).
+	{
+		path: '/courses/:courseName/peer-review/:review',
+		name: 'PeerReview',
+		component: () => import('@/pages/PeerReview.vue'),
+		props: true,
+	},
+	{
+		path: '/courses/:courseName/group-work/:activityDoctype/:activity',
+		name: 'ActivityGroupWork',
+		component: () => import('@/pages/ActivityGroupWork.vue'),
+		props: true,
+	},
 	{
 		path: '/courses/:courseName/student-group',
 		name: 'StudentGroup',

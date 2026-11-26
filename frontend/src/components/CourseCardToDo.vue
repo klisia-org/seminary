@@ -21,6 +21,22 @@
           <span>{{ __('Your review of {0} is ready').format(item.label) }}</span>
         </router-link>
       </section>
+      <!-- Peer reviews and teammate ratings still to do (decisions/120 §8). -->
+      <section v-if="peerTodos.data?.length" class="mt-4">
+        <h3 class="text-xl mb-3 font-semibold text-ink-gray-9">{{ __("Reviews to Do") }}</h3>
+        <router-link v-for="t in peerTodos.data" :key="t.activity"
+          :to="t.review ? { name: 'PeerReview', params: { courseName: props.course, review: t.review } } : { name: 'CourseDetail', params: { courseName: props.course } }"
+          class="mt-1 flex items-start space-x-2 text-ink-gray-8">
+          <Users class="mt-0.5 h-4 w-4 shrink-0 stroke-1.5" />
+          <span>
+            {{ t.title }}:
+            <template v-if="t.reviews">{{ t.reviews === 1 ? __('1 review') : __('{0} reviews').format(t.reviews) }}</template>
+            <template v-if="t.reviews && t.ratings">, </template>
+            <template v-if="t.ratings">{{ t.ratings === 1 ? __('1 teammate to rate') : __('{0} teammates to rate').format(t.ratings) }}</template>
+            ({{ __('Due') }}: {{ formatDate(t.due) }})
+          </span>
+        </router-link>
+      </section>
       <section v-if="missingAssessments.data?.length" class="missing-assessments mt-4">
         <h3 class="text-xl mb-3 font-semibold text-ink-gray-9">{{ __("Missing Assessments") }}</h3>
         <ul>
@@ -39,7 +55,7 @@
         </ul>
       </section>
 
-      <section v-if="!missingAssessments.data?.length && !dueSoonAssessments.length" class="no-assessments mt-4">
+      <section v-if="!missingAssessments.data?.length && !dueSoonAssessments.length && !peerTodos.data?.length" class="no-assessments mt-4">
         <h3 class="text-xl font-semibold text-ink-gray-9">
           {{ __("Congrats! No assessments for now.") }}
         </h3>
@@ -123,7 +139,7 @@
 </template>
 
 <script setup>
-import { PartyPopper, BookOpenCheck, FileUp, Target, Sparkles } from 'lucide-vue-next'
+import { PartyPopper, BookOpenCheck, FileUp, Target, Sparkles, Users } from 'lucide-vue-next'
 import { Button, createResource } from 'frappe-ui'
 import { useCourseToDo } from '@/utils/useCourseToDo'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
@@ -158,6 +174,13 @@ const reviewNews = createResource({
   params: { course_schedule: props.course },
   auto: !!user?.data?.is_student,
   cache: ['cbe-review-news', props.course],
+  onError: () => {},
+})
+
+const peerTodos = createResource({
+  url: 'seminary.seminary.peer_reviews.my_todos',
+  params: { course: props.course },
+  auto: !!user?.data?.is_student,
   onError: () => {},
 })
 

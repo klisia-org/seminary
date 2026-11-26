@@ -255,6 +255,70 @@ Students graded earlier keep the version they were graded on.
 Rubrics are not used in competency-based courses, which grade on the
 competency's own levels, or in courses graded on a descriptive scale.
 
+## Group work and peer review
+
+Assignments and oral activities can be done in groups, can give each group or
+student a topic, and can ask students to review each other's work and rate
+their teammates. Turn these on under **Group Work, Topics and Peer Review** on
+the activity's form. Each section then manages its own groups, topics and
+reviews from **Groups, Topics and Reviews** on the activity in the lesson.
+
+**Groups.** Tick **Group work** on an assignment. An oral activity in
+*Conversation* mode is always group work. Choose how the groups are made:
+
+- **The section's student groups**: copied when the activity is first opened,
+  and editable after that. The section's student groups themselves do not
+  change.
+- **At random**, in groups of the size you give.
+- **By hand**, on the activity's group work page.
+- **Students sign up**: make empty groups, set the most students a group takes,
+  and set when sign-up closes. Anyone left over is yours to place.
+
+Any member hands in the work for the whole group, and every member sees it.
+You grade it once: the grade, rubric levels and comments go to every member.
+To grade one member differently, tick **Grade this member separately** on the
+grading page. A student who leaves a group keeps the work and grade they had
+when they left, and a student who joins gets the group's current work.
+
+The group works to the activity's due date. **Extend for the group** gives
+every member the same new dates in one step. One member's own extension does
+not move the group's date.
+
+**Topics.** Choose how topics are given: by you, drawn at random, or chosen by
+students until a date you set. List the topics for each section on the
+activity's group work page, each with how many groups or students may take it
+(one by default). Importing a course template copies the topics, and the
+section can then change them. With group work the topic belongs to the group.
+The topic shows on the submission, the grading page and the submissions list.
+
+**Peer review.** Choose how many classmates' work each student reviews and when
+reviews open: at the due date, at the cut-off, or when you open them. Each
+piece of work gets about the same number of reviews, and nobody reviews their
+own work or their group's. Reviewers use the activity's rubric (without points)
+or write comments, and may attach their own marked-up copy of the work. For an
+oral activity such as a sermon, they listen beside the transcript and can leave
+comments at moments in the recording. Names show both ways unless you tick
+**Anonymous**. Reviews are due a number of days after they open. Students see
+the reviews of their work at that date, or earlier if you release them. You can
+read every review, hide one from its author, withdraw its credit, or add a
+reviewer for work that is short of reviews. A student who has finished can
+also take on one more review.
+
+**Teammate ratings.** With group work, each member can rate every other member
+on the criteria under **Teammate Ratings** in Seminary Settings (by default:
+contributed their share, met commitments, worked well with others), from 1 to
+5, with a comment. Choose who sees them: the teammate with the rater's name,
+the teammate without names, or you only. On the grading page you see each
+member's average, how far the ratings spread, and the comments. Ratings never
+change a grade by themselves; they help you decide whether to grade someone
+separately.
+
+**Review credit.** Set **Share of the grade for reviews and ratings** to make
+the reviewing count. With 10%, for example, 90% of the grade is your grade on
+the work and 10% is the share of assigned reviews and ratings the student
+completed on time. You can set the review part by hand for one student on the
+grading page. With a share of 0, reviewing is not graded.
+
 ## A typical week
 
 A common rhythm for a seminary instructor:

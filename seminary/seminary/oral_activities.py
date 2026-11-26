@@ -20,11 +20,10 @@ recording is finished it is the one that counts), and a classmate's talk time.
 """
 
 import json
-import random
 
 import frappe
 from frappe import _
-from frappe.utils import cint, now_datetime, today
+from frappe.utils import cint, now_datetime
 
 from seminary.seminary import deadlines, oral
 
@@ -102,65 +101,26 @@ def _section_groups(course_schedule):
 	return groups
 
 
-def ensure_groups(course_schedule, activity):
-	"""Groups of ``group_size`` for a Conversation on a section that has none.
+def conversation_groups(course_schedule, activity):
+	"""{Activity Group: [student]} for a conversation (decisions/120 §2,
+	amending 100b and 100d-a §3): the activity's own groups, made the first
+	time they are needed from the section's student groups, or at random in
+	``group_size`` when the section has none."""
+	from seminary.seminary import group_work
 
-	Members are shuffled with a seed from the section and activity, so the
-	groups are random but the same if two students open it at once; the lock
-	on the section row keeps the second from making a second set."""
-	if activity.mode != "Conversation" or cint(activity.group_size) < 2:
-		return _section_groups(course_schedule)
-	groups = _section_groups(course_schedule)
-	if groups:
-		return groups
-	frappe.db.sql(
-		"select name from `tabCourse Schedule` where name = %s for update",
-		(course_schedule,),
-	)
-	groups = _section_groups(course_schedule)
-	if groups:
-		return groups
-	students = _roster(course_schedule)
-	if len(students) < 2:
+	group_work.ensure_groups(course_schedule, group_work.ORAL, activity.name)
+	return {
+		g.name: group_work.active_members(g.name)
+		for g in group_work.group_rows(course_schedule, group_work.ORAL, activity.name)
+	}
+
+
+def ensure_groups(course_schedule, activity):
+	"""The groups that decide who records together: a conversation's own
+	groups; any other activity has none."""
+	if activity.mode != "Conversation":
 		return {}
-	# A fair, repeatable shuffle for grouping, not a secret.
-	random.Random(f"{course_schedule}|{activity.name}").shuffle(students)  # nosec B311
-	size = cint(activity.group_size)
-	chunks = [students[i : i + size] for i in range(0, len(students), size)]
-	if len(chunks) > 1 and len(chunks[-1]) == 1:
-		chunks[-2].extend(chunks.pop())
-	idx = frappe.db.count(
-		"Student Group Link",
-		{"parent": course_schedule, "parenttype": "Course Schedule"},
-	)
-	for n, chunk in enumerate(chunks, start=1):
-		group = frappe.get_doc(
-			{
-				"doctype": "Student Group",
-				"group_name": _("{0}: group {1}").format(activity.title, n),
-				"active": 1,
-				"group_members": [
-					{
-						"student": student,
-						"student_name": name,
-						"status": "Active",
-						"joined_on": today(),
-					}
-					for _user, student, name in chunk
-				],
-			}
-		).insert(ignore_permissions=True)
-		frappe.get_doc(
-			{
-				"doctype": "Student Group Link",
-				"parent": course_schedule,
-				"parenttype": "Course Schedule",
-				"parentfield": "stu_groups_course",
-				"idx": idx + n,
-				"student_group": group.name,
-			}
-		).db_insert()
-	return _section_groups(course_schedule)
+	return conversation_groups(course_schedule, activity)
 
 
 def _submitted(scac):
@@ -409,7 +369,7 @@ def submit(recording):
 
 
 @frappe.whitelist()
-def section_summary(course, activity):
+def section_summary(course: str, activity: str):
 	"""The staff's roster for one activity on a section: who submitted, with
 	which recording and in which group."""
 	from seminary.seminary.guards import require_course_staff, require_grader
@@ -418,9 +378,9 @@ def section_summary(course, activity):
 	require_course_staff(course)
 	scac = _scac_for(course, activity)
 	act = _activity(activity)
-	groups = _section_groups(course) if act.mode == "Conversation" else {}
+	groups = conversation_groups(course, act) if act.mode == "Conversation" else {}
 	group_of = {s: g for g, members in groups.items() for s in members}
-	group_names = {g: frappe.db.get_value("Student Group", g, "group_name") for g in groups}
+	group_names = {g: frappe.db.get_value("Activity Group", g, "group_name") for g in groups}
 	subs = {
 		s.student: s
 		for s in frappe.get_all(
