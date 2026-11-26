@@ -45,7 +45,7 @@ portal added to the home screen (16.4+), and the preferences page says so. Semin
 
 ## Addendum (2026-11-26, before release): one worker for the whole site, and other apps' notices
 
-Proposed. Another portal on the same site needs device notifications too, and a browser should
+Accepted 2026-11-26, built the same day. Another portal on the same site needs device notifications too, and a browser should
 hold one subscription per site, not one per portal.
 
 1. **The worker is site-wide.** It is served at `/sw.js` with scope `/`. Each portal keeps its own

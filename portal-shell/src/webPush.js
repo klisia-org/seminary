@@ -1,9 +1,10 @@
-// Notifications on this device (decisions/121 §3). The service worker is
-// served under the portal so its scope is the whole portal.
+// Notifications on this device (seminary decisions/121 §3 and its addendum). One
+// service worker serves the whole site, so turning notifications on in one portal
+// turns them on in every portal on the site.
 import { call } from 'frappe-ui'
 
-const SW_URL = '/seminary/sw.js'
-const SCOPE = '/seminary/'
+const SW_URL = '/sw.js'
+const SCOPE = '/'
 
 export function pushSupported() {
 	return (

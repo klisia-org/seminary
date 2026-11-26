@@ -827,10 +827,19 @@ page_renderer = [
 	# LTI 1.3 (decisions/110): the protocol fixes these URLs and their media
 	# types, so they are routes, not `/api/method/...`.
 	"seminary.lti.renderer.LTIRoutes",
-	# The portal's service worker and web manifest live under /seminary/, which
-	# the route rule would otherwise hand to the SPA (decisions/121 §3).
+	# The site-wide service worker at /sw.js and each portal's web manifest
+	# (decisions/121 §3 and its addendum).
 	"seminary.seminary.web_push.PortalPushRoutes",
 ]
+
+# Web manifests for installing a portal (decisions/121 addendum §1). Other apps
+# add {portal prefix: "dotted.path"} returning seminary.seminary.web_push.build_manifest(...).
+portal_manifests = {"seminary": "seminary.seminary.web_push.seminary_manifest"}
+
+# Where a device notification about a record opens (decisions/121 addendum §4).
+# Each dotted path is called as fn(doctype, name, user) and returns a path on
+# this site or None; the first path wins. Seminary ships none.
+# push_links = []
 
 # The other half of that split, and the half that makes it real: frappe routes
 # on path and ignores `Host`, so without this the whole app would answer on the

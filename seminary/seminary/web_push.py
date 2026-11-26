@@ -9,8 +9,10 @@ pair on the Push Channel Provider Account and encrypted to the device with
 What a notification carries is deliberately thin: a title, who it is from and a
 link. The message itself stays in the inbox, behind the person's session.
 
-The portal's service worker and web manifest are served under ``/seminary/`` by
-``PortalPushRoutes`` so the worker's scope is the whole portal.
+One service worker serves the whole site (``/sw.js``, scope ``/``), so a browser holds one
+subscription however many portals it uses; each portal has its own web manifest for installing
+(121 addendum §1). Other apps push through ``notify`` and say where a notice opens through the
+``push_links`` hook.
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ from __future__ import annotations
 import base64
 import json
 from pathlib import Path
+from urllib.parse import quote
 
 import frappe
 from frappe import _
@@ -98,35 +101,59 @@ def _sender_name(user):
 	return frappe.db.get_value("User", user, "full_name") or None
 
 
-def push_for_inapp(log):
-	"""Queue a Push log for a delivered In-App log (§4). Nothing is queued
-	when the site has no Push account, the person has no device, or the person
-	opted out of Push for the log's category, so a site without Push gains no
-	Cancelled rows."""
+def notify(
+	person,
+	title,
+	*,
+	body="",
+	reference_doctype=None,
+	reference_name=None,
+	category="Transactional",
+	triggered_by=None,
+	dedupe_key=None,
+):
+	"""Push a notice to a person's devices, for any app (121 addendum §3). Returns the Push log,
+	or None when nothing was queued: the site has no Push account, the person has no user or no
+	device, the person is the one who acted, or they opted out of Push for the category. So a
+	caller never adds Cancelled rows for people who cannot be pushed to."""
 	from seminary.seminary import comms
 
+	if not person or not title or not push_account():
+		return None
+	person_doc = person if hasattr(person, "channel_addresses") else frappe.get_doc("Person", person)
+	triggered_by = triggered_by or frappe.session.user
+	if not person_doc.user or person_doc.user == triggered_by:
+		return None
+	if not has_subscription(person_doc):
+		return None
+	if comms.consent_blocks(person_doc, PUSH_CHANNEL, category):
+		return None
+	return comms.send_message(
+		channel=PUSH_CHANNEL,
+		person=person_doc,
+		subject=strip_html(title).strip()[:140],
+		message=body or "",
+		category=category,
+		reference_doctype=reference_doctype,
+		reference_name=reference_name,
+		triggered_by=triggered_by,
+		dedupe_key=dedupe_key,
+	)
+
+
+def push_for_inapp(log):
+	"""Queue a Push log for a delivered In-App log (§4)."""
 	if not log.person or log.direction != "Outbound":
 		return None
-	if not push_account():
-		return None
-	person = frappe.get_doc("Person", log.person)
-	if not person.user or person.user == log.triggered_by:
-		return None
-	if not has_subscription(person):
-		return None
-	if comms.consent_blocks(person, PUSH_CHANNEL, log.category):
-		return None
-
 	sender = _sender_name(log.triggered_by)
 	title = log.subject or (
 		_("New message from {0}").format(sender) if sender else _("You have a new message")
 	)
 	body = _("From {0}").format(sender) if sender and log.subject else ""
-	return comms.send_message(
-		channel=PUSH_CHANNEL,
-		person=person,
-		subject=title[:140],
-		message=body,
+	return notify(
+		log.person,
+		title,
+		body=body,
 		category=log.category,
 		# The Push log points at the message it announces; the adapter links
 		# there, and the announcement roll-up ignores it (§4).
@@ -140,9 +167,28 @@ def push_for_inapp(log):
 # ---------------------------------------------------------------- adapter
 
 
+LINK_HOOK = "push_links"
+
+
 def _click_url(log) -> str:
+	"""Where the notification opens: the inbox for a message, else the page an app names for the
+	record through the ``push_links`` hook, else the Desk form for staff and the portal home for
+	everyone else (121 addendum §4). Only a path on this site is ever used."""
 	if log.reference_doctype == "Communication Log" and log.reference_name:
 		return f"{INBOX_PATH}?message={log.reference_name}"
+	user = _user_of(log.person)
+	if log.reference_doctype and log.reference_name:
+		for path in frappe.get_hooks(LINK_HOOK) or []:
+			try:
+				link = frappe.get_attr(path)(log.reference_doctype, log.reference_name, user)
+			except Exception:
+				frappe.log_error(frappe.get_traceback(), f"push_links {path} failed")
+				continue
+			if link and link.startswith("/") and not link.startswith("//"):
+				return link
+		if user and frappe.db.get_value("User", user, "user_type") == "System User":
+			slug = log.reference_doctype.lower().replace(" ", "-")
+			return f"/desk/{slug}/{quote(str(log.reference_name), safe='')}"
 	return f"{PORTAL_PREFIX}/"
 
 
@@ -392,65 +438,88 @@ def send_test_notification():
 # ---------------------------------------------------------------- portal files
 
 _SW_PATH = Path(__file__).resolve().parent.parent / "public" / "js" / "portal-sw.js"
+MANIFEST_HOOK = "portal_manifests"
+DEFAULT_ICONS = [
+	{"src": "/assets/seminary/images/portal-icon-192.png", "sizes": "192x192", "type": "image/png"},
+	{"src": "/assets/seminary/images/portal-icon-512.png", "sizes": "512x512", "type": "image/png"},
+]
 
 
-def _manifest():
-	"""The installable portal. Its name and icon follow the school's branding
-	where set; the default icons ship with the app."""
-	name = (
+def site_name() -> str:
+	return (
 		frappe.db.get_single_value("Website Settings", "app_name")
 		or frappe.db.get_single_value("System Settings", "app_name")
 		or "Seminary"
 	)
-	icons = [
-		{"src": "/assets/seminary/images/portal-icon-192.png", "sizes": "192x192", "type": "image/png"},
-		{"src": "/assets/seminary/images/portal-icon-512.png", "sizes": "512x512", "type": "image/png"},
-	]
+
+
+def build_manifest(prefix: str, name: str, icons=None) -> dict:
+	"""A portal's web manifest: installs as its own app, opening at /<prefix>/."""
 	return {
 		"name": name,
 		"short_name": name[:12],
-		"start_url": f"{PORTAL_PREFIX}/",
-		"scope": f"{PORTAL_PREFIX}/",
+		"start_url": f"/{prefix}/",
+		"scope": f"/{prefix}/",
 		"display": "standalone",
 		"background_color": "#ffffff",
 		"theme_color": "#ffffff",
-		"icons": icons,
+		"icons": icons or DEFAULT_ICONS,
 	}
 
 
-class PortalPushRoutes:
-	"""``/seminary/sw.js`` and ``/seminary/manifest.webmanifest``.
+def seminary_manifest() -> dict:
+	"""This portal's manifest. Its name follows the site's branding."""
+	return build_manifest(PORTAL_PREFIX.strip("/"), site_name())
 
-	A page renderer rather than a static file: a service worker's scope is
-	limited to its own directory, so it has to be served from under
-	``/seminary/``, which the portal's route rule otherwise sends to the SPA."""
+
+def _manifests() -> dict:
+	"""{portal prefix: dotted path returning its manifest}, from every app's
+	``portal_manifests`` hook."""
+	found = {}
+	for prefix, path in (frappe.get_hooks(MANIFEST_HOOK) or {}).items():
+		found[prefix] = path[-1] if isinstance(path, list) else path
+	return found
+
+
+class PortalPushRoutes:
+	"""``/sw.js`` and ``/<portal>/manifest.webmanifest`` (121 addendum §1).
+
+	A page renderer rather than a static file: a service worker's scope is limited to its own
+	directory, so the site-wide worker has to be served from the root, and each portal's route
+	rule would otherwise send its manifest to the SPA."""
 
 	__slots__ = ("http_status_code", "path")
-
-	FILES = ("sw.js", "manifest.webmanifest")
 
 	def __init__(self, path, http_status_code=None):
 		self.path = path
 		self.http_status_code = http_status_code
 
-	def _file(self):
+	def _parts(self):
 		request = getattr(frappe.local, "request", None)
 		raw = (request.path if request else None) or self.path or ""
-		parts = [p for p in raw.strip("/").split("/") if p]
-		if len(parts) == 2 and parts[0] == PORTAL_PREFIX.strip("/") and parts[1] in self.FILES:
-			return parts[1]
+		return [p for p in raw.strip("/").split("/") if p]
+
+	def _target(self):
+		"""("sw", None), ("manifest", prefix), or None."""
+		parts = self._parts()
+		if parts == ["sw.js"]:
+			return ("sw", None)
+		if len(parts) == 2 and parts[1] == "manifest.webmanifest" and parts[0] in _manifests():
+			return ("manifest", parts[0])
 		return None
 
 	def can_render(self) -> bool:
 		from seminary.scorm.delivery import is_delivery_request
 
-		return bool(self._file()) and not is_delivery_request()
+		return bool(self._target()) and not is_delivery_request()
 
 	def render(self) -> Response:
-		if self._file() == "sw.js":
+		kind, prefix = self._target()
+		if kind == "sw":
 			response = Response(_SW_PATH.read_text(), mimetype="application/javascript")
 		else:
-			response = Response(json.dumps(_manifest()), mimetype="application/manifest+json")
+			manifest = frappe.get_attr(_manifests()[prefix])()
+			response = Response(json.dumps(manifest), mimetype="application/manifest+json")
 		# Browsers check the worker for updates themselves; never pin a copy.
 		response.headers["Cache-Control"] = "no-cache"
 		return response

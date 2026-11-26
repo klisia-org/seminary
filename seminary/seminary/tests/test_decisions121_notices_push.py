@@ -284,20 +284,84 @@ class TestUnreadNotices(Decisions121Base):
 		self.assertEqual(frappe.db.get_value("Communication Log", log, "unread_notice"), notices[0].name)
 
 
+def fake_link(doctype, name, user):
+	if doctype == "Person":
+		return f"/elsewhere/{name}"
+	return None
+
+
+def _link_hooks(hook, *args, **kwargs):
+	if hook == web_push.LINK_HOOK:
+		return ["seminary.seminary.tests.test_decisions121_notices_push.fake_link"]
+	return _real_get_hooks(hook, *args, **kwargs)
+
+
+_real_get_hooks = frappe.get_hooks
+
+
+class TestNotify(Decisions121Base):
+	"""The helper other apps push through (121 addendum §3, §4)."""
+
+	def test_nothing_without_a_device_or_for_the_actor(self):
+		self.assertIsNone(web_push.notify(self.person.name, "Hi", triggered_by=self.sender.name))
+		_subscription(self.user.name)
+		self.assertIsNone(web_push.notify(self.person.name, "Hi", triggered_by=self.user.name))
+		self.assertTrue(web_push.notify(self.person.name, "Hi", triggered_by=self.sender.name))
+
+	def test_opt_out_for_the_category(self):
+		_subscription(self.user.name)
+		self.person.append(
+			"consents", {"channel": "Push", "category": "Transactional", "status": "Opted Out"}
+		)
+		self.person.save(ignore_permissions=True)
+		self.assertIsNone(web_push.notify(self.person.name, "Hi", triggered_by=self.sender.name))
+
+	def _url(self, reference_doctype, reference_name, person=None):
+		with patch("frappe.enqueue"):
+			log = web_push.notify(
+				person or self.person.name,
+				"<b>New</b> submission",
+				reference_doctype=reference_doctype,
+				reference_name=reference_name,
+				triggered_by=self.sender.name,
+			)
+		doc = frappe.get_doc("Communication Log", log)
+		self.assertEqual(doc.subject, "New submission")
+		return web_push._click_url(doc)
+
+	def test_an_app_names_the_page(self):
+		_subscription(self.user.name)
+		with patch("frappe.get_hooks", side_effect=_link_hooks):
+			self.assertEqual(
+				self._url("Person", self.sender_person.name), f"/elsewhere/{self.sender_person.name}"
+			)
+
+	def test_staff_get_desk_and_others_the_portal(self):
+		_subscription(self.user.name)
+		ref = self.sender_person.name
+		self.assertEqual(self._url("Person", ref), "/seminary/")
+		staff = fx.make_user()
+		staff.db_set("user_type", "System User")
+		staff_person = fx.make_person("Staff", user=staff.name)
+		_subscription(staff.name)
+		self.assertEqual(self._url("Person", ref, staff_person.name), f"/desk/person/{ref}")
+
+
 class TestPortalFiles(FrappeTestCase):
-	def test_service_worker_and_manifest(self):
-		sw = web_push.PortalPushRoutes("seminary/sw.js")
+	def test_site_wide_worker(self):
+		sw = web_push.PortalPushRoutes("sw.js")
 		self.assertTrue(sw.can_render())
 		response = sw.render()
 		self.assertEqual(response.mimetype, "application/javascript")
 		self.assertIn("notificationclick", response.get_data(as_text=True))
 
+	def test_portal_manifest(self):
 		manifest = web_push.PortalPushRoutes("seminary/manifest.webmanifest")
 		self.assertTrue(manifest.can_render())
 		data = json.loads(manifest.render().get_data(as_text=True))
-		self.assertEqual(data["scope"], "/seminary/")
+		self.assertEqual((data["start_url"], data["scope"]), ("/seminary/", "/seminary/"))
 		self.assertEqual({i["sizes"] for i in data["icons"]}, {"192x192", "512x512"})
 
 	def test_other_paths_are_left_alone(self):
-		for path in ("seminary/inbox", "sw.js", "seminary/x/sw.js"):
+		for path in ("seminary/inbox", "seminary/sw.js", "nowhere/manifest.webmanifest", "x/sw.js"):
 			self.assertFalse(web_push.PortalPushRoutes(path).can_render(), path)

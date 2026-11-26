@@ -18,7 +18,7 @@ from frappe.tests import IntegrationTestCase as FrappeTestCase
 from seminary.seminary.twilio_adapter import TwilioAdapter, _to_text
 
 SID = "AC" + "0" * 32
-TOKEN = "test-auth-token"
+TOKEN = "test-auth-token"  # nosec B105
 
 
 def _account(channel="SMS", **fields):
