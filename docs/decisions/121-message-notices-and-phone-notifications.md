@@ -42,3 +42,18 @@ Moodle and Brightspace all tell the recipient of a new message and push to phone
 Messages and reply notices reach a phone with no per-school SMS cost. iOS only shows push for a
 portal added to the home screen (16.4+), and the preferences page says so. Seminary now depends on
 `pywebpush`. The Twilio adapter gets tests, and 043's roadmap is corrected: the adapter exists.
+
+## Addendum (2026-11-26, before release): one worker for the whole site, and other apps' notices
+
+Proposed. Another portal on the same site needs device notifications too, and a browser should
+hold one subscription per site, not one per portal.
+
+1. **The worker is site-wide.** It is served at `/sw.js` with scope `/`. Each portal keeps its own
+   web manifest (`/<portal>/manifest.webmanifest`) for installing. A browser that turned
+   notifications on in one portal gets them in every portal, with no second prompt.
+2. **The device control is shared.** The *Notifications on your devices* section and its browser
+   code move to `portal-shell`, so any portal can show it.
+3. **Apps send through one helper.** `web_push.notify(person, title, reference, category)` queues
+   a Push log when the person has a device and has not opted out, and does nothing otherwise.
+4. **Links come from the record's app.** A `push_links` hook maps a reference to the page its
+   reader works from. Without one, staff get the Desk form and everyone else the portal home.
