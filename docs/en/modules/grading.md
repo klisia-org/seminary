@@ -149,6 +149,62 @@ Three things to know:
 Extra-credit columns are tinted blue and show a "Max Extra: N" hint
 under the title instead of a weight, so they're easy to spot.
 
+## Sending grades, Incompletes and grade changes
+
+**Send Grades** writes every student's final grade to their transcript
+and closes the course. It waits until every assessment has a grade
+(type 0 for missing work).
+
+**Incompletes.** If a student can't finish on time for a good reason,
+click **Incomplete** next to their name before sending. Give the reason
+and the date they must finish by. That student no longer holds the
+class back: Send Grades goes through, the transcript shows the scale's
+Incomplete code, and their row in the Gradebook stays open. Their
+unfinished assessments are due on the completion date.
+
+- When their work is graded, click **Send Grade** on their row.
+- Two days before the date (set in Seminary Settings), the student and
+  instructor are emailed if work is still missing.
+- If the date passes, the grade is sent automatically: unfinished work
+  counts as 0, or the scale's lapse code is used, as the school chooses
+  in Seminary Settings.
+- An instructor can give up to the number of days set in Seminary
+  Settings. For more time, the student asks from **My Transcripts** in
+  the portal, and the registrar decides. The school may charge a fee.
+
+Each grading scale needs a **Code for Incomplete** before you can mark
+a student Incomplete.
+
+**Sent grades are locked.** Once a grade is sent, it can't be edited
+anywhere. To correct it, open the student's roster row in Desk and
+click **Raise Grade Change**: list the scores to change and say why.
+The registrar approves it, and the transcript, credits and GPA update.
+Seminary Settings can require a second approver for changes made long
+after the grade was sent.
+
+## Repeated courses
+
+When a student takes a course again, the program's **Repeated Courses
+Count** setting decides which attempt counts: the most recent (the
+default) or the highest. The other attempts stay on the transcript,
+marked Repeated, with no credits and out of the GPA. A program can also
+limit how many times a course may be taken; past it, only the registrar
+can enroll the student.
+
+## Transcripts
+
+Students download an **unofficial transcript** (watermarked) from **My
+Transcripts** at any time. Staff open it from the Student form.
+
+An **official transcript** is requested by the student from the portal,
+or by the registrar from the Student form. It can go to the student, to
+an email address, or as a printed copy. A financial or administrative
+hold stops it until the hold is lifted, and the school may charge a
+fee. Each official transcript carries the registrar's signature and a
+verification code. Anyone can enter the code at `/transcript-verify`
+to confirm the student's name and issue date, and check a PDF copy
+against it.
+
 ## Rubrics
 
 A rubric grades an assignment or a discussion criterion by criterion instead of
@@ -268,3 +324,5 @@ get there.
 - [Withdrawal](withdrawal.md) — how withdrawn students are represented
 - [Graduation Requirements](graduation-requirements.md) — non-course
   evidence that complements graded coursework
+- [Settings](../getting-started/initial-setup.md) — Incomplete days, lapse
+  rule, grade change approvers and the transcript signature

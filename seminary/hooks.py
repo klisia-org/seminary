@@ -381,6 +381,9 @@ permission_query_conditions = {
 	"Course Lesson": "seminary.seminary.student_permissions.query_course_lesson",
 	"Student Attendance": "seminary.seminary.student_permissions.query_student_attendance",
 	"Student Due Date Override": "seminary.seminary.student_permissions.query_student_due_date_override",
+	"Incomplete Extension Request": "seminary.seminary.student_permissions.query_incomplete_extension_request",
+	"Grade Change Request": "seminary.seminary.student_permissions.query_grade_change_request",
+	"Transcript Request": "seminary.seminary.student_permissions.query_transcript_request",
 	"Student Chapter Release Override": "seminary.seminary.student_permissions.query_student_chapter_release_override",
 	"Oral Recording": "seminary.seminary.oral.get_permission_query_conditions",
 	"Oral Defense Question": "seminary.seminary.oral_defense.get_permission_query_conditions",
@@ -451,6 +454,9 @@ has_permission = {
 	"Course Lesson": "seminary.seminary.student_permissions.has_permission_course_lesson",
 	"Student Attendance": "seminary.seminary.student_permissions.has_permission_student_attendance",
 	"Student Due Date Override": "seminary.seminary.student_permissions.has_permission_student_due_date_override",
+	"Incomplete Extension Request": "seminary.seminary.student_permissions.has_permission_incomplete_extension_request",
+	"Grade Change Request": "seminary.seminary.student_permissions.has_permission_grade_change_request",
+	"Transcript Request": "seminary.seminary.student_permissions.has_permission_transcript_request",
 	"Student Chapter Release Override": "seminary.seminary.student_permissions.has_permission_student_chapter_release_override",
 	"Oral Recording": "seminary.seminary.oral.has_permission",
 	"Oral Defense Question": "seminary.seminary.oral_defense.has_permission",
@@ -617,6 +623,8 @@ doc_events = {
 		"on_update": "seminary.seminary.disciplinary.on_incident_update",
 	},
 	"Course Assess Results Detail": {
+		# A sent grade is frozen whatever the path (decisions/119 §2).
+		"validate": "seminary.seminary.grade_changes.assert_card_not_frozen",
 		"on_update": [
 			"seminary.seminary.cs_lifecycle.maybe_advance_to_grading",
 			"seminary.seminary.gradebook_weights.on_card_update",

@@ -2365,7 +2365,7 @@ def chapter_competency_for(course_sc, scac_row):
 
 
 @frappe.whitelist()
-def get_gradebook(course):
+def get_gradebook(course: str):
 	require_grader(include_registrar=True)
 	require_course_staff(course, include_registrar=True)
 	students = frappe.get_all(
@@ -2381,6 +2381,11 @@ def get_gradebook(course):
 			"program_std_scr",
 			"progress",
 			"student",
+			# An Incomplete keeps the student's row open after the course closes (decisions/119 §1).
+			"incomplete",
+			"incomplete_until",
+			"incomplete_reason",
+			"incomplete_resolution",
 		],
 	)
 	# Each student's own weights: categories, drops, excuses (decisions/096).

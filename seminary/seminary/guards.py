@@ -568,6 +568,8 @@ COURSE_FIELD = {
 	"Oral Defense Question": "course",
 	"Oral Moment": "course_schedule",
 	"Oral Step Result": "course_schedule",
+	"Incomplete Extension Request": "course_schedule",
+	"Grade Change Request": "course_schedule",
 }
 
 

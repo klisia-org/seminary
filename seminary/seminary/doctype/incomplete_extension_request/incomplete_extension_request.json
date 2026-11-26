@@ -1,0 +1,235 @@
+{
+ "actions": [],
+ "creation": "2026-11-25 23:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "roster",
+  "course_schedule",
+  "course_title",
+  "student",
+  "student_name",
+  "column_break_main",
+  "status",
+  "current_until",
+  "requested_until",
+  "reason",
+  "instructor_section",
+  "instructor_opinion",
+  "instructor_comment",
+  "decision_section",
+  "decided_by",
+  "decided_on",
+  "column_break_decision",
+  "decision_note",
+  "charges"
+ ],
+ "fields": [
+  {
+   "fieldname": "roster",
+   "fieldtype": "Link",
+   "label": "Roster",
+   "options": "Scheduled Course Roster",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course Schedule",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "course_title",
+   "fieldtype": "Data",
+   "label": "Course Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Open\nApproved\nDeclined\nWithdrawn",
+   "default": "Open",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "current_until",
+   "fieldtype": "Date",
+   "label": "Current Completion Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "requested_until",
+   "fieldtype": "Date",
+   "label": "Requested Completion Date",
+   "reqd": 1,
+   "set_only_once": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "instructor_section",
+   "fieldtype": "Section Break",
+   "label": "Instructor"
+  },
+  {
+   "fieldname": "instructor_opinion",
+   "fieldtype": "Select",
+   "label": "Instructor's Opinion",
+   "options": "\nSupport\nDo not support"
+  },
+  {
+   "fieldname": "instructor_comment",
+   "fieldtype": "Small Text",
+   "label": "Instructor's Comment"
+  },
+  {
+   "fieldname": "decision_section",
+   "fieldtype": "Section Break",
+   "label": "Decision"
+  },
+  {
+   "fieldname": "decided_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_on",
+   "fieldtype": "Datetime",
+   "label": "Decided On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_decision",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "decision_note",
+   "fieldtype": "Small Text",
+   "label": "Decision Note",
+   "read_only": 1
+  },
+  {
+   "fieldname": "charges",
+   "fieldtype": "Small Text",
+   "label": "Charges",
+   "read_only": 1,
+   "description": "Fee charges raised on approval, if the school charges for extensions."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-25 23:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Incomplete Extension Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Registrar"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "create": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "IER-.YYYY.-.####",
+ "naming_rule": "Expression",
+ "title_field": "student_name",
+ "show_title_field_in_link": 0,
+ "description": "A student's request for more time to finish an Incomplete than the instructor may grant."
+}

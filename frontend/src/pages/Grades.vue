@@ -2,15 +2,21 @@
   <div v-if="isStudent">
 
     <PageHeader :title="__('My Transcripts')">
-      <!-- Only offered once there is something to see: the profile is empty
-           and confusing for a student on a numerically graded programme. -->
-      <template v-if="hasCompetencies" #actions>
+      <template #actions>
+        <!-- The unofficial transcript, any time (decisions/119 §5). -->
+        <a :href="unofficialUrl" target="_blank" rel="noopener">
+          <Button variant="subtle" size="sm">{{ __('Unofficial Transcript (PDF)') }}</Button>
+        </a>
+        <!-- Only offered once there is something to see: the profile is empty
+             and confusing for a student on a numerically graded programme. -->
+        <template v-if="hasCompetencies">
         <router-link :to="{ name: 'SelfDevelopmentPlans' }">
           <Button variant="subtle" size="sm">{{ __('My Plans') }}</Button>
         </router-link>
         <router-link :to="{ name: 'MyFormation' }">
           <Button variant="subtle" size="sm">{{ __('My Formation') }}</Button>
         </router-link>
+        </template>
       </template>
     </PageHeader>
     <div v-if="Object.keys(groupedData).length > 0" class="px-5 py-4">
@@ -55,6 +61,9 @@
                 </td>
                 <td class="py-2 px-3">
                   <Badge :theme="statusTheme(row.status)" :label="row.status" />
+                  <!-- An attempt that a retake replaced (decisions/119 §4). -->
+                  <Badge v-if="row.repeated" class="ml-1" theme="gray" :label="__('Repeated')"
+                    :title="__('This attempt doesn\'t count toward credits or GPA.')" />
                 </td>
               </tr>
               <!-- Competency standing belongs under its course, not in a
@@ -87,6 +96,8 @@
     <div v-else>
       <MissingData message="No grades found" />
     </div>
+    <MyIncompletes />
+    <OfficialTranscripts />
   </div>
   <div v-else class="flex flex-col items-center justify-center">
     <p class="text-lg font-bold text-ink-gray-5">{{ __('Individual Student Transcripts are only displayed for Students')
@@ -99,6 +110,8 @@ import PageHeader from '@/components/PageHeader.vue'
 import { Badge, Button, createResource } from 'frappe-ui';
 import { reactive, ref, computed, inject } from 'vue';
 import MissingData from '@/components/MissingData.vue';
+import MyIncompletes from '@/components/Transcripts/MyIncompletes.vue';
+import OfficialTranscripts from '@/components/Transcripts/OfficialTranscripts.vue';
 import { usersStore } from '../stores/user'
 import { statusTheme } from '@/utils/statusTheme'
 
@@ -115,6 +128,8 @@ let userResource = usersStore()
 let isStudent = user.data.is_student
 
 let student = user.data.student
+
+const unofficialUrl = `/api/method/seminary.seminary.transcripts.unofficial`
 
 const allPrograms = ref([]);
 const selectedProgram = ref("");

@@ -40,6 +40,16 @@ def daily():
 		advance_due_course_schedules(today)
 		nag_late_graders(today)
 
+	# Incomplete reminders and lapses (decisions/119 §1).
+	from seminary.seminary.incompletes import daily as incompletes_daily
+
+	incompletes_daily(today)
+
+	# Transcript requests held by a hold or a payment (decisions/119 §5).
+	from seminary.seminary.transcripts import daily as transcripts_daily
+
+	transcripts_daily()
+
 	from seminary.seminary.comms import process_follow_ups
 
 	process_follow_ups()

@@ -1,0 +1,94 @@
+{#- The transcript (decisions/119 §5). One render for both uses: `official` adds the
+    signature and the verification code; an unofficial copy is watermarked. -#}
+<style>
+	.tr { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #111; position: relative; }
+	.tr h1 { font-size: 15pt; margin: 0 0 2px; }
+	.tr h2 { font-size: 11pt; margin: 14px 0 4px; border-bottom: 1px solid #444; padding-bottom: 2px; }
+	.tr h3 { font-size: 9.5pt; margin: 8px 0 2px; }
+	.tr table { width: 100%; border-collapse: collapse; }
+	.tr th, .tr td { text-align: left; padding: 2px 6px 2px 0; vertical-align: top; }
+	.tr thead th { border-bottom: 1px solid #999; font-weight: bold; }
+	.tr .num { text-align: right; }
+	.tr .meta td, .tr .meta th { padding: 1px 12px 1px 0; }
+	.tr .muted { color: #555; }
+	.tr .summary { margin-top: 4px; font-weight: bold; }
+	.tr .sign { margin-top: 28px; }
+	.tr .sign img { max-height: 48px; }
+	.tr .verify { margin-top: 14px; border: 1px solid #999; padding: 6px 8px; }
+	.tr .watermark { position: fixed; top: 40%; left: 0; right: 0; text-align: center; font-size: 60pt;
+		color: rgba(0, 0, 0, 0.08); transform: rotate(-30deg); z-index: 0; }
+	.tr .key { margin-top: 12px; font-size: 8pt; }
+</style>
+<div class="tr">
+	{% if not official %}<div class="watermark" aria-hidden="true">{{ _("UNOFFICIAL") }}</div>{% endif %}
+	<h1>{{ _("Official Transcript") if official else _("Unofficial Transcript") }}</h1>
+	<div class="muted">{{ school.name }}</div>
+
+	<table class="meta" style="width:auto;margin-top:8px">
+		<tr><th scope="row">{{ _("Student") }}</th><td>{{ student.student_name }}</td></tr>
+		<tr><th scope="row">{{ _("Student ID") }}</th><td>{{ student.name }}</td></tr>
+		{% if birth_date %}<tr><th scope="row">{{ _("Date of Birth") }}</th><td>{{ frappe.format(birth_date, {"fieldtype": "Date"}) }}</td></tr>{% endif %}
+		<tr><th scope="row">{{ _("Issued") }}</th><td>{{ frappe.format(generated, {"fieldtype": "Date"}) }}</td></tr>
+	</table>
+
+	{% for pe in enrollments %}
+	<h2>{{ pe.program }}</h2>
+	<table class="meta" style="width:auto">
+		<tr><th scope="row">{{ _("Enrolled") }}</th><td>{{ frappe.format(pe.enrolled, {"fieldtype": "Date"}) if pe.enrolled else "–" }}</td></tr>
+		<tr><th scope="row">{{ _("Status") }}</th><td>{{ _(pe.status) if pe.status else "–" }}</td></tr>
+		{% if pe.graduated %}
+		<tr><th scope="row">{{ _("Degree Conferred") }}</th><td>{{ pe.program }}{% if pe.concluded %}, {{ frappe.format(pe.concluded, {"fieldtype": "Date"}) }}{% endif %}{% if pe.honor %} ({{ pe.honor }}){% endif %}</td></tr>
+		{% endif %}
+	</table>
+
+	{% for term in pe.terms %}
+	<h3>{{ term.label }}</h3>
+	<table>
+		<thead>
+			<tr>
+				<th scope="col" style="width:14%">{{ _("Code") }}</th>
+				<th scope="col">{{ _("Course") }}</th>
+				<th scope="col" class="num" style="width:9%">{{ _("Credits") }}</th>
+				<th scope="col" class="num" style="width:9%">{{ _("Earned") }}</th>
+				<th scope="col" style="width:10%">{{ _("Grade") }}</th>
+				<th scope="col" style="width:7%">{{ _("Notes") }}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for row in term.rows %}
+			<tr>
+				<td>{{ row.code or "–" }}</td>
+				<td>{{ row.title }}</td>
+				<td class="num">{{ frappe.utils.fmt_money(row.credits, precision=1) if row.credits else "–" }}</td>
+				<td class="num">{{ frappe.utils.fmt_money(row.earned, precision=1) if row.earned else "0" }}</td>
+				<td>{{ row.grade or "–" }}{% if row.numeric is not none %} <span class="muted">({{ frappe.utils.flt(row.numeric, 1) }})</span>{% endif %}</td>
+				<td>{{ row.marks or "–" }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	{% endfor %}
+
+	<div class="summary">
+		{{ _("Credits earned: {0}").format(frappe.utils.fmt_money(pe.credits, precision=1)) }}{% if pe.gpa is not none %} · {{ _("GPA: {0} of {1}").format(frappe.utils.flt(pe.gpa, 2), frappe.utils.flt(pe.gpa_basis, 1)) }}{% endif %}
+	</div>
+	{% endfor %}
+
+	<div class="key">
+		{% for mark, text in marks.items() %}<div><strong>{{ mark }}</strong>: {{ text }}</div>{% endfor %}
+	</div>
+
+	{% if official %}
+	<div class="sign">
+		{% if school.signature %}<img src="{{ school.signature }}" alt="{{ _('Signature of {0}').format(school.signatory or school.signatory_title) }}">{% endif %}
+		<div>{{ school.signatory or "" }}</div>
+		<div class="muted">{{ school.signatory_title }}</div>
+	</div>
+	{% if request and request.verification_code %}
+	<div class="verify">
+		{{ _("Verification code") }}: <strong>{{ request.verification_code }}</strong><br>
+		{{ _("Confirm this transcript at {0}").format(verify_url) }}
+	</div>
+	{% endif %}
+	{% endif %}
+</div>

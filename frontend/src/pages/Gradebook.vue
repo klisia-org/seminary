@@ -22,13 +22,13 @@
       {{ finalizedMessage }}
     </div>
     <div class="flex items-center gap-2 mb-4 ml-5">
-      <Button v-if="hasUnsavedChanges && !isFinalized" variant="solid" @click="saveAllChanges">
+      <Button v-if="hasUnsavedChanges && (!isFinalized || hasOpenIncompletes)" variant="solid" @click="saveAllChanges">
         <template #prefix>
           <Save class="h-4 w-4" />
         </template>
         {{ __('Save All Changes') }} ({{ Object.keys(changedCells).length }})
       </Button>
-      <span v-if="hasUnsavedChanges && !isFinalized" class="text-sm text-ink-gray-5">
+      <span v-if="hasUnsavedChanges && (!isFinalized || hasOpenIncompletes)" class="text-sm text-ink-gray-5">
         {{ __('or press Ctrl+S') }}
       </span>
       <Button
@@ -176,6 +176,20 @@
                   </span>
                 </Tooltip>
 
+                <!-- Incompletes (decisions/119 §1). -->
+                <div v-if="canMarkIncomplete(student) || isOpenIncomplete(student)" class="flex shrink-0 items-center gap-1">
+                  <Badge v-if="isOpenIncomplete(student)" theme="orange" size="sm"
+                    :label="__('Incomplete until {0}').format(formatDay(student.incomplete_until))"
+                    :title="student.incomplete_reason" />
+                  <Button v-if="canMarkIncomplete(student) && !student.incomplete" size="sm" variant="ghost"
+                    @click="openIncomplete(student)">{{ __('Incomplete') }}</Button>
+                  <Button v-if="canMarkIncomplete(student) && student.incomplete" size="sm" variant="ghost"
+                    @click="clearIncomplete(student)">{{ __('Clear') }}</Button>
+                  <Button v-if="isFinalized && isOpenIncomplete(student) && canGrade" size="sm" variant="solid"
+                    theme="blue" :disabled="hasUnsavedChanges || rowHasNullGrades(student)"
+                    :title="rowHasNullGrades(student) ? __('Fill in every assessment first.') : ''"
+                    @click="sendIncomplete(student)">{{ __('Send Grade') }}</Button>
+                </div>
                 <Tooltip :text="`${__('Send Email to')} ${student.stuname_roster}`" placement="bottom"
                   arrow-class="fill-surface-white">
                   <a :aria-label="__('Send Email to {0}').format(student.stuname_roster)" :href="`mailto:${student.stuemail_rc}`"
@@ -210,14 +224,14 @@
               <div v-else class="flex items-center gap-1">
                 <input type="number"
                   :aria-label="__('{0}: {1}').format(student.stuname_roster, assessment.title)"
-                  :disabled="isFinalized"
+                  :disabled="rowLocked(student)"
                   class="w-full min-w-[50px] text-center text-sm border border-outline-gray-1 bg-surface-white text-ink-gray-9 rounded px-1 py-1 focus:border-outline-blue-1 focus:ring-1 focus:ring-outline-blue-1 outline-none transition-colors disabled:bg-surface-gray-1 disabled:text-ink-gray-6 disabled:cursor-not-allowed"
                   :class="[isCellChanged(student, assessment) ? 'border-outline-blue-1 !bg-surface-blue-1 text-ink-blue-2' : '', weightStatus(student, assessment) ? 'text-ink-gray-5 line-through' : '']"
                   :value="assessment.extracredit_scac ? getExtraCredit(student, assessment) : getRegularGrade(student, assessment)"
                   @input="assessment.extracredit_scac
                     ? markExtraCreditAsChanged(student, assessment, $event.target.value)
                     : markRegularGradeAsChanged(student, assessment, $event.target.value)" />
-                <button :aria-label="__('Save')" v-if="isCellChanged(student, assessment) && !isFinalized"
+                <button :aria-label="__('Save')" v-if="isCellChanged(student, assessment) && !rowLocked(student)"
                   class="shrink-0 rounded p-0.5 text-ink-blue-2 hover:text-ink-blue-3 hover:bg-surface-blue-2 transition-colors"
                   @click="saveCell(student, assessment)">
                   <Save class="h-3.5 w-3.5" />
@@ -257,6 +271,23 @@
     </template>
     <AbsenceDecisionModal ref="absenceDecisions" />
     <StudentDatesModal ref="studentDates" @changed="gradebook.reload()" />
+    <Dialog v-model="incompleteDialog.show" :options="{ title: __('Mark Incomplete') }">
+      <template #body-content>
+        <div class="space-y-3">
+          <p class="text-sm text-ink-gray-7">
+            {{ __('{0} does not count as ungraded, so you can send the class\'s grades. Their row stays open until you send their grade or the date passes.').format(incompleteDialog.student?.stuname_roster) }}
+          </p>
+          <FormControl type="date" :label="__('Complete by')" v-model="incompleteDialog.until" />
+          <FormControl type="textarea" :label="__('Reason')" v-model="incompleteDialog.reason" />
+        </div>
+      </template>
+      <template #actions>
+        <Button variant="solid" class="w-full" :loading="incompleteDialog.saving"
+          :disabled="!incompleteDialog.reason || !incompleteDialog.until" @click="saveIncomplete">
+          {{ __('Mark Incomplete') }}
+        </Button>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -265,7 +296,7 @@ import { userLocale } from '@seminary/portal-shell'
 import PageHeader from '@/components/PageHeader.vue'
 import AbsenceDecisionModal from '@/components/Modals/AbsenceDecisionModal.vue'
 import StudentDatesModal from '@/components/Modals/StudentDatesModal.vue'
-import { Breadcrumbs, Button, createResource, Tooltip, call, toast } from 'frappe-ui'
+import { Badge, Breadcrumbs, Button, createResource, Dialog, FormControl, Tooltip, call, toast } from 'frappe-ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
 import { Send, Save, Clock } from 'lucide-vue-next'
 import { useRoute } from 'vue-router';
@@ -377,12 +408,72 @@ const finalizedMessage = computed(() => {
   if (courseSchedule.data?.workflow_state === 'Cancelled') {
     return __('This course has been cancelled. The gradebook is read-only.');
   }
-  return __('Grades for this course have already been sent. The gradebook is read-only.');
+  if (hasOpenIncompletes.value) {
+    return __('Grades for this course have been sent. Only students with an open Incomplete can still be graded. To change a sent grade, raise a Grade Change Request.');
+  }
+  return __('Grades for this course have already been sent. The gradebook is read-only. To change a grade, raise a Grade Change Request.');
 })
+
+// Incompletes (decisions/119 §1): marked before Send Grades; the student's row
+// stays open after the course closes until their own grade is sent.
+const isOpenIncomplete = (student) =>
+  !!student.incomplete && !!student.active && !student.incomplete_resolution
+const hasOpenIncompletes = computed(() => students.value.some(isOpenIncomplete))
+const canGrade = computed(() => !!(user?.data?.is_evaluator || user?.data?.is_instructor || user?.data?.is_moderator))
+const canMarkIncomplete = (student) =>
+  canSendGrades.value && !courseSchedule.data?.open_ended && student.active && !student.audit_bool
+const rowLocked = (student) => isFinalized.value && !isOpenIncomplete(student)
+const rowHasNullGrades = (student) =>
+  assessments.value.some((def) => {
+    const cell = student.assessments.find((a) => a.assessment_criteria === def.assessment_criteria)
+    return !cell?.excused && (!cell || !cell.graded_card)
+  })
+const formatDay = (value) => (value ? new Date(value + 'T00:00:00').toLocaleDateString(userLocale()) : '')
+
+const incompleteDialog = ref({ show: false, student: null, until: '', reason: '', saving: false })
+const openIncomplete = (student) => {
+  incompleteDialog.value = { show: true, student, until: '', reason: '', saving: false }
+}
+const saveIncomplete = async () => {
+  const d = incompleteDialog.value
+  d.saving = true
+  try {
+    await call('seminary.seminary.incompletes.mark_incomplete', {
+      roster: d.student.name,
+      reason: d.reason,
+      until: d.until,
+    })
+    d.show = false
+    toast.success(__('{0} is marked Incomplete').format(d.student.stuname_roster))
+    gradebook.reload()
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Could not mark Incomplete'))
+  } finally {
+    d.saving = false
+  }
+}
+const clearIncomplete = async (student) => {
+  try {
+    await call('seminary.seminary.incompletes.clear_incomplete', { roster: student.name })
+    gradebook.reload()
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Could not clear the Incomplete'))
+  }
+}
+const sendIncomplete = async (student) => {
+  if (!confirm(__('Send the final grade for {0}? This writes their transcript and cannot be undone.').format(student.stuname_roster))) return
+  try {
+    await call('seminary.seminary.incompletes.send_incomplete_grade', { roster: student.name })
+    toast.success(__('Grade sent for {0}').format(student.stuname_roster))
+    gradebook.reload()
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Failed to send the grade'))
+  }
+}
 
 const hasNullGrades = computed(() => {
   for (const student of students.value) {
-    if (!student.active || student.audit_bool) continue;
+    if (!student.active || student.audit_bool || student.incomplete) continue;
     for (const def of assessments.value) {
       const cell = student.assessments.find(
         (a) => a.assessment_criteria === def.assessment_criteria

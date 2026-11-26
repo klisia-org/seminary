@@ -41,6 +41,8 @@
   "is_weighted",
   "accept_transfer_gpa",
   "min_graduation_gpa",
+  "repeat_policy",
+  "max_attempts",
   "column_break_gpa",
   "honors_levels",
   "cbe_section",
@@ -235,6 +237,21 @@
    "label": "Minimum Graduation GPA",
    "non_negative": 1,
    "precision": "2"
+  },
+  {
+   "fieldname": "repeat_policy",
+   "fieldtype": "Select",
+   "label": "Repeated Courses Count",
+   "options": "Most recent\nHighest",
+   "default": "Most recent",
+   "description": "Which attempt counts toward credits and GPA when a student takes a course again. The other attempts stay on the transcript, marked Repeated."
+  },
+  {
+   "fieldname": "max_attempts",
+   "fieldtype": "Int",
+   "label": "Maximum Attempts per Course",
+   "non_negative": 1,
+   "description": "Leave at 0 for no limit. Past it, only the registrar can enroll the student in the course."
   },
   {
    "fieldname": "column_break_gpa",
@@ -671,7 +688,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-11-25 12:00:00.000000",
+ "modified": "2026-11-25 23:30:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

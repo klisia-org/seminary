@@ -765,6 +765,79 @@ def seed_communication_templates():
 	if not frappe.db.exists("DocType", "Communication Template"):
 		return
 	defaults = [
+		# decisions/119: Incompletes and transcripts.
+		{
+			"template_key": "incomplete-reminder",
+			"category": "Transactional",
+			"description": "Student/instructor reminder: an Incomplete's completion date is near and work is unsubmitted.",
+			"subject": "{{ course }}: work due by {{ due }}",
+			"body": (
+				"<p>The Incomplete for {{ student }} in <b>{{ course }}</b> must be finished by "
+				"<b>{{ due }}</b>.</p><p>Still to hand in: {{ missing }}.</p>"
+			),
+		},
+		{
+			"template_key": "incomplete-resolved",
+			"category": "Transactional",
+			"description": "Student/instructor/registrar notice: an Incomplete's grade was sent (completed or lapsed).",
+			"subject": "{{ course }}: final grade sent",
+			"body": "<p>The Incomplete for {{ student }} in <b>{{ course }}</b> is closed ({{ resolution }}). The final grade is on the transcript.</p>",
+		},
+		{
+			"template_key": "incomplete-extension-requested",
+			"category": "Transactional",
+			"description": "Instructor/registrar notice: a student asked for more time on an Incomplete.",
+			"subject": "Extension requested: {{ course }}",
+			"body": (
+				"<p>{{ student }} asks to finish <b>{{ course }}</b> by {{ requested }} instead of {{ until }}.</p>"
+				"<p>Reason: {{ reason }}</p><p>Request {{ request }} is waiting for the registrar.</p>"
+			),
+		},
+		{
+			"template_key": "incomplete-extension-decided",
+			"category": "Transactional",
+			"description": "Student/instructor notice: the registrar decided an Incomplete extension request.",
+			"subject": "Extension {{ decision }}: {{ course }}",
+			"body": "<p>The extension request for <b>{{ course }}</b> was {{ decision }}. The completion date is {{ until }}.</p><p>{{ note }}</p>",
+		},
+		{
+			"template_key": "transcript-request-on-hold",
+			"category": "Transactional",
+			"description": "Student notice: a transcript request is held by an active hold.",
+			"subject": "Your transcript request is on hold",
+			"body": (
+				"<p>Your transcript request {{ request }} can't be issued while these holds are active:</p>"
+				"<p>{{ holds }}</p><p>Contact the office that placed the hold. The request goes ahead once it is lifted.</p>"
+			),
+		},
+		{
+			"template_key": "transcript-request-ready",
+			"category": "Transactional",
+			"description": "Registrar notice: a printed transcript is ready to issue.",
+			"subject": "Transcript to print: {{ student }}",
+			"body": "<p>Transcript request {{ request }} for {{ student }} is ready. Issue it, then print and mail the copy to {{ recipient }}.</p>",
+		},
+		{
+			"template_key": "transcript-issued",
+			"category": "Transactional",
+			"description": "Student notice: an official transcript was issued.",
+			"subject": "Your official transcript was issued",
+			"body": (
+				"<p>Your official transcript ({{ request }}) was issued. Its verification code is <b>{{ code }}</b>.</p>"
+				'<p>Anyone can confirm it at <a href="{{ verify_url }}">{{ verify_url }}</a>.</p>'
+			),
+		},
+		{
+			"template_key": "transcript-delivery",
+			"category": "Transactional",
+			"description": "Recipient email: an official transcript sent on a student's request.",
+			"subject": "Official transcript for {{ student }}",
+			"body": (
+				"<p>{{ student }} asked us to send you their official transcript.</p>"
+				'<p><a href="{{ download_url }}">Download the transcript</a> (the link works until {{ expires }}).</p>'
+				'<p>You can confirm it is authentic at <a href="{{ verify_url }}">{{ verify_url }}</a>.</p>'
+			),
+		},
 		# decisions/112 §9: one notice per admission decision.
 		{
 			"template_key": "admission-admitted",

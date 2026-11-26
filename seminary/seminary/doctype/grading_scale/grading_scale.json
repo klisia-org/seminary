@@ -22,6 +22,10 @@
   "section_break_fa",
   "fa_code",
   "fa_gpa",
+  "section_break_incomplete",
+  "inc_code",
+  "column_break_incomplete",
+  "lapse_code",
   "competency_based_education_section",
   "gradingscaledimensions",
   "grading_intervals_section",
@@ -132,6 +136,29 @@
    "label": "Consider FA in GPA"
   },
   {
+   "fieldname": "section_break_incomplete",
+   "fieldtype": "Section Break",
+   "label": "Transcript Notation for Incompletes"
+  },
+  {
+   "fieldname": "inc_code",
+   "fieldtype": "Data",
+   "label": "Code for Incomplete",
+   "allow_on_submit": 1,
+   "description": "Shown on the transcript while a student has an Incomplete. Never counted in the GPA. Required to mark a student Incomplete."
+  },
+  {
+   "fieldname": "column_break_incomplete",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lapse_code",
+   "fieldtype": "Data",
+   "label": "Code When an Incomplete Lapses",
+   "allow_on_submit": 1,
+   "description": "Used when the school assigns a code to a lapsed Incomplete. The code must be one of the scale's grades, such as F."
+  },
+  {
    "fieldname": "competency_based_education_section",
    "fieldtype": "Section Break",
    "label": "Competency based education"
@@ -145,7 +172,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-29 23:17:40.353078",
+ "modified": "2026-11-25 23:30:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Grading Scale",

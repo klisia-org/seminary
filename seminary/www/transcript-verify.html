@@ -1,0 +1,56 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="sem-page" style="max-width: 680px;">
+	<div class="sem-panel">
+		<h1>{{ _("Verify a transcript") }}</h1>
+		<p class="sem-lead">{{ _("Enter the verification code printed on the transcript.") }}</p>
+		<form method="get" action="/transcript-verify">
+			<label for="code">{{ _("Verification code") }}</label>
+			<input id="code" name="code" class="form-control" value="{{ code }}" autocomplete="off" required>
+			<button type="submit" class="btn btn-primary" style="margin-top: 8px;">{{ _("Check") }}</button>
+		</form>
+	</div>
+
+	{% if searched and not result %}
+	<div class="sem-panel" role="status">
+		<h2>{{ _("No transcript found") }}</h2>
+		<p>{{ _("No official transcript was issued with this code. Check the code, or contact the registrar.") }}</p>
+	</div>
+	{% endif %}
+
+	{% if result %}
+	<div class="sem-panel" role="status">
+		<h2>{{ _("Transcript found") }}</h2>
+		<p>{{ _("Student") }}: <strong>{{ result.student_name }}</strong></p>
+		<p>{{ _("Issued") }}: <strong>{{ frappe.format(result.issued_on, {"fieldtype": "Date"}) }}</strong></p>
+		<p style="word-break: break-all;">{{ _("SHA-256") }}: <code id="expected">{{ result.sha256 }}</code></p>
+		<label for="pdf">{{ _("Check a PDF copy against it") }}</label>
+		<input id="pdf" type="file" accept="application/pdf">
+		<p id="match" role="status" aria-live="polite"></p>
+		<p class="text-muted">{{ _("The file is checked in your browser and is not uploaded. A printed copy can't be checked this way: compare it with the PDF the student was sent.") }}</p>
+	</div>
+	<script>
+		(function () {
+			var input = document.getElementById("pdf");
+			var out = document.getElementById("match");
+			var expected = document.getElementById("expected").textContent.trim();
+			input.addEventListener("change", function () {
+				var file = input.files && input.files[0];
+				if (!file || !window.crypto || !crypto.subtle) return;
+				file.arrayBuffer().then(function (buf) {
+					return crypto.subtle.digest("SHA-256", buf);
+				}).then(function (hash) {
+					var hex = Array.prototype.map.call(new Uint8Array(hash), function (b) {
+						return ("0" + b.toString(16)).slice(-2);
+					}).join("");
+					out.textContent = hex === expected
+						? {{ _("This PDF matches the issued transcript.") | tojson }}
+						: {{ _("This PDF does not match. It is not the transcript that was issued, or it has been changed.") | tojson }};
+				});
+			});
+		})();
+	</script>
+	{% endif %}
+</div>
+{% endblock %}

@@ -167,9 +167,17 @@ GUEST_ALLOWED = {
 	"seminary.seminary.returning.request_access",
 	# resolves through a readable File row; content-hash keys are not enumerable (p004)
 	"seminary.storage.api.download_file",
+	# @rate_limit 30/3600s ip_based; the emailed random key under compare_digest is the
+	# authorization, and it expires (decisions/119 §5)
+	"seminary.seminary.transcripts.download",
 }
 
 STUDENT_ALLOWED = {
+	# decisions/119: the caller's own Incompletes and transcript requests, resolved
+	# from the session's Student; anyone else gets an empty answer or a refusal.
+	"seminary.seminary.incompletes.my_incompletes",
+	"seminary.seminary.transcripts.my_requests",
+	"seminary.seminary.transcripts.new_request",
 	# decisions/118 §1: the caller's own Person, nothing else; Guest gets {}
 	"seminary.seminary.returning.signed_in_prefill",
 	# decisions/100d-a §9: the caller's own time zone, read and set on their
@@ -534,6 +542,29 @@ OWN_RULE = (
 		# section, resolved from the recording; covered by test_adr100a.
 		"seminary.seminary.oral.add_moment",
 		"seminary.seminary.oral.set_moment_state",
+	}
+	| {
+		# decisions/119: grading staff of the section mark, clear and send an
+		# Incomplete; the student asks for, and the owner withdraws, an extension;
+		# only Registrar/Seminary Manager decide it, issue or waive a transcript and
+		# approve a grade change (a Program Chair is refused, so not STAFF_ONLY); the
+		# student or staff read and cancel their own transcript. Covered by
+		# test_adr119_final_grades.
+		"seminary.seminary.incompletes." + n
+		for n in (
+			"mark_incomplete",
+			"clear_incomplete",
+			"send_incomplete_grade",
+			"request_extension",
+			"approve_extension",
+			"decline_extension",
+			"withdraw_extension",
+		)
+	}
+	| {"seminary.seminary.grade_changes." + n for n in ("approve", "reject", "withdraw")}
+	| {
+		"seminary.seminary.transcripts." + n
+		for n in ("unofficial", "issue", "waive_fee", "recheck", "cancel_request")
 	}
 	| {
 		# decisions/098: the student, their mentor or a decider requests; the

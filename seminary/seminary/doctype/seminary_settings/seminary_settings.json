@@ -31,6 +31,17 @@
   "grade_close_offset_days",
   "column_break_4",
   "academic_term_reqd",
+  "grades_transcripts_section",
+  "incomplete_default_days",
+  "incomplete_instructor_max_days",
+  "incomplete_reminder_days",
+  "incomplete_lapse_rule",
+  "column_break_grades_transcripts",
+  "grade_change_second_approver_role",
+  "grade_change_second_approval_days",
+  "transcript_signature",
+  "transcript_signatory_name",
+  "transcript_signatory_title",
   "section_break_qqak",
   "default_gradescale",
   "prerequisite_override_section",
@@ -221,6 +232,78 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Make Academic Term Mandatory"
+  },
+  {
+   "fieldname": "grades_transcripts_section",
+   "fieldtype": "Section Break",
+   "label": "Incompletes, Grade Changes and Transcripts"
+  },
+  {
+   "fieldname": "incomplete_default_days",
+   "fieldtype": "Int",
+   "label": "Incomplete: Default Days to Finish",
+   "default": "30",
+   "non_negative": 1,
+   "description": "The completion date offered when an instructor marks a student Incomplete, counted from the course end."
+  },
+  {
+   "fieldname": "incomplete_instructor_max_days",
+   "fieldtype": "Int",
+   "label": "Incomplete: Longest Instructor Grant (Days)",
+   "default": "60",
+   "non_negative": 1,
+   "description": "The latest completion date an instructor may set, counted from the course end. A later date needs an extension request approved by the registrar."
+  },
+  {
+   "fieldname": "incomplete_reminder_days",
+   "fieldtype": "Int",
+   "label": "Incomplete: Reminder Days Before",
+   "default": "2",
+   "non_negative": 1,
+   "description": "The student and the instructor are emailed this many days before the completion date while work is unsubmitted. 0 sends no reminder."
+  },
+  {
+   "fieldname": "incomplete_lapse_rule",
+   "fieldtype": "Select",
+   "label": "When an Incomplete Lapses",
+   "options": "Grade unfinished work as 0\nAssign the scale's lapse code",
+   "default": "Grade unfinished work as 0",
+   "description": "What happens on the day after the completion date if the instructor hasn't sent the grade."
+  },
+  {
+   "fieldname": "column_break_grades_transcripts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grade_change_second_approver_role",
+   "fieldtype": "Link",
+   "options": "Role",
+   "label": "Grade Change: Second Approver Role",
+   "description": "Leave empty and the registrar approves grade changes alone."
+  },
+  {
+   "fieldname": "grade_change_second_approval_days",
+   "fieldtype": "Int",
+   "label": "Grade Change: Second Approval After (Days)",
+   "non_negative": 1,
+   "description": "A change requested more than this many days after the grade was sent also needs the second approver. Leave at 0 for none."
+  },
+  {
+   "fieldname": "transcript_signature",
+   "fieldtype": "Attach Image",
+   "label": "Transcript Signature",
+   "description": "The signature printed on official transcripts."
+  },
+  {
+   "fieldname": "transcript_signatory_name",
+   "fieldtype": "Data",
+   "label": "Transcript Signed By"
+  },
+  {
+   "fieldname": "transcript_signatory_title",
+   "fieldtype": "Data",
+   "label": "Signatory Title",
+   "default": "Registrar"
   },
   {
    "fieldname": "section_break_7",
@@ -982,7 +1065,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-24 12:00:00.000000",
+ "modified": "2026-11-25 23:30:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

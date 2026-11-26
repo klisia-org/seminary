@@ -12,6 +12,9 @@ import seminary.seminary.api
 class ScheduledCourseRoster(Document):
 	@frappe.whitelist()
 	def validate(self):
+		from seminary.seminary.grade_changes import assert_roster_not_frozen
+
+		assert_roster_not_frozen(self)
 		self.validate_score()
 
 	@frappe.whitelist()
