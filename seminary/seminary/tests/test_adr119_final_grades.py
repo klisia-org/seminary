@@ -13,11 +13,12 @@ from seminary.seminary import api, grade_changes, incompletes, repeats, transcri
 from seminary.seminary.financial.backend import NullFinancialBackend, PaymentAggregate
 from seminary.seminary.tests import cohort_fixtures as fx
 
+# `grade_pass` is the interval's pass/fail outcome, not a password (bandit B105).
 INTERVALS = [
-	{"grade_code": "A", "threshold": 90, "grade_pass": "Pass"},
-	{"grade_code": "B", "threshold": 80, "grade_pass": "Pass"},
-	{"grade_code": "C", "threshold": 70, "grade_pass": "Pass"},
-	{"grade_code": "F", "threshold": 0, "grade_pass": "Fail"},
+	{"grade_code": "A", "threshold": 90, "grade_pass": "Pass"},  # nosec B105
+	{"grade_code": "B", "threshold": 80, "grade_pass": "Pass"},  # nosec B105
+	{"grade_code": "C", "threshold": 70, "grade_pass": "Pass"},  # nosec B105
+	{"grade_code": "F", "threshold": 0, "grade_pass": "Fail"},  # nosec B105
 ]
 
 
