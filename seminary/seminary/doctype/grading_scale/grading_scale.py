@@ -22,6 +22,27 @@ class GradingScale(Document):
 		if self.grscale_type == "Points" and 0 not in thresholds:
 			frappe.throw(_("Please define a grade for Threshold 0"))
 		self.validate_cbe_scale()
+		self.validate_incomplete_codes()
+
+	def before_update_after_submit(self):
+		# Both codes can be set on a submitted scale.
+		self.validate_incomplete_codes()
+
+	def validate_incomplete_codes(self):
+		"""A lapse code is a final grade, so it must be one of the scale's grades; the
+		Incomplete code must not be, or a real grade would read as unfinished
+		(decisions/119 §1)."""
+		codes = {(d.grade_code or "").strip() for d in self.intervals}
+		lapse = (self.lapse_code or "").strip()
+		if lapse and lapse not in codes:
+			frappe.throw(
+				_("The code when an Incomplete lapses must be one of this scale's grades: {0}.").format(
+					", ".join(sorted(c for c in codes if c))
+				)
+			)
+		inc = (self.inc_code or "").strip()
+		if inc and inc in codes:
+			frappe.throw(_("The Incomplete code {0} is already one of this scale's grades.").format(inc))
 
 	def protect_dimension_codes(self):
 		"""Refuse to drop or rename a dimension code that records still carry.

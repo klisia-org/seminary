@@ -177,11 +177,11 @@
                 </Tooltip>
 
                 <!-- Incompletes (decisions/119 §1). -->
-                <div v-if="canMarkIncomplete(student) || isOpenIncomplete(student)" class="flex shrink-0 items-center gap-1">
+                <div v-if="(canMarkIncomplete(student) && (student.incomplete || rowHasNullGrades(student))) || isOpenIncomplete(student)" class="flex shrink-0 items-center gap-1">
                   <Badge v-if="isOpenIncomplete(student)" theme="orange" size="sm"
                     :label="__('Incomplete until {0}').format(formatDay(student.incomplete_until))"
                     :title="student.incomplete_reason" />
-                  <Button v-if="canMarkIncomplete(student) && !student.incomplete" size="sm" variant="ghost"
+                  <Button v-if="canMarkIncomplete(student) && !student.incomplete && rowHasNullGrades(student)" size="sm" variant="ghost"
                     @click="openIncomplete(student)">{{ __('Incomplete') }}</Button>
                   <Button v-if="canMarkIncomplete(student) && student.incomplete" size="sm" variant="ghost"
                     @click="clearIncomplete(student)">{{ __('Clear') }}</Button>
@@ -420,8 +420,11 @@ const isOpenIncomplete = (student) =>
   !!student.incomplete && !!student.active && !student.incomplete_resolution
 const hasOpenIncompletes = computed(() => students.value.some(isOpenIncomplete))
 const canGrade = computed(() => !!(user?.data?.is_evaluator || user?.data?.is_instructor || user?.data?.is_moderator))
+// Only where the scale has an Incomplete code, and only for a student with work
+// still to do: anything else would be an error the instructor can't fix.
 const canMarkIncomplete = (student) =>
-  canSendGrades.value && !courseSchedule.data?.open_ended && student.active && !student.audit_bool
+  canSendGrades.value && !!course.data?.incompletes_enabled && !courseSchedule.data?.open_ended &&
+  student.active && !student.audit_bool
 const rowLocked = (student) => isFinalized.value && !isOpenIncomplete(student)
 const rowHasNullGrades = (student) =>
   assessments.value.some((def) => {

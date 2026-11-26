@@ -31,7 +31,24 @@
 				showReview :initialRoster="route.query.roster || null" />
 		</div>
 		<div v-show="tab === 'outline'" class="m-5">
-			<div class="grid md:grid-cols-[1fr,var(--right-col)] gap-5"
+			<!-- Students see a section only once it is published (p007 §8.1): say so on both sides. -->
+			<div v-if="access === 'instructor' && !course.data.published" role="status"
+				class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface-amber-1 px-4 py-3 text-sm text-ink-amber-3">
+				<span>{{ __('This course is not published. Enrolled students can\'t open it until you publish it.') }}</span>
+				<router-link v-if="canEditOutline" :to="{ name: 'CourseForm', params: { courseName: props.courseName } }">
+					<Button size="sm" variant="solid">{{ __('Edit and Publish') }}</Button>
+				</router-link>
+			</div>
+			<div v-if="course.data.not_open_yet" role="status" class="mx-auto mt-10 max-w-xl text-center">
+				<h1 class="text-2xl font-semibold text-ink-gray-9">{{ course.data.course }}</h1>
+				<p class="mt-3 text-ink-gray-7">
+					{{ __('You are enrolled in this course, but your instructor hasn\'t opened it yet. It will appear in your courses as soon as they do.') }}
+				</p>
+				<router-link :to="{ name: 'Courses' }">
+					<Button class="mt-5">{{ __('Back to My Courses') }}</Button>
+				</router-link>
+			</div>
+			<div v-else class="grid md:grid-cols-[1fr,var(--right-col)] gap-5"
 				style="--right-col: clamp(20rem, 24vw, 30rem)">
 				<div>
 					<div class="text-3xl font-semibold text-ink-gray-9">

@@ -22,8 +22,6 @@ from frappe.utils import add_days, cint, get_datetime, getdate, today
 INCOMPLETE = "Incomplete"
 COMPLETED = "Completed"
 LAPSED = "Lapsed"
-LAPSE_ZERO = "Grade unfinished work as 0"
-LAPSE_CODE = "Assign the scale's lapse code"
 # Marks the individual due dates an Incomplete set, so clearing it removes only those.
 OVERRIDE_TAG = "Incomplete"
 OPEN_STATES = ("Enrollment Closed", "Grading")
@@ -120,6 +118,8 @@ def mark_incomplete(roster: str, reason: str, until: str | date | None = None):
 		frappe.throw(_("This student's grade has already been sent, or they are auditing."))
 	if not (reason or "").strip():
 		frappe.throw(_("Give the reason for the Incomplete."))
+	if not _unfinished_assessments(row.name):
+		frappe.throw(_("This student has no unfinished work, so there is nothing to finish later."))
 	if not inc_code(row.course_sc):
 		frappe.throw(
 			_("Set a 'Code for Incomplete' on the course's Grading Scale first."),
@@ -372,16 +372,16 @@ def _remind(row):
 
 
 def lapse(roster_name):
-	"""The completion date passed: apply the school's lapse rule and send the grade."""
+	"""The completion date passed: send the grade. The scale's lapse code, when set,
+	is the final grade; without one, unfinished work counts as 0."""
 	row = _roster(roster_name)
 	if not is_open(row):
 		return None
-	rule = _settings().incomplete_lapse_rule or LAPSE_ZERO
 	scale = frappe.db.get_value("Course Schedule", row.course_sc, "gradesc_cs")
 	code = frappe.db.get_value("Grading Scale", scale, "lapse_code") if scale else None
 	interval = None
-	if rule == LAPSE_CODE:
-		interval = code and frappe.db.get_value(
+	if code:
+		interval = frappe.db.get_value(
 			"Grading Scale Interval",
 			{"parent": scale, "grade_code": code},
 			["grade_code", "threshold", "grade_pass"],

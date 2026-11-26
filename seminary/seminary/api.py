@@ -2198,6 +2198,10 @@ def _program_audit(program_enrollment):
 
 	# Add disclaimer
 	result["disclaimer"] = "This audit reflects the declared emphasis at the time of generation."
+	# The school's letter head, rendered server-side for the printable view.
+	from seminary.seminary.doctype.seminary_announcement.seminary_announcement import letterhead_head_html
+
+	result["letterhead"] = letterhead_head_html()
 
 	# Calculate effective total required based on overlap policy
 	effective_total = program.credits_complete or 0

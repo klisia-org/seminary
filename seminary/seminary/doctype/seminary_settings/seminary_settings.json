@@ -35,7 +35,6 @@
   "incomplete_default_days",
   "incomplete_instructor_max_days",
   "incomplete_reminder_days",
-  "incomplete_lapse_rule",
   "column_break_grades_transcripts",
   "grade_change_second_approver_role",
   "grade_change_second_approval_days",
@@ -261,14 +260,6 @@
    "default": "2",
    "non_negative": 1,
    "description": "The student and the instructor are emailed this many days before the completion date while work is unsubmitted. 0 sends no reminder."
-  },
-  {
-   "fieldname": "incomplete_lapse_rule",
-   "fieldtype": "Select",
-   "label": "When an Incomplete Lapses",
-   "options": "Grade unfinished work as 0\nAssign the scale's lapse code",
-   "default": "Grade unfinished work as 0",
-   "description": "What happens on the day after the completion date if the instructor hasn't sent the grade."
   },
   {
    "fieldname": "column_break_grades_transcripts",
@@ -1065,7 +1056,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-25 23:30:00.000000",
+ "modified": "2026-11-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

@@ -13,6 +13,16 @@
     </template>
   </PageHeader>
 
+  <!-- Enrolled sections the instructor hasn't published yet (p007 §8.1): named, not hidden. -->
+  <div v-if="unopened.data?.length" role="status"
+    class="mx-5 mt-5 rounded-md bg-surface-blue-1 px-4 py-3 text-sm text-ink-blue-3">
+    <div class="font-medium">{{ __('Not open yet') }}</div>
+    <p class="mt-1">{{ __('You are enrolled in these courses. Each appears below as soon as its instructor opens it.') }}</p>
+    <ul class="mt-1 list-disc pl-5">
+      <li v-for="c in unopened.data" :key="c.name">{{ c.course }}<span v-if="c.academic_term"> · {{ c.academic_term }}</span></li>
+    </ul>
+  </div>
+
   <!-- Parent container for filters and course cards -->
   <div class="p-5 flex flex-col lg:flex-row gap-4 w-full mx-auto">
     <!-- To Do Column -->
@@ -239,6 +249,13 @@ const studentCourses = createResource({
 })
 
 const courses = computed(() => isInstructor.value ? instructorCourses : studentCourses)
+
+// The student's enrolled but unpublished sections; empty for everyone else.
+const unopened = createResource({
+  url: 'seminary.seminary.utils.get_unopened_courses',
+  auto: true,
+  onError: () => { },
+})
 
 // Fetch only once the role flags are populated. `userResource.initialData`
 // is `[]`, so guard on `.name` (the real user object only has it after the

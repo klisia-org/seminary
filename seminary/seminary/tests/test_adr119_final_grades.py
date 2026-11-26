@@ -21,7 +21,7 @@ INTERVALS = [
 ]
 
 
-def _scale(inc_code="I", lapse_code="F"):
+def _scale(inc_code="I", lapse_code=""):
 	name = fx.uid("GS")
 	frappe.get_doc(
 		{
@@ -85,7 +85,6 @@ class ADR119Case(IntegrationTestCase):
 			incomplete_default_days=30,
 			incomplete_instructor_max_days=60,
 			incomplete_reminder_days=2,
-			incomplete_lapse_rule=incompletes.LAPSE_ZERO,
 			grade_change_second_approver_role=None,
 			grade_change_second_approval_days=0,
 		)
@@ -285,6 +284,32 @@ class TestIncompleteAtSendGrades(ADR119Case):
 				incompletes.mark_incomplete(self.b.roster, "reason", late)
 			incompletes.mark_incomplete(self.b.roster, "reason", add_days(self.end, 60))
 
+	def test_nothing_unfinished_means_no_incomplete(self):
+		self.grade(self.b, 80, 80)
+		with self.assertRaises(frappe.ValidationError):
+			incompletes.mark_incomplete(self.b.roster, "reason")
+
+	def test_the_gradebook_hears_whether_the_scale_allows_it(self):
+		from seminary.seminary import utils
+
+		with patch.object(utils, "section_access", return_value="instructor"):
+			self.assertEqual(utils.get_course_details(self.cs).incompletes_enabled, 1)
+			frappe.db.set_value(
+				"Grading Scale", frappe.db.get_value("Course Schedule", self.cs, "gradesc_cs"), "inc_code", ""
+			)
+			self.assertEqual(utils.get_course_details(self.cs).incompletes_enabled, 0)
+
+	def test_the_scale_checks_its_codes(self):
+		scale = frappe.get_doc("Grading Scale", frappe.db.get_value("Course Schedule", self.cs, "gradesc_cs"))
+		scale.lapse_code = "Z"
+		with self.assertRaises(frappe.ValidationError):
+			scale.validate_incomplete_codes()
+		scale.lapse_code, scale.inc_code = "F", "A"
+		with self.assertRaises(frappe.ValidationError):
+			scale.validate_incomplete_codes()
+		scale.inc_code = "I"
+		scale.validate_incomplete_codes()
+
 	def test_clear_removes_the_mark_and_its_due_dates(self):
 		incompletes.mark_incomplete(self.b.roster, "reason")
 		incompletes.clear_incomplete(self.b.roster)
@@ -318,7 +343,6 @@ class TestDailyJob(ADR119Case):
 		self.assertEqual(self.roster(self.b).incomplete_resolution, incompletes.LAPSED)
 
 	def test_lapse_can_assign_the_scale_s_code(self):
-		_settings(incomplete_lapse_rule=incompletes.LAPSE_CODE)
 		frappe.db.set_value(
 			"Grading Scale", frappe.db.get_value("Course Schedule", self.cs, "gradesc_cs"), "lapse_code", "C"
 		)
@@ -595,3 +619,23 @@ class TestTranscripts(ADR119Case):
 		self.assertNotIn("UNOFFICIAL", official)
 		self.assertIn("ABCD-EFGH-JKLM", official)
 		self.assertIn("/transcript-verify", official)
+
+
+class TestLetterhead(IntegrationTestCase):
+	def test_jinja_is_rendered_and_an_empty_size_dropped(self):
+		from seminary.seminary.doctype.seminary_announcement.seminary_announcement import _render_letterhead
+
+		html = _render_letterhead(
+			'{% set c = doc.company %}<b>{{ c or "" }}</b><img src="/x.png" style="height: px;">'
+		)
+		self.assertNotIn("{%", html)
+		self.assertNotIn("{{", html)
+		self.assertNotIn("px;", html)
+		self.assertNotIn("None", html)
+		self.assertIn('<img src="/x.png"', html)
+
+	def test_a_broken_template_still_prints_without_its_source(self):
+		from seminary.seminary.doctype.seminary_announcement.seminary_announcement import _render_letterhead
+
+		html = _render_letterhead("<p>Head</p>{% if %}{{ doc.nope( }}")
+		self.assertEqual(html, "<p>Head</p>")

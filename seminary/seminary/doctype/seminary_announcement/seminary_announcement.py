@@ -396,12 +396,56 @@ def _resolve_letter_head(doc):
 	return frappe.db.get_value("Letter Head", name, ["name", "content", "footer"], as_dict=True)
 
 
+_EMPTY_SIZE = re.compile(r"(?:height|width)\s*:\s*px\s*;?", re.IGNORECASE)
+
+
+class _NoDoc(dict):
+	"""A letter head's `doc` when there is none: every field reads as empty, so a
+	template such as ERPNext's `{{ doc.company }}` prints nothing rather than "None"."""
+
+	def __getattr__(self, name):
+		return ""
+
+	def __getitem__(self, name):
+		return ""
+
+
+def _render_letterhead(html, doc=None):
+	"""A Letter Head's HTML as Frappe's own print renders it: Jinja against the
+	document (ERPNext's default letter heads read `doc.company`). Seminary
+	documents carry no company, so those lookups come out empty rather than
+	printing the template source. An image letter head with no size set has
+	`height: px`, which some renderers read as 0 or ignore: dropped."""
+	if not html:
+		return html
+	if "{{" in html or "{%" in html:
+		try:
+			# Admin-authored Letter Head, rendered the way frappe.printing does.
+			html = frappe.render_template(html, {"doc": doc or _NoDoc()})  # nosemgrep
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Letter head could not be rendered")
+			html = re.sub(r"\{%.*?%\}|\{\{.*?\}\}", "", html, flags=re.DOTALL)
+	return _EMPTY_SIZE.sub("", html)
+
+
+def letterhead_head_html(name=None):
+	"""The school's letter head (Seminary Settings), rendered, for pages printed in the
+	browser such as the program audit."""
+	name = name or frappe.db.get_single_value("Seminary Settings", "letterhead")
+	if not name:
+		return ""
+	lh = frappe.db.get_value("Letter Head", name, ["name", "content"], as_dict=True)
+	if not lh:
+		return ""
+	return _letterhead_alt(_render_letterhead(lh.content), lh.name, logo=True) or ""
+
+
 def _wrap_letterhead(letter_head, message):
 	"""Wrap a (rendered) message in the resolved letter head for the printed PDF."""
 	if not letter_head:
 		return message
-	content = _letterhead_alt(letter_head.content, letter_head.get("name"), logo=True)
-	footer = _letterhead_alt(letter_head.footer, letter_head.get("name"), logo=False)
+	content = _letterhead_alt(_render_letterhead(letter_head.content), letter_head.get("name"), logo=True)
+	footer = _letterhead_alt(_render_letterhead(letter_head.footer), letter_head.get("name"), logo=False)
 	head = f'<div class="letter-head">{content}</div>' if content else ""
 	foot = f'<div class="letter-head-footer">{footer}</div>' if footer else ""
 	return f"{head}{message}{foot}"

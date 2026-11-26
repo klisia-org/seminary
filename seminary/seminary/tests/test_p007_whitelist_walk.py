@@ -176,6 +176,8 @@ STUDENT_ALLOWED = {
 	# decisions/119: the caller's own Incompletes and transcript requests, resolved
 	# from the session's Student; anyone else gets an empty answer or a refusal.
 	"seminary.seminary.incompletes.my_incompletes",
+	# p007 §8.1: the caller's own enrolled, unpublished sections; nothing else.
+	"seminary.seminary.utils.get_unopened_courses",
 	"seminary.seminary.transcripts.my_requests",
 	"seminary.seminary.transcripts.new_request",
 	# decisions/118 §1: the caller's own Person, nothing else; Guest gets {}

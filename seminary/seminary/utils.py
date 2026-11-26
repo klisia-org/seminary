@@ -616,6 +616,23 @@ def get_courses(
 	return courses
 
 
+@frappe.whitelist()
+def get_unopened_courses():
+	"""The caller's own enrolled sections that the instructor hasn't published
+	yet, for a notice on the course list. Empty for anyone without a Student."""
+	from seminary.seminary.guards import unopened_sections
+
+	names = unopened_sections()
+	if not names:
+		return []
+	return frappe.get_all(
+		"Course Schedule",
+		filters={"name": ["in", names]},
+		fields=["name", "course", "academic_term", "c_datestart"],
+		order_by="c_datestart asc",
+	)
+
+
 def get_course_card_details(courses):
 	for course in courses:
 		course.instructors = _instructors(course.name)
@@ -997,6 +1014,12 @@ def get_course_details(course: str):
 	# What the portal offers this viewer here (p012 decision 1); the outline
 	# editor and the staff tabs key off it rather than off roles alone.
 	course_details.access = section_access(course_details.name)
+	# A student on the roster of a section not published yet is told so, rather
+	# than meeting a page that refuses every read (p007 §8.1).
+	if not course_details.access:
+		from seminary.seminary.guards import unopened_sections
+
+		course_details.not_open_yet = 1 if course_details.name in unopened_sections() else 0
 	# What they may do here, so the page offers only that (decisions/105).
 	from seminary.seminary.guards import ACTION_FIELDS
 
@@ -1005,6 +1028,11 @@ def get_course_details(course: str):
 		if course_details.access == "instructor"
 		else []
 	)
+	# The gradebook offers Incomplete only when the scale has a code for it (decisions/119 §1).
+	if course_details.access == "instructor":
+		from seminary.seminary.incompletes import inc_code
+
+		course_details.incompletes_enabled = 1 if inc_code(course_details.name) else 0
 	course_details.location = get_course_location(course_details.room)
 	course_details.days_of_week = [
 		day.capitalize()

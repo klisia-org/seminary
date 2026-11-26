@@ -3,6 +3,7 @@
 **Date:** 2026-11-25
 **Status:** Accepted 2026-11-25; implemented 2026-11-25
 **Delivers:** SIS-GRD-01 (Yes), SIS-GRD-02 (Yes), SIS-GRD-03 (Yes)
+**Amended:** 2026-11-26, §1 (the lapse rule is the scale's, not a setting; see Amendment)
 **Amends:** 013 (Send Grades no longer waits for every student)
 **Related:** 013 (course lifecycle), 033 (holds), 063 (financial backend), 072 (descriptive scales), 081 (fail for absences),
 082 (individual due dates), 084 (term advancement), 114 (equivalent courses)
@@ -98,3 +99,12 @@ National Student Clearinghouse are integrations for later, built on the Transcri
   so the school's exceptions come from people who see them all.
 - A verification page that only checks a hash proves the PDF is authentic, but not that a printed
   copy is. A printed copy still needs the code typed in and a visual check.
+
+## Amendment (2026-11-26)
+
+§1's lapse rule moves from Seminary Settings to the grading scale. `incomplete_lapse_rule` is
+dropped: a scale's **Code When an Incomplete Lapses**, when set, is the final grade; blank means
+unfinished work counts as 0. The code must be one of the scale's grades, and the Incomplete code
+must not be. The gradebook offers **Incomplete** only where the scale has an Incomplete code and the
+student has unfinished work, so an instructor never meets an error they can't fix.
+

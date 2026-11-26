@@ -370,18 +370,6 @@ function render_audit_summary(frm, audit) {
 }
 
 function show_full_audit(frm) {
-	// Fetch the configured letterhead in parallel with the audit so the
-	// printable view leads with school branding when one is set.
-	let letterhead_promise = frappe.db
-		.get_single_value("Seminary Settings", "letterhead")
-		.then((name) =>
-			name
-				? frappe.db
-						.get_value("Letter Head", name, "content")
-						.then((r) => (r.message && r.message.content) || "")
-				: ""
-		);
-
 	frappe.call({
 		method: "seminary.seminary.api.get_program_audit",
 		args: { program_enrollment: frm.doc.name },
@@ -389,12 +377,17 @@ function show_full_audit(frm) {
 			if (!r.message) return;
 			let audit = r.message;
 
-			letterhead_promise.then(function (letterhead_html) {
+			// The school's letter head comes rendered with the audit (Jinja and all).
+			Promise.resolve(audit.letterhead || "").then(function (letterhead_html) {
 				let today = frappe.datetime.nowdate();
 				let html = '<div id="audit-print-content">';
 
 				if (letterhead_html) {
-					html += '<div style="margin-bottom:12px">' + letterhead_html + "</div>";
+					// An image letter head is scaled to the page, never cropped.
+					html +=
+						'<div class="audit-letterhead" style="margin-bottom:12px">' +
+						letterhead_html +
+						"</div>";
 				}
 
 				// Header with student info
@@ -735,7 +728,8 @@ function show_full_audit(frm) {
 								"table{border-collapse:collapse;width:100%;margin-bottom:12px}" +
 								"th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}" +
 								"th{background:#f5f5f5;font-weight:600}" +
-								"h3,h4{margin:8px 0}</style></head><body>" +
+								"h3,h4{margin:8px 0}" +
+								".audit-letterhead img{max-width:100%!important;height:auto!important}</style></head><body>" +
 								document.getElementById("audit-print-content").innerHTML +
 								"</body></html>"
 						);
@@ -743,7 +737,27 @@ function show_full_audit(frm) {
 						w.print();
 					},
 				});
-				d.$body.html(html);
+				// A student at the registrar's desk (decisions/119 §5): an official copy
+				// requested, or the unofficial one printed, from here.
+				d.add_custom_action(__("Request Official Transcript"), function () {
+					d.hide();
+					frappe.new_doc("Transcript Request", {
+						student: frm.doc.student,
+						program_enrollment: frm.doc.name,
+					});
+				});
+				d.add_custom_action(__("Print Unofficial Transcript"), function () {
+					window.open(
+						"/api/method/seminary.seminary.transcripts.unofficial?" +
+							new URLSearchParams({
+								student: frm.doc.student,
+								program_enrollment: frm.doc.name,
+							}).toString()
+					);
+				});
+				d.$body.html(
+					"<style>.audit-letterhead img{max-width:100%;height:auto}</style>" + html
+				);
 				d.show();
 			});
 		},

@@ -156,7 +156,9 @@ and closes the course. It waits until every assessment has a grade
 (type 0 for missing work).
 
 **Incompletes.** If a student can't finish on time for a good reason,
-click **Incomplete** next to their name before sending. Give the reason
+click **Incomplete** next to their name before sending. The button shows
+only for a student with work still to do, on a course whose grading
+scale has a **Code for Incomplete**. Give the reason
 and the date they must finish by. That student no longer holds the
 class back: Send Grades goes through, the transcript shows the scale's
 Incomplete code, and their row in the Gradebook stays open. Their
@@ -165,15 +167,12 @@ unfinished assessments are due on the completion date.
 - When their work is graded, click **Send Grade** on their row.
 - Two days before the date (set in Seminary Settings), the student and
   instructor are emailed if work is still missing.
-- If the date passes, the grade is sent automatically: unfinished work
-  counts as 0, or the scale's lapse code is used, as the school chooses
-  in Seminary Settings.
+- If the date passes, the grade is sent automatically. Unfinished work
+  counts as 0, unless the grading scale has a **Code When an Incomplete
+  Lapses** (such as F): then that is the final grade.
 - An instructor can give up to the number of days set in Seminary
   Settings. For more time, the student asks from **My Transcripts** in
   the portal, and the registrar decides. The school may charge a fee.
-
-Each grading scale needs a **Code for Incomplete** before you can mark
-a student Incomplete.
 
 **Sent grades are locked.** Once a grade is sent, it can't be edited
 anywhere. To correct it, open the student's roster row in Desk and
