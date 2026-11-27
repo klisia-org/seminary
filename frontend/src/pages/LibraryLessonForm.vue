@@ -8,7 +8,9 @@
 		</template>
 	</PageHeader>
 
-	<div class="mx-auto flex w-full max-w-4xl flex-col gap-5 px-4 py-6">
+	<div class="mx-auto max-w-6xl px-4 py-6 grid gap-5 lg:grid-cols-[15rem,minmax(0,1fr)] items-start">
+		<BlockPalette v-if="canEdit" :groups="groups" :drop="drop" />
+		<div class="flex min-w-0 flex-col gap-5" :class="{ 'lg:col-span-2': !canEdit }">
 		<p v-if="loaded && !canEdit" class="rounded-lg bg-surface-amber-1 px-4 py-3 text-sm text-ink-amber-3">
 			{{ __('Only this lesson\'s maintainers and the Seminary Manager can edit it.') }}
 		</p>
@@ -24,8 +26,10 @@
 			<p class="mt-0.5 text-sm text-ink-gray-5">
 				{{ __('Quizzes, assignments, exams and discussions belong to each section, so add them to the lesson in the section after placing it.') }}
 			</p>
-			<div id="library-lesson-content"
-				class="mt-3 md:pl-14 ProseMirror prose prose-sm max-w-none !whitespace-normal py-3"></div>
+			<BlockDropZone class="mt-3" :drop="drop">
+				<div id="library-lesson-content"
+					class="md:pl-14 ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-sm max-w-none !whitespace-normal py-3"></div>
+			</BlockDropZone>
 		</section>
 
 		<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
@@ -34,6 +38,7 @@
 			<div id="library-lesson-notes"
 				class="mt-3 md:pl-14 ProseMirror prose prose-sm max-w-none !whitespace-normal py-3"></div>
 		</section>
+		</div>
 	</div>
 </template>
 
@@ -43,6 +48,10 @@ import { useRouter } from 'vue-router'
 import { Breadcrumbs, Button, call, FormControl, toast } from 'frappe-ui'
 import EditorJS from '@editorjs/editorjs'
 import PageHeader from '@/components/PageHeader.vue'
+import BlockPalette from '@/components/BlockPalette.vue'
+import BlockDropZone from '@/components/BlockDropZone.vue'
+import { useBlockDrop } from '@/composables/useBlockDrop'
+import { DEFAULT_BLOCK, contentBlockGroups } from '@/utils/blockPalette'
 import { getEditorTools, updateDocumentTitle } from '@/utils'
 
 const ACTIVITY_TYPES = ['quiz', 'exam', 'assignment', 'discussion', 'discussionActivity', 'discussionactivity', 'oralActivity']
@@ -55,8 +64,12 @@ const form = reactive({ title: '', tags: '', preview: '' })
 const saving = ref(false)
 const loaded = ref(false)
 const canEdit = ref(true)
-let content = null
+// The content editor is a ref so the palette can drop blocks into it; quizzes, assignments,
+// exams and discussions belong to each section, so the palette leaves them out.
+const content = ref(null)
 let notes = null
+const groups = contentBlockGroups()
+const drop = useBlockDrop(content, 'library-lesson-content')
 
 const isNew = computed(() => props.name === 'new')
 
@@ -68,8 +81,17 @@ const parse = (value) => {
 	}
 }
 
+// The / menu offers what the palette does: no section activities, and no competency
+// reflection blocks, which read their own section's lesson.
+const SECTION_ONLY_TOOLS = [...ACTIVITY_TYPES, 'selfAssessment', 'developmentPlan']
+const libraryTools = () => {
+	const tools = getEditorTools()
+	for (const tool of SECTION_ONLY_TOOLS) delete tools[tool]
+	return tools
+}
+
 const editor = (holder, data, readOnly) =>
-	new EditorJS({ holder, tools: getEditorTools(), data, readOnly, minHeight: 80 })
+	new EditorJS({ holder, tools: libraryTools(), data, readOnly, minHeight: 80, defaultBlock: DEFAULT_BLOCK })
 
 onMounted(async () => {
 	let doc = {}
@@ -80,7 +102,7 @@ onMounted(async () => {
 		form.preview = doc.preview || ''
 		canEdit.value = Boolean(doc.can_edit)
 	}
-	content = editor('library-lesson-content', parse(doc.content), !canEdit.value)
+	content.value = editor('library-lesson-content', parse(doc.content), !canEdit.value)
 	notes = editor('library-lesson-notes', parse(doc.instructor_content), !canEdit.value)
 	loaded.value = true
 })
@@ -92,7 +114,7 @@ const save = async () => {
 	}
 	saving.value = true
 	try {
-		const data = await content.save()
+		const data = await content.value.save()
 		if (data.blocks.some((b) => ACTIVITY_TYPES.includes(b.type))) {
 			toast.error(__('Remove the quizzes, assignments, exams and discussions: they are added in each section.'))
 			return

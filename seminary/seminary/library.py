@@ -30,6 +30,9 @@ ACTIVITY_TYPES = frozenset(
 		"oralActivity",
 	}
 )
+#: Competency reflection blocks (decisions/079): they read the lesson they sit in, so a lesson
+#: shared across sections can't hold them either.
+REFLECTION_TYPES = frozenset({"selfAssessment", "developmentPlan"})
 #: Fields a placed lesson reads from the library.
 CONTENT_FIELDS = ("body", "youtube", "instructor_content", "instructor_notes", "preview", "transcript")
 CLOSED_STATES = ("Closed", "Cancelled")
@@ -220,6 +223,14 @@ def validate_library_lesson(doc, method=None):
 				"because those belong to one section. Add them to the lesson in each section."
 			)
 		)
+	for content in (doc.content, doc.instructor_content):
+		if any(isinstance(b, dict) and b.get("type") in REFLECTION_TYPES for b in _doc(content)["blocks"]):
+			frappe.throw(
+				_(
+					"A library lesson can't hold a self-assessment or development plan block, because "
+					"each reads its own section's lesson. Add it to the lesson in each section."
+				)
+			)
 	CourseLesson.validate_captions(doc)
 	instructor = guards.current_instructor()
 	if doc.is_new() and instructor and not doc.get("maintainers"):

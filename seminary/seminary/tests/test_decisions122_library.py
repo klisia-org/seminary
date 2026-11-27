@@ -104,6 +104,11 @@ class TestLibraryLesson(LibraryCase):
 		with self.assertRaises(frappe.ValidationError):
 			_library_lesson(content=_blocks("paragraph", "quiz"))
 
+	def test_refuses_reflection_blocks(self):
+		for block in ("selfAssessment", "developmentPlan"):
+			with self.subTest(block=block), self.assertRaises(frappe.ValidationError):
+				_library_lesson(content=_blocks("paragraph", block))
+
 	def test_title_change_reaches_placed_lessons(self):
 		placed = library.place(self.lib.name, self.ch1)["lesson"]
 		self.lib.title = "Renamed policy"

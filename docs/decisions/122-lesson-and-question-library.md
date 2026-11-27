@@ -92,7 +92,9 @@ is placed.
 
 - §2: the placed lesson's own content holds only activity blocks (quiz, assignment, exam,
   discussion, oral). They are shown after the library's blocks, and a save with any other block
-  is refused. A library lesson refuses activity blocks. The placed lesson's title is copied from
+  is refused. A library lesson refuses activity blocks, and also the competency reflection
+  blocks (self-assessment, development plan), which read their own section's lesson. Neither
+  editor offers them. The placed lesson's title is copied from
   the library and kept in step, so the outline and reports need no join.
 - §2: a library lesson's files are read by whoever may read the lesson: instructors, and the
   students of the sections that place it.

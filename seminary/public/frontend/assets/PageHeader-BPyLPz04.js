@@ -1,1 +1,0 @@
-import{jt as e}from"./frappe-ui-BEekJ6l0.js";var t=e;export{t};

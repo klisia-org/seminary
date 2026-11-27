@@ -1,1 +1,0 @@
-import{Mr as e,Tt as t,_r as n}from"./frappe-ui-BEekJ6l0.js";function r(r){let i=n(),a=e(()=>t.returnContext),o=e(()=>!!a.value);function s(){let e=a.value;if(!e)return;let n=r==null?void 0:r();n&&t.setPendingInsert({type:e.insertType,id:n}),t.clearReturnContext(),i.push(e.route)}return{showBackToLesson:o,backToLesson:s}}export{r as t};

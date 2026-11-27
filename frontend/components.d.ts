@@ -21,6 +21,8 @@ declare module 'vue' {
     AssignmentBlock: typeof import('./src/components/AssignmentBlock.vue')['default']
     AudioBlock: typeof import('./src/components/AudioBlock.vue')['default']
     Autocomplete: typeof import('./src/components/Controls/Autocomplete.vue')['default']
+    BlockDropZone: typeof import('./src/components/BlockDropZone.vue')['default']
+    BlockPalette: typeof import('./src/components/BlockPalette.vue')['default']
     CaptionsEditor: typeof import('./src/components/CaptionsEditor.vue')['default']
     CareerProfileFields: typeof import('./src/components/CareerProfileFields.vue')['default']
     ChapterModal: typeof import('./src/components/Modals/ChapterModal.vue')['default']
