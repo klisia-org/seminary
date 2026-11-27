@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "creation": "2026-11-27 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "description": "Places a library lesson in every section of the chosen programs and terms. Instructors can't remove it while the requirement is active.",
+ "field_order": [
+  "library_lesson",
+  "lesson_title",
+  "active",
+  "position",
+  "reason",
+  "scope_section",
+  "programs",
+  "academic_terms"
+ ],
+ "fields": [
+  {
+   "fieldname": "library_lesson",
+   "fieldtype": "Link",
+   "label": "Library Lesson",
+   "options": "Library Lesson",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "lesson_title",
+   "fieldtype": "Data",
+   "label": "Lesson Title",
+   "fetch_from": "library_lesson.title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "position",
+   "fieldtype": "Select",
+   "label": "Position",
+   "options": "Start of the first chapter\nEnd of the last chapter",
+   "default": "Start of the first chapter",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1,
+   "description": "Shown to the instructors of the sections that receive the lesson."
+  },
+  {
+   "fieldname": "scope_section",
+   "fieldtype": "Section Break",
+   "label": "Where"
+  },
+  {
+   "fieldname": "programs",
+   "fieldtype": "Table",
+   "label": "Programs",
+   "options": "Library Lesson Requirement Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_terms",
+   "fieldtype": "Table",
+   "label": "Academic Terms",
+   "options": "Library Lesson Requirement Term",
+   "description": "Leave empty for every term from now on."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-27 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Library Lesson Requirement",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Seminary Manager",
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Program Chair",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Instructor",
+   "read": 1
+  }
+ ],
+ "autoname": "hash",
+ "naming_rule": "Random",
+ "title_field": "lesson_title",
+ "track_changes": 1
+}

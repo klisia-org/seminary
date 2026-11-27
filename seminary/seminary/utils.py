@@ -1370,13 +1370,18 @@ def get_lesson(course: str, chapter: str | int, lesson: str | int):
 			"transcript",
 			# decisions/110: an LTI lesson shows a launch for its tool.
 			"lti_tool",
+			# decisions/122: a lesson placed from the library reads its content there.
+			"library_lesson",
+			"required_by",
 		],
 		as_dict=True,
 	)
 	# The player renders each as a <track> (102 §6).
+	from seminary.seminary import library
 	from seminary.seminary.doctype.course_lesson.course_lesson import lesson_captions
 
 	lesson_details.captions = lesson_captions(lesson_details.name)
+	library.overlay(lesson_details)
 	lesson_details["is_scorm_package"] = bool(
 		lesson_details.chapter
 		and frappe.db.get_value("Course Schedule Chapter", lesson_details.chapter, "is_scorm_package")
@@ -1461,6 +1466,8 @@ def get_lessons(course, chapter=None, get_details=True, progress=False):
 
 
 def get_lesson_details(chapter, progress=False):
+	from seminary.seminary import library
+
 	lessons = []
 	lesson_list = frappe.get_all(
 		"Course Schedule Lesson Reference",
@@ -1488,9 +1495,12 @@ def get_lesson_details(chapter, progress=False):
 				"exam",
 				"instructor_content",
 				"course_sc",
+				"library_lesson",
+				"required_by",
 			],
 			as_dict=True,
 		)
+		library.overlay(lesson_details)
 		lesson_details.number = f"{chapter.idx}.{row.idx}"
 		lesson_details.icon = get_lesson_icon(lesson_details.body, lesson_details.content)
 		lesson_details.due_date = get_lesson_due_date(lesson_details.name)
@@ -1773,9 +1783,15 @@ def get_lesson_creation_details(course: str, chapter: str | int, lesson: str | i
 				"lti_tool",
 				"lti_url",
 				"lti_custom",
+				# decisions/122
+				"library_lesson",
+				"required_by",
 			],
 			as_dict=1,
 		)
+		from seminary.seminary import library
+
+		library.overlay(lesson_details)
 		# The lesson form edits the caption rows and saves them back whole (102 §6).
 		lesson_details.captions = frappe.get_all(
 			"Course Lesson Caption",

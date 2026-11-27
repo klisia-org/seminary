@@ -1,0 +1,183 @@
+{
+ "actions": [],
+ "creation": "2026-11-27 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "description": "A lesson the school keeps once and places in many sections. Every section that places it shows the same content, and an edit here reaches all of them while they are open.",
+ "field_order": [
+  "title",
+  "tags",
+  "preview",
+  "content_section",
+  "content",
+  "body",
+  "youtube",
+  "instructor_content",
+  "instructor_notes",
+  "captions_section",
+  "captions",
+  "transcript",
+  "access_section",
+  "maintainers",
+  "courses"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "tags",
+   "fieldtype": "Small Text",
+   "label": "Tags",
+   "description": "Words instructors search by, separated by commas."
+  },
+  {
+   "fieldname": "preview",
+   "fieldtype": "Small Text",
+   "label": "Preview"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text",
+   "label": "Content",
+   "hidden": 1
+  },
+  {
+   "fieldname": "body",
+   "fieldtype": "Text Editor",
+   "label": "Body"
+  },
+  {
+   "fieldname": "youtube",
+   "fieldtype": "Data",
+   "label": "Video URL"
+  },
+  {
+   "fieldname": "instructor_content",
+   "fieldtype": "Text",
+   "label": "Instructor Content",
+   "hidden": 1
+  },
+  {
+   "fieldname": "instructor_notes",
+   "fieldtype": "Text Editor",
+   "label": "Instructor Notes"
+  },
+  {
+   "fieldname": "captions_section",
+   "fieldtype": "Section Break",
+   "label": "Captions and Transcript",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "captions",
+   "fieldtype": "Table",
+   "label": "Captions",
+   "options": "Course Lesson Caption"
+  },
+  {
+   "fieldname": "transcript",
+   "fieldtype": "Attach",
+   "label": "Transcript"
+  },
+  {
+   "fieldname": "access_section",
+   "fieldtype": "Section Break",
+   "label": "Who May Use It"
+  },
+  {
+   "fieldname": "maintainers",
+   "fieldtype": "Table",
+   "label": "Maintainers",
+   "options": "Library Lesson Maintainer",
+   "description": "Teachers who may edit this lesson. The Seminary Manager may always edit it."
+  },
+  {
+   "fieldname": "courses",
+   "fieldtype": "Table",
+   "label": "Courses",
+   "options": "Library Lesson Course",
+   "description": "Leave empty to let any section place this lesson, or list the courses whose sections may."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-27 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Library Lesson",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Seminary Manager",
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Instructor",
+   "create": 1,
+   "write": 1,
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Program Chair",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  },
+  {
+   "role": "Student",
+   "read": 1
+  }
+ ],
+ "autoname": "hash",
+ "naming_rule": "Random",
+ "title_field": "title",
+ "show_title_field_in_link": 1,
+ "search_fields": "tags",
+ "track_changes": 1,
+ "allow_import": 1
+}

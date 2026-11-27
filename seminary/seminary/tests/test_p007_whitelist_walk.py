@@ -173,6 +173,12 @@ GUEST_ALLOWED = {
 }
 
 STUDENT_ALLOWED = {
+	# privatedocs p028: slots other apps fill. Each reads the section's content rule
+	# (or the quiz's read permission) before asking any hook; empty with no app.
+	"seminary.seminary.extensions.course_tabs",
+	"seminary.seminary.extensions.lesson_panels",
+	"seminary.seminary.extensions.question_panels",
+	"seminary.seminary.extensions.enrollment_notice",
 	# decisions/119: the caller's own Incompletes and transcript requests, resolved
 	# from the session's Student; anyone else gets an empty answer or a refusal.
 	"seminary.seminary.incompletes.my_incompletes",
@@ -542,6 +548,15 @@ STAFF_ONLY = {
 	"seminary.seminary.catalog_year.new_catalog_year",
 	"seminary.seminary.catalog_year.program_course_query",
 	"seminary.seminary.catalog_year.program_status",
+	# --- The lesson library (decisions/122): teaching staff only, before any
+	# lookup; placing and detaching then also need the section's content action.
+	"seminary.seminary.library.place",
+	"seminary.seminary.library.detach",
+	"seminary.seminary.library.shared_query",
+	"seminary.seminary.library.search",
+	"seminary.seminary.library.get",
+	"seminary.seminary.library.save",
+	"seminary.seminary.library.my_chapters",
 }
 
 # Whitelisted functions in the walked modules that are neither student-facing
@@ -1253,6 +1268,14 @@ KWARG_OVERRIDES = {
 	"seminary.seminary.api.save_course_assessment": {"assessment_data": "[]"},
 	"seminary.seminary.catalog_year.program_course_query": {
 		"doctype": "Course",
+		"txt": "",
+		"searchfield": "name",
+		"start": 0,
+		"page_len": 5,
+		"filters": {},
+	},
+	"seminary.seminary.library.shared_query": {
+		"doctype": "Quiz",
 		"txt": "",
 		"searchfield": "name",
 		"start": 0,

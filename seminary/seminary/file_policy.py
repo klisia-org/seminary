@@ -147,6 +147,13 @@ EMBEDDED_FILE_FIELDS = {
 		"children": (("captions", "caption_file"),),
 		"host": lambda doc: ("Course Schedule", doc.get("course_sc")),
 	},
+	# A library lesson's files are read by whoever may read the library lesson:
+	# instructors, and students of the sections that place it (decisions/122).
+	"Library Lesson": {
+		"fields": ("content", "body", "instructor_content", "instructor_notes", "transcript"),
+		"children": (("captions", "caption_file"),),
+		"host": _self_host,
+	},
 	# A graded discussion is read by the whole section, attachments included,
 	# while the submission itself is readable by its author and the staff only.
 	"Discussion Submission": {

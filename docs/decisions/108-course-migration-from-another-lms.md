@@ -1,9 +1,9 @@
 # 108 — Course migration from another LMS
 
 **Date:** 2026-11-23
-**Status:** Accepted 2026-11-23; amended 2026-11-23 (§1: Moodle 5.0–5.3); amended 2026-11-24
+**Status:** Accepted 2026-11-23; amended 2026-11-23 (§1: Moodle 5.0–5.3); amended 2026-11-24; implemented 2026-11-23 (8b9ab8ac, 03b3a3a9)
 (§4: LTI links, by 110)
-**Delivers:** LMS-IMP-01 (Yes)
+**Delivers:** LMS-IMP-01 (Yes), LMS-STD-04 (Yes)
 **Related:** 014 (course template import), 041 (course packs), 094 (history import),
 095 (rubrics), 097 (course discussions), 106 (QTI import), 107 (chapter release), p009 (SCORM)
 

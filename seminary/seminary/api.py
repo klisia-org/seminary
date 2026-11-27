@@ -3190,14 +3190,18 @@ def quizresult_to_card(doc, method):
 		)
 		return
 
-	# Update the raw score and extra credit points
+	# Update the raw score and extra credit points. An ungraded extra-credit
+	# submission (saved before grading, or its grade cleared) earns nothing yet.
+	graded = doc.percentage not in (None, "")
 	card.rawscore_card = doc.percentage if not doc.extra_credit else ""
 	card.actualextrapt_card = (
-		(doc.percentage / max_grade) * card.maxextrapoints_card if doc.extra_credit else ""
+		(flt(doc.percentage) / max_grade) * flt(card.maxextrapoints_card)
+		if doc.extra_credit and graded and max_grade
+		else ""
 	)
 	# Mark the cell as carrying a real grade (vs. the Float column's NOT NULL
 	# default 0). Cleared if the prof unsets the submission grade.
-	card.graded_card = 1 if doc.percentage not in (None, "") else 0
+	card.graded_card = 1 if graded else 0
 	# Late deduction (decisions/082): the card holds the score that counts,
 	# the raw percentage and what was taken off sit beside it.
 	from seminary.seminary import deadlines

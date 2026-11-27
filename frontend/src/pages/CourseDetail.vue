@@ -11,6 +11,10 @@
 				<PageTabs :tabs="tabs" v-model="tab" :label="__('Course views')" />
 			</template>
 		</PageHeader>
+		<!-- A tab another installed app adds to the course (privatedocs p028 §1). -->
+		<div v-if="extensionTab" class="m-5">
+			<component :is="extensionTab" :courseName="props.courseName" :access="access" />
+		</div>
 		<div v-if="tab === 'students'" class="m-5">
 			<CourseStudentsTab :courseName="props.courseName" />
 		</div>
@@ -179,11 +183,12 @@
 import PageHeader from '@/components/PageHeader.vue'
 import { safeUrl } from '@/utils/urlPolicy'
 import { createResource, Breadcrumbs, Badge, Tooltip, Button } from 'frappe-ui'
-import { computed, ref, inject, watch } from 'vue'
+import { computed, defineAsyncComponent, ref, inject, watch } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { updateDocumentTitle, formatTime } from '@/utils'
 import { useRoute, useRouter } from 'vue-router'
 import PageTabs from '@/components/PageTabs.vue'
+import { courseTabComponents } from '@/extensions'
 import CompetencyReview from '@/components/CompetencyReview.vue'
 import CompetencyStudentPane from '@/components/CompetencyStudentPane.vue'
 import CourseStudentsTab from '@/components/CourseStudentsTab.vue'
@@ -296,7 +301,21 @@ const tabs = computed(() => {
 		})
 	}
 	if (hasStudents.value) out.push({ key: 'students', label: __('Students') })
+	for (const row of extensionTabs.data || []) {
+		if (courseTabComponents[row.key]) out.push({ key: row.key, label: row.label })
+	}
 	return out
+})
+
+const extensionTabs = createResource({
+	url: 'seminary.seminary.extensions.course_tabs',
+	makeParams: () => ({ course_schedule: props.courseName }),
+	auto: !!user.data?.has_aretenic,
+	onError: () => {},
+})
+const extensionTab = computed(() => {
+	const loader = courseTabComponents[tab.value]
+	return loader ? defineAsyncComponent(loader) : null
 })
 const tab = useTabParam(computed(() => tabs.value.map((t) => t.key)), 'outline')
 

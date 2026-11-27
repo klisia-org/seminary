@@ -293,6 +293,12 @@
                   :label="c.choice_pending ? __('Pending') : __('Made')"
                 />
                 <span class="text-ink-gray-6">{{ c.choice_pending ? '—' : (c.chosen_label || '—') }}</span>
+                <Button v-if="canChoose(c)" size="sm" @click="openChoiceDialog(c)">
+                  {{ __('Choose') }}
+                </Button>
+                <span v-else-if="c.choice_pending" class="text-xs text-ink-gray-5">
+                  {{ __('Assigned by the registrar') }}
+                </span>
               </span>
             </div>
           </div>
@@ -329,7 +335,12 @@
                 </td>
                 <td class="py-2 px-3 text-xs text-ink-gray-5">{{ req.due_date || '—' }}</td>
                 <td class="py-2 px-3">
-                  <button v-if="!req.linked_doc && canStartRecommendation(req)"
+                  <button v-if="canChoose(req)"
+                    class="text-ink-blue-3 hover:underline text-xs"
+                    @click="openChoiceDialog(req)">
+                    {{ __('Choose') }}
+                  </button>
+                  <button v-else-if="!req.linked_doc && canStartRecommendation(req)"
                     class="text-ink-blue-3 hover:underline text-xs"
                     @click="openRecommendationDialog(req)">
                     {{ __('Request Recommendation') }}
@@ -480,7 +491,10 @@
       </p>
       <FormControl v-model="projectForm.project_title" type="text"
         :label="__('Project Title')" required class="mb-3" />
-      <FormControl v-model="projectForm.project_type" type="select"
+      <p v-if="projectForReq?.chosen_project_type" class="text-sm text-ink-gray-7 mb-3">
+        {{ __('Type') }}: <span class="font-medium">{{ projectForReq.chosen_project_type }}</span>
+      </p>
+      <FormControl v-else v-model="projectForm.project_type" type="select"
         :label="__('Type')"
         :options="['Thesis', 'Capstone', 'Dissertation']" class="mb-3" />
       <FormControl v-model="projectForm.advisor" type="autocomplete"
@@ -493,6 +507,34 @@
       <Button @click="showProjectDialog = false">{{ __('Cancel') }}</Button>
       <Button variant="solid" :loading="projectSubmitting" @click="submitProject">
         {{ __('Create Project') }}
+      </Button>
+    </template>
+  </Dialog>
+
+  <!-- Requirement choice modal (decisions/026): an umbrella's option or a project type -->
+  <Dialog v-model="showChoiceDialog" :options="{ title: choiceDialogTitle }">
+    <template #body-content>
+      <fieldset v-if="choiceForReq">
+        <legend class="text-sm text-ink-gray-7 mb-3">
+          {{ __('For') }}: <span class="font-medium">{{ requirementDisplayName(choiceForReq) }}</span>
+        </legend>
+        <div class="space-y-2">
+          <label v-for="opt in choiceForReq.options" :key="opt.value"
+            class="flex cursor-pointer items-center gap-2 rounded border px-3 py-2 text-sm text-ink-gray-8"
+            :class="choiceValue === opt.value ? 'border-outline-blue-2 bg-surface-blue-1' : 'border-outline-gray-2'">
+            <input v-model="choiceValue" type="radio" name="requirement-choice" :value="opt.value" />
+            {{ opt.label }}
+          </label>
+        </div>
+      </fieldset>
+      <p class="text-xs text-ink-gray-5 mt-3">
+        {{ __('Once you choose, only the registrar can change it.') }}
+      </p>
+    </template>
+    <template #actions>
+      <Button @click="showChoiceDialog = false">{{ __('Cancel') }}</Button>
+      <Button variant="solid" :loading="choiceSubmitting" :disabled="!choiceValue" @click="submitChoice">
+        {{ __('Confirm') }}
       </Button>
     </template>
   </Dialog>
@@ -908,11 +950,63 @@ async function submitRecommendation() {
   }
 }
 
+// A pending choice the student makes here (decisions/026). A made choice is
+// locked: changing it replaces the spawned requirement, so it's the registrar's.
+function canChoose(req) {
+  return Boolean(req.student_choice && req.choice_pending && req.options?.length)
+}
+
+const showChoiceDialog = ref(false)
+const choiceForReq = ref(null)
+const choiceValue = ref(null)
+const choiceSubmitting = ref(false)
+
+const isProjectTypeChoice = (req) => req?.requirement_type !== 'Choose Option'
+
+const choiceDialogTitle = computed(() =>
+  isProjectTypeChoice(choiceForReq.value) ? __('Choose a Project Type') : __('Choose an Option')
+)
+
+function openChoiceDialog(req) {
+  choiceForReq.value = req
+  choiceValue.value = null
+  showChoiceDialog.value = true
+}
+
+async function submitChoice() {
+  const req = choiceForReq.value
+  if (!req || !choiceValue.value) return
+  choiceSubmitting.value = true
+  try {
+    if (isProjectTypeChoice(req)) {
+      await call('seminary.seminary.graduation.choose_project_type', {
+        program_enrollment: audit.data.program_enrollment,
+        sgr_name: req.name,
+        culminating_project_type: choiceValue.value,
+      })
+    } else {
+      await call('seminary.seminary.graduation.choose_requirement_option', {
+        program_enrollment: audit.data.program_enrollment,
+        sgr_name: req.name,
+        chosen_grad_req_item: choiceValue.value,
+      })
+    }
+    toast.success(__('Choice saved'))
+    showChoiceDialog.value = false
+    audit.reload()
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Could not save the choice'))
+  } finally {
+    choiceSubmitting.value = false
+  }
+}
+
 function canStartProject(req) {
   return (
     req.requirement_type === 'Linked Document' &&
     req.link_doctype === 'Culminating Project' &&
     !req.linked_doc &&
+    !req.choice_pending &&
     req.status !== 'Waived'
   )
 }

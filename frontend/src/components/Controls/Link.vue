@@ -86,6 +86,11 @@ const props = defineProps({
 		type: String,
 		default: '',
 	},
+	// A whitelisted search method, for searches a filter can't express.
+	query: {
+		type: String,
+		default: '',
+	},
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -132,6 +137,7 @@ const options = createResource({
 		txt: text.value,
 		doctype: props.doctype,
 		filters: props.filters,
+		...(props.query ? { query: props.query } : {}),
 	},
 	transform: (data) => {
 		return data.map((option) => {
@@ -150,6 +156,7 @@ const reload = (val) => {
 			txt: val,
 			doctype: props.doctype,
 			filters: props.filters,
+			...(props.query ? { query: props.query } : {}),
 		},
 	})
 	options.reload()

@@ -1,7 +1,7 @@
 # 100c — Oral defense of submitted work
 
 **Date:** 2026-11-19
-**Status:** Accepted
+**Status:** Accepted 2026-11-20; implemented 2026-11-20 (49b376f5, e5e2061c; follow-up timing and written follow-ups not built)
 **Parent:** [100](100-oral-assessment.md)
 **Related:** 095 (rubrics)
 

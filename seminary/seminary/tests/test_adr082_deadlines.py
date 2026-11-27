@@ -412,3 +412,39 @@ class TestTemplateImport(ADR082Case):
 		self.assertEqual(frappe.db.get_value("Course Schedule", target, "late_deduction"), 10)
 		self.assertIn("late_policy_exempt", _SCAC_COPYABLE_FIELDS)
 		self.assertNotIn("cutoff_date", _SCAC_COPYABLE_FIELDS)
+
+
+class TestExtraCreditCard(ADR082Case):
+	"""An extra-credit submission fills the card's extra points, and one saved
+	before it is graded leaves them empty instead of failing."""
+
+	def submission(self, percentage):
+		sub = _graded_assignment(
+			self.cs, self.row, self.student.name, self.student.user, self.due, percentage
+		)
+		sub.extra_credit = 1
+		# As on a save before grading: unset in memory (the column reads back 0)
+		sub.percentage = percentage
+		return sub
+
+	def card_doc(self):
+		frappe.db.set_value("Course Assess Results Detail", self.card, "maxextrapoints_card", 5)
+		return frappe.get_doc("Course Assess Results Detail", self.card)
+
+	def test_an_ungraded_extra_credit_submission_earns_nothing_yet(self):
+		from seminary.seminary.api import quizresult_to_card
+
+		self.card_doc()
+		quizresult_to_card(self.submission(None), "on_update")
+		card = frappe.get_doc("Course Assess Results Detail", self.card)
+		self.assertFalse(card.actualextrapt_card)
+		self.assertEqual(card.graded_card, 0)
+
+	def test_a_graded_extra_credit_submission_earns_its_share(self):
+		from seminary.seminary.api import quizresult_to_card
+
+		self.card_doc()
+		quizresult_to_card(self.submission(80), "on_update")
+		card = frappe.get_doc("Course Assess Results Detail", self.card)
+		self.assertEqual(card.actualextrapt_card, 4)
+		self.assertEqual(card.graded_card, 1)

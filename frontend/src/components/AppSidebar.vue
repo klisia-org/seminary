@@ -49,7 +49,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare, BookMarked, Sprout, LayoutGrid, FilePen } from 'lucide-vue-next';
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare, BookMarked, Sprout, LayoutGrid, FilePen, Library } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
 import { computed, watch } from 'vue';
@@ -115,6 +115,11 @@ const links = computed(() => {
 			label: __('Courses'),
 			to: '/courses',
 			icon: BookOpen,
+		}] : []),
+		...((userResource?.data?.is_instructor || userResource?.data?.is_moderator) ? [{
+			label: __('Lesson Library'),
+			to: '/lesson-library',
+			icon: Library,
 		}] : []),
 		...((isMember.value || isAlumni || isParticipant) ? [{
 			label: __('Community'),

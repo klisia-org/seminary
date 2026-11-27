@@ -22,7 +22,7 @@
 				</div>
 				<div>
 					<Link v-if="type == 'quiz'" v-model="quiz" doctype="Quiz" :label="__('Select a quiz')"
-						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm(close)" />
+						:filters="course ? { course: course } : {}" query="seminary.seminary.library.shared_query" :onCreate="(value, close) => redirectToForm(close)" />
 					<Link v-else-if="type == 'exam'" v-model="exam" doctype="Exam Activity"
 						:filters="course ? { course: course } : {}" :label="__('Select an exam')"
 						:onCreate="(value, close) => redirectToForm(close)" />

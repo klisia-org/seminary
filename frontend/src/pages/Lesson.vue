@@ -10,6 +10,8 @@
 				<div class="flex flex-col md:flex-row md:items-center justify-between">
 					<div class="text-3xl font-semibold text-ink-gray-9">
 						{{ lesson.data.lesson_title }}
+						<Badge v-if="lesson.data.library?.required" theme="orange" class="ml-2 align-middle"
+							:title="lesson.data.library.reason">{{ __('Required by the school') }}</Badge>
 					</div>
 					<div class="flex items-center mt-2 md:mt-0">
 						<router-link v-if="lesson.data.prev" :to="{
@@ -113,6 +115,9 @@
 						Date(lesson.data.due_date)) }}
 
 				</div>
+				<!-- Panels another installed app adds above the lesson (privatedocs p028 §2). -->
+				<ExtensionPanels v-if="lesson.data.name && !lesson.data.locked" class="mt-5"
+					url="seminary.seminary.extensions.lesson_panels" :params="{ lesson: lesson.data.name }" />
 				<!-- decisions/110: an LTI lesson opens its tool; whatever the lesson
 				     also says is shown below as usual. Before the SCORM player, so
 				     the player's v-if/v-else chain stays intact. -->
@@ -188,13 +193,14 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
 import { autoDirection } from '@/utils/textDirection'
-import { createResource, Breadcrumbs, Button } from 'frappe-ui'
+import { createResource, Badge, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, watch, inject, ref, onMounted, onBeforeUnmount } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight, FileText, GraduationCap, Lock } from 'lucide-vue-next'
 import { getEditorTools, updateDocumentTitle } from '../utils'
 import EditorJS from '@editorjs/editorjs'
+import ExtensionPanels from '@/components/ExtensionPanels.vue'
 import LessonContent from '@/components/LessonContent.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'

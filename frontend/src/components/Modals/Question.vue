@@ -194,6 +194,9 @@
 						v-model="existingQuestion.question"
 						:label="__('Select a question')"
 						doctype="Question"
+						:filters="quiz?.data?.course ? { course: quiz.data.course } : {}"
+						:query="quiz?.data?.course ? 'seminary.seminary.library.shared_query' : ''"
+						:description="quiz?.data?.course ? __('Questions from this course, and questions other courses share with it.') : ''"
 					/>
 					<FormControl
 						v-model="existingQuestion.points"

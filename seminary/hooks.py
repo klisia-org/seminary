@@ -394,6 +394,7 @@ permission_query_conditions = {
 # Students can only see Sales Invoices where custom_student matches their own Student record
 # Students can only see their own Diplomas
 has_permission = {
+	"Library Lesson": "seminary.seminary.library.has_permission",
 	"Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
 	"Course Folder": "seminary.seminary.doctype.course_folder.course_folder.has_permission",
 	"Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.has_permission",
@@ -552,10 +553,30 @@ doc_events = {
 	"Instructor": {
 		"on_update": "seminary.seminary.requirements.on_instructor_update",
 	},
+	# The lesson library (decisions/122): placement rules, required lessons and
+	# freezing a section's placed lessons when it closes.
+	"Library Lesson": {
+		"validate": "seminary.seminary.library.validate_library_lesson",
+		"on_update": "seminary.seminary.library.on_library_lesson_update",
+	},
+	"Library Lesson Requirement": {
+		"on_update": "seminary.seminary.library.on_requirement_update",
+		"on_trash": "seminary.seminary.library.on_requirement_trash",
+	},
+	"Course Lesson": {
+		"validate": "seminary.seminary.library.validate_course_lesson",
+		"on_trash": "seminary.seminary.library.guard_course_lesson_trash",
+	},
+	# A chapter joins its section's outline through its reference row; that is when
+	# the section can take its required library lessons.
+	"Course Schedule Chapter Reference": {
+		"after_insert": "seminary.seminary.library.on_chapter_reference_insert",
+	},
 	"Course Schedule": {
 		# A warning, never a block (decisions/091 §9).
 		"validate": "seminary.seminary.requirements.warn_course_schedule_instructors",
 		"on_update": [
+			"seminary.seminary.library.freeze_on_close",
 			"seminary.seminary.required_enrollment.on_course_schedule_update",
 			# A section opening enrolls students who advanced into its course
 			# (decisions/084 §6).
@@ -875,6 +896,8 @@ scheduler_events = {
 	},
 	"daily": [
 		"seminary.tasks.daily",
+		# Instructors hear once a day about library lessons changed (decisions/122 §3).
+		"seminary.seminary.library.notify_changes",
 		"seminary.seminary.staff.daily",
 		"seminary.partner.internship.activate_due_placements",
 		# Content gating means a student who stops reflecting locks themselves

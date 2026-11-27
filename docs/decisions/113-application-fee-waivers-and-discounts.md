@@ -1,7 +1,7 @@
 # 113 — Application fee waivers and discounts
 
 **Date:** 2026-11-24
-**Status:** Accepted 2026-11-24
+**Status:** Accepted 2026-11-24; seminary side built 2026-11-24 (d17fdb91); tamias and oikonomos sides uncommitted
 **Delivers:** SIS-ADM-02 (Yes)
 **Related:** 019 (application fees), 112 (complete, then In Review)
 

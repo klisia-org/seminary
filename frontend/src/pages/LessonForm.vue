@@ -26,41 +26,17 @@
 			:course="lessonDetails.data?.course_title || ''" @restore="restoreVersion" />
 
 		<div class="mx-auto max-w-6xl px-4 py-6 grid gap-5 lg:grid-cols-[15rem,minmax(0,1fr)] items-start">
-			<!-- Block palette: drag a tile into the lesson, or click it to add at the end. -->
-			<aside
-				class="order-last lg:order-first lg:sticky lg:top-20 rounded-xl border border-outline-gray-2 bg-surface-white p-4">
-				<h2 class="text-base font-semibold text-ink-gray-9">{{ __('Blocks') }}</h2>
-				<p class="mt-0.5 text-xs text-ink-gray-5">
-					{{ __('Drag into the lesson, or click to add at the end') }}
-				</p>
-				<div v-for="group in blockGroups" :key="group.label" class="mt-4">
-					<div class="mb-1.5 text-[11px] font-semibold uppercase tracking-wider" :class="group.text">
-						{{ group.label }}
-					</div>
-					<div class="grid grid-cols-2 gap-1.5">
-						<button v-for="block in group.blocks" :key="block.tool" type="button" draggable="true"
-							:title="block.hint || block.label"
-							class="flex flex-col items-start gap-1.5 rounded-lg border border-outline-gray-2 bg-surface-white p-2 text-left text-sm text-ink-gray-8 hover:border-outline-gray-3 hover:bg-surface-gray-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3 cursor-grab active:cursor-grabbing"
-							:class="{ 'opacity-50': draggingTool === block.tool }"
-							@click="addBlock(block.tool)" @dragstart="onTileDragStart($event, block.tool)"
-							@dragend="onTileDragEnd">
-							<span class="flex h-7 w-7 items-center justify-center rounded-md" :class="group.icon">
-								<component :is="block.icon" class="h-4 w-4" />
-							</span>
-							<span class="leading-tight">{{ block.label }}</span>
-						</button>
-					</div>
-				</div>
-				<p class="mt-4 rounded-lg bg-surface-gray-2 p-2.5 text-xs text-ink-gray-6">
-					{{ __('Tip: in the lesson, type / to search blocks without leaving the keyboard.') }}
-				</p>
-			</aside>
+			<BlockPalette :groups="blockGroups" :drop="drop" />
 
 			<div class="space-y-5 min-w-0">
 				<!-- Lesson details -->
 				<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
 					<FormControl v-model="lesson.lesson_title" :label="__('Lesson title')" :required="true" size="lg"
-						:placeholder="__('e.g. The Doctrine of Revelation')" />
+						:disabled="Boolean(library)" :placeholder="__('e.g. The Doctrine of Revelation')" />
+					<div v-if="!lessonName && !library" class="mt-3 flex items-center gap-2 text-sm text-ink-gray-6">
+						<span>{{ __('Or use a lesson the school keeps in its library.') }}</span>
+						<Button size="sm" @click="openLibraryPicker">{{ __('From the library') }}</Button>
+					</div>
 					<div class="mt-5">
 						<div class="mb-1.5 flex items-baseline justify-between">
 							<label for="lesson-summary" class="text-xs text-ink-gray-5">
@@ -85,8 +61,35 @@
 					</div>
 				</section>
 
+				<!-- A lesson placed from the library (decisions/122): its content is the library's. -->
+				<section v-if="library" class="rounded-xl border border-outline-blue-2 bg-surface-white p-6">
+					<div class="flex flex-wrap items-start justify-between gap-3">
+						<div class="min-w-0">
+							<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('From the school library') }}</h2>
+							<p class="mt-0.5 text-sm text-ink-gray-5">
+								{{ __('Every section that uses this lesson shows the same content. Edits made in the library appear here while the section is open.') }}
+							</p>
+							<p v-if="library.required" class="mt-2 text-sm text-ink-gray-7">
+								<Badge theme="orange" class="mr-1">{{ __('Required by the school') }}</Badge>
+								{{ library.reason }}
+							</p>
+						</div>
+						<div class="flex gap-2">
+							<Button v-if="library.can_edit" :route="{ name: 'LibraryLessonForm', params: { name: library.name } }">
+								{{ __('Edit in the library') }}
+							</Button>
+							<Button v-if="!library.required" :loading="detaching" @click="detachFromLibrary">
+								{{ __('Detach') }}
+							</Button>
+						</div>
+					</div>
+					<div id="library-content"
+						class="mt-4 rounded-lg bg-surface-gray-1 px-4 md:pl-14 ProseMirror prose prose-sm max-w-none !whitespace-normal py-3">
+					</div>
+				</section>
+
 				<!-- Instructor notes: folded away by default -->
-				<section class="rounded-xl border border-outline-gray-2 bg-surface-white">
+				<section v-show="!library" class="rounded-xl border border-outline-gray-2 bg-surface-white">
 					<button type="button" class="flex w-full items-center gap-3 px-6 py-4 text-left"
 						:aria-expanded="openInstructorEditor" @click="openInstructorEditor = !openInstructorEditor">
 						<span class="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-gray-2 text-ink-gray-6">
@@ -112,11 +115,16 @@
 				<!-- Lesson content -->
 				<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
 					<div class="mb-3 flex items-baseline justify-between">
-						<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('Lesson content') }}</h2>
+						<h2 class="text-lg font-semibold text-ink-gray-9">
+							{{ library ? __('This section\'s activities') : __('Lesson content') }}
+						</h2>
 						<span class="text-sm text-ink-gray-5">
 							{{ blockCount === 1 ? __('1 block') : __('{0} blocks').format(blockCount) }}
 						</span>
 					</div>
+					<p v-if="library" class="mb-3 text-sm text-ink-gray-5">
+						{{ __('Add this section\'s quizzes, assignments, exams or discussions here. They are shown after the library content. Other blocks aren\'t kept.') }}
+					</p>
 					<ContentIssues ref="contentChecker" class="mb-3" :issues="contentIssues" />
 					<div v-if="blockCount === 0"
 						class="mb-3 rounded-lg border border-dashed border-outline-gray-3 bg-surface-gray-1 px-4 py-5 text-center">
@@ -125,17 +133,11 @@
 							{{ __('Drag a block here from the panel, click one to add it, or type / in the line below.') }}
 						</p>
 					</div>
-					<!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a drop target for dragged blocks only; keyboard users add the same blocks by activating them in the panel or typing / in the editor -->
-					<div ref="dropZone" class="relative rounded-lg transition-colors"
-						:class="{ 'lesson-dropzone--active bg-surface-blue-1': draggingTool }"
-						@dragover.capture="onDragOver" @dragleave="onDragLeave" @drop.capture="onDrop">
-						<div v-if="dropIndicatorTop !== null"
-							class="pointer-events-none absolute left-0 right-0 z-10 h-0.5 rounded bg-surface-blue-3"
-							:style="{ top: dropIndicatorTop + 'px' }"></div>
+					<BlockDropZone :drop="drop">
 						<div id="content"
 							class="md:pl-14 ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal py-3">
 						</div>
-					</div>
+					</BlockDropZone>
 				</section>
 
 				<!-- An external tool (decisions/110 §3): saved with the lesson, like its other fields. -->
@@ -155,7 +157,7 @@
 				</section>
 
 				<!-- Captions and transcript (102 §6): saved with the lesson, like its other fields. -->
-				<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
+				<section v-if="!library" class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
 					<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('Captions and transcript') }}</h2>
 					<p class="mt-0.5 text-sm text-ink-gray-5">
 						{{ __('Caption files for the videos uploaded or recorded in this lesson, one per language, in WebVTT (.vtt) format. YouTube and Vimeo videos keep their own captions.') }}
@@ -189,6 +191,23 @@
 				</section>
 			</div>
 		</div>
+		<Dialog v-model="libraryPickerOpen" :options="{ title: __('Add a lesson from the library'), size: 'xl' }">
+			<template #body-content>
+				<FormControl v-model="librarySearch" :placeholder="__('Search by title or tag')" @input="searchLibrary" />
+				<div class="mt-3 max-h-96 space-y-2 overflow-y-auto">
+					<p v-if="!libraryResults.data?.length" class="text-sm text-ink-gray-5">
+						{{ __('No library lessons match.') }}
+					</p>
+					<button v-for="row in libraryResults.data || []" :key="row.name" type="button"
+						class="w-full rounded-lg border border-outline-gray-2 p-3 text-left hover:bg-surface-gray-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
+						@click="placeFromLibrary(row.name)">
+						<span class="block text-base font-medium text-ink-gray-9">{{ row.title }}</span>
+						<span v-if="row.preview" class="block text-sm text-ink-gray-6">{{ row.preview }}</span>
+						<span v-if="row.tags" class="block text-xs text-ink-gray-5">{{ row.tags }}</span>
+					</button>
+				</div>
+			</template>
+		</Dialog>
 	</div>
 </template>
 <script setup>
@@ -197,11 +216,18 @@ import ContentIssues from '@/components/ContentIssues.vue'
 import SmartFileUploader from '@/components/SmartFileUploader.vue'
 import CaptionsEditor from '@/components/CaptionsEditor.vue'
 import LessonHistory from '@/components/LessonHistory.vue'
+import BlockPalette from '@/components/BlockPalette.vue'
+import BlockDropZone from '@/components/BlockDropZone.vue'
+import { useBlockDrop } from '@/composables/useBlockDrop'
+import { DEFAULT_BLOCK, blockGroups as blockGroupsFor } from '@/utils/blockPalette'
 import { autoDirection } from '@/utils/textDirection'
 import {
+	Badge,
 	Breadcrumbs,
 	Button,
+	call,
 	createResource,
+	Dialog,
 	FormControl,
 	Switch,
 	Textarea,
@@ -209,6 +235,7 @@ import {
 } from 'frappe-ui'
 import {
 	computed,
+	nextTick,
 	reactive,
 	onMounted,
 	inject,
@@ -219,30 +246,17 @@ import {
 import { onBeforeRouteLeave } from 'vue-router'
 import EditorJS from '@editorjs/editorjs'
 import dayjs from '@/utils/dayjs'
-import {
-	BookOpenCheck,
-	ChevronDown,
-	CircleHelp,
-	Code,
-	Code2,
-	Folder,
-	Heading,
-	List,
-	Lock,
-	MessagesSquare,
-	Mic,
-	Pencil,
-	Table,
-	Type,
-	Upload,
-	Video,
-	X,
-} from 'lucide-vue-next'
+import { ChevronDown, Lock, X } from 'lucide-vue-next'
 import { updateDocumentTitle, createToast, getEditorTools } from '@/utils'
 import { checkBlocks } from '@/utils/contentCheck'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
 import { examStore } from '@/stores/exam'
+
+// Blocks a lesson placed from the library may hold: the section's own activities.
+const ACTIVITY_TYPES = ['quiz', 'exam', 'assignment', 'discussion', 'discussionActivity', 'discussionactivity', 'oralActivity']
+// Fields of a placed lesson that the library owns, never sent back on save.
+const LIBRARY_FIELDS = ['body', 'youtube', 'instructor_content', 'instructor_notes', 'preview', 'transcript', 'section_content', 'library_content', 'library']
 
 // Editor block type -> the data key that carries the linked activity's name.
 const ACTIVITY_DATA_KEY = {
@@ -253,52 +267,11 @@ const ACTIVITY_DATA_KEY = {
 	oralActivity: 'oral',
 }
 
-// The block palette beside the editor. `tool` is the editorjs tool name from
-// getEditorTools(); the / menu inside the editor still lists every tool.
-const blockGroups = [
-	{
-		label: __('Text'),
-		text: 'text-ink-gray-5',
-		icon: 'bg-surface-gray-2 text-ink-gray-7',
-		blocks: [
-			{ tool: 'markdown', label: __('Text'), icon: Type },
-			{ tool: 'header', label: __('Heading'), icon: Heading },
-			{ tool: 'list', label: __('List'), icon: List },
-			{ tool: 'table', label: __('Table'), icon: Table },
-			{ tool: 'codeBox', label: __('Code'), icon: Code },
-		],
-	},
-	{
-		label: __('Media'),
-		text: 'text-ink-blue-3',
-		icon: 'bg-surface-blue-1 text-ink-blue-3',
-		blocks: [
-			{ tool: 'upload', label: __('Upload'), hint: __('Video, audio, PDF or image file'), icon: Upload },
-			{ tool: 'iframe', label: __('Embed'), hint: __('A link to a video or web page'), icon: Code2 },
-			{ tool: 'recordVideo', label: __('Record video'), icon: Video },
-			{ tool: 'folder', label: __('Folder'), icon: Folder },
-		],
-	},
-	{
-		label: __('Assessment'),
-		text: 'text-ink-amber-3',
-		icon: 'bg-surface-amber-1 text-ink-amber-3',
-		blocks: [
-			{ tool: 'quiz', label: __('Quiz'), icon: CircleHelp },
-			{ tool: 'exam', label: __('Exam'), icon: BookOpenCheck },
-			{ tool: 'assignment', label: __('Assignment'), icon: Pencil },
-		],
-	},
-	{
-		label: __('Engagement'),
-		text: 'text-ink-green-3',
-		icon: 'bg-surface-green-1 text-ink-green-3',
-		blocks: [
-			{ tool: 'discussionActivity', label: __('Discussion'), icon: MessagesSquare },
-			{ tool: 'oralActivity', label: __('Oral activity'), icon: Mic },
-		],
-	},
-]
+// The palette's tiles. A lesson placed from the library holds only the section's
+// activities, so that is all its palette offers (decisions/122 §2).
+const blockGroups = computed(() =>
+	library.value ? blockGroupsFor().filter((g) => g.activity) : blockGroupsFor(),
+)
 
 // Soft guide for the course page summary; the field itself has no cap.
 const SUMMARY_LIMIT = 160
@@ -310,10 +283,6 @@ const hasInstructorNotes = ref(false)
 const blockCount = ref(0)
 const saving = ref(false)
 const savedOnce = ref(false)
-const dropZone = ref(null)
-const draggingTool = ref(null)
-const dropIndicatorTop = ref(null)
-let dropIndex = null
 const user = inject('$user')
 const openInstructorEditor = ref(false)
 const settingsStore = useSettings()
@@ -321,6 +290,11 @@ let autoSaveInterval
 let titleSaveTimer
 // Name of the persisted Course Lesson once it exists (loaded or autosaved).
 const lessonName = ref(null)
+// The library lesson this lesson is placed from, with whether the school requires it.
+const library = ref(null)
+const detaching = ref(false)
+const libraryPickerOpen = ref(false)
+const librarySearch = ref('')
 // Editors are created exactly once, after the first details fetch resolves.
 const initialized = ref(false)
 // Serializes every save so autosave, the title debounce, the route-leave guard
@@ -354,9 +328,69 @@ onMounted(() => {
 
 
 
-// editorjs's `defaultBlock`: the tool used for a plain new block, and the only
-// one focusFreeBlockAtEnd() will append.
-const DEFAULT_BLOCK = 'markdown'
+
+// A placed lesson shows the library content read-only above its own activities.
+const renderLibraryContent = (content, course, courseName) => {
+	let data = { blocks: [] }
+	try {
+		data = JSON.parse(content || '{"blocks": []}')
+	} catch {
+		/* shown empty */
+	}
+	const mount = () => {
+		const holder = document.getElementById('library-content')
+		if (!holder) return
+		holder.innerHTML = ''
+		new EditorJS({ holder: 'library-content', readOnly: true, tools: getEditorTools(course, courseName), data })
+	}
+	nextTick(mount)
+}
+
+const detachFromLibrary = async () => {
+	detaching.value = true
+	try {
+		await call('seminary.seminary.library.detach', { lesson: lessonName.value })
+		toast.success(__('The lesson is now this section\'s own copy.'))
+		window.location.reload()
+	} catch (e) {
+		toast.error(e?.messages?.[0] || __('The lesson could not be detached.'))
+	} finally {
+		detaching.value = false
+	}
+}
+
+const libraryResults = createResource({
+	url: 'seminary.seminary.library.search',
+	makeParams() {
+		return { txt: librarySearch.value, course_schedule: props.courseName }
+	},
+})
+
+let librarySearchTimer
+const searchLibrary = () => {
+	clearTimeout(librarySearchTimer)
+	librarySearchTimer = setTimeout(() => libraryResults.reload(), 300)
+}
+
+const openLibraryPicker = () => {
+	libraryPickerOpen.value = true
+	libraryResults.reload()
+}
+
+const placeFromLibrary = async (name) => {
+	try {
+		await call('seminary.seminary.library.place', {
+			library_lesson: name,
+			chapter: lessonDetails.data.chapter.name,
+		})
+		libraryPickerOpen.value = false
+		toast.success(__('Lesson added from the library'))
+		// The new lesson takes the next place in the chapter, which this form's route names.
+		window.location.reload()
+	} catch (e) {
+		toast.error(e?.messages?.[0] || __('The lesson could not be added.'))
+	}
+}
 
 const renderEditor = (holder, course = null, courseName = null, onChange = null) => {
 	// Clear the holder first
@@ -471,93 +505,12 @@ const removeCaption = (index) => {
 	if (lessonName.value) persistLesson().catch(() => {})
 }
 
-/**
- * Add a palette block at `index` (default: the end). An empty text line at the
- * spot -- the free line focusFreeBlockAtEnd() leaves, or a blank new lesson --
- * is replaced rather than left stranded above the new block.
- */
-const addBlock = async (tool, index = null) => {
-	const api = editor.value
-	if (!api) return
-	await api.isReady
-	const count = api.blocks.getBlocksCount()
-	let at = index === null ? count : Math.max(0, Math.min(index, count))
-	const isFreeLine = (i) => {
-		const block = i >= 0 && i < count ? api.blocks.getBlockByIndex(i) : null
-		return Boolean(block && block.name === DEFAULT_BLOCK && block.isEmpty)
-	}
-	let replace = false
-	if (isFreeLine(at)) {
-		replace = true
-	} else if (isFreeLine(at - 1)) {
-		at -= 1
-		replace = true
-	}
-	api.blocks.insert(tool, {}, {}, at, true, replace)
-	capture('lesson_block_added')
-	countBlocks()
-}
-
-// Drag from the palette. A custom type keeps these drags apart from editorjs's
-// own block dragging and from files dropped into the editor.
-const BLOCK_MIME = 'application/x-seminary-block'
-
-const onTileDragStart = (event, tool) => {
-	event.dataTransfer.setData(BLOCK_MIME, tool)
-	event.dataTransfer.effectAllowed = 'copy'
-	draggingTool.value = tool
-}
-
-const onTileDragEnd = () => {
-	draggingTool.value = null
-	dropIndicatorTop.value = null
-	dropIndex = null
-}
-
-const isBlockDrag = (event) => Array.from(event.dataTransfer?.types || []).includes(BLOCK_MIME)
-
-const onDragOver = (event) => {
-	if (!isBlockDrag(event) || !dropZone.value) return
-	event.preventDefault()
-	event.stopPropagation()
-	event.dataTransfer.dropEffect = 'copy'
-
-	// The drop lands before the first block whose middle is below the pointer.
-	const blocks = Array.from(dropZone.value.querySelectorAll('#content .ce-block'))
-	const zoneTop = dropZone.value.getBoundingClientRect().top
-	let index = blocks.length
-	for (let i = 0; i < blocks.length; i++) {
-		const rect = blocks[i].getBoundingClientRect()
-		if (event.clientY < rect.top + rect.height / 2) {
-			index = i
-			break
-		}
-	}
-	dropIndex = index
-	if (!blocks.length) {
-		dropIndicatorTop.value = 12
-	} else if (index < blocks.length) {
-		dropIndicatorTop.value = blocks[index].getBoundingClientRect().top - zoneTop
-	} else {
-		dropIndicatorTop.value = blocks[blocks.length - 1].getBoundingClientRect().bottom - zoneTop
-	}
-}
-
-const onDragLeave = (event) => {
-	if (dropZone.value && !dropZone.value.contains(event.relatedTarget)) {
-		dropIndicatorTop.value = null
-	}
-}
-
-const onDrop = (event) => {
-	if (!isBlockDrag(event)) return
-	event.preventDefault()
-	event.stopPropagation()
-	const tool = event.dataTransfer.getData(BLOCK_MIME)
-	const index = dropIndex ?? editor.value?.blocks.getBlocksCount() ?? 0
-	onTileDragEnd()
-	if (tool) addBlock(tool, index)
-}
+const drop = useBlockDrop(editor, 'content', {
+	onAdded: () => {
+		capture('lesson_block_added')
+		countBlocks()
+	},
+})
 
 /**
  * Leave the caret in a free block at the end of the content, with the toolbar
@@ -637,6 +590,11 @@ const lessonDetails = createResource({
 		editor.value = renderEditor('content', course, courseName, onContentChange)
 		instructorEditor.value = renderEditor('instructor-notes', course, courseName)
 
+		if (data.lesson?.library) {
+			library.value = data.lesson.library
+			renderLibraryContent(data.lesson.library_content, course, courseName)
+		}
+
 		if (data.lesson) {
 			lessonName.value = data.lesson.name
 			Object.keys(data.lesson).forEach((key) => {
@@ -649,7 +607,13 @@ const lessonDetails = createResource({
 			lesson.include_in_preview = Boolean(data.lesson.include_in_preview)
 			lesson.allow_discuss = Boolean(data.lesson.allow_discuss)
 
-			addInstructorNotes(data)
+			if (library.value) {
+				// The library owns these; the section's lesson keeps only its activities.
+				for (const key of LIBRARY_FIELDS) delete lesson[key]
+				lesson.captions = []
+			} else {
+				addInstructorNotes(data)
+			}
 		}
 
 		// Render saved content and splice in any activity created via the
@@ -676,7 +640,9 @@ const initContent = async (data) => {
 	await editor.value.isReady
 
 	let contentObj = null
-	if (data.lesson?.content) {
+	if (library.value) {
+		contentObj = JSON.parse(data.lesson.section_content || '{"blocks": []}')
+	} else if (data.lesson?.content) {
 		try {
 			contentObj = JSON.parse(data.lesson.content)
 		} catch {
@@ -1073,9 +1039,12 @@ const writeLesson = async () => {
 		return { ...data, blocks }
 	}
 	const contentData = untimed(await editor.value.save())
+	if (library.value) {
+		contentData.blocks = contentData.blocks.filter((b) => ACTIVITY_TYPES.includes(b.type))
+	}
 	lesson.content = JSON.stringify(contentData)
 
-	if (instructorEditor.value) {
+	if (instructorEditor.value && !library.value) {
 		const instructorData = untimed(await instructorEditor.value.save())
 		lesson.instructor_content = JSON.stringify(instructorData)
 	}
@@ -1380,15 +1349,6 @@ iframe {
 /* While a palette tile is dragged: outline the drop area, and let the pointer
    pass over embedded frames, which would otherwise swallow the dragover events
    and hide the drop position. */
-.lesson-dropzone--active {
-	outline: 2px dashed var(--outline-blue-1, #93c5fd);
-	outline-offset: 4px;
-}
-
-.lesson-dropzone--active iframe {
-	pointer-events: none;
-}
-
 /* A hover band on framed blocks. An iframe keeps mouse events to itself, so
    moving the pointer over a video never reaches the editor: editorjs never
    hears "block hovered", the toolbar never moves there, and the "+" stays on

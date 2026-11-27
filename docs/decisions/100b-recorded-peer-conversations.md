@@ -1,7 +1,7 @@
 # 100b — Recorded peer conversations and talk time
 
 **Date:** 2026-11-19
-**Status:** Accepted
+**Status:** Accepted 2026-11-20; implemented 2026-11-20 (d6cd3234, 847dfa14; outcomes mapper, lesson completion and instructor lists not built)
 **Amended:** 2026-11-26, §1 (a conversation's groups are Activity Groups; see 120)
 **Parent:** [100](100-oral-assessment.md)
 **Related:** 097 (discussions, student groups)

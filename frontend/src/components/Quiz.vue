@@ -192,6 +192,9 @@
 								{{ __('of') }} {{ questionDetails.data.pages_total }} {{ __('pages read') }}
 							</span>
 						</div>
+						<!-- What another installed app shows under a reading report (privatedocs p028 §2). -->
+						<ExtensionPanels class="my-3" url="seminary.seminary.extensions.question_panels"
+							:params="{ question: currentQuestion, quiz: props.quizName }" />
 						<div v-if="showAnswers.length">
 							<Badge v-if="showAnswers[0]" :label="__('Fully read')" theme="green">
 								<template #prefix>
@@ -411,6 +414,7 @@
 <script setup>
 import { userLocale } from '@seminary/portal-shell'
 import { Badge, Button, call, createResource, ListView, TextEditor, FormControl, toast } from 'frappe-ui'
+import ExtensionPanels from '@/components/ExtensionPanels.vue'
 import { ref, watch, reactive, inject, computed } from 'vue'
 import { createToast } from '@/utils/'
 import { CheckCircle, XCircle, MinusCircle } from 'lucide-vue-next'

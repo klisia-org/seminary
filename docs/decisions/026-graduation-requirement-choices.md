@@ -97,3 +97,9 @@ umbrella-chosen linked docs fulfil correctly.
   Culminating Project → list `options` (allowed types) → `choose_project_type`.
   After the choice the existing Start Project / evidence actions appear. Build
   with the deferred milestone workbench (ADR 025).
+  **Built 2026-11-27:** the Choose button sits in the Choices box and the
+  requirement's Action cell; Start Project waits until the type is chosen and
+  shows the chosen type. A student chooses once, while the choice is pending;
+  `_check_choice_permission` refuses a student changing a made choice (it would
+  replace the spawned row), so a change goes through the registrar on the desk.
+  Tests: `test_adr026_requirement_choices.py`.
