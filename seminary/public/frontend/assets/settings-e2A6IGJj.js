@@ -1,1 +1,0 @@
-import{di as e,hr as t,n}from"./frappe-ui-DUmG21s9.js";var r=t(`settings`,()=>{let{isLoggedIn:t}=n();return{isSettingsOpen:e(!1)}});export{r as t};

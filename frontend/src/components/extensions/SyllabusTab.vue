@@ -33,11 +33,39 @@
 				<div class="flex items-baseline justify-between gap-2">
 					<h2 class="text-base font-semibold text-ink-gray-9">{{ section.heading }}</h2>
 					<span class="text-xs text-ink-gray-5">
-						<template v-if="section.kind === 'From records'">{{ __('Filled in from the course: {0}').format(__(section.source)) }}</template>
+						<template v-if="section.kind === 'From records'">
+							{{ texts[section.key]
+								? __('Your wording of: {0}').format(__(section.source))
+								: __('Filled in from the course: {0}').format(__(section.source)) }}
+						</template>
 						<template v-else-if="section.kind === 'School text'">{{ __('The school\'s text') }}</template>
 						<template v-else-if="section.required">{{ __('Required') }}</template>
 					</span>
 				</div>
+
+				<!-- From the course records; the instructor may reword it (decisions/100 §8) -->
+				<template v-if="section.kind === 'From records'">
+					<p v-if="section.stale && texts[section.key]" role="status"
+						class="mt-2 rounded-md bg-surface-amber-1 px-3 py-2 text-sm text-ink-amber-3">
+						{{ __('The course records changed since you edited this.') }}
+						<span class="ml-1 inline-flex flex-wrap gap-2">
+							<button type="button" class="underline" @click="compare = section">{{ __('Compare') }}</button>
+							<button type="button" class="underline" @click="keepWording(section)">{{ __('Keep my wording') }}</button>
+							<button type="button" class="underline" @click="resetSection(section)">{{ __('Reset to records') }}</button>
+						</span>
+					</p>
+					<TextEditor v-if="texts[section.key]" class="mt-2 min-h-24 rounded border border-outline-gray-2 p-2"
+						:content="texts[section.key]" :editable="true" :fixedMenu="true" :bubbleMenu="false"
+						@change="(v) => (texts[section.key] = v)" />
+					<SafeHtml v-else :html="section.records_html" class="mt-2 prose prose-sm max-w-none text-ink-gray-7" />
+					<div class="mt-2 flex gap-2">
+						<Button v-if="!texts[section.key]" size="sm" @click="texts[section.key] = section.records_html || '<p></p>'">
+							{{ __('Edit wording') }}
+						</Button>
+						<Button v-else-if="!section.stale" size="sm" @click="resetSection(section)">{{ __('Reset to records') }}</Button>
+					</div>
+				</template>
+
 				<template v-if="section.kind === 'Instructor text'">
 					<p v-if="section.guidance" class="mt-1 text-sm text-ink-gray-6">{{ section.guidance }}</p>
 					<TextEditor class="mt-2 min-h-24 rounded border border-outline-gray-2 p-2" :content="texts[section.key]"
@@ -46,7 +74,7 @@
 			</div>
 			<div class="flex flex-wrap gap-2">
 				<Button :loading="busy === 'save'" @click="save">{{ __('Save') }}</Button>
-				<Button v-if="data.status !== 'Published' || data.changed_since_published" variant="solid" :loading="busy === 'submit'" @click="submit">
+				<Button v-if="data.status !== 'Published' || data.changed_since_published" variant="solid" :loading="busy === 'submit'" @click="submit()">
 					{{ data.requires_review && !data.can_approve ? __('Submit for review') : __('Publish') }}
 				</Button>
 				<template v-if="data.can_approve && data.status === 'Submitted'">
@@ -58,8 +86,41 @@
 
 		<!-- The syllabus -->
 		<article v-else-if="data.html" class="rounded-lg border border-outline-gray-2 bg-surface-white p-6">
+			<SafeHtml v-if="data.letterhead" :html="data.letterhead" class="mb-4 border-b border-outline-gray-2 pb-4" />
 			<SafeHtml :html="data.html" class="prose prose-sm max-w-none syllabus" />
 		</article>
+
+		<Dialog :modelValue="Boolean(compare)" @update:modelValue="(v) => { if (!v) compare = null }"
+			:options="{ title: compare ? __('Compare: {0}').format(compare.heading) : '', size: '5xl' }">
+			<template #body-content>
+				<div v-if="compare" class="grid gap-4 md:grid-cols-2">
+					<div>
+						<h3 class="mb-2 text-sm font-semibold text-ink-gray-7">{{ __('Your wording') }}</h3>
+						<SafeHtml :html="texts[compare.key]"
+							class="prose prose-sm max-w-none max-h-[60vh] overflow-y-auto rounded border border-outline-gray-2 p-3" />
+					</div>
+					<div>
+						<h3 class="mb-2 text-sm font-semibold text-ink-gray-7">{{ __('From the records today') }}</h3>
+						<SafeHtml :html="compare.records_html"
+							class="prose prose-sm max-w-none max-h-[60vh] overflow-y-auto rounded border border-outline-gray-2 p-3" />
+					</div>
+				</div>
+			</template>
+		</Dialog>
+
+		<Dialog v-model="staleOpen" :options="{ title: __('Publish with changed records?') }">
+			<template #body-content>
+				<p class="text-sm text-ink-gray-7">
+					{{ __('The course records changed since you reworded these sections: {0}. Students will see your wording, not the change.').format((data.stale || []).join(', ')) }}
+				</p>
+			</template>
+			<template #actions>
+				<div class="flex justify-end gap-2">
+					<Button @click="staleOpen = false">{{ __('Go back') }}</Button>
+					<Button variant="solid" @click="publishAnyway">{{ __('Publish anyway') }}</Button>
+				</div>
+			</template>
+		</Dialog>
 
 		<Dialog v-model="snapshotOpen" :options="{ title: __('Published copy'), size: '4xl' }">
 			<template #body-content>
@@ -89,9 +150,10 @@ const syllabus = createResource({
 })
 const data = computed(() => syllabus.data || {})
 const sections = computed(() => data.value.sections || [])
+// Instructor text, and the instructor's wording of From records sections ('' = the records).
 const texts = reactive({})
 watch(sections, (list) => {
-	for (const s of list) if (s.kind === 'Instructor text' && texts[s.key] === undefined) texts[s.key] = s.text || ''
+	for (const s of list) if (s.kind !== 'School text' && texts[s.key] === undefined) texts[s.key] = s.text || ''
 }, { immediate: true })
 const editing = ref(false)
 // A draft opens ready to write; a published syllabus opens as students see it.
@@ -119,15 +181,37 @@ const run = async (key, method, args) => {
 const save = async () => {
 	if (await run('save', 'aretenic.syllabus.save_texts', { texts })) toast.success(__('Saved'))
 }
-const submit = async () => {
+// Publishing warns, without blocking, about reworded sections whose records changed (§8).
+const staleOpen = ref(false)
+const submit = async (confirmed = false) => {
 	if (!(await run('save', 'aretenic.syllabus.save_texts', { texts }))) return
+	if (!confirmed && data.value.stale?.length) {
+		staleOpen.value = true
+		return
+	}
 	if (await run('submit', 'aretenic.syllabus.submit', {})) {
 		toast.success(data.value.status === 'Published' ? __('Published') : __('Sent for review'))
 		editing.value = false
 	}
 }
+const publishAnyway = () => {
+	staleOpen.value = false
+	submit(true)
+}
 const act = async (what) => {
 	if (await run(what, `aretenic.syllabus.${what}`, {})) editing.value = false
+}
+
+const compare = ref(null)
+const keepWording = async (section) => {
+	if (await run('save', 'aretenic.syllabus.save_texts', { texts, keep: [section.key] })) {
+		toast.success(__('Kept your wording'))
+	}
+}
+const resetSection = async (section) => {
+	texts[section.key] = ''
+	if (compare.value?.key === section.key) compare.value = null
+	if (await run('save', 'aretenic.syllabus.save_texts', { texts })) toast.success(__('Back to the course records'))
 }
 
 const snapshotOpen = ref(false)
