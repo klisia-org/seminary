@@ -22,6 +22,8 @@ import frappe
 from frappe import _
 from frappe.utils import now
 
+from seminary.seminary import library
+
 from . import editorjs
 from .constants import (
 	ASSESSMENT_DIMENSION_WEIGHT_FIELDS,
@@ -76,6 +78,8 @@ class _Exporter:
 		self.assessment_criteria = {}  # name -> {type}
 		self.warnings = []  # folders left out of the pack, and why
 		self.includes_instructor_material = False
+		# Files other installed apps add under extras/<app>/ (privatedocs p028 §3).
+		self.extras = {}
 		self._seen_q = set()
 		self._seen_a = set()
 		self._seen_folders = set()
@@ -439,7 +443,19 @@ class _Exporter:
 			"scac": scac,
 			"competencies": self._competencies(),
 		}
+		self._collect_extras()
+		manifest["extras"] = sorted(self.extras)
 		return manifest
+
+	def _collect_extras(self):
+		"""Each `course_pack_exported(course_schedule)` returns {file name: text or bytes}; its
+		files go under extras/<app>/. A name is a plain file name, never a path."""
+		for path in frappe.get_hooks("course_pack_exported"):
+			app = path.split(".", 1)[0]
+			for name, data in (frappe.get_attr(path)(self.cs.name) or {}).items():
+				if not name or "/" in name or "\\" in name or name.startswith("."):
+					continue
+				self.extras[f"extras/{app}/{name}"] = data
 
 	def _collect_scac(self):
 		scac = []
@@ -532,6 +548,8 @@ class _Exporter:
 				if not lref.lesson or not frappe.db.exists("Course Lesson", lref.lesson):
 					continue
 				lesson = frappe.get_doc("Course Lesson", lref.lesson)
+				# The library doesn't travel: a placed lesson goes as content (decisions/122 §8).
+				library.inline(lesson)
 				fields = self._pick(lesson, LESSON_FIELDS)
 				if lesson.lti_tool and not lesson.lti_url:
 					# The receiving site matches the tool by host when the name
@@ -628,6 +646,8 @@ def _write_pack(exporter, manifest, fileobj):
 			):
 				for chunk in chunks:
 					target.write(chunk)
+		for name, data in exporter.extras.items():
+			archive.writestr(name, data)
 		archive.writestr("manifest.json", json.dumps(manifest, indent=1, default=str))
 
 

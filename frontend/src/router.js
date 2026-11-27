@@ -486,6 +486,17 @@ const routes = [
     component: () => import('@/pages/FacultyWorklist.vue'),
   },
   {
+    path: "/lesson-library",
+    name: "LessonLibrary",
+    component: () => import('@/pages/LessonLibrary.vue'),
+  },
+  {
+    path: "/lesson-library/:name",
+    name: "LibraryLessonForm",
+    component: () => import('@/pages/LibraryLessonForm.vue'),
+    props: true,
+  },
+  {
     path: "/enrollment",
     name: "Enrollment",
     component: () => import('@/pages/Enrollment.vue'),

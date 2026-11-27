@@ -13,6 +13,13 @@
   "course_code",
   "is_scorm_package",
   "allow_discuss",
+  "library_section",
+  "library_lesson",
+  "required_by",
+  "column_break_library",
+  "detached_from",
+  "detached_on",
+  "frozen_at_close",
   "section_break_ksdk",
   "content_column",
   "preview",
@@ -183,6 +190,50 @@
    "label": "Allow Discussions"
   },
   {
+   "fieldname": "library_section",
+   "fieldtype": "Section Break",
+   "label": "Library",
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.library_lesson || doc.detached_from"
+  },
+  {
+   "fieldname": "library_lesson",
+   "fieldtype": "Link",
+   "label": "Library Lesson",
+   "options": "Library Lesson",
+   "description": "When set, the lesson shows this library lesson's content. Its own content holds only the section's activities."
+  },
+  {
+   "fieldname": "required_by",
+   "fieldtype": "Link",
+   "label": "Required By",
+   "options": "Library Lesson Requirement",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_library",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "detached_from",
+   "fieldtype": "Link",
+   "label": "Detached From",
+   "options": "Library Lesson",
+   "read_only": 1
+  },
+  {
+   "fieldname": "detached_on",
+   "fieldtype": "Datetime",
+   "label": "Detached On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "frozen_at_close",
+   "fieldtype": "Check",
+   "label": "Frozen When the Section Closed",
+   "read_only": 1
+  },
+  {
    "fieldname": "discussion_id",
    "fieldtype": "Data",
    "label": "Discussion Activity"
@@ -302,7 +353,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-24 10:00:00.000000",
+ "modified": "2026-11-27 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

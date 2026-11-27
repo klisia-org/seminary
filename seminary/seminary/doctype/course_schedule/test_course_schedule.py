@@ -103,3 +103,40 @@ class TestSeatSemantics(unittest.TestCase):
 		self.assertNotIn("Unseated", SEAT_HOLDER_STATES)
 		self.assertIn("Waitlisted", DEMAND_STATES)
 		self.assertNotIn("Unseated", DEMAND_STATES)
+
+
+class TestAssessmentWeights(unittest.TestCase):
+	"""The legacy 100% check counts a row whose extra-credit flag was never set
+	(decisions/014)."""
+
+	def _check(self, rows):
+		from unittest.mock import patch
+
+		from seminary.seminary.doctype.course_schedule.course_schedule import CourseSchedule
+
+		doc = frappe._dict(
+			course="C",
+			gradesc_cs="S",
+			assess_categories=[],
+			courseassescrit_sc=[frappe._dict(r) for r in rows],
+		)
+		with patch("seminary.seminary.cbe.framework_for_course_and_scale", return_value=None):
+			CourseSchedule.validate_assessment_criteria(doc)
+
+	def test_unset_flag_counts_toward_total(self):
+		self._check(
+			[
+				{"weight_scac": 60, "extracredit_scac": None},
+				{"weight_scac": 40, "extracredit_scac": 0},
+				{"weight_scac": 10, "extracredit_scac": 1},
+			]
+		)
+
+	def test_extra_credit_does_not_count(self):
+		with self.assertRaises(frappe.ValidationError):
+			self._check(
+				[
+					{"weight_scac": 90, "extracredit_scac": 0},
+					{"weight_scac": 10, "extracredit_scac": 1},
+				]
+			)

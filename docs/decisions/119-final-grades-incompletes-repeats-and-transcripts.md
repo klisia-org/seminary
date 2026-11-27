@@ -1,7 +1,7 @@
 # 119 — Final grades: incompletes, changes, repeats and transcripts
 
 **Date:** 2026-11-25
-**Status:** Accepted 2026-11-25; implemented 2026-11-25
+**Status:** Accepted 2026-11-25; implemented 2026-11-25; §6 fees built in tamias 2026-11-25 and oikonomos 2026-11-27 (both uncommitted)
 **Delivers:** SIS-GRD-01 (Yes), SIS-GRD-02 (Yes), SIS-GRD-03 (Yes)
 **Amended:** 2026-11-26, §1 (the lapse rule is the scale's, not a setting; see Amendment)
 **Amends:** 013 (Send Grades no longer waits for every student)

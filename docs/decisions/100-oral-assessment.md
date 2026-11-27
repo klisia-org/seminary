@@ -1,7 +1,7 @@
 # 100 — Oral assessment
 
 **Date:** 2026-11-19
-**Status:** Accepted
+**Status:** Accepted 2026-11-20; implemented 2026-11-20 (002b797c, ae6062c2, 856df137)
 **Children:** [100a](100a-oral-answers-in-exams.md) (oral answers in exams),
 [100b](100b-recorded-peer-conversations.md) (recorded peer conversations),
 [100c](100c-oral-defense-of-submitted-work.md) (oral defense of submitted work),

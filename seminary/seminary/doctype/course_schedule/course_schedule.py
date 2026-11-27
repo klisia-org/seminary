@@ -434,11 +434,8 @@ class CourseSchedule(Document):
 					"title": cc.title,
 					"assesscriteria_scac": cc.assessment_criteria,
 					"weight_scac": cc.weightage,
-					# Explicit 0 — validate_assessment_criteria's if/elif on
-					# extracredit_scac silently skips rows where the value
-					# is None, causing the weight sum to drop and fail the
-					# 100% check. Course Assessment Criteria has no extra-
-					# credit field; everything copied here is non-extra-credit.
+					# Course Assessment Criteria has no extra-credit field;
+					# everything copied here is non-extra-credit.
 					"extracredit_scac": 0,
 				},
 			)
@@ -577,10 +574,9 @@ class CourseSchedule(Document):
 
 		total_weight_scac = 0
 		for criteria in self.courseassescrit_sc:
-			if criteria.extracredit_scac == 0:
+			# An unset flag is not extra credit (decisions/014).
+			if not criteria.extracredit_scac:
 				total_weight_scac += criteria.weight_scac or 0
-			elif criteria.extracredit_scac == 1:
-				continue
 		if total_weight_scac != 100:
 			frappe.throw(_("Total Weight of all Assessment Criteria must total 100%"))
 
@@ -1062,12 +1058,14 @@ class CourseSchedule(Document):
 		# the source section get a twin on this one, or the new section's
 		# students could not open them (p007 §8.2, `file_policy.adopt`).
 		frappe.flags.seminary_adopt_from = ("Course Schedule", source_cs)
+		frappe.flags.in_course_copy = True
 		try:
 			n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
 				source_cs, self.name, folder_report=folder_report
 			)
 		finally:
 			frappe.flags.seminary_adopt_from = None
+			frappe.flags.in_course_copy = False
 		_remap_lesson_scac_links(lesson_name_map, scac_name_map)
 		# Fill what the template lacked, stamp the reflections it brought, and
 		# file its assessments on the chapters they now sit in.
@@ -1085,6 +1083,10 @@ class CourseSchedule(Document):
 		# outcome maps, p023); a failure rolls the import back with it.
 		for fn in frappe.get_hooks("course_template_imported"):
 			frappe.get_attr(fn)(source_cs, self.name, scac_name_map)
+		# The school's required library lessons, once the outline is complete (decisions/122 §9).
+		from seminary.seminary import library
+
+		library.place_for_section(self.name)
 		n_scac = len(scac_name_map)
 		lines = [
 			_(
@@ -1572,7 +1574,7 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name, folder_report=Non
 
 	# Release dates move with the section; prerequisites are rewritten onto
 	# the copies once every chapter exists (decisions/107 §7).
-	from seminary.seminary import content_release
+	from seminary.seminary import content_release, library
 
 	day_shift = content_release.start_shift(
 		frappe.db.get_value("Course Schedule", source_cs_name, "c_datestart"),
@@ -1629,6 +1631,15 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name, folder_report=Non
 			src_lesson = frappe.get_doc("Course Lesson", lref.lesson)
 			new_lesson = frappe.new_doc("Course Lesson")
 			new_lesson.chapter = new_chapter.name
+			# A library lesson stays placed by reference where the course may place it,
+			# and is copied as content where it may not. Required lessons are placed
+			# again by the target's own requirements (decisions/122 §8-9).
+			if src_lesson.library_lesson:
+				target_course = frappe.db.get_value("Course Schedule", target_cs_name, "course")
+				if library.available_for(src_lesson.library_lesson, target_course):
+					new_lesson.library_lesson = src_lesson.library_lesson
+				else:
+					library.inline(src_lesson)
 			for field in _LESSON_COPYABLE_FIELDS:
 				new_lesson.set(field, src_lesson.get(field))
 			new_lesson.flags.ignore_permissions = True

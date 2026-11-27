@@ -21,6 +21,8 @@ INTERNAL = {
 	"Cohort Feed Read State",
 	"Cohort Thread Read State",
 	"Discussion Read State",
+	# A device that may receive notifications, registered by the portal (decisions/121).
+	"Push Subscription",
 }
 # Frappe's own doctypes that a sidebar may open, because every site has them.
 FRAMEWORK_DOCTYPES = {"User", "Website Settings"}
@@ -79,6 +81,15 @@ PORTAL_ONLY = {
 	"Oral Recording",
 	"Oral Moment",
 	"Oral Step Result",
+	# Group work and peer review (decisions/120): set up and done in the portal.
+	"Activity Group",
+	"Activity Topic",
+	"Peer Review",
+	"Teammate Rating",
+	"Topic Choice",
+	# Written and placed from the Lesson Library page (decisions/122); the Desk keeps the
+	# requirements and the use report.
+	"Library Lesson",
 }
 # Listed in the billing apps' Scholarships sidebars (088a §5).
 COMPANION_PLACED = {"Sources of Funding"}

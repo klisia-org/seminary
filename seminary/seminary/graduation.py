@@ -959,9 +959,15 @@ def _culm_types(library):
 
 
 def _check_choice_permission(pe, row):
-	"""Student may choose only when the library item flags student_choice;
-	otherwise the choice is a staff (registrar) assignment."""
+	"""Student may choose only when the library item flags student_choice, and
+	only while the choice is pending: changing a made choice replaces the
+	spawned row and its evidence, so that is a staff (registrar) action."""
 	if row.student_choice and _user_owns_enrollment(pe):
+		if not row.choice_pending:
+			frappe.throw(
+				_("This choice has been made. Ask the registrar to change it."),
+				frappe.PermissionError,
+			)
 		return
 	if not frappe.has_permission("Program Enrollment", "write", doc=pe):
 		frappe.throw(

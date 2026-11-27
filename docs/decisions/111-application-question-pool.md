@@ -1,7 +1,7 @@
 # 111 — Application questions from a shared pool, chosen per program
 
 **Date:** 2026-11-24
-**Status:** Accepted 2026-11-24
+**Status:** Accepted 2026-11-24; implemented 2026-11-24 (210bceb0, b7db42be)
 **Amends:** 091 §10 (agreements can be asked on the application too)
 **Delivers:** SIS-ADM-01 (Yes)
 **Related:** 019 (term admissions), 058 (requirement review), 068 (Person-first identity),

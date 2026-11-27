@@ -1,7 +1,7 @@
 # 121 — Message notices and phone notifications
 
 **Date:** 2026-11-26
-**Status:** Accepted 2026-11-26
+**Status:** Accepted 2026-11-26; implemented 2026-11-26 (d8044d6b, 0413821b, 01253343, 8765e395; no device pass)
 **Delivers:** LMS-COL-03 (Yes), LMS-COL-05 (Yes)
 **Related:** 043 (channels, Communication Log, portal compose), 045 (announcement channels),
 097 (reply notices, unread)

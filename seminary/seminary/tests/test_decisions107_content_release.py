@@ -361,7 +361,8 @@ class TestEnforcement(Decisions107Case):
 		quiz = _quiz()
 		row = _quiz_row(self.cs, quiz)
 		frappe.db.set_value("Course Lesson", self.l2, "assessment_criteria_quiz", row)
-		doc = frappe._dict(course=self.cs, course_assess=row, student=self.student.name)
+		# A submission as the hook gets it: a document with (empty) flags.
+		doc = frappe._dict(course=self.cs, course_assess=row, student=self.student.name, flags=frappe._dict())
 		with self.assertRaises(frappe.PermissionError):
 			cr.assert_activity_unlocked(doc)
 		self.set_chapter(self.ch2, release_on=add_days(now_datetime(), -1))

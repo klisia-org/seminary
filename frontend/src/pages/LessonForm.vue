@@ -60,7 +60,11 @@
 				<!-- Lesson details -->
 				<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
 					<FormControl v-model="lesson.lesson_title" :label="__('Lesson title')" :required="true" size="lg"
-						:placeholder="__('e.g. The Doctrine of Revelation')" />
+						:disabled="Boolean(library)" :placeholder="__('e.g. The Doctrine of Revelation')" />
+					<div v-if="!lessonName && !library" class="mt-3 flex items-center gap-2 text-sm text-ink-gray-6">
+						<span>{{ __('Or use a lesson the school keeps in its library.') }}</span>
+						<Button size="sm" @click="openLibraryPicker">{{ __('From the library') }}</Button>
+					</div>
 					<div class="mt-5">
 						<div class="mb-1.5 flex items-baseline justify-between">
 							<label for="lesson-summary" class="text-xs text-ink-gray-5">
@@ -85,8 +89,35 @@
 					</div>
 				</section>
 
+				<!-- A lesson placed from the library (decisions/122): its content is the library's. -->
+				<section v-if="library" class="rounded-xl border border-outline-blue-2 bg-surface-white p-6">
+					<div class="flex flex-wrap items-start justify-between gap-3">
+						<div class="min-w-0">
+							<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('From the school library') }}</h2>
+							<p class="mt-0.5 text-sm text-ink-gray-5">
+								{{ __('Every section that uses this lesson shows the same content. Edits made in the library appear here while the section is open.') }}
+							</p>
+							<p v-if="library.required" class="mt-2 text-sm text-ink-gray-7">
+								<Badge theme="orange" class="mr-1">{{ __('Required by the school') }}</Badge>
+								{{ library.reason }}
+							</p>
+						</div>
+						<div class="flex gap-2">
+							<Button v-if="library.can_edit" :route="{ name: 'LibraryLessonForm', params: { name: library.name } }">
+								{{ __('Edit in the library') }}
+							</Button>
+							<Button v-if="!library.required" :loading="detaching" @click="detachFromLibrary">
+								{{ __('Detach') }}
+							</Button>
+						</div>
+					</div>
+					<div id="library-content"
+						class="mt-4 rounded-lg bg-surface-gray-1 px-4 md:pl-14 ProseMirror prose prose-sm max-w-none !whitespace-normal py-3">
+					</div>
+				</section>
+
 				<!-- Instructor notes: folded away by default -->
-				<section class="rounded-xl border border-outline-gray-2 bg-surface-white">
+				<section v-show="!library" class="rounded-xl border border-outline-gray-2 bg-surface-white">
 					<button type="button" class="flex w-full items-center gap-3 px-6 py-4 text-left"
 						:aria-expanded="openInstructorEditor" @click="openInstructorEditor = !openInstructorEditor">
 						<span class="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-gray-2 text-ink-gray-6">
@@ -112,11 +143,16 @@
 				<!-- Lesson content -->
 				<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
 					<div class="mb-3 flex items-baseline justify-between">
-						<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('Lesson content') }}</h2>
+						<h2 class="text-lg font-semibold text-ink-gray-9">
+							{{ library ? __('This section\'s activities') : __('Lesson content') }}
+						</h2>
 						<span class="text-sm text-ink-gray-5">
 							{{ blockCount === 1 ? __('1 block') : __('{0} blocks').format(blockCount) }}
 						</span>
 					</div>
+					<p v-if="library" class="mb-3 text-sm text-ink-gray-5">
+						{{ __('Add this section\'s quizzes, assignments, exams or discussions here. They are shown after the library content. Other blocks aren\'t kept.') }}
+					</p>
 					<ContentIssues ref="contentChecker" class="mb-3" :issues="contentIssues" />
 					<div v-if="blockCount === 0"
 						class="mb-3 rounded-lg border border-dashed border-outline-gray-3 bg-surface-gray-1 px-4 py-5 text-center">
@@ -155,7 +191,7 @@
 				</section>
 
 				<!-- Captions and transcript (102 §6): saved with the lesson, like its other fields. -->
-				<section class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
+				<section v-if="!library" class="rounded-xl border border-outline-gray-2 bg-surface-white p-6">
 					<h2 class="text-lg font-semibold text-ink-gray-9">{{ __('Captions and transcript') }}</h2>
 					<p class="mt-0.5 text-sm text-ink-gray-5">
 						{{ __('Caption files for the videos uploaded or recorded in this lesson, one per language, in WebVTT (.vtt) format. YouTube and Vimeo videos keep their own captions.') }}
@@ -189,6 +225,23 @@
 				</section>
 			</div>
 		</div>
+		<Dialog v-model="libraryPickerOpen" :options="{ title: __('Add a lesson from the library'), size: 'xl' }">
+			<template #body-content>
+				<FormControl v-model="librarySearch" :placeholder="__('Search by title or tag')" @input="searchLibrary" />
+				<div class="mt-3 max-h-96 space-y-2 overflow-y-auto">
+					<p v-if="!libraryResults.data?.length" class="text-sm text-ink-gray-5">
+						{{ __('No library lessons match.') }}
+					</p>
+					<button v-for="row in libraryResults.data || []" :key="row.name" type="button"
+						class="w-full rounded-lg border border-outline-gray-2 p-3 text-left hover:bg-surface-gray-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
+						@click="placeFromLibrary(row.name)">
+						<span class="block text-base font-medium text-ink-gray-9">{{ row.title }}</span>
+						<span v-if="row.preview" class="block text-sm text-ink-gray-6">{{ row.preview }}</span>
+						<span v-if="row.tags" class="block text-xs text-ink-gray-5">{{ row.tags }}</span>
+					</button>
+				</div>
+			</template>
+		</Dialog>
 	</div>
 </template>
 <script setup>
@@ -199,9 +252,12 @@ import CaptionsEditor from '@/components/CaptionsEditor.vue'
 import LessonHistory from '@/components/LessonHistory.vue'
 import { autoDirection } from '@/utils/textDirection'
 import {
+	Badge,
 	Breadcrumbs,
 	Button,
+	call,
 	createResource,
+	Dialog,
 	FormControl,
 	Switch,
 	Textarea,
@@ -209,6 +265,7 @@ import {
 } from 'frappe-ui'
 import {
 	computed,
+	nextTick,
 	reactive,
 	onMounted,
 	inject,
@@ -243,6 +300,11 @@ import { checkBlocks } from '@/utils/contentCheck'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
 import { examStore } from '@/stores/exam'
+
+// Blocks a lesson placed from the library may hold: the section's own activities.
+const ACTIVITY_TYPES = ['quiz', 'exam', 'assignment', 'discussion', 'discussionActivity', 'discussionactivity', 'oralActivity']
+// Fields of a placed lesson that the library owns, never sent back on save.
+const LIBRARY_FIELDS = ['body', 'youtube', 'instructor_content', 'instructor_notes', 'preview', 'transcript', 'section_content', 'library_content', 'library']
 
 // Editor block type -> the data key that carries the linked activity's name.
 const ACTIVITY_DATA_KEY = {
@@ -321,6 +383,11 @@ let autoSaveInterval
 let titleSaveTimer
 // Name of the persisted Course Lesson once it exists (loaded or autosaved).
 const lessonName = ref(null)
+// The library lesson this lesson is placed from, with whether the school requires it.
+const library = ref(null)
+const detaching = ref(false)
+const libraryPickerOpen = ref(false)
+const librarySearch = ref('')
 // Editors are created exactly once, after the first details fetch resolves.
 const initialized = ref(false)
 // Serializes every save so autosave, the title debounce, the route-leave guard
@@ -357,6 +424,69 @@ onMounted(() => {
 // editorjs's `defaultBlock`: the tool used for a plain new block, and the only
 // one focusFreeBlockAtEnd() will append.
 const DEFAULT_BLOCK = 'markdown'
+
+// A placed lesson shows the library content read-only above its own activities.
+const renderLibraryContent = (content, course, courseName) => {
+	let data = { blocks: [] }
+	try {
+		data = JSON.parse(content || '{"blocks": []}')
+	} catch {
+		/* shown empty */
+	}
+	const mount = () => {
+		const holder = document.getElementById('library-content')
+		if (!holder) return
+		holder.innerHTML = ''
+		new EditorJS({ holder: 'library-content', readOnly: true, tools: getEditorTools(course, courseName), data })
+	}
+	nextTick(mount)
+}
+
+const detachFromLibrary = async () => {
+	detaching.value = true
+	try {
+		await call('seminary.seminary.library.detach', { lesson: lessonName.value })
+		toast.success(__('The lesson is now this section\'s own copy.'))
+		window.location.reload()
+	} catch (e) {
+		toast.error(e?.messages?.[0] || __('The lesson could not be detached.'))
+	} finally {
+		detaching.value = false
+	}
+}
+
+const libraryResults = createResource({
+	url: 'seminary.seminary.library.search',
+	makeParams() {
+		return { txt: librarySearch.value, course_schedule: props.courseName }
+	},
+})
+
+let librarySearchTimer
+const searchLibrary = () => {
+	clearTimeout(librarySearchTimer)
+	librarySearchTimer = setTimeout(() => libraryResults.reload(), 300)
+}
+
+const openLibraryPicker = () => {
+	libraryPickerOpen.value = true
+	libraryResults.reload()
+}
+
+const placeFromLibrary = async (name) => {
+	try {
+		await call('seminary.seminary.library.place', {
+			library_lesson: name,
+			chapter: lessonDetails.data.chapter.name,
+		})
+		libraryPickerOpen.value = false
+		toast.success(__('Lesson added from the library'))
+		// The new lesson takes the next place in the chapter, which this form's route names.
+		window.location.reload()
+	} catch (e) {
+		toast.error(e?.messages?.[0] || __('The lesson could not be added.'))
+	}
+}
 
 const renderEditor = (holder, course = null, courseName = null, onChange = null) => {
 	// Clear the holder first
@@ -637,6 +767,11 @@ const lessonDetails = createResource({
 		editor.value = renderEditor('content', course, courseName, onContentChange)
 		instructorEditor.value = renderEditor('instructor-notes', course, courseName)
 
+		if (data.lesson?.library) {
+			library.value = data.lesson.library
+			renderLibraryContent(data.lesson.library_content, course, courseName)
+		}
+
 		if (data.lesson) {
 			lessonName.value = data.lesson.name
 			Object.keys(data.lesson).forEach((key) => {
@@ -649,7 +784,13 @@ const lessonDetails = createResource({
 			lesson.include_in_preview = Boolean(data.lesson.include_in_preview)
 			lesson.allow_discuss = Boolean(data.lesson.allow_discuss)
 
-			addInstructorNotes(data)
+			if (library.value) {
+				// The library owns these; the section's lesson keeps only its activities.
+				for (const key of LIBRARY_FIELDS) delete lesson[key]
+				lesson.captions = []
+			} else {
+				addInstructorNotes(data)
+			}
 		}
 
 		// Render saved content and splice in any activity created via the
@@ -676,7 +817,9 @@ const initContent = async (data) => {
 	await editor.value.isReady
 
 	let contentObj = null
-	if (data.lesson?.content) {
+	if (library.value) {
+		contentObj = JSON.parse(data.lesson.section_content || '{"blocks": []}')
+	} else if (data.lesson?.content) {
 		try {
 			contentObj = JSON.parse(data.lesson.content)
 		} catch {
@@ -1073,9 +1216,12 @@ const writeLesson = async () => {
 		return { ...data, blocks }
 	}
 	const contentData = untimed(await editor.value.save())
+	if (library.value) {
+		contentData.blocks = contentData.blocks.filter((b) => ACTIVITY_TYPES.includes(b.type))
+	}
 	lesson.content = JSON.stringify(contentData)
 
-	if (instructorEditor.value) {
+	if (instructorEditor.value && !library.value) {
 		const instructorData = untimed(await instructorEditor.value.save())
 		lesson.instructor_content = JSON.stringify(instructorData)
 	}

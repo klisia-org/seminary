@@ -12,6 +12,7 @@
  "field_order": [
   "title",
   "course",
+  "shared_with",
   "standalone",
   "questions",
   "quiz_configuration_section",
@@ -127,6 +128,13 @@
    "options": "Course"
   },
   {
+   "fieldname": "shared_with",
+   "fieldtype": "Table",
+   "label": "Shared With",
+   "options": "Shared With Course",
+   "description": "Other courses whose instructors may use this in their quizzes."
+  },
+  {
    "default": "0",
    "description": "Check if you want to force the student to answer one question before moving to the next (each question on a page)",
    "fieldname": "qbyquestion",
@@ -143,7 +151,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-23 03:08:06.272063",
+ "modified": "2026-11-27 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Quiz",

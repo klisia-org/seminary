@@ -716,9 +716,18 @@ class _Importer:
 		self.import_folders()
 		cs = self.create_cs()
 		self.import_scac(cs)
-		n_ch, n_les = self.import_chapters_and_lessons(cs)
+		frappe.flags.in_course_copy = True
+		try:
+			n_ch, n_les = self.import_chapters_and_lessons(cs)
+		finally:
+			frappe.flags.in_course_copy = False
+		# The school's required library lessons, once the outline exists (decisions/122 §9).
+		from seminary.seminary import library
+
+		library.place_for_section(cs.name)
 		self.remap_lesson_scac_links()
 		self.after_content(cs)
+		self.import_extras(cs)
 		from seminary.seminary import cbe_reflection
 
 		cbe_reflection.scaffold(cs.name)
@@ -736,6 +745,22 @@ class _Importer:
 			"media": len(self.url_map),
 			"warnings": self.warnings,
 		}
+
+	def import_extras(self, cs):
+		"""Hand each installed app the files its export put under extras/<app>/ (privatedocs
+		p028 §3). The pack's size and entry caps were checked when it was opened. Extras of an
+		app not installed here are skipped."""
+		names = [n for n in self.zf.namelist() if n.startswith("extras/")]
+		for path in frappe.get_hooks("course_pack_imported"):
+			prefix = "extras/{0}/".format(path.split(".", 1)[0])
+			files = {n[len(prefix) :]: self.zf.read(n) for n in names if n.startswith(prefix)}
+			if files:
+				name_map = {
+					"lessons": dict(self.l_map),
+					"activities": dict(self.a_map),
+					"questions": dict(self.q_map),
+				}
+				frappe.get_attr(path)(cs.name, files, name_map)
 
 	def after_content(self, cs):
 		"""Runs once chapters, lessons and assessments exist. Course migration

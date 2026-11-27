@@ -1,7 +1,7 @@
 # 100a — Oral answers in exams
 
 **Date:** 2026-11-19
-**Status:** Accepted
+**Status:** Accepted 2026-11-20; implemented 2026-11-20 (59cad7ed)
 **Parent:** [100](100-oral-assessment.md)
 
 ## Context

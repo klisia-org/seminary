@@ -1,7 +1,7 @@
 # 099 — PDFs through Chrome, not wkhtmltopdf
 
 **Date:** 2026-11-04
-**Status:** Accepted 2026-11-04
+**Status:** Accepted 2026-11-04; implemented 2026-11-04 (28b22309)
 **Related:** 091 (agreements), 063 (bridge apps)
 
 ## Context

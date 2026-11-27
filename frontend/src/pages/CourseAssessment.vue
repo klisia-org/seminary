@@ -128,7 +128,7 @@
         <td class="p-2 border">
           <template v-if="criteria.type === 'Quiz'">
             <Link v-model="criteria.quiz" doctype="Quiz" :label="__('Select a Quiz')" :required="true"
-              :filters="{ course: course.data.course }" :onCreate="(value, close) => redirectToForm('quiz', close)" />
+              :filters="{ course: course.data.course }" query="seminary.seminary.library.shared_query" :onCreate="(value, close) => redirectToForm('quiz', close)" />
           </template>
           <template v-else-if="criteria.type === 'Exam'">
             <Link v-model="criteria.exam" doctype="Exam Activity" :label="__('Select an Exam')" :required="true"

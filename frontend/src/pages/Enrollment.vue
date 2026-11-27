@@ -188,6 +188,17 @@
   </div>
 
   <!-- ADR 050: double-booking is allowed on purpose — warn, don't block. -->
+  <Dialog v-model="showNotice" :options="{ title: notice?.title || __('Before you enroll'), size: '3xl' }">
+    <template #body-content>
+      <SafeHtml :html="notice?.html || ''" class="prose prose-sm max-w-none max-h-[65vh] overflow-y-auto" />
+    </template>
+    <template #actions>
+      <div class="flex justify-end gap-2">
+        <Button @click="showNotice = false">{{ __('Cancel') }}</Button>
+        <Button variant="solid" @click="confirmNotice">{{ __('Continue to enroll') }}</Button>
+      </div>
+    </template>
+  </Dialog>
   <Dialog v-model="showConflictDialog" :options="{ title: __('Schedule overlap') }">
     <template #body-content>
       <p class="text-sm text-ink-gray-6 mb-3">
@@ -211,11 +222,12 @@
 
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
-import { Badge, Button, Dialog, LoadingIndicator, Tooltip, createResource, toast } from 'frappe-ui'
+import { Badge, Button, Dialog, LoadingIndicator, Tooltip, call, createResource, toast } from 'frappe-ui'
 import { HelpCircle } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
 
 import MissingData from '@/components/MissingData.vue'
+import SafeHtml from '@/components/SafeHtml.vue'
 import { statusTheme } from '@/utils/statusTheme'
 
 const user = inject('$user')
@@ -341,7 +353,39 @@ function conflictSummary(conflicts) {
   return (conflicts || []).map(conflictLine).join('\n')
 }
 
-function enrollInCourse(cs) {
+// Another installed app may show something before the student enrolls, such as
+// the section's syllabus (privatedocs p028 §4). Asked before the overlap check.
+const showNotice = ref(false)
+const notice = ref(null)
+const pendingNoticeCS = ref(null)
+
+async function enrollInCourse(cs) {
+  if (user?.data?.has_aretenic) {
+    const name = typeof cs === 'string' ? cs : cs.name
+    let found = null
+    try {
+      found = await call('seminary.seminary.extensions.enrollment_notice', { course_schedule: name })
+    } catch {
+      found = null
+    }
+    if (found?.html) {
+      notice.value = found
+      pendingNoticeCS.value = cs
+      showNotice.value = true
+      return
+    }
+  }
+  continueEnroll(cs)
+}
+
+function confirmNotice() {
+  showNotice.value = false
+  const cs = pendingNoticeCS.value
+  pendingNoticeCS.value = null
+  if (cs) continueEnroll(cs)
+}
+
+function continueEnroll(cs) {
   const courseSchedule = typeof cs === 'string' ? cs : cs.name
   const conflicts = (typeof cs === 'object' && cs.schedule_conflict) || []
   if (conflicts.length) {
