@@ -66,7 +66,7 @@ class FakeStore:
 			return None
 		data = self.objects[key]
 		# A multipart ETag is not the content hash.
-		return {"size": len(data), "etag": f"{hashlib.md5(data).hexdigest()}-2"}
+		return {"size": len(data), "etag": f"{hashlib.md5(data, usedforsecurity=False).hexdigest()}-2"}
 
 	def stream(self, key, chunk_size=1024 * 1024):
 		yield self.objects[key]
@@ -202,7 +202,7 @@ class TestMultipart(VideoCase):
 		self.assertEqual(file_doc.file_size, 15)
 		self.assertEqual(file_doc.owner, self.student.user)
 		# Keyed by the content's MD5, hashed by streaming: a multipart ETag is not it.
-		digest = hashlib.md5(b"a" * 10 + tail).hexdigest()
+		digest = hashlib.md5(b"a" * 10 + tail, usedforsecurity=False).hexdigest()
 		self.assertTrue(file_doc.file_url.endswith(f"key=media/{digest[:2]}/{digest}"))
 		self.assertIn(f"media/{digest[:2]}/{digest}", self.store.objects)
 
