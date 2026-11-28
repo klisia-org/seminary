@@ -615,7 +615,10 @@ doc_events = {
 			# One submission, a record per member; new work joins peer review (decisions/120).
 			"seminary.seminary.group_work.propagate",
 			"seminary.seminary.peer_reviews.on_submission_update",
+			# A video becomes the submission's Oral Recording (privatedocs p029 §5).
+			"seminary.seminary.video_submissions.on_submission_update",
 		],
+		"on_trash": "seminary.seminary.video_submissions.on_submission_trash",
 	},
 	"Exam Submission": {
 		"before_insert": "seminary.seminary.content_release.assert_activity_unlocked",

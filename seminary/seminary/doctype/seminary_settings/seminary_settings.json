@@ -135,6 +135,7 @@
   "oral_assessment_section",
   "oral_audio_retention_days",
   "oral_max_minutes",
+  "video_max_minutes",
   "column_break_oral",
   "oral_steps_html",
   "oral_step_transcribe",
@@ -981,6 +982,14 @@
    "non_negative": 1
   },
   {
+   "fieldname": "video_max_minutes",
+   "fieldtype": "Int",
+   "label": "Longest Video Assignment (minutes)",
+   "default": "60",
+   "non_negative": 1,
+   "description": "The most an instructor may allow for a video assignment. Videos are recorded at 720p, about 10 MB a minute."
+  },
+  {
    "fieldname": "column_break_oral",
    "fieldtype": "Column Break"
   },
@@ -1070,7 +1079,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-26 22:00:00.000000",
+ "modified": "2026-11-27 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

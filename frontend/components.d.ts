@@ -141,6 +141,8 @@ declare module 'vue' {
     UserAvatar: typeof import('./src/components/UserAvatar.vue')['default']
     UserDropdown: typeof import('./src/components/UserDropdown.vue')['default']
     VideoBlock: typeof import('./src/components/VideoBlock.vue')['default']
+    VideoPlayer: typeof import('./src/components/AssignmentViewers/VideoPlayer.vue')['default']
+    VideoSubmission: typeof import('./src/components/VideoSubmission.vue')['default']
     YouTubePlayer: typeof import('./src/components/AssignmentViewers/YouTubePlayer.vue')['default']
   }
 }

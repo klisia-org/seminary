@@ -162,8 +162,8 @@
 					<p class="mt-0.5 text-sm text-ink-gray-5">
 						{{ __('Caption files for the videos uploaded or recorded in this lesson, one per language, in WebVTT (.vtt) format. YouTube and Vimeo videos keep their own captions.') }}
 					</p>
-					<CaptionsEditor class="mt-4" :captions="lesson.captions"
-						@add="addCaption" @remove="removeCaption" />
+					<CaptionsEditor class="mt-4" :captions="lesson.captions" :videos="lessonVideos"
+						@add="addCaption" @remove="removeCaption" @review="reviewCaption" />
 					<div class="mt-5 border-t border-outline-gray-1 pt-4">
 						<div class="text-base font-medium text-ink-gray-9">{{ __('Transcript') }}</div>
 						<p class="text-sm text-ink-gray-5">
@@ -249,6 +249,7 @@ import dayjs from '@/utils/dayjs'
 import { ChevronDown, Lock, X } from 'lucide-vue-next'
 import { updateDocumentTitle, createToast, getEditorTools } from '@/utils'
 import { checkBlocks } from '@/utils/contentCheck'
+import { isVideo } from '@/utils/mediaTypes'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
 import { examStore } from '@/stores/exam'
@@ -443,6 +444,7 @@ const runContentCheck = async () => {
 	try {
 		const data = await editor.value.save()
 		contentIssues.value = checkBlocks(data.blocks, { captions: lesson.captions })
+		lessonVideos.value = videosIn(data.blocks)
 	} catch {
 		/* the editor is mid-render; the next change checks again */
 	}
@@ -459,6 +461,19 @@ const onContentChange = () => {
 }
 
 watch(() => lesson.captions.length, scheduleContentCheck)
+watch(() => lesson.captions.map((c) => c.status).join('|'), scheduleContentCheck)
+
+// The lesson's own uploaded or recorded videos, which captions can be drafted
+// for (privatedocs p029 §7); found by the content check's read of the blocks.
+const lessonVideos = ref([])
+const videosIn = (blocks) => {
+	const seen = new Set()
+	return (blocks || [])
+		.filter((b) => (b?.type === 'upload' && isVideo(b.data?.file_type)) || b?.type === 'recordVideo')
+		.map((b) => b.data?.file_url)
+		.filter((url) => url && !seen.has(url) && seen.add(url))
+		.map((url) => ({ url, label: fileName(url) }))
+}
 
 // Captions (102 §6). The rows ride on the lesson and save with it.
 const fileName = (url) => decodeURIComponent(String(url || '').split('?')[0].split('/').pop())
@@ -498,6 +513,11 @@ const restoreVersion = async ({ content, instructor_content, saved_at }) => {
 	} catch (err) {
 		toast.error(err.messages?.[0] || err.message || __('Could not restore that version'))
 	}
+}
+
+const reviewCaption = (index) => {
+	lesson.captions[index].status = 'Reviewed'
+	if (lessonName.value) persistLesson().catch(() => {})
 }
 
 const removeCaption = (index) => {

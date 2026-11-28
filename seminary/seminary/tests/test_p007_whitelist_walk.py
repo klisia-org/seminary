@@ -173,6 +173,9 @@ GUEST_ALLOWED = {
 }
 
 STUDENT_ALLOWED = {
+	# privatedocs p029 §6: each checks read permission on the submission or assignment.
+	"seminary.seminary.video_submissions.video_limits",
+	"seminary.seminary.video_submissions.video_of",
 	# privatedocs p028: slots other apps fill. Each reads the section's content rule
 	# (or the quiz's read permission) before asking any hook; empty with no app.
 	"seminary.seminary.extensions.course_tabs",
@@ -340,6 +343,9 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+	# privatedocs p029 §8: instructors and school roles only.
+	"seminary.seminary.captions.caption_requests",
+	"seminary.seminary.captions.request_captions",
 	# decisions/120: require_grader, then the section's GRADE capability.
 	"seminary.seminary.peer_reviews.get_manage",
 	"seminary.seminary.peer_reviews.save_group",
@@ -1108,6 +1114,8 @@ G6_STUDENT_ALLOWED = {
 	"seminary.seminary.withdrawal.get_withdrawal_rule_for_date",
 	# seminary.storage.direct
 	"seminary.storage.direct.presign_upload",
+	# privatedocs p029 §4: refused unless the assignment is a Video one the caller may read.
+	"seminary.storage.direct.start_multipart",
 }
 
 # Carry their own rule and fail closed WITHOUT raising: an unauthorized caller
@@ -1186,6 +1194,12 @@ G6_OWN_RULE = {
 	"seminary.seminary.web_form.student_applicant.student_applicant.get_context",
 	# seminary.storage.direct
 	"seminary.storage.direct.register_upload",
+	# privatedocs p029 §4: the upload's pending record is bound to the user who started it.
+	"seminary.storage.direct.abort_multipart",
+	"seminary.storage.direct.complete_multipart",
+	"seminary.storage.direct.presign_part",
+	# privatedocs p029 §8: only the requester or a school role reads a request.
+	"seminary.seminary.captions.caption_request",
 	# seminary.workspace_i18n
 	"seminary.workspace_i18n.get_desktop_page",
 	"seminary.workspace_i18n.get_workspace_sidebar_items",

@@ -237,6 +237,36 @@ class StorageBackend(ABC):
 		over the whole bucket.
 		"""
 
+	# -- multipart (p029 §4) ---------------------------------------------------
+	# Not abstract: a backend that cannot take a browser upload in parts says so
+	# with `supports_multipart`, and the long video recorder is not offered.
+
+	def supports_multipart(self) -> bool:
+		return False
+
+	def create_multipart(self, key: str, content_type: str | None = None) -> str:
+		"""Open a multipart upload at `key` and return its upload id."""
+		raise NotImplementedError("create_multipart")
+
+	def presigned_part(self, key: str, upload_id: str, part_number: int, ttl: int | None = None) -> str:
+		"""A short-lived URL the browser may PUT one part (1-based) to."""
+		raise NotImplementedError("presigned_part")
+
+	def complete_multipart(self, key: str, upload_id: str) -> int:
+		"""Join the parts the store holds, in order, and return how many there were.
+
+		The parts are listed by the server, never taken from the client, so the
+		browser need not read each part's ETag (which CORS hides by default).
+		"""
+		raise NotImplementedError("complete_multipart")
+
+	def abort_multipart(self, key: str, upload_id: str) -> None:
+		raise NotImplementedError("abort_multipart")
+
+	def list_multipart(self, prefix: str) -> list[dict]:
+		"""Return `[{"key", "upload_id", "initiated"}]` of open uploads under `prefix`."""
+		return []
+
 
 class LocalDiskBackend(StorageBackend):
 	"""No object store installed: nothing offloads, everything stays on disk.

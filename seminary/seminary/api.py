@@ -1018,7 +1018,7 @@ def remove_virtual_meeting(course_schedule, meeting):
 	return {"success": True}
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep -- a guest gets None; rate-limited
 @rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_user_info():
 	if frappe.session.user == "Guest":
@@ -1066,6 +1066,12 @@ def get_user_info():
 	# website_route_rule owned by koinonia, so without the app the route
 	# does not exist and the switcher's Donate tile led to a 404.
 	user.has_giving = "koinonia" in _installed
+	# Video assignments and generated captions (privatedocs p029 §1, §7).
+	from seminary.seminary.captions import generators
+	from seminary.seminary.video_submissions import is_offered
+
+	user.video_submissions = is_offered()
+	user.caption_generation = bool(generators())
 	user.student = frappe.db.get_value("Student", {"user": user.name, "enabled": 1}, "name")
 	user.instructor = frappe.db.get_value("Instructor", {"user": user.name}, "name")
 	# p007 §2.8: how far this instructor reaches, for the Courses page control.

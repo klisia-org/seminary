@@ -1,7 +1,8 @@
 <template>
   <div v-if="rec.data" class="rounded-md border p-3 space-y-3 text-left">
     <div class="flex items-center justify-between text-xs text-ink-gray-5">
-      <span>{{ __('Oral answer') }} · {{ clock(rec.data.duration_s || 0) }}</span>
+      <span v-if="!video">{{ __('Oral answer') }} · {{ clock(rec.data.duration_s || 0) }}</span>
+      <span v-else>{{ __('Transcript') }}</span>
       <span v-if="rec.data.status === 'Processing' || rec.data.status === 'Recorded'">
         {{ __('Transcription in progress') }}
       </span>
@@ -11,11 +12,23 @@
       </span>
     </div>
 
+    <!-- eslint-disable-next-line vuejs-accessibility/media-has-caption -- its transcript is shown below it -->
+    <video v-if="video && rec.data.audio" ref="audio" :src="rec.data.audio" controls preload="metadata"
+      playsinline class="aspect-video w-full rounded-md bg-black"
+      @timeupdate="now = $event.target.currentTime; emit('time', now)" />
     <!-- eslint-disable-next-line vuejs-accessibility/media-has-caption -- audio-only recording; its transcript is shown below it -->
-    <audio v-if="rec.data.audio" ref="audio" :src="rec.data.audio" controls preload="metadata" class="w-full"
+    <audio v-else-if="rec.data.audio" ref="audio" :src="rec.data.audio" controls preload="metadata" class="w-full"
       @timeupdate="now = $event.target.currentTime; emit('time', now)" />
     <div v-else-if="rec.data.audio_deleted_on" class="text-xs text-ink-gray-5">
-      {{ __('The audio was deleted after the retention period. The transcript is kept.') }}
+      {{
+        (video
+          ? __('The video was deleted on {0}, after the retention period. The transcript and comments are kept.')
+          : __('The audio was deleted on {0}, after the retention period. The transcript is kept.')
+        ).format(dayOf(rec.data.audio_deleted_on))
+      }}
+    </div>
+    <div v-if="video && rec.data.transcript.length === 0 && rec.data.status === 'Ready'" class="text-xs text-ink-gray-5">
+      {{ __('No transcript: transcription is not turned on for this assignment.') }}
     </div>
 
     <div v-if="labelling" class="space-y-1 border-t pt-2">
@@ -98,7 +111,7 @@
     </div>
 
     <div v-if="rec.data.is_staff" class="space-y-2 border-t pt-2">
-      <div class="flex items-center gap-2">
+      <div v-if="marking" class="flex items-center gap-2">
         <FormControl v-model="note" class="flex-1" :placeholder="__('Note for this moment')" />
         <Button size="sm" @click="mark">{{ __('Mark moment at {0}').format(clock(now)) }}</Button>
       </div>
@@ -128,9 +141,14 @@ import { computed, ref, watch } from 'vue'
 const props = defineProps({
   recording: { type: String, required: true },
   question: { type: String, default: null },
+  // A video submission (privatedocs p029 §6): a <video>, and its timestamp
+  // comments are marked from the submission's own sidebar, not here.
+  video: { type: Boolean, default: false },
+  marking: { type: Boolean, default: true },
 })
 // The playing time, for a peer reviewer placing comments (decisions/120 §5).
-const emit = defineEmits(['time'])
+// `changed`: a moment was kept or removed, so a video's comments may have changed.
+const emit = defineEmits(['time', 'changed'])
 
 const audio = ref(null)
 const now = ref(0)
@@ -147,6 +165,8 @@ const clock = (s) => {
   const v = Math.max(0, Math.floor(s || 0))
   return `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')}`
 }
+
+const dayOf = (value) => String(value || '').slice(0, 10)
 
 const seek = (t) => {
   if (!audio.value) return
@@ -216,9 +236,10 @@ const setState = async (m, state) => {
   try {
     await call('seminary.seminary.oral.set_moment_state', { moment: m.name, state })
     rec.reload()
+    emit('changed')
   } catch (e) {
     toast.error(e.messages?.[0] || __('The moment could not be changed.'))
   }
 }
-defineExpose({ seek })
+defineExpose({ seek, reload: () => rec.reload(), currentTime: () => audio.value?.currentTime || 0 })
 </script>

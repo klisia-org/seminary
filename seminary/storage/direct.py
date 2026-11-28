@@ -198,7 +198,11 @@ def register_upload(key: str):
 
 	size = int(stat["size"])
 	_enforce_size(size, pending)
+	return _record_file(backend, key, stat, size, pending, nonce)
 
+
+def _record_file(backend, key: str, stat: dict, size: int, pending: dict, nonce: str):
+	"""Promote a verified upload to its content-addressed key and create its File row."""
 	content_hash = _content_hash(backend, key, stat)
 	final_key = object_key(content_hash)
 
@@ -236,6 +240,122 @@ def register_upload(key: str):
 		"is_private": file_doc.is_private,
 		"file_type": (os.path.splitext(file_doc.file_name or "")[1] or "").lstrip(".").upper(),
 	}
+
+
+# ------------------------------------------------------------------ multipart (p029 §4)
+
+#: Every part but the last is this size: R2 refuses a join of unequal parts.
+PART_SIZE = 8 * 1024 * 1024
+
+#: A long recording is uploaded while it records, so its pending record must
+#: outlive the recording itself, not just one PUT.
+MULTIPART_TTL = 6 * 3600
+
+#: Video types a browser records or a phone saves.
+VIDEO_TYPES = {"video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov"}
+
+
+def _video_type(content_type: str | None, file_name: str) -> str:
+	base = (content_type or "").split(";")[0].strip().lower()
+	if base not in VIDEO_TYPES:
+		base = mimetypes.guess_type(file_name or "")[0] or ""
+	if base not in VIDEO_TYPES:
+		frappe.throw(_("Please choose an MP4, MOV or WebM video."), title=_("Not a video"))
+	return base
+
+
+@frappe.whitelist(methods=["POST"])
+def start_multipart(file_name: str, content_type: str | None = None, assignment: str | None = None):
+	"""Open an upload sent in parts, for a video assignment.
+
+	The ceiling is the assignment's, from its length at 720p, not the user's
+	upload limit: the school sets it in minutes.
+	"""
+	backend = get_storage_backend()
+	if not backend.is_configured() or not backend.supports_multipart():
+		frappe.throw(_("Video uploads are not available on this site."))
+	from seminary.seminary.video_submissions import upload_ceiling
+
+	ceiling = upload_ceiling(assignment)
+	content_type = _video_type(content_type, file_name)
+	name = _safe_name(file_name)
+	if not os.path.splitext(name)[1]:
+		name += VIDEO_TYPES[content_type]
+
+	nonce = frappe.generate_hash(length=32)
+	key = f"{DIRECT_PREFIX}/{nonce}/{name}"
+	upload_id = backend.create_multipart(key, content_type)
+	frappe.cache.set_value(
+		_pending_key(nonce),
+		{
+			"key": key,
+			"user": frappe.session.user,
+			"file_name": os.path.basename(file_name or name) or name,
+			"content_type": content_type,
+			"doctype": None,
+			"docname": None,
+			"fieldname": None,
+			"is_private": 1,
+			"folder": None,
+			"max_bytes": ceiling,
+			"upload_id": upload_id,
+		},
+		expires_in_sec=MULTIPART_TTL,
+	)
+	return {"key": key, "part_size": PART_SIZE, "max_bytes": ceiling}
+
+
+def _multipart_pending(key: str):
+	pending, nonce = _load_pending(key)
+	if not pending.get("upload_id"):
+		frappe.throw(_("Not an upload sent in parts."), frappe.PermissionError)
+	return pending, nonce
+
+
+@frappe.whitelist(methods=["POST"])
+def presign_part(key: str, part_number: int):
+	"""A URL for one part. Refused past the ceiling, so parts cannot pile up unseen."""
+	pending, _nonce = _multipart_pending(key)
+	part_number = frappe.utils.cint(part_number)
+	if part_number < 1 or part_number > 10000:
+		frappe.throw(_("Invalid part number."))
+	if (part_number - 1) * PART_SIZE >= int(pending["max_bytes"]):
+		frappe.throw(_("This video is longer than the assignment allows."), title=_("Video too long"))
+	return {
+		"url": get_storage_backend().presigned_part(key, pending["upload_id"], part_number, ttl=upload_ttl())
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def complete_multipart(key: str):
+	"""Join the parts, check the size the store reports, and create the File row."""
+	backend = get_storage_backend()
+	pending, nonce = _multipart_pending(key)
+	if not backend.complete_multipart(key, pending["upload_id"]):
+		frappe.throw(_("No video was received. Please try again."), title=_("Upload not found"))
+	stat = backend.stat(key)
+	if not stat:
+		frappe.throw(_("No video was received. Please try again."), title=_("Upload not found"))
+	size = int(stat["size"])
+	if size > int(pending["max_bytes"]):
+		# Nothing references it, and the throw below rolls back any after_commit.
+		_discard(key, None)
+		frappe.cache.delete_value(_pending_key(nonce))
+		frappe.throw(
+			_("This video is too large ({0} MB). This assignment takes up to {1} MB.").format(
+				round(size / (1024 * 1024)), round(int(pending["max_bytes"]) / (1024 * 1024))
+			),
+			title=_("Video too large"),
+		)
+	return _record_file(backend, key, stat, size, pending, nonce)
+
+
+@frappe.whitelist(methods=["POST"])
+def abort_multipart(key: str):
+	pending, nonce = _multipart_pending(key)
+	get_storage_backend().abort_multipart(key, pending["upload_id"])
+	frappe.cache.delete_value(_pending_key(nonce))
+	return "ok"
 
 
 def _load_pending(key: str):
@@ -365,4 +485,16 @@ def sweep_pending_uploads():
 					title="seminary.storage: could not sweep abandoned upload",
 					message=f"{obj['key']}\n{frappe.get_traceback()}",
 				)
+	for upload in backend.list_multipart(f"{DIRECT_PREFIX}/"):
+		initiated = upload.get("initiated")
+		if not initiated or get_datetime(initiated.replace(tzinfo=None)) >= get_datetime(cutoff):
+			continue
+		try:
+			backend.abort_multipart(upload["key"], upload["upload_id"])
+			removed += 1
+		except Exception:
+			frappe.log_error(
+				title="seminary.storage: could not abort abandoned upload",
+				message=f"{upload['key']}\n{frappe.get_traceback()}",
+			)
 	return removed

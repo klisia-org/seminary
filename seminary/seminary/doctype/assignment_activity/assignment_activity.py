@@ -11,6 +11,11 @@ from seminary.seminary.utils import (
 
 
 class AssignmentActivity(Document):
+	def validate(self):
+		from seminary.seminary.video_submissions import validate_activity
+
+		validate_activity(self)
+
 	# p008a G6: not whitelisted. No caller anywhere, and the check below reads
 	# "moderator AND instructor" where it meant "moderator OR instructor", so it
 	# silently returned None -- a save that looked like it worked -- for every

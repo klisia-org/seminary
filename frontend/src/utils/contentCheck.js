@@ -21,6 +21,8 @@
  *                   files; in HTML, a <video> that lists no captions (decision
  *                   109 §5) and has no captions <track>. YouTube and
  *                   Vimeo embeds carry their own captions and aren't counted.
+ *   video-captions-draft  the same video, whose only captions are machine-generated
+ *                   drafts nobody has reviewed yet (privatedocs p029 §7)
  *
  * HTML is read with the browser's DOMParser, which builds an inert document:
  * nothing in it loads or runs. `__` is the portal's global translator, looked up
@@ -89,6 +91,10 @@ const MESSAGES = {
 		n === 1
 			? __('A video has no captions.')
 			: __('{0} videos have no captions.').format(n),
+	'video-captions-draft': (n) =>
+		n === 1
+			? __('A video has only machine-generated captions. Review them, then mark them reviewed.')
+			: __('{0} videos have only machine-generated captions. Review them, then mark them reviewed.').format(n),
 }
 
 // Fixed order, so the list doesn't reshuffle as the instructor types.
@@ -158,16 +164,18 @@ function tallyFragment(doc, t) {
 		if (!hasHeader) t.add('table-header')
 	})
 	doc.querySelectorAll('video').forEach((video) => {
-		if (!listsCaptions(video) && !video.querySelector('track[kind="captions"], track[kind="subtitles"]'))
-			t.add('video-captions')
+		if (listsCaptions(video) || video.querySelector('track[kind="captions"], track[kind="subtitles"]')) return
+		t.add(listsCaptions(video, true) ? 'video-captions-draft' : 'video-captions')
 	})
 }
 
 // A rich-text video keeps its caption files in `data-captions` (decision 109 §5).
-function listsCaptions(video) {
+// Only reviewed captions count; `drafts` asks for machine-generated ones instead
+// (privatedocs p029 §7).
+function listsCaptions(video, drafts = false) {
 	try {
 		const list = JSON.parse(video.getAttribute('data-captions') || '[]')
-		return Array.isArray(list) && list.some((c) => c && c.src)
+		return Array.isArray(list) && list.some((c) => c && c.src && (c.status === 'Draft') === drafts)
 	} catch {
 		return false
 	}
@@ -199,7 +207,10 @@ function listHtml(items) {
  */
 export function checkBlocks(blocks, options = {}) {
 	const t = tally()
-	const hasCaptions = (options.captions || []).some((row) => row && (row.caption_file || row.file))
+	const rows = (options.captions || []).filter((row) => row && (row.caption_file || row.file))
+	const hasCaptions = rows.some((row) => row.status !== 'Draft')
+	// Captions that exist but are machine-generated drafts (privatedocs p029 §7).
+	const missing = rows.length ? 'video-captions-draft' : 'video-captions'
 	const levels = []
 	const inline = []
 
@@ -221,14 +232,14 @@ export function checkBlocks(blocks, options = {}) {
 				break
 			case 'upload': {
 				if (isVideo(data.file_type)) {
-					if (!hasCaptions) t.add('video-captions')
+					if (!hasCaptions) t.add(missing)
 				} else if (data.file_url && isImage(data.file_type) && !String(data.alt || '').trim()) {
 					t.add('image-alt')
 				}
 				break
 			}
 			case 'recordVideo':
-				if (data.file_url && !hasCaptions) t.add('video-captions')
+				if (data.file_url && !hasCaptions) t.add(missing)
 				break
 			case 'table':
 				if ((data.content || []).length && !data.withHeadings) t.add('table-header')

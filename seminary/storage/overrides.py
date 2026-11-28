@@ -22,6 +22,7 @@ nothing is ever offloaded, so this class is a strict no-op there.
 
 from __future__ import annotations
 
+import frappe
 from frappe.core.doctype.file.file import FILE_ENCODING_OPTIONS, File
 
 from seminary.storage.backend import get_storage_backend, key_from_url
@@ -45,6 +46,32 @@ class SeminaryFile(File):
 
 		file_policy.check_on_save(self)
 		super().validate()
+
+	def _delete_file_on_disk(self):
+		"""An offloaded file is shared by URL, not by hash.
+
+		Upstream decides by `content_hash`, which it clears on every remote
+		file (file.py: "a remote file has no local blob to hash"), so for a
+		browser's direct upload, or a twin file_policy attaches elsewhere, it
+		always sees the blob as shared and never deletes it. For an offloaded
+		file the URL names the object, so other rows over that URL are what
+		keep it (privatedocs p029: retention must remove a video's object).
+		"""
+		if not key_from_url(self.file_url):
+			return super()._delete_file_on_disk()
+		shared = frappe.get_all(
+			"File",
+			filters={"file_url": self.file_url, "name": ["!=", self.name]},
+			limit=1,
+		) or (
+			self.content_hash
+			and frappe.get_all(
+				"File",
+				filters={"content_hash": self.content_hash, "name": ["!=", self.name]},
+				limit=1,
+			)
+		)
+		self.delete_file_data_content(only_thumbnail=bool(shared))
 
 	def is_downloadable(self):
 		from seminary.seminary import file_policy

@@ -11,6 +11,7 @@
 				:can-comment="canComment"
 				@anchor-selected="onAnchorSelected"
 				@active-changed="setActive"
+				@comments-changed="loadComments"
 			/>
 		</div>
 		<div class="w-72 shrink-0" v-if="submission?.name">
@@ -41,7 +42,7 @@ import CommentSidebar from './CommentSidebar.vue'
 const props = defineProps({
 	// `Assignment Submission` doc
 	submission: { type: Object, default: () => ({}) },
-	// `Assignment Activity.type`: PDF | Document | Image | URL | Text | YouTube
+	// `Assignment Activity.type`: PDF | Document | Image | URL | Text | YouTube | Video
 	type: { type: String, default: '' },
 	// false for student-side read-only review of their own submission.
 	canComment: { type: Boolean, default: true },
@@ -49,7 +50,7 @@ const props = defineProps({
 
 const emit = defineEmits(['comments-loaded'])
 
-const fileTypes = ['PDF', 'Document', 'Image']
+const fileTypes = ['PDF', 'Document', 'Image', 'Video']
 
 const viewerComponent = computed(() => {
 	switch (props.type) {
@@ -65,6 +66,8 @@ const viewerComponent = computed(() => {
 			return defineAsyncComponent(() => import('./UrlCard.vue'))
 		case 'YouTube':
 			return defineAsyncComponent(() => import('./YouTubePlayer.vue'))
+		case 'Video':
+			return defineAsyncComponent(() => import('./VideoPlayer.vue'))
 		default:
 			return null
 	}
@@ -75,6 +78,9 @@ const viewerProps = computed(() => {
 	const url = isFile ? props.submission?.assignment_attachment : props.submission?.answer
 	if (props.type === 'Text') {
 		return { answer: props.submission?.answer || '' }
+	}
+	if (props.type === 'Video') {
+		return { url: url || '', submission: props.submission?.name || '' }
 	}
 	return { url: url || '' }
 })

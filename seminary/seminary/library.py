@@ -88,19 +88,22 @@ def _library(name):
 
 def library_captions(name):
 	from seminary.language import native_choices
+	from seminary.seminary.captions import draft_label
 
 	rows = frappe.get_all(
 		"Course Lesson Caption",
 		filters={"parent": name, "parenttype": "Library Lesson", "parentfield": "captions"},
-		fields=["language", "label", "caption_file"],
+		fields=["language", "label", "caption_file", "status"],
 		order_by="idx asc",
 	)
 	names = dict(native_choices([r.language for r in rows])) if rows else {}
 	return [
 		{
 			"language": r.language,
-			"label": r.label or names.get(r.language) or r.language,
+			# A draft is shown, labelled machine-generated (privatedocs p029 §7).
+			"label": draft_label(r.label or names.get(r.language) or r.language, r.status),
 			"file": r.caption_file,
+			"status": r.status or "Reviewed",
 		}
 		for r in rows
 		if r.caption_file
@@ -350,7 +353,13 @@ def _detach(doc, frozen=False):
 	doc.set("captions", [])
 	for row in lib.captions:
 		doc.append(
-			"captions", {"language": row.language, "label": row.label, "caption_file": row.caption_file}
+			"captions",
+			{
+				"language": row.language,
+				"label": row.label,
+				"caption_file": row.caption_file,
+				"status": row.status,
+			},
 		)
 	doc.detached_from = lib.name
 	doc.detached_on = now_datetime()
