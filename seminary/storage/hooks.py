@@ -147,12 +147,12 @@ def _delete_if_unreferenced(key: str, content_hash: str | None, exclude: str | N
 	accepts for disk; a raised exception here would be worse than the orphan.
 	"""
 	try:
-		if content_hash:
-			filters = {"content_hash": content_hash}
-			if exclude:
-				filters["name"] = ["!=", exclude]
-			if frappe.get_all("File", filters=filters, limit=1):
-				return
+		others = {"name": ["!=", exclude]} if exclude else {}
+		if content_hash and frappe.get_all("File", filters={"content_hash": content_hash, **others}, limit=1):
+			return
+		# A remote file keeps no hash (upstream clears it), so its URL is the reference.
+		if frappe.get_all("File", filters={"file_url": _url(key), **others}, limit=1):
+			return
 		get_storage_backend().delete(key)
 	except Exception:
 		frappe.log_error(

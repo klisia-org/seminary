@@ -49,6 +49,27 @@
 				editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
 			<ContentIssues ref="questionChecker" class="mt-2" :issues="questionIssues" :actionLabel="__('Save anyway')" />
 		</div>
+		<div v-if="model.type === 'Video'" class="mt-8 space-y-4">
+			<div class="font-semibold">{{ __('Video') }}</div>
+			<div class="grid grid-cols-2 gap-5">
+				<FormControl v-model.number="model.max_video_minutes" type="number" min="1"
+					:label="__('Longest video (minutes)')" />
+				<FormControl v-model.number="model.expected_speakers" type="number" min="1"
+					:label="__('Speakers in the video')" />
+			</div>
+			<p class="text-xs text-ink-gray-5">
+				{{ __('Students record in the browser at 720p, about 10 MB a minute, or upload a video they already have. With more than one speaker, the transcript says who spoke when.') }}
+			</p>
+			<div>
+				<div class="text-sm text-ink-gray-7 mb-1">{{ __('Processing of each video') }}</div>
+				<div v-if="videoStepChoices.length" class="flex flex-wrap gap-y-2">
+					<FormControl v-for="c in videoStepChoices" :key="c.step" type="checkbox" :label="c.label"
+						class="mr-6" :modelValue="chosenVideoSteps.includes(c.step)"
+						@update:modelValue="(v) => toggleVideoStep(c.step, v)" />
+				</div>
+				<p v-else class="text-sm text-ink-gray-5">{{ __('No processing steps are available on this site.') }}</p>
+			</div>
+		</div>
 		<div v-if="defensible" class="mt-8 space-y-4">
 			<div class="font-semibold">{{ __('Oral Defense') }}</div>
 			<FormControl v-model="model.oral_defense" type="checkbox"
@@ -151,6 +172,10 @@ const model = reactive({
 	defense_window: 259200,
 	defense_review: false,
 	defense_steps: '[]',
+	// privatedocs p029 §2
+	max_video_minutes: 20,
+	expected_speakers: 1,
+	video_steps: '["transcribe"]',
 	// decisions/120 §1
 	group_work: false,
 	group_source: 'By hand',
@@ -182,6 +207,22 @@ const toggleStep = (step, on) => {
 	const set = new Set(chosenSteps.value)
 	on ? set.add(step) : set.delete(step)
 	model.defense_steps = JSON.stringify([...set])
+}
+// A video runs the steps a finished recording runs (100 §4); defense questions
+// and follow-ups belong to the oral defense alone.
+const VIDEO_STEPS = ['transcribe', 'diarize', 'moments', 'score_suggestions', 'consistency']
+const videoStepChoices = computed(() => (stepChoices.data || []).filter((c) => VIDEO_STEPS.includes(c.step)))
+const chosenVideoSteps = computed(() => {
+	try {
+		return JSON.parse(model.video_steps || '[]')
+	} catch (e) {
+		return []
+	}
+})
+const toggleVideoStep = (step, on) => {
+	const set = new Set(chosenVideoSteps.value)
+	on ? set.add(step) : set.delete(step)
+	model.video_steps = JSON.stringify([...set])
 }
 // The window is stored in seconds and shown in the largest unit that divides it.
 const windowUnit = computed({
@@ -337,6 +378,10 @@ const assignmentOptions = computed(() => {
 		{ label: __('Text'), value: 'Text' },
 		{ label: __('URL'), value: 'URL' },
 		{ label: 'YouTube', value: 'YouTube' },
+		// Only where the site can store and transcribe video (privatedocs p029 §1).
+		...(user?.data?.video_submissions || model.type === 'Video'
+			? [{ label: __('Video'), value: 'Video' }]
+			: []),
 	]
 })
 </script>

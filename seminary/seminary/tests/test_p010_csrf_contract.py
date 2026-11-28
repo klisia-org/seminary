@@ -51,6 +51,7 @@ SENDERS = {
 	"components/SmartFileUploader.vue": "XHR upload_file (progress)",
 	"components/Modals/CourseAssessmentModal.vue": "fetch insert_cs_assessment",
 	"utils/directUpload.js": "fetch, direct-to-object-storage handshake",
+	"utils/multipartUpload.js": "fetch, video upload in parts (p029)",
 	"utils/foldertool.js": "fetch Course Folder + create_subfolder",
 	"pages/RecommenderForm.vue": "fetch upload_attachment -- GUEST flow",
 	"pages/CourseAssessment.vue": "fetch save_course_assessment",

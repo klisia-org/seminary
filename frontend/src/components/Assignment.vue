@@ -423,7 +423,9 @@
 						<div class="text-xs text-ink-gray-5 mt-1 mb-2">
 							{{ __('Add your assignment as {0}').format(assignment.data.type) }}
 						</div>
-						<FileUploader v-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
+						<VideoSubmission v-if="!submissionFile && assignment.data.type === 'Video'"
+							:assignment="assignment.data.name" @done="(file) => saveSubmission(file)" />
+						<FileUploader v-else-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
 							@success="(file) => saveSubmission(file)">
 							<template #default="{ uploading, progress, openFileSelector }">
 								<div class="flex items-center gap-2">
@@ -540,6 +542,7 @@ import { computed, inject, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { FileText, X } from 'lucide-vue-next'
 import { getFileSize, uploadLimits, validateFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
+import VideoSubmission from '@/components/VideoSubmission.vue'
 import SubmissionViewer from '@/components/AssignmentViewers/SubmissionViewer.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
@@ -1068,7 +1071,7 @@ const statusTheme = computed(() => {
 })
 
 const showUploader = () => {
-	return ['PDF', 'Image', 'Document'].includes(assignment.data?.type)
+	return ['PDF', 'Image', 'Document', 'Video'].includes(assignment.data?.type)
 }
 
 // --- Instructor view: dashboard and grading shortcuts ---

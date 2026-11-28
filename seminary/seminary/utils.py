@@ -1796,7 +1796,7 @@ def get_lesson_creation_details(course: str, chapter: str | int, lesson: str | i
 		lesson_details.captions = frappe.get_all(
 			"Course Lesson Caption",
 			filters={"parent": lesson_name, "parenttype": "Course Lesson", "parentfield": "captions"},
-			fields=["name", "language", "label", "caption_file"],
+			fields=["name", "language", "label", "caption_file", "status"],
 			order_by="idx asc",
 		)
 

@@ -112,7 +112,9 @@ class TestLessonCaptions(IntegrationTestCase):
 
 		data = get_lesson(cs, 1, 1)
 		self.assertEqual(data.transcript, transcript)
-		self.assertEqual(data.captions, [{"language": "en", "label": "English", "file": url}])
+		self.assertEqual(
+			data.captions, [{"language": "en", "label": "English", "file": url, "status": "Reviewed"}]
+		)
 
 		# The lesson form gets the rows to edit and save back.
 		details = get_lesson_creation_details(cs, 1, 1)
@@ -121,6 +123,30 @@ class TestLessonCaptions(IntegrationTestCase):
 			[("en", url)],
 		)
 		self.assertEqual(details["lesson"].transcript, transcript)
+
+	def test_a_draft_reaches_the_player_labelled_machine_generated(self):
+		from seminary.seminary.doctype.course_lesson.course_lesson import lesson_captions
+
+		lesson = fx.uid("LSN")
+		url = self._file("draft.vtt", VTT)
+		doc = frappe.get_doc(
+			{
+				"doctype": "Course Lesson",
+				"name": lesson,
+				"lesson_title": "Draft",
+				"captions": [{"language": "en", "label": "English", "caption_file": url, "status": "Draft"}],
+			}
+		)
+		doc.flags.ignore_links = True
+		doc.flags.ignore_mandatory = True
+		doc.db_insert()
+		for row in doc.captions:
+			row.db_insert()
+		self.records.append(("Course Lesson", lesson))
+		self.assertEqual(
+			lesson_captions(lesson),
+			[{"language": "en", "label": "English (machine-generated)", "file": url, "status": "Draft"}],
+		)
 
 	def test_a_blank_label_takes_the_language_name(self):
 		from seminary.seminary.doctype.course_lesson.course_lesson import lesson_captions

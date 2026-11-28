@@ -22,7 +22,7 @@
 		<div v-else class="relative">
 			<video :src="node.attrs.src" controls class="w-full rounded">
 				<track v-for="(c, i) in captions" :key="c.src" kind="captions" :src="c.src"
-					:srclang="c.srclang" :label="c.label" :default="i === 0" />
+					:srclang="c.srclang" :label="trackLabel(c)" :default="i === 0" />
 			</video>
 		</div>
 		<div v-if="editor.isEditable && !uploading" contenteditable="false" class="mt-1">
@@ -33,7 +33,8 @@
 				<p class="mb-3 text-sm text-ink-gray-5">
 					{{ __('One WebVTT (.vtt) file per language.') }}
 				</p>
-				<CaptionsEditor compact :captions="rows" @add="add" @remove="remove" />
+				<CaptionsEditor compact :captions="rows" :videos="videos" @add="add" @remove="remove"
+					@review="review" />
 			</div>
 		</div>
 	</NodeViewWrapper>
@@ -44,7 +45,7 @@ import { computed, ref } from 'vue'
 import { NodeViewWrapper, nodeViewProps } from '@tiptap/vue-3'
 import { Button } from 'frappe-ui'
 import CaptionsEditor from '@/components/CaptionsEditor.vue'
-import { readCaptions } from '@/utils/embed'
+import { SITE_FILE, readCaptions } from '@/utils/embed'
 import { videoUploads } from '@/utils/richEditorNodes'
 
 const props = defineProps(nodeViewProps)
@@ -57,15 +58,40 @@ const captions = computed(() => readCaptions(JSON.stringify(props.node.attrs.cap
 
 // CaptionsEditor's rows: the same shape as a lesson's Captions table.
 const rows = computed(() =>
-	captions.value.map((c) => ({ language: c.srclang, label: c.label, caption_file: c.src }))
+	captions.value.map((c) => ({
+		language: c.srclang,
+		label: c.label,
+		caption_file: c.src,
+		status: c.status || 'Reviewed',
+	}))
 )
+
+// A video on this site can have captions drafted (privatedocs p029 §7).
+const videos = computed(() => (SITE_FILE.test(props.node.attrs.src || '') ? [{ url: props.node.attrs.src }] : []))
+
+const trackLabel = (c) => (c.status === 'Draft' ? __('{0} (machine-generated)').format(c.label) : c.label)
 
 const add = (row) => {
 	props.updateAttributes({
 		captions: [
 			...captions.value,
-			{ src: row.caption_file, srclang: row.language, label: row.label || row.language },
+			{
+				src: row.caption_file,
+				srclang: row.language,
+				label: row.label || row.language,
+				...(row.status === 'Draft' ? { status: 'Draft' } : {}),
+			},
 		],
+	})
+}
+
+const review = (index) => {
+	props.updateAttributes({
+		captions: captions.value.map((c, i) => {
+			if (i !== index) return c
+			const { status, ...rest } = c
+			return rest
+		}),
 	})
 }
 

@@ -630,13 +630,27 @@ def may_review_recording(recording, user):
 	if not student:
 		return False
 	subs = frappe.get_all("Oral Activity Submission", filters={"recording": recording}, pluck="name")
+	if subs and frappe.db.exists(
+		REVIEW,
+		{
+			"submission_doctype": "Oral Activity Submission",
+			"submission": ["in", subs],
+			"reviewer": student,
+		},
+	):
+		return True
+	# A video assignment's recording belongs to its submission (privatedocs p029 §5).
+	ref = frappe.db.get_value(
+		"Oral Recording", recording, ["reference_doctype", "reference_name"], as_dict=True
+	)
 	return bool(
-		subs
+		ref
+		and ref.reference_doctype == "Assignment Submission"
 		and frappe.db.exists(
 			REVIEW,
 			{
-				"submission_doctype": "Oral Activity Submission",
-				"submission": ["in", subs],
+				"submission_doctype": "Assignment Submission",
+				"submission": ref.reference_name,
 				"reviewer": student,
 			},
 		)
@@ -896,6 +910,11 @@ def _work_payload(doc):
 	sub = frappe.get_doc(doc.submission_doctype, doc.submission)
 	base = f"/api/method/seminary.seminary.peer_reviews.download?review={doc.name}"
 	if doc.submission_doctype == "Assignment Submission":
+		from seminary.seminary.video_submissions import is_video, recording_of
+
+		if is_video(sub):
+			# Watched through its recording, which the reviewer may read (privatedocs p029 §5).
+			return {"kind": "assignment", "type": "Video", "recording": recording_of(sub.name)}
 		return {
 			"kind": "assignment",
 			"type": sub.type,

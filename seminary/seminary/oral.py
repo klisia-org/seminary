@@ -79,6 +79,8 @@ REFERENCES: dict[str, str] = {
 	# submission exists, and submitting points every member's at it (100b).
 	"Scheduled Course Assess Criteria": "seminary.seminary.oral_activities.resolve",
 	"Oral Defense Question": "seminary.seminary.oral_defense.resolve",  # 100c
+	# A video assignment's submission (privatedocs p029 §5).
+	"Assignment Submission": "seminary.seminary.video_submissions.resolve",
 }
 
 MIME_EXTENSIONS = {
@@ -876,16 +878,22 @@ def add_moment(recording, start, end=None, note=None, criterion_code=None, quest
 
 
 @frappe.whitelist(methods=["POST"])
-def set_moment_state(moment, state, note=None):
+def set_moment_state(moment: str, state: str, note: str | None = None):
 	"""Keep or dismiss a suggested moment, or edit a moment's note (100 §6)."""
 	if state not in ("Kept", "Dismissed"):
 		frappe.throw(_("A moment can only be kept or dismissed."))
 	doc = frappe.get_doc("Oral Moment", moment)
 	_staff_recording(doc.recording)
+	kept_now = state == "Kept" and doc.state != "Kept"
 	doc.state = state
 	if note is not None:
 		doc.note = note
 	doc.save(ignore_permissions=True)
+	if kept_now:
+		# On a video submission a kept moment is a timestamp comment (100 §6, p029 §6).
+		from seminary.seminary.video_submissions import moment_kept
+
+		moment_kept(doc)
 	return doc.state
 
 
@@ -1075,11 +1083,16 @@ def delete_expired_audio():
 
 
 def delete_audio(doc):
-	for file_name in frappe.get_all(
+	names = frappe.get_all(
 		"File",
 		filters={"attached_to_doctype": "Oral Recording", "attached_to_name": doc.name},
 		pluck="name",
-	):
+	)
+	if doc.reference_doctype == "Assignment Submission" and doc.audio:
+		# A video submission's file is also attached to the submission itself
+		# (file_policy.adopt): every row over it goes, or the video stays stored.
+		names += frappe.get_all("File", filters={"file_url": doc.audio}, pluck="name")
+	for file_name in dict.fromkeys(names):
 		frappe.delete_doc("File", file_name, ignore_permissions=True, delete_permanently=True)
 	doc.audio = None
 	for row in doc.speakers:

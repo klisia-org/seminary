@@ -259,19 +259,22 @@ def lesson_captions(lesson):
 	rows = frappe.get_all(
 		"Course Lesson Caption",
 		filters={"parent": lesson, "parenttype": "Course Lesson", "parentfield": "captions"},
-		fields=["language", "label", "caption_file"],
+		fields=["language", "label", "caption_file", "status"],
 		order_by="idx asc",
 	)
 	if not rows:
 		return []
 	from seminary.language import native_choices
+	from seminary.seminary.captions import draft_label
 
 	names = dict(native_choices([r.language for r in rows]))
 	return [
 		{
 			"language": r.language,
-			"label": r.label or names.get(r.language) or r.language,
+			# A draft is shown, labelled machine-generated (privatedocs p029 §7).
+			"label": draft_label(r.label or names.get(r.language) or r.language, r.status),
 			"file": r.caption_file,
+			"status": r.status or "Reviewed",
 		}
 		for r in rows
 		if r.caption_file

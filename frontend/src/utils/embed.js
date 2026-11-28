@@ -39,7 +39,7 @@ export function buildEmbed(url, title = '') {
 
 // A caption file must be one uploaded to this site: on disk, or in object storage
 // (seminary/storage/backend.py FILE_URL_RE).
-const SITE_FILE =
+export const SITE_FILE =
 	/^(?:\/(?:private\/)?files\/[^?#"'<>\s]+|\/api\/method\/seminary\.storage\.api\.download_file\?key=[A-Za-z0-9/._-]+)$/
 
 /** The captions a rich-text video lists, keeping only files on this site. */
@@ -57,6 +57,8 @@ export function readCaptions(value) {
 			src: c.src,
 			srclang: String(c.srclang || '').slice(0, 20),
 			label: String(c.label || c.srclang || '').slice(0, 80),
+			// Machine-generated and not yet reviewed (privatedocs p029 §7).
+			...(c.status === 'Draft' ? { status: 'Draft' } : {}),
 		}))
 }
 
@@ -85,7 +87,11 @@ export function buildRichMedia(root) {
 			track.setAttribute('kind', 'captions')
 			track.setAttribute('src', c.src)
 			if (c.srclang) track.setAttribute('srclang', c.srclang)
-			if (c.label) track.setAttribute('label', c.label)
+			if (c.label)
+				track.setAttribute(
+					'label',
+					c.status === 'Draft' ? __('{0} (machine-generated)').format(c.label) : c.label
+				)
 			if (i === 0) track.setAttribute('default', '')
 			video.appendChild(track)
 		})

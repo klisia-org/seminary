@@ -16,7 +16,7 @@ from .fingerprint import strip_html
 MAX_CHARS = 200_000
 
 # Assignment Activity types whose submission carries no comparable prose.
-NON_TEXT_TYPES = {"Image", "YouTube", "URL"}
+NON_TEXT_TYPES = {"Image", "YouTube", "URL", "Video"}
 
 
 def _file_doc(file_url: str):

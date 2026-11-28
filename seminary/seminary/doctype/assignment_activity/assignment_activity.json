@@ -18,6 +18,11 @@
   "grade_assignment",
   "answer",
   "rubric",
+  "video_section",
+  "max_video_minutes",
+  "expected_speakers",
+  "column_break_video",
+  "video_steps",
   "defense_section",
   "oral_defense",
   "defense_questions",
@@ -70,7 +75,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Accepted file type",
-   "options": "PDF\nDocument\nImage\nURL\nText\nYouTube",
+   "options": "PDF\nDocument\nImage\nURL\nText\nYouTube\nVideo",
    "reqd": 1
   },
   {
@@ -115,6 +120,37 @@
    "options": "Rubric",
    "read_only": 1,
    "description": "The current version of this activity's rubric. Set from the activity's page in the portal."
+  },
+  {
+   "fieldname": "video_section",
+   "fieldtype": "Section Break",
+   "label": "Video",
+   "depends_on": "eval:doc.type=='Video'"
+  },
+  {
+   "fieldname": "max_video_minutes",
+   "fieldtype": "Int",
+   "label": "Longest Video (minutes)",
+   "default": "20",
+   "non_negative": 1,
+   "description": "Up to the school's limit in Seminary Settings."
+  },
+  {
+   "fieldname": "expected_speakers",
+   "fieldtype": "Int",
+   "label": "Speakers in the Video",
+   "default": "1",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_video",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "video_steps",
+   "fieldtype": "Small Text",
+   "label": "Processing of the Video",
+   "description": "The processing steps that run on each video, as a JSON list."
   },
   {
    "fieldname": "defense_section",
@@ -285,7 +321,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-26 22:00:00.000000",
+ "modified": "2026-11-27 18:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Assignment Activity",

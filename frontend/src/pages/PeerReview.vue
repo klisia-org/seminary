@@ -16,7 +16,11 @@
 				<SafeHtml :html="r.prompt" class="prose prose-sm mt-2 max-w-none !whitespace-normal" />
 			</details>
 
-			<template v-if="r.work.kind === 'assignment'">
+			<template v-if="r.work.kind === 'assignment' && r.work.type === 'Video'">
+				<OralPlayer v-if="r.work.recording" ref="player" :recording="r.work.recording" video :marking="false"
+					@time="(t) => (now = t)" />
+			</template>
+			<template v-else-if="r.work.kind === 'assignment'">
 				<SafeHtml v-if="r.work.type === 'Text' && r.work.answer" :html="r.work.answer"
 					class="prose max-w-none rounded-lg border p-4 !whitespace-normal" />
 				<a v-else-if="['URL', 'YouTube'].includes(r.work.type) && r.work.answer" :href="safeUrl(r.work.answer)"
